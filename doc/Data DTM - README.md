@@ -8,13 +8,14 @@ Alur konversi: **xlsx → `Data DTM.json`** (representasi 1:1 per pegawai, terma
 
 | File | Grain (1 baris = ...) | Kolom |
 |---|---|---|
-| `dtm_pegawai.csv` | 1 pegawai (PK: `nip`) | nip, nama, golongan, tmt_golongan_pangkat, unit_organisasi, unit_kerja, eselon, jabatan_saat_ini, jenjang, tmt_jabatan, sekolah, bidang_studi, tingkat_pendidikan |
+| `dtm_pegawai.csv` | 1 pegawai (PK: `nip`) | nip, nama, golongan, tmt_golongan_pangkat, unit_organisasi, unit_kerja, eselon, jabatan_saat_ini, jenjang, tmt_jabatan, sekolah, bidang_studi, tingkat_pendidikan, riwayat_diklat (JSON) |
 | `dtm_asesmen_talenta.csv` | 1 pegawai × 1 tahun asesmen (FK: `nip`) | nip, tahun_asesmen, jenis_asesmen, status_asesmen, potkom, nilai_integritas, tahun_kinerja, rating_kinerja, kotak_9 |
 | `dtm_riwayat_jabatan.csv` | 1 baris riwayat jabatan (FK: `nip`) | nip, urutan, nama_jabatan |
-| `dtm_riwayat_diklat.csv` | 1 baris riwayat diklat/sertifikasi (FK: `nip`) | nip, urutan, nama_diklat |
 | `dtm_riwayat_pendidikan.csv` | 1 baris riwayat pendidikan (FK: `nip`) | nip, urutan, riwayat_pendidikan |
 
-Relasi: `dtm_pegawai.nip` adalah PK; keempat tabel lain punya FK `nip` ke `dtm_pegawai` (relasi 1-ke-banyak). `nip + urutan` bisa jadi composite key pada 3 tabel riwayat.
+Relasi: `dtm_pegawai.nip` adalah PK; ketiga tabel lain punya FK `nip` ke `dtm_pegawai` (relasi 1-ke-banyak). `nip + urutan` bisa jadi composite key pada 2 tabel riwayat.
+
+Riwayat diklat/sertifikasi **tidak** dipisah jadi tabel/CSV sendiri — datanya cuma daftar nama diklat tanpa kolom relasional yang benar-benar berguna (lokasi, TMT, arsip mayoritas kosong di data contoh), jadi disimpan langsung sebagai array JSON di kolom `dtm_pegawai.csv:riwayat_diklat`, persis seperti struktur `Data DTM.json` per pegawai (lihat juga [`ERD.md`](ERD.md) §1 poin 6).
 
 Kolom numerik (`potkom`, `nilai_integritas`) sudah dinormalisasi ke format desimal titik (`.`) — sumbernya campur koma/titik (`101,25` vs `93.47`). Kolom tanggal (`tmt_golongan_pangkat`, `tmt_jabatan`) **belum** diparse jadi tipe DATE karena formatnya tidak konsisten antar baris (lihat catatan di bawah) — perlu tahap cleaning terpisah sebelum masuk kolom `DATE` di MySQL.
 
