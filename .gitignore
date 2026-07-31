@@ -1,0 +1,41 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+
+# drizzle meta hasil introspect
+/lib/db/meta/
+
+# perkakas agen (skill Claude Code yang diunduh) — bukan bagian aplikasi.
+# Isinya ratusan berkas termasuk font biner; `skills-lock.json` tetap dilacak
+# supaya perkakas yang sama bisa dipasang ulang tanpa membawa payload-nya.
+/.claude/skills/
+/.agents/

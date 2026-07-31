@@ -1,9 +1,18 @@
 # ERD — Sistem Informasi Manajemen Talenta DJBK
 
 **Target DBMS:** MySQL 8.x
+**Status:** skema sudah **diimplementasikan** di `pupr_dev`. DDL & data: [`sql/001_schema.sql`](sql/001_schema.sql) → [`011_notifikasi.sql`](sql/011_notifikasi.sql), dijalankan berurutan. Kolom yang ditambahkan setelah `001`:
+
+| Berkas | Tambahan | Alasan |
+|---|---|---|
+| `005_skema_tambahan.sql` | `match_score_detail`, `match_score.rubrik_snapshot`, `jabatan_target.kata_kunci_relevansi` | hasil audit rule engine — lihat [`../phase.md`](../phase.md) §8 (U-3, U-5, U-12) |
+| `009_kolom_pembanding.sql` | `asesmen_talenta.kotak_9_sumber` | §6 no. 2 mewajibkan menyimpan `kotak_9` dari sumber sebagai pembanding, tapi kolomnya belum ada sehingga nilai sumber hilang saat dihitung ulang |
+| `010_kunci_indikator.sql` | `rubrik_indikator.kunci_sistem`, `match_score` UNIQUE (pegawai_id, jabatan_target_id) | begitu rubrik bisa diedit (Fase 5), nama indikator jadi milik pengguna — jembatan data→indikator tidak boleh lagi bergantung pada pencocokan nama. Kunci unik menegakkan relasi "paling banyak satu skor per pasangan" yang selama ini hanya dijaga oleh cara pengisiannya |
+| `011_notifikasi.sql` | tabel `notifikasi` (U-7) + pembetulan keadaan workflow di data dev | Alur approval tanpa inbox menggantung: unit mengajukan lalu tidak tahu apa-apa sampai seseorang kebetulan membuka halaman. Pembetulan datanya perlu karena `007_recompute` menyisipkan nominasi tanpa memperbarui `talent_pool.status` yang berpasangan dengannya |
+
 **Sumber rancangan:** [`Data DTM.json`](Data%20DTM.json) & CSV turunannya (data contoh 9 pegawai), [`KERANGKA TALENT POOL.md`](KERANGKA%20TALENT%20POOL.md) (rubrik penilaian), [`BLUEPRINT READINESS - MODUL MANAJEMEN TALENTA.md`](BLUEPRINT%20READINESS%20-%20MODUL%20MANAJEMEN%20TALENTA.md) (gap data & modul yang akan dibangun), [`manajemen talenta 27 juli utk tim SIM.md`](manajemen%20talenta%2027%20juli%20utk%20tim%20SIM.md) (roadmap & stakeholder).
 
-> Dokumen ini murni desain data (skema tabel), **belum ada kode**. Tujuannya untuk diaudit dulu sebelum implementasi MySQL/Prisma/ORM apa pun.
+> Skema di dokumen ini **sudah diimplementasikan** dan berjalan di `pupr_dev` (**28 tabel**). Sumber kebenarannya adalah berkas SQL bernomor di [`sql/`](sql/), dijalankan berurutan `001` → `011`; tipe TypeScript **diturunkan dari database** lewat `drizzle-kit pull`, bukan ditulis ulang manual. Kalau struktur di dokumen ini berubah, ubah juga berkas SQL-nya — jangan biarkan keduanya lepas.
 
 ---
 
@@ -139,6 +148,7 @@ erDiagram
         varchar kode_target UK
         varchar nama_target "cth: Kepala Balai BP2JK/Kasubdit Pengadaan"
         text deskripsi
+        json kata_kunci_relevansi "definisi 'sesuai jabatan target' utk bidang ilmu & diklat"
         enum status "DRAFT,AKTIF,NONAKTIF"
         bigint dibuat_oleh FK
         datetime created_at
@@ -167,6 +177,7 @@ erDiagram
         bigint rubrik_komponen_id FK
         bigint parent_indikator_id FK "nullable, untuk sub-rubrik"
         varchar nama_indikator
+        enum kunci_sistem "nullable, pengenal sumber data otomatis"
         decimal bobot_indikator "0-1"
         enum mode_skor "KATEGORI_TETAP,NILAI_LANGSUNG"
         text kebutuhan_data
@@ -193,6 +204,8 @@ erDiagram
     pegawai ||--o{ asesmen_talenta : punya
     pegawai ||--o{ match_score : dinilai
     jabatan_target ||--o{ match_score : "dinilai untuk"
+    match_score ||--o{ match_score_detail : dirinci
+    rubrik_indikator ||--o{ match_score_detail : "dinilai pada"
     match_score ||--o| talent_pool : menghasilkan
     pegawai ||--o{ talent_pool : masuk
     jabatan_target ||--o{ talent_pool : menampung
@@ -210,9 +223,10 @@ erDiagram
         decimal nilai_kinerja_y
         decimal nilai_potensial_x
         decimal potkom
-        decimal nilai_integritas
+        decimal nilai_integritas "skala 0-100, sama dgn rubrik Integritas and Moralitas"
         decimal nilai_talenta "50 percent Y + 50 percent X"
-        tinyint kotak_9 "1-9"
+        tinyint kotak_9 "1-9, SELALU hasil hitung"
+        tinyint kotak_9_sumber "nilai apa adanya dari sumber, pembanding kualitas data"
         year tahun_kinerja
         enum rating_kinerja "Sangat_Baik,Baik,Butuh_Perbaikan,Kurang,Sangat_Kurang"
         varchar sumber_sync "eNominasi,manual,recalculated"
@@ -228,7 +242,23 @@ erDiagram
         decimal skor_total "65/20/15 weighted"
         boolean eligible "hasil cek jabatan_target_persyaratan"
         text catatan_eligibility
+        json rubrik_snapshot "beku: bobot rubrik saat skor dihitung"
         datetime computed_at
+    }
+    match_score_detail {
+        bigint id PK
+        bigint match_score_id FK
+        bigint rubrik_indikator_id FK
+        bigint parent_indikator_id FK "nullable, untuk sub-indikator"
+        decimal bobot_indikator "snapshot bobot saat dihitung"
+        varchar nilai_mentah "input apa adanya (angka atau label)"
+        varchar kategori_terpilih
+        decimal skor
+        enum sumber_nilai "OTOMATIS,MANUAL"
+        boolean perlu_review
+        text catatan
+        bigint diisi_oleh FK "wajib bila sumber_nilai=MANUAL"
+        datetime created_at
     }
     talent_pool {
         bigint id PK
@@ -375,19 +405,21 @@ erDiagram
 
 | Tabel | Fungsi | Catatan |
 |---|---|---|
-| `jabatan_target` | Profil "jabatan sasaran suksesi" — bisa mencakup beberapa jabatan definitif sekaligus (cth: gabungan Kepala Balai BP2JK + Kasubdit Pengadaan) | Menutup gap ❌ "Master Jabatan Target & Persyaratan". |
+| `jabatan_target` | Profil "jabatan sasaran suksesi" — bisa mencakup beberapa jabatan definitif sekaligus (cth: gabungan Kepala Balai BP2JK + Kasubdit Pengadaan) | Menutup gap ❌ "Master Jabatan Target & Persyaratan". Kolom `kata_kunci_relevansi` (JSON) menyimpan **apa yang dianggap "sesuai dengan jabatan target"** — rubrik memakai frasa itu pada indikator Kesesuaian Bidang Ilmu & Pengembangan Kompetensi, tapi sebelumnya tidak ada tempat menyimpannya, sehingga kedua indikator tidak bisa dihitung otomatis. Nilai `"semua"` berarti semua bidang ilmu diperbolehkan; untuk indikator diklat, `"semua"` **tidak** dianggap membebaskan syarat (lihat `lib/penilaian.ts`). |
 | `jabatan_target_anggota` | Junction many-to-many `jabatan_target` ↔ `jabatan` | |
 | `jabatan_target_persyaratan` | Syarat minimal (pendidikan, bidang ilmu, dst) per jabatan target | Cth: "cek syarat jabatan Dit Pengadaan — minimal S1 semua jurusan" dari `KERANGKA TALENT POOL.md`. |
 | `rubrik_komponen` | Komponen berbobot per sumbu (Y/X), `jabatan_target_id` NULL = rubrik generik Kotak 9 | Menutup gap ❌ "Master Jabatan Target & Rule Configuration" — bobot **bisa diubah dari UI**, bukan hardcode. |
-| `rubrik_indikator` | Indikator berbobot per komponen, mendukung sub-indikator (self-FK `parent_indikator_id`) | Sub-indikator dipakai utk 3 sub-rubrik "Nilai Pengalaman Jabatan" (Lama/Keragaman/Substansi Jabatan). |
+| `rubrik_indikator` | Indikator berbobot per komponen, mendukung sub-indikator (self-FK `parent_indikator_id`) | Sub-indikator dipakai utk 3 sub-rubrik "Nilai Pengalaman Jabatan" (Lama/Keragaman/Substansi Jabatan). Kolom `kunci_sistem` memisahkan **label** indikator (milik pengguna, bebas diubah dari editor rubrik) dari **pengenal sumber datanya** (milik sistem, dipilih dari daftar tertutup di `lib/penilaian.ts`). `NULL` berarti tidak ada sumber otomatis → nilainya diisi manusia dan ditandai `MANUAL` di `match_score_detail`. Sebelum kolom ini ada, jembatannya adalah pencocokan nama persis, sehingga mengganti nama indikator dari UI akan mematikan seluruh perhitungan match score (`doc/sql/010`). |
 | `rubrik_kategori_skor` | Rubrik skor per indikator (kategori → nilai, atau ambang batas) | Merepresentasikan tabel-tabel skor di `KERANGKA TALENT POOL.md` (Sangat Baik=100, dst). |
 
 ### 3.3 Asesmen, Talent Pool & Workflow
 
 | Tabel | Fungsi | Catatan |
 |---|---|---|
-| `asesmen_talenta` | Snapshot tahunan hasil e-Nominasi (Kotak 9 generik) | Data yang **sudah ada** ✅ per Blueprint. Setara `dtm_asesmen_talenta.csv`. |
-| `match_score` | Skor kecocokan pegawai × jabatan target spesifik | Output komponen Blueprint #3 "Eligibility Check & Match Scoring". |
+| `asesmen_talenta` | Snapshot tahunan hasil e-Nominasi (Kotak 9 generik) | Data yang **sudah ada** ✅ per Blueprint. Setara `dtm_asesmen_talenta.csv`. **Skala `nilai_integritas` diseragamkan ke 0–100** (semula `DECIMAL(4,2)`, mengikuti skala kecil 1–4 di data contoh) supaya sistem hanya punya SATU skala integritas — lihat `phase.md` §2.7; perubahan tipe ada di `005_skema_tambahan.sql`. `kotak_9` **selalu hasil hitung** dari (Y, X); nilai dari sistem sumber disimpan terpisah di **`kotak_9_sumber`** (ditambahkan `009_kolom_pembanding.sql`) dan dipakai HANYA sebagai pembanding — selisihnya masuk Antrian Pembersihan Data (`phase.md` §2.3, §6 no. 2). Sebelum kolom itu ada, nilai sumber tertimpa `007_recompute` sehingga selisihnya tidak bisa ditampilkan sama sekali. |
+| `match_score` | Skor kecocokan pegawai × jabatan target spesifik | Output komponen Blueprint #3 "Eligibility Check & Match Scoring". Kolom `rubrik_snapshot` membekukan bobot rubrik saat skor dihitung — tanpa itu, skor talent pool yang sudah `DITETAPKAN` tidak bisa direproduksi setelah bobot diubah dari UI (lihat `phase.md` §8 usulan U-5). **UNIQUE (pegawai_id, jabatan_target_id)** ditambahkan di `doc/sql/010`: relasinya memang paling banyak satu baris per pasangan, tapi sebelumnya hanya dijaga oleh cara pengisiannya (`007_recompute` menghapus seluruh tabel lebih dulu). Tombol Hitung Ulang memperbarui satu jabatan target saja, jadi jalur "sudah ada → perbarui" perlu dijamin database — duplikatnya tidak akan terlihat karena halaman menampilkan salah satunya dan `talent_pool.match_score_id` menunjuk entah yang mana. |
+| `match_score_detail` | Rincian skor per **indikator & sub-indikator** untuk satu baris `match_score` | Ditambahkan di `doc/sql/005_skema_tambahan.sql`. Alasannya: `match_score` hanya menyimpan 3 agregat + total, sehingga pertanyaan "kenapa kandidat yang sama dapat 75,83 di satu jabatan target tapi 88,33 di target lain?" tidak bisa dijawab dari UI — padahal indikator Kesesuaian Bidang Ilmu & Pengembangan Kompetensi memang bernilai beda per target. `sumber_nilai` memisahkan hasil hitung otomatis dari nilai yang diisi manusia, karena sebagian indikator (Lama/Keragaman/Substansi Jabatan) datanya belum tentu lengkap di sistem sumber (lihat `phase.md` §8 usulan U-3). |
+| `notifikasi` | Kabar untuk satu pengguna tentang perubahan alur nominasi & suksesi | Ditambahkan di `doc/sql/011` (phase.md §8 usulan U-7). **Disebar per pengguna saat dibuat**, bukan disimpan bertujuan peran: satu baris untuk peran yang dipegang tiga orang akan hilang dari dua orang lain begitu satu orang menandainya terbaca — `dibaca_pada` tidak bisa dibagi. Kolom `peran_tujuan` tetap ada, tapi sebagai keterangan ("Anda menerima ini sebagai Admin Talenta"), bukan alamat pengiriman. Aturan siapa yang dikabari diturunkan dari state machine di `lib/workflow.ts`, bukan ditulis ulang |
 | `talent_pool` | Daftar kandidat final per jabatan target + status workflow | Output komponen #4 "Ranking, Gap Analysis & Talent Profile". |
 | `nominasi` | Pengajuan nominasi oleh unit | Langkah "Nominasi Unit" di Garis Besar Proses. |
 | `approval_log` | Log berjenjang persetujuan (bisa >1 tahap) | Langkah "Verifikasi Biro Kepegawaian" (lihat asumsi §6). |
@@ -426,14 +458,14 @@ erDiagram
 
 ## 5. Asumsi & Hal yang Perlu Dikonfirmasi
 
-Sebelum implementasi, tolong konfirmasi poin-poin berikut (aku ambil asumsi paling masuk akal, tapi ini keputusan bisnis yang sebaiknya divalidasi):
+Poin bertanda ⚙️ **sudah punya default yang berjalan di kode** (dipilih supaya implementasi bisa maju), tapi tetap keputusan bisnis yang sebaiknya divalidasi. Poin bertanda ✅ sudah terjawab. Daftar keputusan yang lebih lengkap — termasuk empat yang baru muncul saat rubrik diterjemahkan ke kode — ada di [`PRD.md`](PRD.md) §10.
 
 1. **"Verifikasi Biro Kepegawaian"** di Garis Besar Proses — asumsi ini merujuk ke **Bagian Kepegawaian dan Umum DJBK sendiri** (bukan Biro Kepegawaian & Ortala Kementerian PU, yang di peta stakeholder berperan sebagai *Latens*/pembina kebijakan, bukan operasional harian). Kalau ternyata verifikasi memang harus lewat Kementerian, perlu tabel `approval_log.tahap` tambahan + role baru.
-2. **Agregasi 3 sub-indikator "Nilai Pengalaman Jabatan"** (Lama Jabatan, Keragaman Riwayat Jabatan, Substansi Riwayat Jabatan) — skema `rubrik_indikator` sudah mendukung struktur sub-indikator, tapi metode gabungnya (rata-rata sederhana? bobot custom per sub-indikator?) belum ditentukan di dokumen sumber manapun.
-3. **Satu pegawai bisa masuk banyak `talent_pool`** untuk jabatan target berbeda secara bersamaan (diasumsikan YA — relasi many-to-many via baris `talent_pool` terpisah).
+2. ⚙️ **Agregasi 3 sub-indikator "Nilai Pengalaman Jabatan"** (Lama Jabatan, Keragaman Riwayat Jabatan, Substansi Riwayat Jabatan) — **default terpasang: rata-rata sederhana** (bobot sama rata). Mesin rubrik memakai rumus generik `Σ(nilai × bobot) / Σ(bobot)`, jadi kalau ternyata bobotnya harus berbeda cukup isi `rubrik_indikator.bobot_indikator` pada sub-indikator — tanpa mengubah kode. Masih perlu konfirmasi pemilik proses (lihat `PRD.md` §10 poin 7).
+3. ✅ **Satu pegawai bisa masuk banyak `talent_pool`** untuk jabatan target berbeda secara bersamaan — **dikonfirmasi oleh implementasi**: `UNIQUE KEY (pegawai_id, jabatan_target_id)` mengizinkan satu pegawai punya satu baris per jabatan target, dan data dev memang memuat pegawai yang dinilai untuk 3 jabatan target sekaligus dengan skor berbeda.
 4. **Level data yang boleh dibagi ke instansi eksternal via API** — asumsi: berbasis `scope_akses` per klien (bisa dibatasi read-only, bisa dibatasi ke data agregat saja tanpa NIP/nama individu, tergantung ada/tidaknya MoU). Perlu ketentuan resmi (rujukan UU PDP No. 27/2022 karena ini data ASN).
-5. **Autentikasi user internal** — asumsi: akun lokal (email/username + password) untuk fase awal; integrasi SSO Kementerian PU (kalau ada) bisa menyusul di fase panjang.
+5. ⚙️ **Autentikasi user internal** — akun lokal (email/username + password) untuk fase awal; integrasi SSO Kementerian PU bisa menyusul. Tabel `users` sudah menyimpan `password_hash` (bcrypt), tapi **modul auth-nya sendiri baru dibangun di Fase 7** — sampai itu, identitas pengguna diambil dari satu fungsi `getCurrentUser()` yang nanti cukup diganti isinya (lihat `../phase.md` §5.6).
 
 ---
 
-*Dokumen ini adalah rancangan skema (DDL belum dibuat). Setelah diaudit dan poin §5 dikonfirmasi, DDL MySQL (atau schema Prisma) bisa disusun 1:1 dari struktur di atas.*
+*DDL MySQL sudah disusun 1:1 dari struktur di atas dan berjalan di `pupr_dev` — lihat [`sql/`](sql/). Perubahan skema berikutnya dilakukan sebagai berkas SQL bernomor baru (`008`, `009`, …), bukan dengan menyunting berkas yang sudah tereksekusi, supaya riwayatnya bisa dijalankan ulang dari nol.*

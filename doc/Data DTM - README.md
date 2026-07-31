@@ -1,5 +1,10 @@
 # Data DTM — Hasil Konversi & Normalisasi
 
+> **Penting — berkas di sini adalah REKAMAN data contoh apa adanya, bukan cerminan isi database dev.**
+> `Data DTM.json` dan CSV turunannya sengaja dibiarkan seperti aslinya (termasuk seluruh keanehannya) sebagai bukti bentuk data yang datang dari e-Nominasi/eHRM.
+> Isi `pupr_dev` **sudah berbeda**: format diseragamkan, Potkom dibawa ke rentang 0–100, skala Nilai Integritas diubah ke 0–100, dan jumlah pegawai diperbanyak untuk keperluan pengujian — lihat [`../phase.md`](../phase.md) §1 & §4. Perbedaan itu disengaja, bukan drift.
+> Setiap keanehan yang tercatat di bawah sudah diterjemahkan menjadi kebutuhan validasi importer produksi di [`../phase.md`](../phase.md) §6.
+
 Sumber: `Data DTM.xlsx` (9 sheet, 1 sheet = 1 pegawai, format vertikal key-value hasil tempel dari **e-Nominasi** dan **e-Hrm**).
 
 Alur konversi: **xlsx → `Data DTM.json`** (representasi 1:1 per pegawai, termasuk field berulang seperti riwayat jabatan/diklat/pendidikan sebagai array) **→ 5 CSV ternormalisasi** (siap jadi tabel MySQL).
