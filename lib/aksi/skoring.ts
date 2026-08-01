@@ -12,6 +12,7 @@ import {
   ambilProfilKandidat,
   ambilRubrikUntukHitung,
 } from '../kueri/rubrik'
+import { ambilPengaturan } from '../pengaturan'
 import { validasiRubrik } from '../scoring'
 import { hitungSkorMassal } from '../skor-massal'
 import { tulisHasilSkor } from '../skoring-tulis'
@@ -72,17 +73,24 @@ export async function hitungUlangSkor(
   // supaya angka yang keluar tidak dianggap final.
   const validasi = validasiRubrik(siap.komponen, { untukJabatanTarget: true })
 
-  const [profil, nilaiManual, jejakManual] = await Promise.all([
+  const [profil, nilaiManual, jejakManual, pengaturan] = await Promise.all([
     ambilProfilKandidat(),
     ambilNilaiManual(idTarget.data),
     ambilJejakManual(idTarget.data),
+    ambilPengaturan(),
   ])
 
   if (profil.length === 0) {
     return gagal('Tidak ada pegawai aktif untuk dinilai.')
   }
 
-  const hasil = hitungSkorMassal(siap.rubrik, profil, { nilaiManual })
+  // Masa berlaku asesmen datang dari Pengaturan Sistem (Fase 7), bukan lagi
+  // konstanta di kode — PRD §10.11 memang menyebutnya parameter sistem.
+  // `lib/scoring` tetap bebas DB: nilainya diteruskan sebagai argumen.
+  const hasil = hitungSkorMassal(siap.rubrik, profil, {
+    nilaiManual,
+    masaBerlakuTahun: pengaturan.masaBerlakuAsesmenTahun,
+  })
   const snapshot = JSON.stringify(hasil.snapshotRubrik)
 
   let jumlahBarisRincian = 0

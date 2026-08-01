@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { AKUN, konteksMasuk } from './_masuk.mjs'
 import { readFileSync } from 'node:fs'
 
 /**
@@ -29,13 +30,18 @@ import { readFileSync } from 'node:fs'
 const BASE = process.argv[3] ?? 'http://localhost:3000'
 const OUT = process.argv[2] ?? '.'
 
-/** id pengguna seed (lihat 002_seed.sql). Cookie dev: simt_dev_user. */
+/**
+ * Akun seed per peran. Sejak Fase 7 uji ini **benar-benar masuk** sebagai
+ * masing-masing orang — dulu cukup menyetel cookie `simt_dev_user`. Bedanya
+ * penting: penegakan wewenang yang diuji di bawah kini berjalan di atas sesi
+ * asli, bukan di atas identitas yang bisa dipalsukan dari sisi klien.
+ */
 const USER = {
-  superAdmin: 1,
-  adminTalenta: 2,
-  pengelolaUnit: 3,
-  pimpinan: 6,
-  viewer: 8,
+  superAdmin: AKUN.superAdmin,
+  adminTalenta: AKUN.adminTalenta,
+  pengelolaUnit: AKUN.pengelolaUnit,
+  pimpinan: AKUN.pimpinan,
+  viewer: AKUN.viewer,
 }
 
 const errors = []
@@ -126,19 +132,14 @@ async function pilihKandidatUji() {
 
 const browser = await chromium.launch()
 
-/** Konteks browser dengan cookie pengguna dev tertentu. */
-async function konteksSebagai(userId, opsi = {}) {
-  const ctx = await browser.newContext({
+/** Konteks browser yang sudah masuk sebagai akun tertentu. */
+async function konteksSebagai(akun, opsi = {}) {
+  const ctx = await konteksMasuk(browser, {
+    base: BASE,
+    akun,
     viewport: { width: 1600, height: 1100 },
     ...opsi,
   })
-  await ctx.addCookies([
-    {
-      name: 'simt_dev_user',
-      value: String(userId),
-      url: BASE,
-    },
-  ])
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
   page.on('response', (r) => {
@@ -154,6 +155,30 @@ async function tungguTeks(page, teks, timeout = 20000) {
     teks,
     { timeout },
   )
+}
+
+/**
+ * Jalankan satu aksi workflow sampai mutasinya BENAR-BENAR selesai.
+ *
+ * **Kenapa helper ini ada.** Versi sebelumnya menekan tombol lalu menunggu
+ * sebuah kata muncul — dan kata itu ternyata sudah ada di kalimat akibat pada
+ * dialog yang baru saja terbuka ("Kandidat menjadi *Diverifikasi* dan
+ * diteruskan ke Persetujuan Pimpinan"). Penantiannya lolos seketika, uji
+ * melanjutkan ke `ctx.close()`, dan **konteks yang ditutup membatalkan POST
+ * server action yang masih terbang**. Hasilnya: langkahnya HIJAU, mutasinya
+ * tidak pernah terjadi, dan langkah berikutnya gagal di tempat yang tidak ada
+ * hubungannya. Dua kali kami mengejar sebabnya ke tempat yang salah.
+ *
+ * Penanda yang dipakai sekarang adalah **tertutupnya dialog**: `onTutup()`
+ * hanya dipanggil pada cabang berhasil, jadi dialog yang menutup berarti
+ * server sudah membalas ok — bukan berarti sebuah kata kebetulan terbaca.
+ */
+async function jalankanAksi(page, label, catatan) {
+  await page.getByRole('button', { name: label }).first().click()
+  await page.waitForSelector('dialog[open]', { state: 'visible', timeout: 10000 })
+  if (catatan !== undefined) await page.locator('dialog[open] textarea').fill(catatan)
+  await page.getByRole('button', { name: label }).last().click()
+  await page.waitForSelector('dialog[open]', { state: 'hidden', timeout: 25000 })
 }
 
 const kandidat = await pilihKandidatUji()
@@ -314,7 +339,7 @@ try {
 
     const baris = page.locator('tr', { hasText: kandidat.nama })
     await baris.getByRole('button', { name: 'Ajukan nominasi' }).click()
-    await page.waitForTimeout(600)
+    await page.waitForSelector('dialog[open]', { state: 'visible', timeout: 10000 })
 
     // Catatan wajib: coba simpan tanpa catatan lebih dulu.
     await page.getByRole('button', { name: 'Ajukan nominasi' }).last().click()
@@ -326,10 +351,21 @@ try {
     )
 
     await page
-      .locator('textarea')
+      .locator('dialog[open] textarea')
       .fill('Kandidat diusulkan unit; dokumen pendukung lengkap. (uji smoke Fase 6)')
     await page.getByRole('button', { name: 'Ajukan nominasi' }).last().click()
-    await tungguTeks(page, 'Dinominasikan', 25000)
+    // Dialog menutup hanya kalau server membalas ok. Menunggu kata
+    // "Dinominasikan" TIDAK sah: itu salah satu label penyaring status yang
+    // memang selalu ada di halaman ini.
+    await page.waitForSelector('dialog[open]', { state: 'hidden', timeout: 25000 })
+    await page.waitForFunction(
+      (nama) => {
+        const tr = [...document.querySelectorAll('tr')].find((r) => r.innerText.includes(nama))
+        return tr !== undefined && !tr.innerText.includes('Ajukan nominasi')
+      },
+      kandidat.nama,
+      { timeout: 25000 },
+    )
     await ctx.close()
     return 'nominasi diajukan; catatan wajib ditegakkan lebih dulu'
   })
@@ -397,10 +433,11 @@ try {
       'tahap Persetujuan Pimpinan tidak ditampilkan',
     )
 
-    await page.getByRole('button', { name: 'Setujui verifikasi' }).first().click()
-    await page.waitForTimeout(600)
-    await page.getByRole('button', { name: 'Setujui verifikasi' }).last().click()
-    await tungguTeks(page, 'Diverifikasi', 25000)
+    // Menunggu kata "Diverifikasi" TIDAK sah: kalimat akibat di dialog memuatnya,
+    // jadi penantiannya lolos sebelum aksinya jalan — lalu ctx.close() membunuh
+    // POST-nya. Lihat catatan pada jalankanAksi().
+    await jalankanAksi(page, 'Setujui verifikasi')
+    await tungguTeks(page, 'Persetujuan Pimpinan', 25000)
     await ctx.close()
     return 'nominasi lolos verifikasi; timeline memuat tahap yang belum dijalani'
   })
@@ -422,12 +459,8 @@ try {
     const { ctx, page } = await konteksSebagai(USER.pimpinan)
     await page.goto(nominasiUrl, { waitUntil: 'networkidle' })
     await tungguTeks(page, 'Tetapkan sebagai suksesor')
-    await page.getByRole('button', { name: 'Tetapkan sebagai suksesor' }).first().click()
-    await page.waitForTimeout(600)
-    await page.getByRole('button', { name: 'Tetapkan sebagai suksesor' }).last().click()
-    // Menunggu 'Ditetapkan' tidak sah: kalimat akibat di dialog yang masih terbuka
-    // memuat kata itu, jadi kondisinya lolos SEBELUM aksinya selesai. Yang menandai
-    // keadaan baru adalah munculnya aksi yang hanya ada di status DITETAPKAN.
+    // Penanda keadaan baru: munculnya aksi yang HANYA ada di status DITETAPKAN.
+    await jalankanAksi(page, 'Tetapkan sebagai suksesor')
     await tungguTeks(page, 'Batalkan penetapan', 25000)
     const teks = await page.locator('body').innerText()
     tegaskan(
@@ -461,7 +494,7 @@ try {
 
     const panel = page.locator('section', { hasText: kandidat.nama }).first()
     await panel.getByRole('button', { name: 'Tambah rencana' }).click()
-    await page.waitForTimeout(600)
+    await page.waitForSelector('dialog[open]', { state: 'visible', timeout: 10000 })
 
     await page.locator('textarea').fill('pendek')
     await page.getByRole('button', { name: 'Simpan' }).click()
@@ -470,10 +503,13 @@ try {
     tegaskan(galat.includes('minimal 10 karakter'), `validasi deskripsi tidak muncul: "${galat}"`)
 
     await page
-      .locator('textarea')
+      .locator('dialog[open] textarea')
       .fill('Diklat Kepemimpinan Nasional Tingkat II — uji smoke Fase 6')
     await page.getByRole('button', { name: 'Simpan' }).click()
-    await tungguTeks(page, 'Diklat', 25000)
+    // Menunggu kata "Diklat" TIDAK sah: itu salah satu label pilihan jenis
+    // pengembangan di dalam dialog yang masih terbuka.
+    await page.waitForSelector('dialog[open]', { state: 'hidden', timeout: 25000 })
+    await tungguTeks(page, 'Kepemimpinan Nasional Tingkat II', 25000)
     await ctx.close()
     return 'rencana tersimpan; deskripsi pendek ditolak per-field'
   })
@@ -485,11 +521,8 @@ try {
     const { ctx, page } = await konteksSebagai(USER.pimpinan)
     await page.goto(nominasiUrl, { waitUntil: 'networkidle' })
     await tungguTeks(page, 'Batalkan penetapan')
-    await page.getByRole('button', { name: 'Batalkan penetapan' }).first().click()
-    await page.waitForTimeout(600)
-    await page.locator('textarea').fill('Pembersihan uji smoke Fase 6.')
-    await page.getByRole('button', { name: 'Batalkan penetapan' }).last().click()
-    await tungguTeks(page, 'Diverifikasi', 25000)
+    await jalankanAksi(page, 'Batalkan penetapan', 'Pembersihan uji smoke Fase 6.')
+    await tungguTeks(page, 'Tetapkan sebagai suksesor', 25000)
     await ctx.close()
     return 'penetapan dibatalkan'
   })
@@ -512,11 +545,14 @@ try {
     const { ctx, page } = await konteksSebagai(USER.pimpinan)
     await page.goto(nominasiUrl, { waitUntil: 'networkidle' })
     await tungguTeks(page, 'Tolak di tahap pimpinan')
-    await page.getByRole('button', { name: 'Tolak di tahap pimpinan' }).first().click()
-    await page.waitForTimeout(600)
-    await page.locator('textarea').fill('Pembersihan uji smoke Fase 6.')
-    await page.getByRole('button', { name: 'Tolak di tahap pimpinan' }).last().click()
-    await tungguTeks(page, 'Ditolak', 25000)
+    await jalankanAksi(page, 'Tolak di tahap pimpinan', 'Pembersihan uji smoke Fase 6.')
+    // Penanda keadaan baru: TOMBOL penolakan lenyap karena tidak ada lagi yang
+    // bisa ditolak. Yang dicari harus tombolnya, bukan teksnya — timeline
+    // mencatat keputusan itu dengan label yang sama persis, jadi kalimatnya
+    // justru baru muncul setelah aksinya berhasil.
+    await page
+      .getByRole('button', { name: 'Tolak di tahap pimpinan' })
+      .waitFor({ state: 'detached', timeout: 25000 })
     await ctx.close()
     return 'ditolak di tahap pimpinan'
   })
@@ -527,11 +563,7 @@ try {
       waitUntil: 'networkidle',
     })
     await tungguTeks(page, 'Pulihkan sebagai kandidat', 25000)
-    await page.getByRole('button', { name: 'Pulihkan sebagai kandidat' }).first().click()
-    await page.waitForTimeout(600)
-    await page.locator('textarea').fill('Pembersihan uji smoke Fase 6.')
-    await page.getByRole('button', { name: 'Pulihkan sebagai kandidat' }).last().click()
-    await page.waitForTimeout(2500)
+    await jalankanAksi(page, 'Pulihkan sebagai kandidat', 'Pembersihan uji smoke Fase 6.')
     await ctx.close()
     return 'kandidat dipulihkan'
   })

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
+import { Bidang, kelasInput } from '@/components/ui/bidang'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/toast'
@@ -194,45 +195,4 @@ export function FormDisiplin({
 function isoTanggal(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
-
-function kelasInput(galat?: string): string {
-  return cn(
-    'h-9 w-full rounded-md border bg-surface px-2.5 text-[13px] text-text outline-none transition-colors placeholder:text-text-subtle disabled:opacity-60',
-    galat ? 'border-danger-border focus:border-danger' : 'border-border focus:border-accent',
-  )
-}
-
-function Bidang({
-  label,
-  galat,
-  wajib,
-  keterangan,
-  children,
-}: {
-  label: string
-  galat?: string
-  wajib?: boolean
-  keterangan?: string
-  children: React.ReactNode
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 flex flex-wrap items-baseline gap-1.5">
-        <span className="text-[12px] font-medium text-text">{label}</span>
-        {wajib ? (
-          <span aria-hidden className="text-[12px] text-danger">
-            *
-          </span>
-        ) : null}
-        {keterangan ? <span className="text-[10px] text-text-subtle">{keterangan}</span> : null}
-      </span>
-      {children}
-      {galat ? (
-        <span role="alert" className="mt-1 block text-[11px] leading-relaxed text-danger">
-          {galat}
-        </span>
-      ) : null}
-    </label>
-  )
 }

@@ -2,10 +2,12 @@ import { Plus, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+import { AksesDitolak } from '@/components/ui/akses-ditolak'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { ChartSkeleton, Skeleton, TableSkeleton } from '@/components/ui/skeleton'
+import { getCurrentUser } from '@/lib/auth'
 import { MAKS_KANDIDAT, MIN_KANDIDAT, bacaDaftarNip } from '@/lib/banding'
 import { formatNip } from '@/lib/format'
 import {
@@ -15,6 +17,7 @@ import {
   cariKandidat,
   type KandidatBanding,
 } from '@/lib/kueri/perbandingan'
+import { punyaPeran } from '@/lib/peran'
 import { PanelRadar } from './_komponen/panel-radar'
 import { PemilihKandidat } from './_komponen/pemilih-kandidat'
 import { TabelBanding } from './_komponen/tabel-banding'
@@ -38,7 +41,28 @@ type ParamHalaman = Promise<Record<string, string | undefined>>
  *    predikat kinerja karena itu tampil berdampingan dengan skor, bukan di
  *    halaman lain.
  */
+/**
+ * PRD §6.3 membatasi halaman ini ke Admin Talenta & Pimpinan (plus Super
+ * Admin). Sampai Fase 6 pembatasannya hanya menyembunyikan item menu; sejak
+ * ada auth asli, URL yang bisa ditebak harus ditolak di server juga —
+ * halaman ini menyandingkan rekam jejak beberapa pegawai sekaligus.
+ */
+const PERAN_HALAMAN = ['Super Admin', 'Admin Talenta', 'Pimpinan'] as const
+
 export default async function BandingkanPage({ searchParams }: { searchParams: ParamHalaman }) {
+  const pengguna = await getCurrentUser()
+  if (!pengguna || !punyaPeran(pengguna, PERAN_HALAMAN)) {
+    return (
+      <AksesDitolak
+        judulHalaman="Perbandingan Kandidat"
+        deskripsiHalaman="Bandingkan beberapa pegawai berdampingan."
+        peranAnda={pengguna?.peran ?? 'tanpa peran'}
+        alasan="Halaman ini menyandingkan nilai asesmen, match score, dan rekam jejak beberapa pegawai sekaligus, jadi hanya peran yang memang memutuskan penempatan yang bisa membukanya (PRD §6.3)."
+        catatan="Profil masing-masing pegawai tetap bisa dibuka satu per satu dari Direktori Pegawai, sebatas lingkup unit Anda."
+      />
+    )
+  }
+
   const params = await searchParams
   const daftarNip = bacaDaftarNip(params.nip)
   const cari = params.cari?.slice(0, 100) ?? ''

@@ -4,9 +4,11 @@ import { Suspense } from 'react'
 
 import { Kotak9Grid } from '@/components/charts/kotak9-grid'
 import { Badge } from '@/components/ui/badge'
+import { CatatanLingkup } from '@/components/ui/catatan-lingkup'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Panel, PanelHeader, PageHeader } from '@/components/ui/panel'
 import { ChartSkeleton, Kotak9Skeleton, Skeleton, TableSkeleton } from '@/components/ui/skeleton'
+import { getCurrentUser } from '@/lib/auth'
 import { formatAngka } from '@/lib/format'
 import {
   ambilAnggotaSel,
@@ -15,6 +17,7 @@ import {
   ambilTitikPeta,
   type FilterPeta as TipeFilterPeta,
 } from '@/lib/kueri/peta-talenta'
+import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { DESKRIPSI_KOTAK_9, kategoriDariKotak9, type Kotak9 } from '@/lib/scoring'
 import { DaftarSel } from './_komponen/daftar-sel'
 import { FilterPeta } from './_komponen/filter-peta'
@@ -39,7 +42,11 @@ type ParamHalaman = Promise<Record<string, string | undefined>>
  */
 export default async function PetaTalentaPage({ searchParams }: { searchParams: ParamHalaman }) {
   const params = await searchParams
-  const filter = bacaFilterPeta(params)
+  const lingkup = lingkupData(await getCurrentUser())
+  // Batas unit ikut ke seluruh kueri halaman ini — termasuk hitungan sebaran.
+  // Kalau hanya daftar drill-down yang dibatasi, angka di grid akan bercerita
+  // tentang populasi yang tidak boleh dilihat pemiliknya.
+  const filter = { ...bacaFilterPeta(params), unitWajib: unitWajib(lingkup) }
   const kotak = bacaKotak(params.kotak)
   const halaman = bacaHalaman(params.hal)
 
@@ -50,9 +57,13 @@ export default async function PetaTalentaPage({ searchParams }: { searchParams: 
         deskripsi="Sebaran talenta pada 9 Kotak Manajemen Talenta ASN. Klik satu kotak untuk melihat daftar pegawainya."
       />
 
-      <Suspense key={JSON.stringify(filter)} fallback={<PetaSkeleton />}>
-        <IsiPeta filter={filter} kotak={kotak} halaman={halaman} />
-      </Suspense>
+      <CatatanLingkup lingkup={lingkup} />
+
+      {tanpaAkses(lingkup) ? null : (
+        <Suspense key={JSON.stringify(filter)} fallback={<PetaSkeleton />}>
+          <IsiPeta filter={filter} kotak={kotak} halaman={halaman} />
+        </Suspense>
+      )}
     </div>
   )
 }

@@ -32,13 +32,17 @@ export const metadata = { title: 'Inbox Tugas' }
 export default async function InboxPage() {
   const pengguna = await getCurrentUser()
 
+  // Praktis tidak tercapai sejak Fase 7 — app shell sudah menuntut sesi lewat
+  // `wajibMasuk()`. Dipertahankan sebagai jaring: TypeScript tetap menyatakan
+  // `getCurrentUser()` bisa null, dan mengakalinya dengan `!` akan berubah jadi
+  // galat runtime kalau suatu saat halaman ini dipakai di luar app shell.
   if (pengguna === null) {
     return (
       <div className="space-y-5">
         <PageHeader judul="Inbox Tugas" />
         <EmptyState
-          judul="Belum masuk sebagai pengguna"
-          deskripsi="Inbox berisi tugas dan notifikasi milik satu pengguna. Pilih pengguna lewat pengalih peran di navbar."
+          judul="Sesi Anda sudah berakhir"
+          deskripsi="Inbox berisi tugas dan notifikasi milik satu pengguna. Masuk lagi untuk melihat milik Anda."
           ikon={<InboxIkon className="size-5" />}
         />
       </div>

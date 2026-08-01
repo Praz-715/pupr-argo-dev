@@ -1,13 +1,16 @@
 import { Suspense } from 'react'
 
+import { CatatanLingkup } from '@/components/ui/catatan-lingkup'
 import { PageHeader } from '@/components/ui/panel'
 import { TableSkeleton } from '@/components/ui/skeleton'
+import { getCurrentUser } from '@/lib/auth'
 import {
   UKURAN_HALAMAN_DIREKTORI,
   ambilDirektori,
   ambilOpsiFilter,
   type FilterDirektori,
 } from '@/lib/kueri/pegawai'
+import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { FilterDirektori as KontrolFilter } from './_komponen/filter-direktori'
 import { TabelDirektori } from './_komponen/tabel-direktori'
 
@@ -24,7 +27,12 @@ type ParamHalaman = Promise<Record<string, string | undefined>>
  */
 export default async function DirektoriPage({ searchParams }: { searchParams: ParamHalaman }) {
   const params = await searchParams
-  const filter = bacaFilter(params)
+  const lingkup = lingkupData(await getCurrentUser())
+
+  // Batas unit ditempelkan ke filter DI SERVER, jadi ia ikut ke SQL dan tidak
+  // bisa dihapus dari URL. Filter unit pilihan pengguna tetap dikirim apa
+  // adanya — keduanya beririsan dengan sendirinya (lihat `lib/lingkup.ts`).
+  const filter = { ...bacaFilter(params), unitWajib: unitWajib(lingkup) }
 
   return (
     <div className="space-y-5">
@@ -33,9 +41,13 @@ export default async function DirektoriPage({ searchParams }: { searchParams: Pa
         deskripsi="Daftar talenta ASN Direktorat Jenderal Bina Konstruksi. Klik satu baris untuk membuka profil talenta 360°."
       />
 
-      <Suspense key={JSON.stringify(filter)} fallback={<DirektoriSkeleton />}>
-        <IsiDirektori filter={filter} />
-      </Suspense>
+      <CatatanLingkup lingkup={lingkup} />
+
+      {tanpaAkses(lingkup) ? null : (
+        <Suspense key={JSON.stringify(filter)} fallback={<DirektoriSkeleton />}>
+          <IsiDirektori filter={filter} />
+        </Suspense>
+      )}
     </div>
   )
 }

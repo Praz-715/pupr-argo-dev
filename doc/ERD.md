@@ -1,7 +1,7 @@
 # ERD — Sistem Informasi Manajemen Talenta DJBK
 
 **Target DBMS:** MySQL 8.x
-**Status:** skema sudah **diimplementasikan** di `pupr_dev`. DDL & data: [`sql/001_schema.sql`](sql/001_schema.sql) → [`011_notifikasi.sql`](sql/011_notifikasi.sql), dijalankan berurutan. Kolom yang ditambahkan setelah `001`:
+**Status:** skema sudah **diimplementasikan** di `pupr_dev`. DDL & data: [`sql/001_schema.sql`](sql/001_schema.sql) → [`012_auth.sql`](sql/012_auth.sql), dijalankan berurutan. Kolom yang ditambahkan setelah `001`:
 
 | Berkas | Tambahan | Alasan |
 |---|---|---|
@@ -9,10 +9,11 @@
 | `009_kolom_pembanding.sql` | `asesmen_talenta.kotak_9_sumber` | §6 no. 2 mewajibkan menyimpan `kotak_9` dari sumber sebagai pembanding, tapi kolomnya belum ada sehingga nilai sumber hilang saat dihitung ulang |
 | `010_kunci_indikator.sql` | `rubrik_indikator.kunci_sistem`, `match_score` UNIQUE (pegawai_id, jabatan_target_id) | begitu rubrik bisa diedit (Fase 5), nama indikator jadi milik pengguna — jembatan data→indikator tidak boleh lagi bergantung pada pencocokan nama. Kunci unik menegakkan relasi "paling banyak satu skor per pasangan" yang selama ini hanya dijaga oleh cara pengisiannya |
 | `011_notifikasi.sql` | tabel `notifikasi` (U-7) + pembetulan keadaan workflow di data dev | Alur approval tanpa inbox menggantung: unit mengajukan lalu tidak tahu apa-apa sampai seseorang kebetulan membuka halaman. Pembetulan datanya perlu karena `007_recompute` menyisipkan nominasi tanpa memperbarui `talent_pool.status` yang berpasangan dengannya |
+| `012_auth.sql` | tabel `sesi`, `pengaturan_sistem`, `permintaan_reset_password`; kolom `users.harus_ganti_sandi`/`password_diubah_pada`/`gagal_masuk_beruntun`/`terkunci_sampai`; indeks waktu di `audit_log` | Fase 7 mengganti identitas dev dengan sesi asli. Sesi disimpan di DB (bukan JWT) karena dua tuntutan Fase 7 justru menuntut keadaan server: **pencabutan harus seketika** saat akun dinonaktifkan, dan **timeout idle** butuh penanda "terakhir aktif". `pengaturan_sistem` memindahkan masa berlaku asesmen dari konstanta kode ke parameter — PRD §10.11 memang menyebutnya begitu |
 
 **Sumber rancangan:** [`Data DTM.json`](Data%20DTM.json) & CSV turunannya (data contoh 9 pegawai), [`KERANGKA TALENT POOL.md`](KERANGKA%20TALENT%20POOL.md) (rubrik penilaian), [`BLUEPRINT READINESS - MODUL MANAJEMEN TALENTA.md`](BLUEPRINT%20READINESS%20-%20MODUL%20MANAJEMEN%20TALENTA.md) (gap data & modul yang akan dibangun), [`manajemen talenta 27 juli utk tim SIM.md`](manajemen%20talenta%2027%20juli%20utk%20tim%20SIM.md) (roadmap & stakeholder).
 
-> Skema di dokumen ini **sudah diimplementasikan** dan berjalan di `pupr_dev` (**28 tabel**). Sumber kebenarannya adalah berkas SQL bernomor di [`sql/`](sql/), dijalankan berurutan `001` → `011`; tipe TypeScript **diturunkan dari database** lewat `drizzle-kit pull`, bukan ditulis ulang manual. Kalau struktur di dokumen ini berubah, ubah juga berkas SQL-nya — jangan biarkan keduanya lepas.
+> Skema di dokumen ini **sudah diimplementasikan** dan berjalan di `pupr_dev` (**31 tabel**). Sumber kebenarannya adalah berkas SQL bernomor di [`sql/`](sql/), dijalankan berurutan `001` → `012`; tipe TypeScript **diturunkan dari database** lewat `drizzle-kit pull`, bukan ditulis ulang manual. Kalau struktur di dokumen ini berubah, ubah juga berkas SQL-nya — jangan biarkan keduanya lepas.
 
 ---
 
@@ -307,6 +308,9 @@ erDiagram
     roles ||--o{ users : memiliki
     unit_organisasi ||--o{ users : "scope akses"
     users ||--o{ audit_log : melakukan
+    users ||--o{ sesi : membuka
+    users ||--o{ permintaan_reset_password : mengajukan
+    users ||--o{ pengaturan_sistem : mengubah
     users ||--o{ api_token : menerbitkan
     api_client ||--o{ api_token : memiliki
     api_client ||--o{ api_activity_log : memanggil
@@ -322,11 +326,45 @@ erDiagram
         varchar nama
         varchar email UK
         varchar username UK
-        varchar password_hash
+        varchar password_hash "bcrypt"
+        boolean harus_ganti_sandi "sandi diatur Super Admin, wajib diganti saat masuk"
+        datetime password_diubah_pada
         bigint role_id FK
         bigint unit_organisasi_id FK "nullable, batasi akses data per unit"
         boolean status_aktif
         datetime last_login_at
+        smallint gagal_masuk_beruntun "penghambat tebak-sandi"
+        datetime terkunci_sampai
+    }
+    sesi {
+        bigint id PK
+        bigint user_id FK
+        char token_hash UK "SHA-256; token aslinya hanya pernah ada di cookie"
+        varchar ip_address
+        varchar user_agent
+        datetime terakhir_aktif_pada "dasar timeout idle"
+        datetime kedaluwarsa_pada "tenggat mutlak, tidak diperpanjang aktivitas"
+        datetime dicabut_pada "keluar / dicabut admin / sandi diganti"
+    }
+    pengaturan_sistem {
+        varchar kunci PK
+        varchar nilai
+        enum tipe "ANGKA,TEKS,BOOLEAN"
+        varchar label
+        text deskripsi
+        int nilai_min
+        int nilai_max
+        bigint diubah_oleh FK
+        datetime diubah_pada
+    }
+    permintaan_reset_password {
+        bigint id PK
+        varchar email "apa adanya, walau tidak cocok akun mana pun"
+        bigint user_id FK "nullable jika email tak terdaftar"
+        varchar ip_address
+        datetime ditangani_pada
+        bigint ditangani_oleh FK
+        varchar catatan
     }
     audit_log {
         bigint id PK
@@ -429,8 +467,11 @@ erDiagram
 
 | Tabel | Fungsi | Catatan |
 |---|---|---|
-| `roles`, `users` | Pengguna internal & peran | Peran mengikuti Tim Kerja di `manajemen talenta...md` §07 (Champion, Core Team, dst) — dipetakan ke role sistem, lihat PRD. |
-| `audit_log` | Jejak audit semua perubahan data | Output Modul Blueprint "Audit log dan ekspor laporan". |
+| `roles`, `users` | Pengguna internal & peran | Peran mengikuti Tim Kerja di `manajemen talenta...md` §07 (Champion, Core Team, dst) — dipetakan ke role sistem, lihat PRD. Kolom penghambat tebak-sandi (`gagal_masuk_beruntun`, `terkunci_sampai`) sengaja **di baris pengguna**, bukan di memori proses: Next.js bisa berjalan lebih dari satu instans, dan penghitung per proses berarti batasnya terkalikan jumlah instans tanpa ada yang menyadarinya. |
+| `sesi` | Sesi login pengguna internal (Fase 7) | Sesi disimpan di DB, **bukan JWT**. Alasannya dua hal yang justru jadi inti Fase 7: (a) menonaktifkan pengguna harus memutus aksesnya **seketika** — dengan JWT satu-satunya cara adalah daftar-cabut di server, yang artinya sudah punya keadaan server; (b) timeout idle butuh penanda "terakhir aktif" yang tidak bisa dibawa token yang tidak diperbarui. Token disimpan sebagai **hash SHA-256** (bukan bcrypt: isinya 256 bit acak, tidak ada yang bisa ditebak, jadi fungsi lambat hanya menambah biaya tiap permintaan). **Dua tenggat**, karena satu tenggat selalu bisa dilangkahi: `terakhir_aktif_pada` menutup sesi yang ditinggal, `kedaluwarsa_pada` menutup sesi yang dibiarkan hidup terus oleh tab yang memuat ulang sendiri. |
+| `pengaturan_sistem` | Parameter yang boleh diubah tanpa deploy | Halaman Pengaturan Sistem (PRD §6.10). Berisi masa berlaku asesmen yang PRD §10.11 sebut sebagai parameter tapi sampai Fase 6 hidup sebagai konstanta di `lib/scoring/konstanta.ts` — selama di sana, jawaban atas pertanyaan terbuka tidak bisa dijalankan tanpa menyentuh kode. Bentuknya kunci–nilai bertipe supaya menambah parameter tidak berarti `ALTER TABLE`. **Perubahannya tidak retroaktif**: `match_score` yang tersimpan tetap hasil hitungan dengan nilai lama sampai Hitung Ulang dijalankan. |
+| `permintaan_reset_password` | Permintaan Lupa Password (PRD §6.1) | Belum ada transport surel yang diputuskan, jadi **tidak ada tautan reset yang dikirim** — permintaannya dicatat lalu ditangani Super Admin secara manual, dan halamannya mengatakan itu apa adanya. Halaman yang menjanjikan "cek email Anda" padahal tidak ada surel yang dikirim adalah cacat termahal: penggunanya menunggu sesuatu yang tidak akan datang dan tidak melapor karena mengira itu salahnya sendiri. Permintaan dari email **tidak terdaftar** tetap disimpan (`user_id` NULL) — pola email asing yang berulang adalah percobaan mencacah akun. |
+| `audit_log` | Jejak audit semua perubahan data | Output Modul Blueprint "Audit log dan ekspor laporan". Sejak Fase 7 juga memuat peristiwa autentikasi (`MASUK`, `MASUK_GAGAL`, `KELUAR`, `SANDI_DIGANTI`, `AKUN_TERKUNCI`, `RESET_DIMINTA`) lewat pintu tulis kedua `catatPeristiwaAuth()` — peristiwa yang terjadi **sebelum** ada pengguna tidak mungkin lewat `jalankanMutasi()` yang menuntut pemeriksaan peran. Indeks `(created_at, id)` ditambahkan di `012`: ini satu-satunya tabel yang hanya bertambah, dan Audit Log Viewer mengurutkan menurut waktu. |
 | `api_client` | Instansi eksternal yang mengonsumsi API | Kolom `no_mou` untuk keterkaitan dasar hukum berbagi data (relevan UU PDP). |
 | `api_token` | Token akses per klien (Bearer token) | Bisa lebih dari 1 token aktif per klien (rotasi). |
 | `api_activity_log` | Log pemanggilan API eksternal | Untuk audit & pemantauan rate-limit. |
@@ -464,7 +505,7 @@ Poin bertanda ⚙️ **sudah punya default yang berjalan di kode** (dipilih supa
 2. ⚙️ **Agregasi 3 sub-indikator "Nilai Pengalaman Jabatan"** (Lama Jabatan, Keragaman Riwayat Jabatan, Substansi Riwayat Jabatan) — **default terpasang: rata-rata sederhana** (bobot sama rata). Mesin rubrik memakai rumus generik `Σ(nilai × bobot) / Σ(bobot)`, jadi kalau ternyata bobotnya harus berbeda cukup isi `rubrik_indikator.bobot_indikator` pada sub-indikator — tanpa mengubah kode. Masih perlu konfirmasi pemilik proses (lihat `PRD.md` §10 poin 7).
 3. ✅ **Satu pegawai bisa masuk banyak `talent_pool`** untuk jabatan target berbeda secara bersamaan — **dikonfirmasi oleh implementasi**: `UNIQUE KEY (pegawai_id, jabatan_target_id)` mengizinkan satu pegawai punya satu baris per jabatan target, dan data dev memang memuat pegawai yang dinilai untuk 3 jabatan target sekaligus dengan skor berbeda.
 4. **Level data yang boleh dibagi ke instansi eksternal via API** — asumsi: berbasis `scope_akses` per klien (bisa dibatasi read-only, bisa dibatasi ke data agregat saja tanpa NIP/nama individu, tergantung ada/tidaknya MoU). Perlu ketentuan resmi (rujukan UU PDP No. 27/2022 karena ini data ASN).
-5. ⚙️ **Autentikasi user internal** — akun lokal (email/username + password) untuk fase awal; integrasi SSO Kementerian PU bisa menyusul. Tabel `users` sudah menyimpan `password_hash` (bcrypt), tapi **modul auth-nya sendiri baru dibangun di Fase 7** — sampai itu, identitas pengguna diambil dari satu fungsi `getCurrentUser()` yang nanti cukup diganti isinya (lihat `../phase.md` §5.6).
+5. ✅ **Autentikasi user internal** — **terpasang di Fase 7**: akun lokal (username **atau** email + sandi bcrypt), sesi tersimpan di tabel `sesi` dengan timeout idle & tenggat mutlak, penghambat tebak-sandi, dan penggantian sandi wajib untuk sandi yang dibuatkan Super Admin. Janji `phase.md` §5.6 ditepati — hanya isi `lib/auth.ts` yang berubah, dan pengalih peran dev **dihapus**, bukan dimatikan di balik flag (dua sumber identitas yang hidup berdampingan bisa berselisih, dan yang satu memang dirancang melewati sandi). Integrasi SSO Kementerian PU tetap terbuka sebagai penggantian isi `getCurrentUser()` berikutnya; tinggal dikonfirmasi (PRD §10.6).
 
 ---
 

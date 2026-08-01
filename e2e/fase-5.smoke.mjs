@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { konteksMasuk } from './_masuk.mjs'
 
 /**
  * Smoke test Fase 5 — Rule Engine (Jabatan Target).
@@ -57,7 +58,7 @@ const KODE_UJI = `SMOKE5-${Date.now().toString().slice(-6)}`
 const browser = await chromium.launch()
 
 try {
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+  const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
   page.on('response', (r) => {
@@ -85,7 +86,7 @@ try {
   // 1. Rute dasar di kedua tema
   // -------------------------------------------------------------------------
   for (const tema of ['light', 'dark']) {
-    const ctxTema = await browser.newContext({
+    const ctxTema = await konteksMasuk(browser, { base: BASE,
       viewport: { width: 1600, height: 1100 },
       colorScheme: tema,
     })
@@ -549,7 +550,7 @@ try {
     ['tablet 834px', 834],
     ['tablet sempit 768px', 768],
   ]) {
-    const c = await browser.newContext({ viewport: { width: lebar, height: 1180 } })
+    const c = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const p = await c.newPage()
     for (const rute of ['/jabatan-target', '/jabatan-target/1', '/jabatan-target/1/simulasi']) {
       await p.goto(`${BASE}${rute}`, { waitUntil: 'networkidle' })

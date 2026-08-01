@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { apiClient, apiActivityLog, apiToken, users, approvalLog, nominasi, pegawai, asesmenTalenta, auditLog, hukumanDisiplin, unitOrganisasi, jabatan, jabatanTarget, jabatanTargetAnggota, jabatanTargetPersyaratan, kinerjaPeriode, matchScore, matchScoreDetail, rubrikIndikator, talentPool, notifikasi, rencanaPengembangan, riwayatJabatan, riwayatPendidikan, rubrikKomponen, rubrikKategoriSkor, syncLog, roles } from "./schema";
+import { apiClient, apiActivityLog, apiToken, users, approvalLog, nominasi, pegawai, asesmenTalenta, auditLog, hukumanDisiplin, unitOrganisasi, jabatan, jabatanTarget, jabatanTargetAnggota, jabatanTargetPersyaratan, kinerjaPeriode, matchScore, matchScoreDetail, rubrikIndikator, talentPool, notifikasi, pengaturanSistem, permintaanResetPassword, rencanaPengembangan, riwayatJabatan, riwayatPendidikan, rubrikKomponen, rubrikKategoriSkor, sesi, syncLog, roles } from "./schema";
 
 export const apiActivityLogRelations = relations(apiActivityLog, ({one}) => ({
 	apiClient: one(apiClient, {
@@ -43,7 +43,15 @@ export const usersRelations = relations(users, ({one, many}) => ({
 	notifikasis_userId: many(notifikasi, {
 		relationName: "notifikasi_userId_users_id"
 	}),
+	pengaturanSistems: many(pengaturanSistem),
+	permintaanResetPasswords_ditanganiOleh: many(permintaanResetPassword, {
+		relationName: "permintaanResetPassword_ditanganiOleh_users_id"
+	}),
+	permintaanResetPasswords_userId: many(permintaanResetPassword, {
+		relationName: "permintaanResetPassword_userId_users_id"
+	}),
 	rencanaPengembangans: many(rencanaPengembangan),
+	sesis: many(sesi),
 	syncLogs: many(syncLog),
 	talentPools: many(talentPool),
 	role: one(roles, {
@@ -273,6 +281,26 @@ export const notifikasiRelations = relations(notifikasi, ({one}) => ({
 	}),
 }));
 
+export const pengaturanSistemRelations = relations(pengaturanSistem, ({one}) => ({
+	user: one(users, {
+		fields: [pengaturanSistem.diubahOleh],
+		references: [users.id]
+	}),
+}));
+
+export const permintaanResetPasswordRelations = relations(permintaanResetPassword, ({one}) => ({
+	user_ditanganiOleh: one(users, {
+		fields: [permintaanResetPassword.ditanganiOleh],
+		references: [users.id],
+		relationName: "permintaanResetPassword_ditanganiOleh_users_id"
+	}),
+	user_userId: one(users, {
+		fields: [permintaanResetPassword.userId],
+		references: [users.id],
+		relationName: "permintaanResetPassword_userId_users_id"
+	}),
+}));
+
 export const rencanaPengembanganRelations = relations(rencanaPengembangan, ({one}) => ({
 	user: one(users, {
 		fields: [rencanaPengembangan.dibuatOleh],
@@ -314,6 +342,13 @@ export const rubrikKategoriSkorRelations = relations(rubrikKategoriSkor, ({one})
 	rubrikIndikator: one(rubrikIndikator, {
 		fields: [rubrikKategoriSkor.rubrikIndikatorId],
 		references: [rubrikIndikator.id]
+	}),
+}));
+
+export const sesiRelations = relations(sesi, ({one}) => ({
+	user: one(users, {
+		fields: [sesi.userId],
+		references: [users.id]
 	}),
 }));
 

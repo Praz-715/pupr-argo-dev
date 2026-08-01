@@ -21,6 +21,7 @@ import {
   Target,
   TriangleAlert,
   UserCog,
+  UserRound,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -50,6 +51,7 @@ const PETA_IKON: Record<string, LucideIcon> = {
   FileText,
   Download,
   UserCog,
+  UserRound,
   KeyRound,
   ScrollText,
   Settings,

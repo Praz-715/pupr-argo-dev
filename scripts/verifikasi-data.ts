@@ -245,6 +245,78 @@ const PEMERIKSAAN: Periksa[] = [
             (SELECT COUNT(DISTINCT status) FROM approval_log
              WHERE status IN ('DISETUJUI','DITOLAK','REVISI')) = 3, 0, 1) n`,
   },
+
+  // -------------------------------------------------------------------------
+  // Fase 7 — Auth & RBAC
+  //
+  // Semuanya keadaan yang TIDAK menimbulkan galat apa pun kalau salah: sistem
+  // tetap berjalan, hanya saja seseorang kehilangan akses tanpa sebab yang
+  // terlihat, atau justru punya akses yang seharusnya sudah dicabut.
+  // -------------------------------------------------------------------------
+  {
+    nama: 'Setiap peran di tabel roles dikenali aplikasi (lib/peran.ts)',
+    // Peran yang ada di DB tapi tidak dikenal kode membuat `getCurrentUser()`
+    // mengembalikan null — pemiliknya tidak bisa masuk, tanpa pesan apa pun
+    // yang menjelaskan kenapa.
+    sql: `SELECT COUNT(*) n FROM roles
+          WHERE nama_role NOT IN ('Super Admin','Admin Talenta','Pengelola Unit','Pimpinan','Viewer')`,
+  },
+  {
+    nama: 'Selalu ada minimal satu Super Admin aktif (sistem tidak mengunci diri)',
+    sql: `SELECT IF((SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id
+                     WHERE r.nama_role = 'Super Admin' AND u.status_aktif = 1) >= 1, 0, 1) n`,
+  },
+  {
+    nama: 'Setiap Pengelola Unit aktif tertaut ke unit organisasi',
+    // Tanpa unit, `lingkupData()` gagal-tertutup dan orangnya melihat aplikasi
+    // yang benar-benar kosong. Itu keadaan yang benar, tapi datanya salah.
+    sql: `SELECT COUNT(*) n FROM users u JOIN roles r ON r.id = u.role_id
+          WHERE r.nama_role = 'Pengelola Unit' AND u.status_aktif = 1
+            AND u.unit_organisasi_id IS NULL`,
+  },
+  {
+    nama: 'Semua password_hash berformat bcrypt (tidak ada sandi polos menyelinap)',
+    sql: `SELECT COUNT(*) n FROM users
+          WHERE password_hash NOT REGEXP '^\\\\$2[aby]\\\\$[0-9]{2}\\\\$.{53}$'`,
+  },
+  {
+    nama: 'Tidak ada sesi hidup milik pengguna nonaktif',
+    // Menonaktifkan akun WAJIB memutus sesinya. Kalau baris ini ada, seseorang
+    // yang sudah dicabut aksesnya masih bekerja di dalam aplikasi.
+    sql: `SELECT COUNT(*) n FROM sesi s JOIN users u ON u.id = s.user_id
+          WHERE s.dicabut_pada IS NULL AND s.kedaluwarsa_pada > NOW() AND u.status_aktif = 0`,
+  },
+  {
+    nama: 'Tenggat sesi konsisten (kedaluwarsa selalu setelah dibuat)',
+    sql: `SELECT COUNT(*) n FROM sesi WHERE kedaluwarsa_pada <= created_at`,
+  },
+  {
+    nama: 'Seluruh parameter yang dibaca kode ada di pengaturan_sistem',
+    sql: `SELECT 6 - COUNT(*) n FROM pengaturan_sistem
+          WHERE kunci IN ('masa_berlaku_asesmen_tahun','tahun_asesmen_aktif','sesi_idle_menit',
+                          'sesi_maksimal_jam','maks_gagal_masuk','kunci_akun_menit')`,
+  },
+  {
+    nama: 'Nilai parameter sistem berada dalam rentang yang diizinkan',
+    // Parameter di luar rentang tidak menimbulkan galat — ia hanya membuat
+    // timeout sesi jadi nol menit, dan tidak ada yang bisa masuk lagi.
+    sql: `SELECT COUNT(*) n FROM pengaturan_sistem
+          WHERE tipe = 'ANGKA'
+            AND ( nilai NOT REGEXP '^-?[0-9]+$'
+               OR (nilai_min IS NOT NULL AND CAST(nilai AS SIGNED) < nilai_min)
+               OR (nilai_max IS NOT NULL AND CAST(nilai AS SIGNED) > nilai_max) )`,
+  },
+  {
+    nama: 'Permintaan reset yang sudah ditangani mencatat siapa penanganya',
+    sql: `SELECT COUNT(*) n FROM permintaan_reset_password
+          WHERE ditangani_pada IS NOT NULL AND ditangani_oleh IS NULL`,
+  },
+  {
+    nama: 'audit_log memuat jejak autentikasi (bukan cuma mutasi data)',
+    sql: `SELECT IF((SELECT COUNT(*) FROM audit_log
+                     WHERE aksi IN ('MASUK','MASUK_GAGAL','KELUAR','SANDI_DIGANTI',
+                                    'AKUN_TERKUNCI','RESET_DIMINTA')) > 0, 0, 1) n`,
+  },
 ]
 
 /** Selisih kotak_9 terhadap nilai dari sistem sumber — informasi, bukan kegagalan. */

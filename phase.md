@@ -2,7 +2,7 @@
 
 Rencana eksekusi teknis untuk membangun aplikasi dari desain di [`doc/`](doc/). Dokumen ini **pelengkap**: [`doc/PRD.md`](doc/PRD.md) menentukan *apa* yang dibangun, [`doc/ERD.md`](doc/ERD.md) *struktur datanya*, [`doc/KERANGKA TALENT POOL.md`](doc/KERANGKA%20TALENT%20POOL.md) *aturan penilaiannya*, dan `phase.md` mengatur *urutan kerja, standar mutu, dan keputusan teknis*.
 
-**Titik mulai:** Dashboard dulu, **tanpa auth**. Auth & RBAC di Fase 7 — tapi kode disiapkan supaya penyisipannya cuma menyentuh satu file (§5.6).
+**Titik mulai:** Dashboard dulu, **tanpa auth**. Auth & RBAC ditunda ke Fase 7, tapi kode disiapkan supaya penyisipannya cuma menyentuh satu berkas (§5.6). **Janji itu ditepati:** Fase 7 mengganti isi `lib/auth.ts` dan menghapus pengalih peran dev — tidak ada satu pun komponen yang perlu disunting karena "tambal RBAC", sebab `assertPeran()` sudah menjaga setiap mutasi sejak Fase 1.
 
 ---
 
@@ -196,7 +196,7 @@ Perlu variasi predikat sampai ke bawah, karena baris tengah/bawah cuma bisa dihu
 | Ikon | **lucide-react** | netral, tanpa emoji dekoratif |
 | Format | `Intl.NumberFormat('id-ID')` + `date-fns` locale `id`, terpusat di `lib/format.ts` | satu sumber format |
 | Test | **Vitest** untuk `lib/scoring` (wajib) · **Playwright** smoke per fase (skill `webapp-testing`) | scoring = logika bisnis inti |
-| Auth | **ditunda** ke Fase 7; sementara `getCurrentUser()` baca cookie dev + role switcher di navbar, dijaga env flag | §5.6 |
+| Auth | **terpasang di Fase 7**: sandi bcrypt (`bcryptjs`), sesi ber-cookie httpOnly yang tersimpan di tabel `sesi`, timeout idle + tenggat mutlak. Pengalih peran dev sudah dihapus | §5.6 |
 
 ### 5.1 Struktur folder
 ```
@@ -264,11 +264,15 @@ scripts/
 - Setiap chart mencantumkan **basis datanya** ("40 pegawai · asesmen berlaku · 3 dikecualikan").
 - Sumbu nilai `max = Math.max(100, dataMax)` sebagai pertahanan berlapis — walau §2.1 menjamin data 0–100, chart tidak boleh memotong titik kalau ada yang lolos.
 
-### 5.6 Menunda auth tanpa menimbun utang teknis
+### 5.6 Menunda auth tanpa menimbun utang teknis — ✅ **lunas di Fase 7**
 - Semua akses identitas lewat **satu fungsi** `lib/auth.ts → getCurrentUser()`. Fase 1–6: baca cookie dev `simt_dev_user`; Fase 7: ganti isinya dengan sesi asli. **Tidak ada komponen yang membaca cookie langsung.**
-- Navbar punya **Dev Role Switcher** (8 user seed, password `password123`) agar UI bergantung-role bisa dibangun & diuji sekarang. Dijaga `NEXT_PUBLIC_DEV_ROLE_SWITCH === '1'`, **wajib mati** di build produksi.
-- Guard ditulis sejak awal sebagai `assertRole(user, [...])` di server action, aktif sejak Fase 1 memakai user dev → tidak ada "tambal RBAC" belakangan.
-- Halaman Login/Lupa Password (PRD §6.1) dikerjakan di Fase 7, tidak dibuat kerangka kosong sekarang.
+- Navbar punya **Dev Role Switcher** (8 user seed, sandi `password123`) agar UI bergantung-role bisa dibangun & diuji sebelum auth ada. Dijaga `NEXT_PUBLIC_DEV_ROLE_SWITCH === '1'`, **wajib mati** di build produksi.
+- Guard ditulis sejak awal sebagai `assertPeran(user, [...])` di server action, aktif sejak Fase 1 memakai user dev → tidak ada "tambal RBAC" belakangan.
+- Halaman Login/Lupa Password (PRD §6.1) dikerjakan di Fase 7, tidak dibuat kerangka kosong sebelumnya.
+
+**Hasil nyatanya saat Fase 7 dikerjakan.** Yang berubah cuma isi `lib/auth.ts` plus penambahan `lib/sesi.ts` & `middleware.ts`; **tidak satu pun** dari 21 halaman atau ~40 server action yang perlu disunting untuk memasang RBAC — semuanya sudah lewat `assertPeran()`/`jalankanMutasi()`. Yang memang perlu disentuh hanyalah hal yang baru diminta Fase 7 (pembatasan unit di kueri) dan penghapusan pengalih peran.
+
+**Pengalih peran dev DIHAPUS, bukan dimatikan.** Flag lingkungan sudah cukup untuk produksi, tapi menyisakan jalur "berpindah identitas tanpa sandi" di dalam kode berarti dua sumber identitas yang bisa berselisih — dan yang satu memang dirancang melewati autentikasi. Uji per peran sekarang **benar-benar masuk** lewat halaman login (`e2e/_masuk.mjs`), yang sekaligus berarti jalur autentikasinya ikut teruji setiap kali smoke dijalankan. Sandi seed `password123` malah kini **ditolak kebijakan sandi** — jadi ia tidak bisa ikut ke produksi lewat "sudah jalan di dev".
 
 ### 5.7 Detail densitas & navigasi
 - `tabular-nums` untuk semua angka supaya kolom tidak bergoyang saat sorting.
@@ -552,9 +556,27 @@ Delapan widget, masing-masing `<Suspense>` sendiri, seluruh agregasi di SQL (`li
 3. **Rencana pengembangan bisa jadi yatim.** Rencana hanya boleh dibuat untuk suksesor DITETAPKAN, tapi penetapan bisa dibatalkan setelahnya. Menghapus rencananya berarti membuang pekerjaan pengembangan yang mungkin sudah berjalan; menyembunyikannya berarti ia hilang tanpa penjelasan. Keputusannya: dipertahankan dan **dikelompokkan terpisah** dengan keterangan bahwa penetapannya dibatalkan — diuji di smoke, karena keadaan ini hanya muncul setelah dua aksi berlawanan.
 4. **Dua smoke test gagal-palsu karena `innerText` menerapkan `text-transform`.** Label kartu ber-`uppercase`, jadi menunggu teks "Anggota pool" tidak akan pernah cocok — yang ada di `innerText` adalah "ANGGOTA POOL". Satu lagi lebih halus: menunggu kata "Ditetapkan" setelah menekan tombol penetapan **lolos seketika**, karena kalimat akibat di dialog yang masih terbuka memuat kata itu. Diganti menunggu munculnya aksi yang hanya ada di keadaan baru (`Batalkan penetapan`) — penanda keadaan, bukan penanda kata.
 
-### Fase 7 · Auth & RBAC *(ditunda ke sini sesuai permintaan)*
-Login · sesi & timeout · middleware · ganti isi `getCurrentUser()` · **matikan dev role switcher** · Profil Saya · Manajemen Pengguna & Peran · Audit Log Viewer · pembatasan data per `unit_organisasi_id` untuk Pengelola Unit · pembatasan akses data hukuman disiplin.
-**DoD tambahan:** Playwright per role memastikan halaman & aksi yang seharusnya tertutup memang tertutup **di level server action**, bukan cuma disembunyikan di UI.
+### Fase 7 · Auth & RBAC — ✅ **SELESAI**
+- ✅ **Masuk · Lupa Password · Ganti Sandi Wajib · Profil Saya · Manajemen Pengguna & Peran · Audit Log Viewer · Pengaturan Sistem** (PRD §6.1, §6.8, §6.10).
+- ✅ **Sesi asli menggantikan cookie dev.** Tabel `sesi` (`doc/sql/012`), token acak 256-bit yang disimpan sebagai hash SHA-256, dua tenggat (idle + mutlak), pencabutan seketika.
+- ✅ **Pengalih peran dev DIHAPUS**, bukan dimatikan di balik flag — beserta `lib/aksi/pengguna-dev.ts` dan cookie `simt_dev_user`.
+- ✅ **Pembatasan data per unit** ditegakkan **di SQL** untuk Direktori, Profil, dan Peta Talenta; `/bandingkan` mendapat gerbang peran di server sesuai PRD §6.3.
+- ✅ **Masa berlaku asesmen pindah dari konstanta kode ke `pengaturan_sistem`** — menutup PRD §10.11 & §9 no. 2 yang sejak awal menyebutnya parameter.
+
+**DoD terpenuhi:** `e2e/fase-7.smoke.mjs` — **46 pemeriksaan** per peran, semuanya menguji penolakan **di server**, bukan di UI: HTML mentah diperiksa untuk membuktikan datanya tidak pernah ikut terkirim, bukan sekadar tidak terlihat. Seluruh smoke Fase 0–6 ikut diubah supaya **benar-benar masuk** lewat halaman login (`e2e/_masuk.mjs`), jadi setiap kali suite dijalankan, jalur autentikasinya ikut teruji. Total **268 pemeriksaan** di 8 berkas smoke.
+
+> **Sesi disimpan di database, bukan JWT.** JWT stateless terdengar lebih ringan tapi salah untuk aplikasi ini, karena dua tuntutan Fase 7 justru menuntut keadaan server: (a) menonaktifkan pengguna harus memutus aksesnya **sekarang**, bukan setelah tokennya kedaluwarsa sendiri — dan satu-satunya cara dengan JWT adalah daftar-cabut di server, yang berarti sudah punya keadaan server; (b) timeout idle butuh penanda "terakhir aktif" yang tidak bisa dibawa token yang tidak bisa diperbarui. Biayanya satu SELECT berindeks per permintaan — persis yang sudah dilakukan `getCurrentUser()` sejak Fase 0.
+
+> **Middleware adalah gerbang cepat, bukan otoritas.** Ia berjalan di edge dan tidak bisa menyentuh MySQL, jadi ia hanya melihat ada tidaknya cookie. Penjagaan yang sebenarnya ada di `app/(app)/layout.tsx` (memvalidasi sesi sebelum halaman apa pun dirender) dan di `assertPeran()` pada setiap server action. Menaruh RBAC di middleware akan terasa rapi dan salah: cookie yang sudah dicabut akan lolos, dan peran tidak tersimpan di cookie sama sekali.
+
+> **Penolakan lingkup unit memakai "tidak ditemukan", bukan "akses ditolak".** Halaman yang berkata "orang ini ada tapi Anda tidak boleh melihatnya" tetap mengonfirmasi keberadaannya kepada yang tidak berhak — dan NIP bisa ditebak dari pola tanggal lahir. Untuk halaman **administrasi** yang lain justru sebaliknya: di sana penolakannya eksplisit beserta alasannya, karena pengguna memang perlu tahu itu batas peran, bukan aplikasi yang rusak.
+
+**Empat hal yang ditemukan karena dikerjakan:**
+
+1. **Form masuk mengirim sandi lewat URL sebelum React ter-hidrasi.** Versi pertama memakai `onSubmit` + `useTransition`. Kalau seseorang menekan Enter pada detik-detik sebelum hidrasi selesai, browser melakukan pengiriman form HTML biasa — GET ke `/masuk?identitas=…&sandi=…`, yang lalu mengendap di riwayat peramban dan log server. Ditemukan bukan lewat inspeksi tapi lewat smoke yang gagal berselang-seling. Diperbaiki dengan `<form action={serverAction}>`, yang ditangani Next lewat POST bahkan tanpa JavaScript.
+2. **Middleware saya sendiri membuat lingkaran pengalihan.** Aturan "sudah punya cookie tapi membuka `/masuk` → antar ke dashboard" tampak wajar dan berakhir `ERR_TOO_MANY_REDIRECTS` pada kasus yang justru paling sering: cookie masih ada tapi sesinya sudah mati. Pelajarannya umum — **komponen yang tidak bisa membedakan dua keadaan tidak boleh mengambil keputusan yang bergantung pada bedanya.**
+3. **Dua smoke Fase 6 hijau padahal mutasinya tidak pernah terjadi.** Keduanya menunggu sebuah *kata* yang ternyata sudah ada di layar — "Diverifikasi" di kalimat akibat pada dialog, "Diklat" di label pilihan jenis pengembangan. Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang**. Langkahnya hijau, mutasinya batal, dan langkah berikutnya gagal di tempat yang tidak ada hubungannya. Diganti helper yang menunggu **tertutupnya dialog** — penanda yang hanya muncul kalau server membalas ok.
+4. **`[role="dialog"]` tidak pernah cocok dengan `<dialog>` native.** Elemen itu punya *implicit* role `dialog` tapi tidak punya atributnya, dan selektor CSS mencocokkan atribut. Selektor yang salah menghasilkan timeout yang terbaca persis seperti "aplikasinya lambat" — dua kali sebabnya dicari ke tempat yang keliru sebelum ketahuan.
 
 ### Fase 8 · Laporan & Ekspor
 Laporan Gap Analysis · Laporan Nominasi & Approval · Pusat Ekspor (PDF/Excel). Ekspor besar → job asinkron + progress + notifikasi selesai (U-10).
@@ -581,7 +603,7 @@ Hasil membaca ulang daftar halaman terhadap rubrik & alur di doc. **`PRD.md` dip
 | **U-6** | "Status Jabatan Kosong" → **"Jabatan Kosong & Risiko Kekosongan"** | Lampiran B langkah 2 meminta jabatan **berisiko** kosong; PRD baru mencakup yang sudah kosong. Data pendukung sudah ada di NIP tanpa kolom baru (K-6) | 4 |
 | **U-7** ✅ | **Notifikasi & Inbox Tugas** + tabel `notifikasi` | PRD memakai notifikasi sebagai widget tanpa entitas & halaman; approval tanpa inbox menggantung | 6 |
 | **U-8** | **Command palette `Ctrl/⌘+K`** | CLAUDE.md meminta rasa Notion & navbar bersearch; jauh lebih cepat untuk staf yang seharian di aplikasi | 0 |
-| **U-9** | **Dev Role Switcher** (sementara, di balik env flag) | membangun UI bergantung-role sebelum auth ada, tanpa utang teknis (§5.6) | 0 |
+| **U-9** ✅ | **Dev Role Switcher** (sementara, di balik env flag) | membangun UI bergantung-role sebelum auth ada, tanpa utang teknis (§5.6). **Dihapus di Fase 7** setelah auth asli terpasang — bukan dimatikan di balik flag, karena dua sumber identitas yang hidup berdampingan bisa berselisih dan yang satu memang dirancang melewati sandi | 0 → dihapus di 7 |
 | **U-10** | Ekspor besar jadi **job asinkron berprogres** | 1.872 pegawai × PDF tidak layak dalam satu request | 8 |
 | **U-11** | `jenis_syarat` **kinerja** pada `jabatan_target_persyaratan` *(perlu keputusan bisnis)* | match score mengabaikan kinerja sepenuhnya (K-4); belum ada cara memasang syarat minimal predikat/Kotak 9 | 5 |
 | **U-12** ✅ | Kolom **`jabatan_target.kata_kunci_relevansi`** (JSON) | Rubrik memakai frasa "sesuai dengan jabatan target" pada indikator Kesesuaian Bidang Ilmu & Pengembangan Kompetensi, tapi tidak ada tempat menyimpan APA yang dianggap sesuai — akibatnya kedua indikator itu tidak bisa dihitung otomatis dan selalu jatuh ke penilaian manual. Sudah diterapkan di `005`. | 0.5 |
@@ -595,17 +617,17 @@ Semua non-blocking — sudah ada keputusan default yang dipakai, tinggal dikonfi
 | # | Pertanyaan | Default yang dipakai | Perlu jawaban sebelum |
 |---|---|---|---|
 | 1 | Rentang Lama Jabatan: benar maksudnya `≥2–<5` untuk nilai 80? | ya (§2.8a) | data produksi masuk |
-| 2 | Masa berlaku asesmen berapa tahun? | **3 tahun**, parameter sistem (§2.9) | data produksi masuk |
+| 2 | Masa berlaku asesmen berapa tahun? | **3 tahun**. Sejak Fase 7 benar-benar jadi parameter sistem di tabel `pengaturan_sistem` — bisa diubah dari halaman Pengaturan tanpa deploy, dan halamannya memperingatkan bahwa skor tersimpan perlu Hitung Ulang | data produksi masuk |
 | 3 | Agregasi sub-indikator: rata-rata sederhana? | ya, bobot sama rata (§2.5) | data produksi masuk |
 | 4 | Hukuman disiplin `status_aktif=0` benar tidak menurunkan skor? Ada masa kedaluwarsa resmi? | tidak menurunkan (§2.7) | **jawaban mengubah skor Integritas 15% seluruh kandidat** — perlu dikonfirmasi sebelum talent pool ditetapkan (Fase 6) |
 | 5 | Perlu syarat minimal kinerja/Kotak 9 di eligibility? | belum dipasang (K-4, U-11). Sementara ini Kotak 9 & predikat kinerja **ditampilkan berdampingan** di halaman kandidat, jadi konteksnya ada walau tidak menyaring | penetapan suksesor (Fase 6) |
 | 6 | Siapa berwenang mengisi nilai manual untuk indikator yang datanya belum ada? | **terpasang di Fase 5**: Admin Talenta & Super Admin, catatan **wajib**, tercatat di `match_score_detail.diisi_oleh` | — sudah jalan; tinggal dikonfirmasi apakah peran lain juga berhak |
 | 7 | Sumber produksi: batch atau API/webhook dari eHRM/eNominasi/eKinerja? | batch/impor berkas (PRD §10.2) | Fase 4 |
 | 8 | Relasi dengan *karir.pu.go.id* — berdiri sendiri lalu ekspos API, atau menyatu? | berdiri sendiri (PRD §10.1) | Fase 9 |
-| 9 | SSO Kementerian PU atau akun lokal? | akun lokal (PRD §10.6) | Fase 7 |
+| 9 | SSO Kementerian PU atau akun lokal? | **terpasang di Fase 7: akun lokal** (username atau email + sandi bcrypt). Penggantian ke SSO menyentuh satu berkas (`lib/auth.ts`) | — sudah jalan; tinggal dikonfirmasi apakah SSO diinginkan sebelum produksi |
 | 10 | Siapa menjalankan "Verifikasi Kepegawaian"? | **terpasang di Fase 6**: peran Admin Talenta, tahap `Verifikasi Kepegawaian`, diikuti tahap `Persetujuan Pimpinan` (ERD §5.1) | — sudah jalan; tinggal dikonfirmasi apakah perlu tahap ketiga di Kementerian |
 
-**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5, dan sebagian besar Fase 4. Itu sudah mencakup seluruh permukaan dashboard, direktori, profil talenta, peta talenta, dan perbandingan kandidat.
+**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5 → 6 → 7, dan sebagian besar Fase 4. Itu sudah mencakup seluruh permukaan aplikasi internal: dashboard, direktori, profil talenta, peta talenta, perbandingan kandidat, rule engine, workflow suksesi, dan autentikasi.
 
 ---
 

@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node e2e/fase-0.smoke.mjs .next/smoke && node e2e/fase-1.smoke.mjs .next/smoke && node e2e/fase-2.smoke.mjs .next/smoke && node e2e/fase-3.smoke.mjs .next/smoke && node e2e/fase-4.smoke.mjs .next/smoke && node e2e/fase-5.smoke.mjs .next/smoke && node e2e/fase-6.smoke.mjs .next/smoke",
+    "smoke": "node e2e/fase-0.smoke.mjs .next/smoke && node e2e/fase-1.smoke.mjs .next/smoke && node e2e/fase-2.smoke.mjs .next/smoke && node e2e/fase-3.smoke.mjs .next/smoke && node e2e/fase-4.smoke.mjs .next/smoke && node e2e/fase-5.smoke.mjs .next/smoke && node e2e/fase-6.smoke.mjs .next/smoke && node e2e/fase-7.smoke.mjs .next/smoke",
+    "db:sql": "tsx scripts/jalankan-sql.ts",
     "verifikasi": "npm run typecheck && npm run lint && npm run test",
     "verifikasi:data": "tsx scripts/verifikasi-data.ts",
     "ukur:kueri": "tsx --conditions react-server scripts/ukur-kueri.ts",
@@ -28,6 +29,8 @@
     "ukur:hitung-ulang:volume": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts --volume"
   },
   "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

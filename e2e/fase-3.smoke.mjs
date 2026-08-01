@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { konteksMasuk } from './_masuk.mjs'
 
 /**
  * Smoke test Fase 3 — Peta Talenta & Perbandingan Kandidat.
@@ -51,7 +52,7 @@ const browser = await chromium.launch()
 
 try {
   for (const tema of ['light', 'dark']) {
-    const ctx = await browser.newContext({
+    const ctx = await konteksMasuk(browser, { base: BASE,
       viewport: { width: 1600, height: 1100 },
       colorScheme: tema,
     })
@@ -291,7 +292,7 @@ try {
 
   // ---- Perbandingan dengan 3 kandidat sejabatan target (radar tampil) ----
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 
@@ -369,7 +370,7 @@ try {
     ['tablet 834px', 834],
     ['tablet sempit 768px', 768],
   ]) {
-    const ctx = await browser.newContext({ viewport: { width: lebar, height: 1180 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const page = await ctx.newPage()
     for (const path of ['/peta-talenta', '/bandingkan']) {
       await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle' })

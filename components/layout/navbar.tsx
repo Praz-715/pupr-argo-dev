@@ -2,7 +2,7 @@ import type { GrupNav } from '@/lib/navigasi'
 import type { PenggunaAktif } from '@/lib/peran'
 import { Breadcrumb } from './breadcrumb'
 import { CommandPalette } from './command-palette'
-import { DevRoleSwitcher } from './dev-role-switcher'
+import { MenuPengguna } from './menu-pengguna'
 import { ThemeToggle } from './theme-toggle'
 
 /**
@@ -12,11 +12,9 @@ import { ThemeToggle } from './theme-toggle'
 export function Navbar({
   navigasi,
   penggunaAktif,
-  daftarPenggunaDev,
 }: {
   navigasi: GrupNav[]
-  penggunaAktif: PenggunaAktif | null
-  daftarPenggunaDev: PenggunaAktif[]
+  penggunaAktif: PenggunaAktif
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
@@ -30,7 +28,7 @@ export function Navbar({
 
       <div className="flex shrink-0 items-center gap-2">
         <ThemeToggle />
-        <DevRoleSwitcher penggunaAktif={penggunaAktif} daftarPengguna={daftarPenggunaDev} />
+        <MenuPengguna pengguna={penggunaAktif} />
       </div>
     </header>
   )

@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, foreignKey, primaryKey, bigint, varchar, smallint, int, datetime, unique, mysqlEnum, json, text, check, year, decimal, tinyint, date } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, foreignKey, primaryKey, bigint, varchar, smallint, int, datetime, unique, mysqlEnum, json, text, check, year, decimal, tinyint, date, char } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const apiActivityLog = mysqlTable("api_activity_log", {
@@ -102,6 +102,8 @@ export const auditLog = mysqlTable("audit_log", {
 (table) => [
 	index("idx_audit_entitas").on(table.entitas, table.entitasId),
 	index("idx_audit_user").on(table.userId),
+	index("idx_audit_waktu").on(table.createdAt, table.id),
+	index("idx_audit_aksi").on(table.aksi, table.createdAt),
 	primaryKey({ columns: [table.id], name: "audit_log_id"}),
 ]);
 
@@ -134,8 +136,8 @@ export const jabatan = mysqlTable("jabatan", {
 	updatedAt: datetime("updated_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
-	index("idx_jabatan_status").on(table.statusJabatan),
 	index("idx_jabatan_unit").on(table.unitOrganisasiId),
+	index("idx_jabatan_status").on(table.statusJabatan),
 	primaryKey({ columns: [table.id], name: "jabatan_id"}),
 	unique("uk_jabatan_kode").on(table.kodeJabatan),
 ]);
@@ -229,8 +231,8 @@ export const matchScoreDetail = mysqlTable("match_score_detail", {
 	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
-	index("idx_msd_indikator").on(table.rubrikIndikatorId),
 	index("idx_msd_match_score").on(table.matchScoreId),
+	index("idx_msd_indikator").on(table.rubrikIndikatorId),
 	index("idx_msd_review").on(table.perluReview),
 	primaryKey({ columns: [table.id], name: "match_score_detail_id"}),
 	unique("uk_msd_skor_indikator").on(table.matchScoreId, table.rubrikIndikatorId),
@@ -267,8 +269,8 @@ export const notifikasi = mysqlTable("notifikasi", {
 	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
-	index("idx_notifikasi_entitas").on(table.entitas, table.entitasId),
 	index("idx_notifikasi_user").on(table.userId, table.dibacaPada, table.id),
+	index("idx_notifikasi_entitas").on(table.entitas, table.entitasId),
 	primaryKey({ columns: [table.id], name: "notifikasi_id"}),
 ]);
 
@@ -297,6 +299,37 @@ export const pegawai = mysqlTable("pegawai", {
 	index("idx_pegawai_jabatan").on(table.jabatanId),
 	primaryKey({ columns: [table.id], name: "pegawai_id"}),
 	unique("uk_pegawai_nip").on(table.nip),
+]);
+
+export const pengaturanSistem = mysqlTable("pengaturan_sistem", {
+	kunci: varchar({ length: 60 }).notNull(),
+	nilai: varchar({ length: 255 }).notNull(),
+	tipe: mysqlEnum(['ANGKA','TEKS','BOOLEAN']).default('TEKS').notNull(),
+	label: varchar({ length: 150 }).notNull(),
+	deskripsi: text(),
+	nilaiMin: int("nilai_min"),
+	nilaiMax: int("nilai_max"),
+	diubahOleh: bigint("diubah_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	diubahPada: datetime("diubah_pada", { mode: 'string'}),
+},
+(table) => [
+	primaryKey({ columns: [table.kunci], name: "pengaturan_sistem_kunci"}),
+]);
+
+export const permintaanResetPassword = mysqlTable("permintaan_reset_password", {
+	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
+	email: varchar({ length: 150 }).notNull(),
+	userId: bigint("user_id", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "cascade" } ),
+	ipAddress: varchar("ip_address", { length: 45 }),
+	ditanganiPada: datetime("ditangani_pada", { mode: 'string'}),
+	ditanganiOleh: bigint("ditangani_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	catatan: varchar({ length: 255 }),
+	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("idx_reset_belum_ditangani").on(table.ditanganiPada, table.id),
+	index("idx_reset_user").on(table.userId),
+	primaryKey({ columns: [table.id], name: "permintaan_reset_password_id"}),
 ]);
 
 export const rencanaPengembangan = mysqlTable("rencana_pengembangan", {
@@ -330,8 +363,8 @@ export const riwayatJabatan = mysqlTable("riwayat_jabatan", {
 	urlArsipDigital: varchar("url_arsip_digital", { length: 500 }),
 },
 (table) => [
-	index("idx_riwayat_jabatan_jabatan").on(table.jabatanId),
 	index("idx_riwayat_jabatan_pegawai").on(table.pegawaiId),
+	index("idx_riwayat_jabatan_jabatan").on(table.jabatanId),
 	primaryKey({ columns: [table.id], name: "riwayat_jabatan_id"}),
 ]);
 
@@ -377,8 +410,8 @@ export const rubrikIndikator = mysqlTable("rubrik_indikator", {
 },
 (table) => [
 	index("idx_ri_komponen").on(table.rubrikKomponenId),
-	index("idx_ri_kunci").on(table.kunciSistem),
 	index("idx_ri_parent").on(table.parentIndikatorId),
+	index("idx_ri_kunci").on(table.kunciSistem),
 	foreignKey({
 			columns: [table.parentIndikatorId],
 			foreignColumns: [table.id],
@@ -413,6 +446,23 @@ export const rubrikKomponen = mysqlTable("rubrik_komponen", {
 	index("idx_rk_target").on(table.jabatanTargetId),
 	primaryKey({ columns: [table.id], name: "rubrik_komponen_id"}),
 	check("chk_rk_bobot", sql`((\`bobot_komponen\` >= 0) and (\`bobot_komponen\` <= 1))`),
+]);
+
+export const sesi = mysqlTable("sesi", {
+	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
+	userId: bigint("user_id", { mode: "number", unsigned: true }).notNull().references(() => users.id, { onDelete: "cascade" } ),
+	tokenHash: char("token_hash", { length: 64 }).notNull(),
+	ipAddress: varchar("ip_address", { length: 45 }),
+	userAgent: varchar("user_agent", { length: 255 }),
+	terakhirAktifPada: datetime("terakhir_aktif_pada", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+	kedaluwarsaPada: datetime("kedaluwarsa_pada", { mode: 'string'}).notNull(),
+	dicabutPada: datetime("dicabut_pada", { mode: 'string'}),
+	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("idx_sesi_user").on(table.userId, table.dicabutPada),
+	primaryKey({ columns: [table.id], name: "sesi_id"}),
+	unique("uk_sesi_token").on(table.tokenHash),
 ]);
 
 export const syncLog = mysqlTable("sync_log", {
@@ -477,10 +527,14 @@ export const users = mysqlTable("users", {
 	email: varchar({ length: 150 }).notNull(),
 	username: varchar({ length: 60 }).notNull(),
 	passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+	harusGantiSandi: tinyint("harus_ganti_sandi").default(0).notNull(),
+	passwordDiubahPada: datetime("password_diubah_pada", { mode: 'string'}),
 	roleId: bigint("role_id", { mode: "number", unsigned: true }).notNull().references(() => roles.id),
 	unitOrganisasiId: bigint("unit_organisasi_id", { mode: "number", unsigned: true }).references(() => unitOrganisasi.id, { onDelete: "set null" } ),
 	statusAktif: tinyint("status_aktif").default(1).notNull(),
 	lastLoginAt: datetime("last_login_at", { mode: 'string'}),
+	gagalMasukBeruntun: smallint("gagal_masuk_beruntun", { unsigned: true }).notNull(),
+	terkunciSampai: datetime("terkunci_sampai", { mode: 'string'}),
 	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [

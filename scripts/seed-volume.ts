@@ -85,6 +85,7 @@ async function main() {
     'doc/sql/009_kolom_pembanding.sql',
     'doc/sql/010_kunci_indikator.sql',
     'doc/sql/011_notifikasi.sql',
+    'doc/sql/012_auth.sql',
   ]
 
   await langkah(`pasang skema (${BERKAS_SKEMA.length} berkas)`, async () => {

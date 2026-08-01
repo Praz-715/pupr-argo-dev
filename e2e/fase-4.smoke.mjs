@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { AKUN, konteksMasuk } from './_masuk.mjs'
 
 /**
  * Smoke test Fase 4 — Master Data, Importer & Kualitas Data.
@@ -54,7 +55,7 @@ const NAMA_UJI = `Unit Smoke ${KODE_UJI}`
 
 try {
   for (const tema of ['light', 'dark']) {
-    const ctx = await browser.newContext({
+    const ctx = await konteksMasuk(browser, { base: BASE,
       viewport: { width: 1600, height: 1100 },
       colorScheme: tema,
     })
@@ -95,7 +96,7 @@ try {
 
   // ---------------- U-6 · risiko kekosongan ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 
@@ -157,7 +158,7 @@ try {
 
   // ---------------- U-2 · kelengkapan ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     await page.goto(`${BASE}/data/kelengkapan`, { waitUntil: 'networkidle' })
@@ -197,7 +198,7 @@ try {
 
   // ---------------- Antrian pembersihan ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     await page.goto(`${BASE}/data/pembersihan`, { waitUntil: 'networkidle' })
@@ -249,7 +250,7 @@ try {
 
   // ---------------- Konsolidasi ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     await page.goto(`${BASE}/data/konsolidasi`, { waitUntil: 'networkidle' })
@@ -276,7 +277,7 @@ try {
 
   // ---------------- MUTASI: master unit ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     await page.goto(`${BASE}/master/unit`, { waitUntil: 'networkidle' })
@@ -352,7 +353,7 @@ try {
 
   // ---------------- MUTASI: master jabatan ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1600, height: 1100 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: 1600, height: 1100 } })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     await page.goto(`${BASE}/master/jabatan?status=TERISI`, { waitUntil: 'networkidle' })
@@ -410,9 +411,14 @@ try {
 
   // ---------------- RBAC data sensitif ----------------
   {
-    const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } })
-    // Reza Kurniawan (id 3) = Pengelola Unit — bukan peran yang berwenang.
-    await ctx.addCookies([{ name: 'simt_dev_user', value: '3', url: BASE }])
+    // Reza Kurniawan = Pengelola Unit — bukan peran yang berwenang. Sejak
+    // Fase 7 ia benar-benar MASUK sebagai dirinya; tidak ada lagi cookie yang
+    // bisa memindahkan identitas tanpa sandi.
+    const ctx = await konteksMasuk(browser, {
+      base: BASE,
+      akun: AKUN.pengelolaUnit,
+      viewport: { width: 1400, height: 900 },
+    })
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 
@@ -444,7 +450,7 @@ try {
     ['tablet 834px', 834],
     ['tablet sempit 768px', 768],
   ]) {
-    const ctx = await browser.newContext({ viewport: { width: lebar, height: 1180 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const page = await ctx.newPage()
     for (const rute of ['/master/unit', '/data/kelengkapan', '/master/jabatan-kosong']) {
       await page.goto(`${BASE}${rute}`, { waitUntil: 'networkidle' })

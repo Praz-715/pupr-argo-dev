@@ -22,7 +22,20 @@ import type { Peran } from './peran'
  * berubah — bukan berubah dari apa, yang justru pertanyaan pemeriksa.
  */
 
-export type AksiAudit = 'BUAT' | 'UBAH' | 'HAPUS' | 'UBAH_STATUS' | 'IMPOR' | 'RECOMPUTE'
+export type AksiAudit =
+  | 'BUAT'
+  | 'UBAH'
+  | 'HAPUS'
+  | 'UBAH_STATUS'
+  | 'IMPOR'
+  | 'RECOMPUTE'
+  // Peristiwa autentikasi (Fase 7) — lihat `catatPeristiwaAuth()` di bawah.
+  | 'MASUK'
+  | 'MASUK_GAGAL'
+  | 'KELUAR'
+  | 'SANDI_DIGANTI'
+  | 'AKUN_TERKUNCI'
+  | 'RESET_DIMINTA'
 
 export interface KonteksMutasi<T> {
   /** Nama tabel/entitas seperti di ERD — snake_case. */
@@ -66,8 +79,44 @@ export async function jalankanMutasi<T>(
   return hasil
 }
 
+/**
+ * Pintu tulis KEDUA — khusus peristiwa autentikasi.
+ *
+ * `jalankanMutasi()` memanggil `assertPeran()`, yang menuntut ada pengguna yang
+ * sudah masuk. Peristiwa yang **terjadi sebelum** ada pengguna — percobaan
+ * masuk, masuk gagal, permintaan reset sandi — menurut definisi tidak bisa
+ * lewat sana. Ketimbang melonggarkan `jalankanMutasi()` (yang akan membuka
+ * jalan bagi mutasi biasa untuk melewati pemeriksaan peran), peristiwa auth
+ * diberi pintu sendiri yang **sempit dan bernama jelas**, sehingga
+ * `grep 'jalankanMutasi\|catatPeristiwaAuth'` tetap menemukan seluruh jalur
+ * tulis ke `audit_log`.
+ *
+ * Yang TIDAK boleh masuk ke sini: apa pun yang mengubah data domain. Fungsi ini
+ * tidak memeriksa wewenang, jadi ia hanya aman untuk peristiwa yang wewenangnya
+ * memang belum ada.
+ */
+export async function catatPeristiwaAuth(a: {
+  userId: number | null
+  aksi: Extract<
+    AksiAudit,
+    'MASUK' | 'MASUK_GAGAL' | 'KELUAR' | 'SANDI_DIGANTI' | 'AKUN_TERKUNCI' | 'RESET_DIMINTA'
+  >
+  /** Konteks secukupnya. **Jangan pernah** memuat sandi, token, atau hash. */
+  detail?: Record<string, unknown>
+}): Promise<void> {
+  await tulisAudit({
+    userId: a.userId,
+    aksi: a.aksi,
+    entitas: 'users',
+    entitasId: a.userId,
+    sebelum: null,
+    sesudah: a.detail ?? null,
+  })
+}
+
 async function tulisAudit(a: {
-  userId: number
+  /** NULL untuk peristiwa tanpa pengguna dikenali (mis. masuk gagal, permintaan reset). */
+  userId: number | null
   aksi: AksiAudit
   entitas: string
   entitasId: number | null

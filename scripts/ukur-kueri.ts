@@ -130,6 +130,23 @@ await ukur('suksesorDitetapkan', sk.ambilSuksesorDitetapkan)
 await ukur('notifikasi(1 user)', () => sk.ambilNotifikasi(2))
 await ukur('tugas(Admin Talenta)', () => sk.ambilTugas('Admin Talenta', null))
 
+// -- Fase 7: Auth & RBAC ---------------------------------------------------
+// Ambangnya sama dengan halaman lain. Yang paling perlu diawasi di sini
+// `auditLog`: `audit_log` satu-satunya tabel yang hanya bertambah dan tidak
+// pernah dipangkas, jadi kueri yang cepat hari ini belum tentu cepat sebulan lagi.
+const ad = await import('../lib/kueri/admin')
+const pg = await import('../lib/pengaturan')
+await ukur('pengaturanSistem', pg.ambilPengaturan)
+await ukur('barisPengaturan', pg.ambilBarisPengaturan)
+const daftarPengguna = await ukur('daftarPengguna', () => ad.ambilDaftarPengguna())
+await ukur('daftarPengguna(cari)', () => ad.ambilDaftarPengguna({ cari: 'a' }))
+await ukur('opsiPeran', ad.ambilOpsiPeran)
+await ukur('opsiUnitRingkas', ad.ambilOpsiUnitRingkas)
+await ukur('permintaanReset', ad.ambilPermintaanReset)
+const audit = await ukur('auditLog(hal 1)', () => ad.ambilAuditLog({}))
+await ukur('auditLog(berfilter)', () => ad.ambilAuditLog({ entitas: 'users', cari: 'nama' }))
+await ukur('opsiAudit', ad.ambilOpsiAudit)
+
 /**
  * Pembacaan profil untuk PERHITUNGAN, bukan untuk render halaman.
  *
@@ -149,6 +166,10 @@ console.log(
   `${pool.length} anggota di target ${idTarget}, ${opsiPool.reduce((n, o) => n + o.jumlahMenunggu, 0)} menunggu tindakan lintas target, ${nominasi.length} nominasi`,
 )
 console.log('kandidat target     :', `${kandidatTarget.total} dinilai, ${kandidatTarget.baris.length} baris/halaman`)
+console.log(
+  'administrasi        :',
+  `${daftarPengguna.length} pengguna, ${audit.total} baris audit (${audit.baris.length}/halaman)`,
+)
 console.log(
   'profilKandidat      :',
   `${profilSemua.length} pegawai dalam ${msProfil} ms (di luar ambang halaman — hanya dipakai Hitung Ulang & Simulasi)`,

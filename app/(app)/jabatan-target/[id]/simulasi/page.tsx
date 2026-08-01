@@ -15,6 +15,7 @@ import {
   ambilRubrikUntukHitung,
   ambilSkorTersimpan,
 } from '@/lib/kueri/rubrik'
+import { ambilPengaturan } from '@/lib/pengaturan'
 import { validasiRubrik } from '@/lib/scoring'
 import { bandingkanSkor, hitungSkorMassal, type BarisDiff } from '@/lib/skor-massal'
 import { TabelDiff } from './_komponen/tabel-diff'
@@ -100,13 +101,20 @@ async function IsiSimulasi({
   const siap = await ambilRubrikUntukHitung(idTarget)
   if (siap === null) notFound()
 
-  const [profil, tersimpan, nilaiManual] = await Promise.all([
+  const [profil, tersimpan, nilaiManual, pengaturan] = await Promise.all([
     ambilProfilKandidat(),
     ambilSkorTersimpan(idTarget),
     ambilNilaiManual(idTarget),
+    ambilPengaturan(),
   ])
 
-  const hasil = hitungSkorMassal(siap.rubrik, profil, { nilaiManual })
+  // Parameter yang sama persis dengan Hitung Ulang (`lib/aksi/skoring.ts`).
+  // Kalau salah satunya memakai angka berbeda, halaman ini akan melaporkan
+  // "perubahan" yang tidak akan pernah terjadi saat tombolnya benar-benar ditekan.
+  const hasil = hitungSkorMassal(siap.rubrik, profil, {
+    nilaiManual,
+    masaBerlakuTahun: pengaturan.masaBerlakuAsesmenTahun,
+  })
   const diff = bandingkanSkor(tersimpan, hasil.hasil)
   const validasi = validasiRubrik(siap.komponen, { untukJabatanTarget: true })
 

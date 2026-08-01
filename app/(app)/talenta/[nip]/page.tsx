@@ -20,6 +20,7 @@ import {
   formatTingkatPendidikan,
   inisial,
 } from '@/lib/format'
+import { getCurrentUser } from '@/lib/auth'
 import { LABEL_TINGKAT, tingkatKelengkapan } from '@/lib/kelengkapan'
 import {
   ambilHukumanDisiplin,
@@ -32,13 +33,19 @@ import {
   ambilRiwayatPendidikan,
   type ProfilPegawai,
 } from '@/lib/kueri/pegawai'
+import { lingkupData, unitWajib } from '@/lib/lingkup'
 import { DESKRIPSI_KOTAK_9, klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
 import { DaftarDiklat } from './_komponen/daftar-diklat'
 import { RincianSkor } from './_komponen/rincian-skor'
 
+/** Batas unit pengguna yang sedang masuk — dipakai judul halaman & isinya. */
+async function batasUnitSaya(): Promise<number | null> {
+  return unitWajib(lingkupData(await getCurrentUser()))
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ nip: string }> }) {
   const { nip } = await params
-  const profil = await ambilProfil(nip)
+  const profil = await ambilProfil(nip, await batasUnitSaya())
   return { title: profil ? profil.nama : 'Profil tidak ditemukan' }
 }
 
@@ -47,10 +54,15 @@ export async function generateMetadata({ params }: { params: Promise<{ nip: stri
  *
  * Setiap bagian berat dibungkus <Suspense> sendiri supaya identitas pegawai
  * langsung tampil dan sisanya mengalir masuk.
+ *
+ * **Pegawai di luar lingkup unit pengguna berakhir di `notFound()`**, bukan di
+ * halaman "akses ditolak". Itu disengaja: halaman yang berkata "orang ini ada
+ * tapi Anda tidak boleh melihatnya" tetap mengonfirmasi keberadaannya kepada
+ * yang tidak berhak tahu — dan NIP bisa ditebak dari pola tanggal lahir.
  */
 export default async function ProfilPage({ params }: { params: Promise<{ nip: string }> }) {
   const { nip } = await params
-  const profil = await ambilProfil(nip)
+  const profil = await ambilProfil(nip, await batasUnitSaya())
   if (!profil) notFound()
 
   return (

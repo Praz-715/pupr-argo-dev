@@ -1,11 +1,12 @@
 import { chromium } from '@playwright/test'
+import { AKUN, konteksMasuk } from './_masuk.mjs'
 
 /**
  * Smoke test Fase 0 — **kerangka aplikasi**, bukan isi halaman.
  *
  * Cakupan: design token kedua tema, app shell (sidebar/navbar/breadcrumb),
- * command palette, dev role switcher, penyaringan navigasi per peran, state
- * collapse sidebar, dan halaman 404.
+ * command palette, menu pengguna & keluar, penyaringan navigasi per peran,
+ * state collapse sidebar, dan halaman 404.
  *
  * Isi Dashboard (widget, chart, drill-down) diuji terpisah di
  * `fase-1.smoke.mjs` — berkas ini sengaja tidak mengunci konten halaman supaya
@@ -44,7 +45,7 @@ const browser = await chromium.launch()
 
 try {
   for (const tema of ['light', 'dark']) {
-    const ctx = await browser.newContext({
+    const ctx = await konteksMasuk(browser, { base: BASE,
       viewport: { width: 1440, height: 900 },
       colorScheme: tema,
     })
@@ -119,69 +120,68 @@ try {
         return 'cari "kotak" → menemukan Peta Talenta lewat kata kunci'
       })
 
-      await langkah('dev role switcher: memuat 8 akun seed', async () => {
-        await page.click('button[title*="Pengalih peran"]')
+      await langkah('menu pengguna: identitas & peran terbaca tanpa mengklik', async () => {
+        const tombol = page.locator('header button[aria-haspopup="menu"]').last()
+        const label = await tombol.innerText()
+        tegaskan(/Admin Sistem/.test(label), `tombol menu tidak menyebut nama: "${label}"`)
+        tegaskan(/Super Admin/.test(label), `peran tidak tampil di tombol: "${label}"`)
+        await tombol.click()
         await page.waitForSelector('[role="menu"]', { timeout: 4000 })
-        const jumlah = await page.locator('[role="menuitemradio"]').count()
-        tegaskan(jumlah === 8, `jumlah akun = ${jumlah}, seharusnya 8`)
-        await page.screenshot({ path: `${OUT}/role-switcher.png` })
-        return `${jumlah} akun seed tampil`
+        const isi = await page.locator('[role="menu"]').innerText()
+        tegaskan(/Profil Saya/.test(isi), 'menu tidak punya tautan Profil Saya')
+        tegaskan(/Keluar/.test(isi), 'menu tidak punya tombol Keluar')
+        await page.screenshot({ path: `${OUT}/menu-pengguna.png` })
+        await page.keyboard.press('Escape')
+        return 'nama + peran di tombol · Profil Saya & Keluar di menu'
       })
 
-      await langkah('RBAC: navigasi menyusut untuk Pengelola Unit', async () => {
+      await langkah('RBAC: navigasi Pengelola Unit lebih sempit daripada Super Admin', async () => {
         const ITEM_NAV = 'aside nav a, aside nav span[aria-disabled]'
-        const sebelum = await page.locator(ITEM_NAV).count()
-        await page.click('[role="menuitemradio"]:has-text("Reza Kurniawan")')
-        // Tunggu tombol pengalih peran sendiri yang berubah label. Menunggu teks
-        // "Pengelola Unit" muncul di halaman lolos seketika karena menu yang
-        // sedang terbuka memang mendaftar peran tiap akun — bukan bukti bahwa
-        // penggantiannya sudah selesai.
-        await page.waitForFunction(
-          () =>
-            document
-              .querySelector('button[title*="Pengalih peran"]')
-              ?.innerText.includes('Reza Kurniawan') ?? false,
-          undefined,
-          { timeout: 15000 },
-        )
-        // Sidebar dirender ulang oleh server (revalidatePath), jadi jumlahnya
-        // menyusut beberapa saat setelah label tombol berubah.
-        await page
-          .waitForFunction(
-            ([sel, awal]) => document.querySelectorAll(sel).length < awal,
-            [ITEM_NAV, sebelum],
-            { timeout: 15000 },
-          )
-          .catch(() => {})
-        const sesudah = await page.locator(ITEM_NAV).count()
-        tegaskan(sesudah < sebelum, `item nav ${sebelum} → ${sesudah} (harus berkurang)`)
-        await page.screenshot({ path: `${OUT}/shell-pengelola-unit.png`, fullPage: true })
-        return `item nav ${sebelum} → ${sesudah}`
+        const superAdmin = await page.locator(ITEM_NAV).count()
+        tegaskan(superAdmin > 15, `Super Admin hanya melihat ${superAdmin} item nav`)
+
+        // Konteks TERPISAH yang benar-benar masuk sebagai Reza. Sejak Fase 7
+        // tidak ada lagi cara berpindah identitas tanpa sandi — dan itu justru
+        // yang diuji di sini: penyempitan menu berasal dari sesi, bukan dari
+        // nilai yang bisa disetel dari sisi klien.
+        const ctxUnit = await konteksMasuk(browser, {
+          base: BASE,
+          akun: AKUN.pengelolaUnit,
+          viewport: { width: 1440, height: 900 },
+        })
+        const pageUnit = await ctxUnit.newPage()
+        await pageUnit.goto(BASE, { waitUntil: 'networkidle' })
+        const unit = await pageUnit.locator(ITEM_NAV).count()
+        const labelUnit = await pageUnit
+          .locator('header button[aria-haspopup="menu"]')
+          .last()
+          .innerText()
+        await pageUnit.screenshot({ path: `${OUT}/shell-pengelola-unit.png`, fullPage: true })
+        await ctxUnit.close()
+
+        tegaskan(/Pengelola Unit/.test(labelUnit), `peran tidak sesuai: "${labelUnit}"`)
+        tegaskan(unit < superAdmin, `item nav ${superAdmin} → ${unit} (harus berkurang)`)
+        return `Super Admin ${superAdmin} item · Pengelola Unit ${unit} item`
       })
 
-      await langkah('dev role switcher: kembali ke Super Admin', async () => {
-        await page.click('button[title*="Pengalih peran"]')
-        await page.waitForSelector('[role="menu"]', { timeout: 4000 })
-        await page.click('[role="menuitemradio"]:has-text("Admin Sistem")')
-        await page.waitForFunction(
-          () =>
-            document
-              .querySelector('button[title*="Pengalih peran"]')
-              ?.innerText.includes('Admin Sistem') ?? false,
-          undefined,
-          { timeout: 15000 },
-        )
-        await page
-          .waitForFunction(
-            () =>
-              document.querySelectorAll('aside nav a, aside nav span[aria-disabled]').length > 15,
-            undefined,
-            { timeout: 15000 },
-          )
-          .catch(() => {})
-        const jumlah = await page.locator('aside nav a, aside nav span[aria-disabled]').count()
-        tegaskan(jumlah > 15, `Super Admin seharusnya melihat semua menu, dapat ${jumlah}`)
-        return `${jumlah} item nav untuk Super Admin`
+      await langkah('keluar: sesi berakhir & halaman terlindungi memantulkan ke /masuk', async () => {
+        const ctxKeluar = await konteksMasuk(browser, { base: BASE, akun: AKUN.viewer })
+        const p = await ctxKeluar.newPage()
+        await p.goto(BASE, { waitUntil: 'networkidle' })
+        await p.locator('header button[aria-haspopup="menu"]').last().click()
+        await p.waitForSelector('[role="menu"]', { timeout: 4000 })
+        await p.click('[role="menu"] button:has-text("Keluar")')
+        await p.waitForFunction(() => location.pathname.startsWith('/masuk'), null, {
+          timeout: 15000,
+        })
+
+        // Bukti sesinya benar-benar dicabut, bukan cuma dialihkan sekali:
+        // membuka halaman dalam aplikasi lagi harus tetap memantul.
+        await p.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        const jalur = new URL(p.url()).pathname
+        await ctxKeluar.close()
+        tegaskan(jalur.startsWith('/masuk'), `setelah keluar masih bisa membuka ${jalur}`)
+        return 'keluar → /masuk · kunjungan berikutnya tetap dipantulkan'
       })
 
       await langkah('sidebar: collapse bertahan setelah reload', async () => {
@@ -214,7 +214,7 @@ try {
   }
 
   // Pimpinan sering akses lewat tablet (PRD §8)
-  const ctxTablet = await browser.newContext({ viewport: { width: 834, height: 1112 } })
+  const ctxTablet = await konteksMasuk(browser, { base: BASE, viewport: { width: 834, height: 1112 } })
   const pageTablet = await ctxTablet.newPage()
   await pageTablet.goto(BASE, { waitUntil: 'networkidle' })
   await langkah('tablet 834px: tanpa scroll horizontal', async () => {

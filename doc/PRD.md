@@ -3,7 +3,7 @@
 **Codename:** SIMT DJBK (Sistem Informasi Manajemen Talenta) — modul peningkatan fitur *karir.pu.go.id*
 **Stack:** Next.js (frontend + backend dalam satu app) + MySQL + API eksternal berbasis token
 **Skema data pendukung:** lihat [`ERD.md`](ERD.md)
-**Status dokumen:** Sudah diaudit; implementasi berjalan. **Fase 0 sampai 6 selesai** — fondasi & rule engine, data dev, Dashboard Utama, Direktori & Profil Talenta, Peta Talenta & Perbandingan Kandidat, Master Data & Kualitas Data, Rule Engine (Jabatan Target), serta Talent Pool & Workflow Nominasi. Berikutnya Fase 7 (Auth & RBAC). Halaman yang sudah dibangun ditandai ✅ di §6; lihat [`../phase.md`](../phase.md) untuk urutan fase, keputusan teknis, dan usulan perbaikan halaman (§8 U-1…U-12).
+**Status dokumen:** Sudah diaudit; implementasi berjalan. **Fase 0 sampai 7 selesai** — fondasi & rule engine, data dev, Dashboard Utama, Direktori & Profil Talenta, Peta Talenta & Perbandingan Kandidat, Master Data & Kualitas Data, Rule Engine (Jabatan Target), Talent Pool & Workflow Nominasi, serta Auth & RBAC. Berikutnya Fase 8 (Laporan & Ekspor). Halaman yang sudah dibangun ditandai ✅ di §6; lihat [`../phase.md`](../phase.md) untuk urutan fase, keputusan teknis, dan usulan perbaikan halaman (§8 U-1…U-12).
 
 ---
 
@@ -100,9 +100,10 @@ Memetakan "Garis Besar Proses" di `BLUEPRINT READINESS...md` §5 ke aktor, halam
 
 | Halaman | Isi / Konten | Aksi Kunci | Role |
 |---|---|---|---|
-| Login | Form email/username + password | Login, lupa password | Semua |
-| Lupa Password | Form request reset via email | Kirim link reset | Semua |
-| Profil Saya | Info akun, unit, role; ganti password | Update profil/password | Semua (login) |
+| **Masuk** ✅ | Form username **atau** email + sandi. Dipasang sebagai `<form action>`, bukan `onSubmit`: sebelum React ter-hidrasi, form `onSubmit` jatuh ke pengiriman HTML biasa — GET dengan **sandi di query string**, yang lalu mengendap di riwayat peramban & log server. Balasan gagal **tidak membedakan** "akun tidak ada" dari "sandi salah" (kalau berbeda, halaman ini jadi alat mendata siapa saja yang punya akun); lamanya balasan pun disamakan. `?next=` disaring terhadap *open redirect*. Akun terkunci sementara setelah beberapa kegagalan beruntun — satu-satunya keadaan yang diberi tahu apa adanya, karena yang mencapainya sudah tahu akun itu ada | Masuk, lanjut ke tujuan semula | Semua |
+| **Lupa Password** ✅ | Form permintaan pengaturan ulang. **Tidak ada email yang dikirim, dan halaman ini mengatakannya** — belum ada transport surel yang diputuskan (§4.3), jadi permintaannya dicatat lalu muncul sebagai pekerjaan Super Admin di Manajemen Pengguna, yang menerbitkan sandi sementara lewat jalur kepegawaian. Balasannya selalu sama, terdaftar atau tidak | Ajukan pengaturan ulang | Semua |
+| **Ganti Sandi Wajib** ✅ *(baru)* | Penahan setelah sandi diatur Super Admin. Selama sandi yang berlaku masih diketahui orang lain, tindakan atas nama akun itu tidak bisa dipertanggungjawabkan sebagai perbuatan pemiliknya — jadi aplikasi belum dibuka sama sekali, dan jalan keluarnya hanya dua: ganti sandi, atau keluar | Simpan sandi baru | Semua (masuk dengan sandi sementara) |
+| **Profil Saya** ✅ | Identitas akun, peran + penjelasannya, lingkup unit yang berlaku, riwayat akun (masuk terakhir, sandi terakhir diubah, kapan sesi ini berakhir), ganti sandi, dan **daftar perangkat yang sedang terbuka** dengan tombol akhiri per sesi. Nama/email/unit **sengaja tidak bisa diubah sendiri**: ketiganya menentukan lingkup data dan jadi identitas di `audit_log`, jadi membiarkan pemiliknya menggeser sendiri berarti jejak audit bisa diarahkan — dan itu ditulis di halaman, bukan dibiarkan jadi field yang tampak bisa diklik tapi ternyata mati | Ganti sandi, akhiri sesi perangkat lain | Semua (login) |
 
 ### 6.2 Dashboard
 
@@ -162,7 +163,7 @@ Memetakan "Garis Besar Proses" di `BLUEPRINT READINESS...md` §5 ke aktor, halam
 |---|---|---|---|
 | **Laporan Gap Analysis** | Kebutuhan pengembangan kompetensi per unit/jenjang, dibandingkan persyaratan jabatan target yang belum terpenuhi | Filter, ekspor PDF/Excel | Admin Talenta, Pimpinan |
 | **Laporan Nominasi & Approval** | Rekap seluruh nominasi per periode: status, waktu proses, unit pengaju | Filter, ekspor | Admin Talenta, Pimpinan |
-| **Audit Log Viewer** | Log semua perubahan data penting (siapa, kapan, entitas apa, sebelum/sesudah) — searchable | Filter by user/entitas/tanggal, ekspor | Super Admin |
+| **Audit Log Viewer** ✅ | Log semua perubahan data penting (siapa, kapan, entitas apa, sebelum/sesudah) — berpaginasi & tersaring di SQL. Rincian per baris menampilkan **hanya field yang berubah**; yang nilainya sama dilipat. Dua blok JSON berdampingan menyuruh pembacanya mengerjakan perbandingan itu sendiri, dan pada baris ke-30 ia berhenti membaca — jejak audit yang ada tapi tidak dipakai. Perbandingannya longgar terhadap beda tipe dari driver (`1` vs `true`, `"10"` vs `10`), karena riwayat yang penuh perubahan palsu tidak bisa dibedakan dari riwayat yang benar. Pilihan penyaring diturunkan dari isi tabel, bukan daftar tetap, supaya modul baru langsung muncul. Peristiwa autentikasi yang gagal diberi nada bahaya — itu satu-satunya baris yang bisa menandakan serangan. **Akses baca ditolak di server**: isinya memuat nilai sebelum/sesudah seluruh mutasi, termasuk baris yang aslinya dibatasi peran tertentu | Filter user/entitas/aksi/tanggal, cari isi perubahan. *Ekspor → Fase 8* | Super Admin |
 | **Pusat Ekspor Laporan** | Halaman terpusat generate laporan (pilih jenis, filter, format PDF/Excel) | Generate & unduh | Admin Talenta, Pimpinan |
 
 ### 6.9 Integrasi API Eksternal
@@ -178,8 +179,8 @@ Memetakan "Garis Besar Proses" di `BLUEPRINT READINESS...md` §5 ke aktor, halam
 
 | Halaman | Isi / Konten | Aksi Kunci | Role |
 |---|---|---|---|
-| **Manajemen Pengguna & Peran** | Daftar user internal, role, unit scope, status aktif | CRUD user, assign role | Super Admin |
-| **Pengaturan Sistem** | Konfigurasi umum: tahun asesmen aktif, parameter notifikasi, dsb. | Update pengaturan | Super Admin |
+| **Manajemen Pengguna & Peran** ✅ | Daftar akun internal: peran, unit scope, status aktif, akun terkunci, sandi sementara yang belum diganti, dan **jumlah sesi yang sedang berjalan** — angka terakhir itu yang membuat akibat penonaktifan terbaca sebelum tombolnya ditekan. Di atasnya, antrian **permintaan Lupa Password** yang menunggu ditangani (pekerjaan, bukan log; permintaan dari email tak terdaftar tetap ditampilkan & ditandai, karena pola email asing yang berulang adalah percobaan mencacah akun). Sandi sementara ditampilkan **tepat sekali** dan tidak pernah masuk `audit_log`: sandi yang bisa dilihat kapan saja oleh Super Admin tidak pernah benar-benar jadi milik penggunanya | Buat/ubah akun, atur peran & unit, atur ulang sandi, buka kunci, aktif/nonaktifkan. **Mengubah peran atau unit langsung memutus sesi aktifnya** — wewenang lama tidak boleh menempel sampai ia keluar sendiri. **Super Admin aktif terakhir tidak bisa dinonaktifkan atau diturunkan**, dan tidak seorang pun bisa menonaktifkan dirinya sendiri: satu klik yang wajar akan membuat halaman ini tidak bisa dibuka siapa pun lagi, dan pemulihannya hanya lewat SQL langsung ke produksi | Super Admin |
+| **Pengaturan Sistem** ✅ | Parameter yang boleh diubah tanpa deploy, dikelompokkan: **penilaian** (masa berlaku asesmen, tahun asesmen berjalan) dan **keamanan & sesi** (timeout idle, umur maksimal sesi, batas percobaan masuk, lama kunci akun). Tiap parameter punya tombol simpannya sendiri — akibatnya berbeda-beda dan sebagian berat, jadi menyimpan enam sekaligus membuat akibatnya menumpuk jadi satu peristiwa yang tidak bisa ditelusuri balik ke penyebabnya. Halaman menyatakan tegas bahwa perubahannya **tidak retroaktif**: skor di `match_score` tetap hasil hitungan dengan nilai lama sampai Hitung Ulang dijalankan. Parameter yang belum ditempatkan ke kelompok mana pun muncul di panel penadah, bukan hilang tanpa jejak | Update parameter — batas nilainya ditegakkan **di server** dari kolom `nilai_min`/`nilai_max`, bukan hanya atribut `min`/`max` di input | Super Admin |
 
 ---
 
@@ -238,7 +239,7 @@ Sama seperti [`ERD.md`](ERD.md) §5, beberapa keputusan produk berikut sebaiknya
 3. **Siapa yang menjalankan tahap "Verifikasi Kepegawaian"** — asumsi: Bagian Kepegawaian dan Umum DJBK sendiri (role Admin Talenta), bukan Biro Kepegawaian Kementerian (lihat juga `ERD.md` §5 poin 1).
 4. **Cakupan self-service pegawai** — belum masuk MVP; perlu keputusan apakah pegawai butuh akses lihat profil talenta sendiri di fase awal atau cukup fase panjang.
 5. **Kebijakan berbagi data via API eksternal** — perlu kebijakan resmi (siapa yang berhak menyetujui `api_client` baru, data apa saja yang butuh MoU, siapa yang menandatangani).
-6. **Metode SSO internal** — pakai akun lokal dulu (email/username+password) atau langsung integrasi ke sistem identitas Kementerian PU yang sudah ada?
+6. ⚙️ **Metode SSO internal** — **terpasang di Fase 7: akun lokal** (username atau email + sandi bcrypt), sesi tersimpan di tabel `sesi` dengan timeout idle & tenggat mutlak. Integrasi ke sistem identitas Kementerian PU tetap terbuka dan **murah dilakukan**: seluruh aplikasi mengambil identitas dari satu fungsi `getCurrentUser()`, jadi penggantiannya menyentuh satu berkas. Perlu konfirmasi apakah SSO memang diinginkan sebelum produksi.
 7. ⚙️ **Metode agregasi 3 sub-indikator "Nilai Pengalaman Jabatan"** (Lama Jabatan, Keragaman Riwayat Jabatan, Substansi Riwayat Jabatan) — sama seperti `ERD.md` §5 poin 2. **Default terpasang: rata-rata sederhana** (bobot sama rata), dan aritmatikanya sudah diverifikasi konsisten dengan data contoh. Mesin rubrik memakai rumus generik `Σ(nilai × bobot) / Σ(bobot)`, jadi kalau ternyata bobotnya harus berbeda, cukup isi `rubrik_indikator.bobot_indikator` pada sub-indikator — **tanpa mengubah kode**.
 8. ⚙️ **Riwayat hukuman disiplin yang sudah tidak aktif** (`hukuman_disiplin.status_aktif = 0`) — **default terpasang: TIDAK menurunkan skor** Integritas & Moralitas (dianggap sudah selesai dijalani); yang diambil adalah tingkat hukuman **teraktif-terberat**. Aturan ini tidak tertulis eksplisit di `KERANGKA TALENT POOL.md`, jadi perlu dikonfirmasi — termasuk apakah ada batas waktu "kedaluwarsa" hukuman disiplin secara resmi.
 
@@ -263,5 +264,7 @@ Empat pertanyaan berikut **baru muncul saat rubrik diterjemahkan ke kode**, buka
 | §10 poin 7 & 8 dapat keputusan default | Dibutuhkan untuk menulis rule engine; ditandai default agar tetap bisa dikonfirmasi |
 | §10 bertambah poin 9–12 | Empat keputusan baru muncul saat rubrik diterjemahkan ke kode |
 | §6 belum memuat usulan halaman U-1…U-12 | Usulan masih di [`../phase.md`](../phase.md) §8, digabung ke sini setelah disetujui |
+| §6.1 bertambah halaman **Ganti Sandi Wajib** | Sandi yang dibuatkan Super Admin diketahui Super Admin. Tanpa pemaksaan ganti, "siapa melakukan apa" di `audit_log` bisa dibantah — jadi penahannya jadi halaman tersendiri, bukan sekadar peringatan |
+| §10 poin 6 dapat keputusan terpasang | Fase 7 memasang akun lokal; SSO tetap terbuka lewat satu titik ganti (`getCurrentUser()`) |
 
-*DDL MySQL sudah disusun 1:1 dari ERD ([`sql/001_schema.sql`](sql/001_schema.sql) → [`007_recompute.sql`](sql/007_recompute.sql)). Yang belum: wireframe/UI detail per halaman §6 (dikerjakan per fase) dan spesifikasi OpenAPI untuk §7 (Fase 9).*
+*DDL MySQL sudah disusun 1:1 dari ERD ([`sql/001_schema.sql`](sql/001_schema.sql) → [`012_auth.sql`](sql/012_auth.sql)). Yang belum: wireframe/UI detail per halaman §6 (dikerjakan per fase) dan spesifikasi OpenAPI untuk §7 (Fase 9).*

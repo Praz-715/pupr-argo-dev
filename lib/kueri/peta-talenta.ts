@@ -23,6 +23,12 @@ import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN } from './dasar'
 
 export interface FilterPeta {
   unitId?: number
+  /**
+   * Batas unit WAJIB dari peran pengguna (`lib/lingkup.ts`), dipasang
+   * berdampingan dengan `unitId` sehingga hasilnya irisan. Alasan lengkapnya
+   * ada di `FilterDirektori.unitWajib`.
+   */
+  unitWajib?: number | null
   eselon?: string
   jenjang?: string
   tahun?: number
@@ -37,6 +43,10 @@ function bangunFilterPeta(f: FilterPeta): { where: string; params: unknown[] } {
   if (f.unitId !== undefined) {
     syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(f.unitId)
+  }
+  if (f.unitWajib !== undefined && f.unitWajib !== null) {
+    syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
+    params.push(f.unitWajib)
   }
   if (f.eselon) {
     syarat.push('j.eselon = ?')
@@ -124,6 +134,10 @@ async function hitungTanpaAsesmen(f: FilterPeta): Promise<number> {
   if (f.unitId !== undefined) {
     syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(f.unitId)
+  }
+  if (f.unitWajib !== undefined && f.unitWajib !== null) {
+    syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
+    params.push(f.unitWajib)
   }
   if (f.eselon) {
     syarat.push('j.eselon = ?')

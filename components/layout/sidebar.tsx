@@ -6,13 +6,16 @@ import { usePathname } from 'next/navigation'
 
 import { cn } from '@/lib/cn'
 import { useHydrated, useLocalStorageBoolean } from '@/lib/hooks'
-import { itemTersedia, type GrupNav } from '@/lib/navigasi'
+import { itemTersedia, navigasiSidebar, type GrupNav } from '@/lib/navigasi'
 import { IkonNav } from './ikon-nav'
 
 const KUNCI_SIMPAN = 'simt-sidebar-collapsed'
 
-export function Sidebar({ navigasi }: { navigasi: GrupNav[] }) {
+export function Sidebar({ navigasi: navigasiPenuh }: { navigasi: GrupNav[] }) {
   const pathname = usePathname()
+  // Profil Saya & sejenisnya tetap ada di breadcrumb dan command palette, tapi
+  // tidak di sini — jalan masuknya lewat menu pengguna di navbar.
+  const navigasi = navigasiSidebar(navigasiPenuh)
   // Pilihan collapse bertahan antar kunjungan & tersinkron antar tab.
   const [ciut, setCiut] = useLocalStorageBoolean(KUNCI_SIMPAN)
   const siap = useHydrated()

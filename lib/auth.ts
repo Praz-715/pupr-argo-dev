@@ -1,82 +1,58 @@
 import 'server-only'
 
-import { eq } from 'drizzle-orm'
-import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-import { db, roles, unitOrganisasi, users } from './db'
-import { adalahPeranValid, punyaPeran, type Peran, type PenggunaAktif } from './peran'
+import { punyaPeran, type Peran, type PenggunaAktif } from './peran'
+import { bacaSesi, type SesiAktif } from './sesi'
 
 /**
  * SATU-SATUNYA titik akses identitas pengguna.
  *
- * Fase 0–6: belum ada auth. Identitas diambil dari cookie dev `simt_dev_user`
- * yang diset oleh Dev Role Switcher di navbar, dengan fallback ke Super Admin.
- * Fase 7: isi `getCurrentUser()` diganti sesi asli — **tidak ada komponen lain
- * yang perlu berubah**, karena tidak ada yang membaca cookie langsung
- * (phase.md §5.6).
+ * Fase 0–6 memakai cookie dev `simt_dev_user` + pengalih peran di navbar; Fase 7
+ * menggantinya dengan sesi asli. Janji phase.md §5.6 ditepati: **hanya isi
+ * berkas ini yang berubah**, karena sejak awal tidak ada komponen yang membaca
+ * cookie sendiri dan setiap mutasi sudah lewat `assertPeran()`.
+ *
+ * Pengalih peran dev dihapus, bukan dimatikan di balik flag. Dua sumber
+ * identitas yang hidup berdampingan adalah dua sumber identitas yang bisa
+ * berselisih — dan yang satu memang dirancang untuk melewati sandi. Menguji
+ * per peran sekarang dilakukan dengan benar-benar masuk sebagai peran itu
+ * (lihat `e2e/_masuk.mjs`), yang sekalian menguji jalur autentikasinya juga.
  */
 
-export const COOKIE_PENGGUNA_DEV = 'simt_dev_user'
-
-/** Dipakai kalau cookie dev belum diset. */
-const ID_PENGGUNA_BAWAAN = 1
-
-export function devRoleSwitchAktif(): boolean {
-  return process.env.NEXT_PUBLIC_DEV_ROLE_SWITCH === '1'
-}
-
-async function ambilPengguna(id: number): Promise<PenggunaAktif | null> {
-  const baris = await db
-    .select({
-      id: users.id,
-      nama: users.nama,
-      username: users.username,
-      email: users.email,
-      namaPeran: roles.namaRole,
-      unitOrganisasiId: users.unitOrganisasiId,
-      namaUnit: unitOrganisasi.namaUnit,
-      statusAktif: users.statusAktif,
-    })
-    .from(users)
-    .innerJoin(roles, eq(roles.id, users.roleId))
-    .leftJoin(unitOrganisasi, eq(unitOrganisasi.id, users.unitOrganisasiId))
-    .where(eq(users.id, id))
-    .limit(1)
-
-  const u = baris[0]
-  if (!u || u.statusAktif === 0) return null
-  if (!adalahPeranValid(u.namaPeran)) return null
-
-  return {
-    id: u.id,
-    nama: u.nama,
-    username: u.username,
-    email: u.email,
-    peran: u.namaPeran,
-    unitOrganisasiId: u.unitOrganisasiId ?? null,
-    namaUnit: u.namaUnit ?? null,
-  }
-}
+export const RUTE_MASUK = '/masuk'
+export const RUTE_GANTI_SANDI = '/ganti-sandi'
 
 export async function getCurrentUser(): Promise<PenggunaAktif | null> {
-  let id = ID_PENGGUNA_BAWAAN
+  const sesi = await bacaSesi()
+  return sesi?.pengguna ?? null
+}
 
-  if (devRoleSwitchAktif()) {
-    const store = await cookies()
-    const dariCookie = Number(store.get(COOKIE_PENGGUNA_DEV)?.value)
-    if (Number.isInteger(dariCookie) && dariCookie > 0) id = dariCookie
+/** Sesi lengkap (id sesi, tenggat, penanda wajib ganti sandi). Untuk Profil Saya & app shell. */
+export async function sesiSaatIni(): Promise<SesiAktif | null> {
+  return bacaSesi()
+}
+
+/**
+ * Gerbang halaman: pastikan ada sesi, kalau tidak alihkan ke halaman masuk.
+ *
+ * `next` dibawa serta supaya pengguna kembali ke halaman yang ia tuju setelah
+ * masuk — kehilangan tujuan setelah timeout adalah cara tercepat membuat orang
+ * berhenti memakai aplikasi yang dibuka sepanjang hari.
+ */
+export async function wajibMasuk(tujuan?: string): Promise<SesiAktif> {
+  const sesi = await bacaSesi()
+  if (!sesi) {
+    const q = tujuan && tujuan !== '/' ? `?next=${encodeURIComponent(tujuan)}` : ''
+    redirect(`${RUTE_MASUK}${q}`)
   }
-
-  const pengguna = await ambilPengguna(id)
-  if (pengguna) return pengguna
-
-  // Cookie menunjuk user yang sudah tidak ada/nonaktif → jatuh ke bawaan.
-  return id === ID_PENGGUNA_BAWAAN ? null : ambilPengguna(ID_PENGGUNA_BAWAAN)
+  return sesi
 }
 
 /**
  * Guard untuk server action & route handler. Sudah aktif sejak Fase 0 memakai
- * user dev, jadi tidak ada "tambal RBAC" di Fase 7 (phase.md §5.6).
+ * user dev, jadi tidak ada "tambal RBAC" di Fase 7 (phase.md §5.6) — yang
+ * berganti hanya dari mana identitasnya datang.
  */
 export async function assertPeran(diizinkan: readonly Peran[]): Promise<PenggunaAktif> {
   const pengguna = await getCurrentUser()
@@ -89,35 +65,4 @@ export async function assertPeran(diizinkan: readonly Peran[]): Promise<Pengguna
     )
   }
   return pengguna
-}
-
-/** Daftar akun untuk Dev Role Switcher. Kosong kalau flag-nya mati. */
-export async function daftarPenggunaDev(): Promise<PenggunaAktif[]> {
-  if (!devRoleSwitchAktif()) return []
-
-  const baris = await db
-    .select({
-      id: users.id,
-      nama: users.nama,
-      username: users.username,
-      email: users.email,
-      namaPeran: roles.namaRole,
-      unitOrganisasiId: users.unitOrganisasiId,
-      namaUnit: unitOrganisasi.namaUnit,
-    })
-    .from(users)
-    .innerJoin(roles, eq(roles.id, users.roleId))
-    .leftJoin(unitOrganisasi, eq(unitOrganisasi.id, users.unitOrganisasiId))
-    .where(eq(users.statusAktif, 1))
-    .orderBy(users.roleId, users.nama)
-
-  return baris.filter((u) => adalahPeranValid(u.namaPeran)).map((u) => ({
-    id: u.id,
-    nama: u.nama,
-    username: u.username,
-    email: u.email,
-    peran: u.namaPeran as Peran,
-    unitOrganisasiId: u.unitOrganisasiId ?? null,
-    namaUnit: u.namaUnit ?? null,
-  }))
 }

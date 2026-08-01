@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 
+import { Bidang, kelasInput } from '@/components/ui/bidang'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/toast'
@@ -19,38 +20,6 @@ import { KUNCI_INDIKATOR, SUMBER_KUNCI, type KunciIndikator } from '@/lib/penila
  * tanpa keluhan). Konversinya terjadi di satu tempat: di sini, saat kirim.
  */
 
-const kelasInput = (galat?: string): string =>
-  cn(
-    'h-9 w-full rounded-md border bg-surface px-2.5 text-[13px] text-text outline-none transition-colors placeholder:text-text-subtle disabled:opacity-60',
-    galat ? 'border-danger-border focus:border-danger' : 'border-border focus:border-accent',
-  )
-
-function Bidang({
-  label,
-  galat,
-  keterangan,
-  children,
-}: {
-  label: string
-  galat?: string
-  keterangan?: string
-  children: React.ReactNode
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 flex flex-wrap items-baseline gap-1.5">
-        <span className="text-[12px] font-medium text-text">{label}</span>
-        {keterangan ? <span className="text-[10px] text-text-subtle">{keterangan}</span> : null}
-      </span>
-      {children}
-      {galat ? (
-        <span role="alert" className="mt-1 block text-[11px] leading-relaxed text-danger">
-          {galat}
-        </span>
-      ) : null}
-    </label>
-  )
-}
 
 /** Persen (UI) → rasio (DB). Dibulatkan ke 4 desimal, sesuai DECIMAL(5,4). */
 function keRasio(persen: string): number | null {

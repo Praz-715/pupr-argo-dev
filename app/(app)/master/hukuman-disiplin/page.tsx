@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react'
 import { Suspense } from 'react'
 
+import { AksesDitolak } from '@/components/ui/akses-ditolak'
 import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
@@ -32,31 +33,19 @@ export default async function HukumanDisiplinPage({ searchParams }: { searchPara
   // di UI. Data yang sudah terkirim ke klien tidak bisa ditarik kembali.
   if (!pengguna || !punyaPeran(pengguna, PERAN_DISIPLIN)) {
     return (
-      <div className="space-y-5">
-        <PageHeader
-          judul="Data Hukuman Disiplin"
-          deskripsi="Rekam jejak disiplin pegawai — akses dibatasi."
-        />
-        <div className="rounded-lg border border-danger-border bg-danger-subtle px-4 py-4">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 size-5 shrink-0 text-danger" />
-            <div>
-              <p className="text-[14px] font-semibold text-text">Akses ditolak</p>
-              <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-text-muted">
-                Rekam jejak hukuman disiplin adalah data pribadi ASN yang aksesnya dibatasi peran
-                tertentu (UU PDP No. 27/2022). Peran Anda saat ini —{' '}
-                <strong className="font-medium text-text">{pengguna?.peran ?? 'tanpa peran'}</strong>{' '}
-                — tidak termasuk.
-              </p>
-              <p className="mt-2 text-[12px] leading-relaxed text-text-subtle">
-                Nilai integritas yang dihitung dari catatan ini tetap terlihat di profil talenta
-                sebagai <strong className="font-medium text-text-muted">angka</strong>, tanpa uraian
-                pelanggarannya. Hubungi Admin Talenta bila perlu memeriksa dasarnya.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AksesDitolak
+        judulHalaman="Data Hukuman Disiplin"
+        deskripsiHalaman="Rekam jejak disiplin pegawai — akses dibatasi."
+        peranAnda={pengguna?.peran ?? 'tanpa peran'}
+        alasan="Rekam jejak hukuman disiplin adalah data pribadi ASN yang aksesnya dibatasi peran tertentu (UU PDP No. 27/2022)."
+        catatan={
+          <>
+            Nilai integritas yang dihitung dari catatan ini tetap terlihat di profil talenta sebagai{' '}
+            <strong className="font-medium text-text-muted">angka</strong>, tanpa uraian
+            pelanggarannya. Hubungi Admin Talenta bila perlu memeriksa dasarnya.
+          </>
+        }
+      />
     )
   }
 

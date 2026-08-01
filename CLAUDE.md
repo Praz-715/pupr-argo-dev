@@ -8,46 +8,55 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 **Stack:** Next.js 16 (App Router, full-stack — frontend + backend dalam satu app) + React 19 + Tailwind v4 + Drizzle ORM + MySQL.
 
-**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), dan **6** (Talent Pool & Workflow Nominasi + Inbox Tugas) sudah selesai; berikutnya Fase 7 (Auth & RBAC). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
+**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), dan **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit) sudah selesai; berikutnya Fase 8 (Laporan & Ekspor). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
 
 | Dokumen | Isi |
 |---|---|
 | [`doc/PRD.md`](doc/PRD.md) | Spesifikasi produk lengkap: tujuan, role, alur proses, inventaris halaman, desain API eksternal, fase implementasi. §10 memuat 12 keputusan terbuka (⚙️ = sudah ada default yang jalan di kode) |
-| [`doc/ERD.md`](doc/ERD.md) | Skema database (28 tabel), relasi, aturan bisnis level data | 
-| [`doc/sql/`](doc/sql/) | DDL & data dev, **dijalankan berurutan `001` → `011`**. Sumber kebenaran skema; perubahan berikutnya jadi berkas bernomor baru, bukan menyunting yang sudah tereksekusi |
+| [`doc/ERD.md`](doc/ERD.md) | Skema database (31 tabel), relasi, aturan bisnis level data | 
+| [`doc/sql/`](doc/sql/) | DDL & data dev, **dijalankan berurutan `001` → `012`**. Sumber kebenaran skema; perubahan berikutnya jadi berkas bernomor baru, bukan menyunting yang sudah tereksekusi |
 | [`doc/KERANGKA TALENT POOL.md`](doc/KERANGKA%20TALENT%20POOL.md) | Rubrik penilaian talenta yang harus direplikasi di rule engine (Komponen→Indikator→Kategori Skor) |
 | [`doc/BLUEPRINT READINESS - MODUL MANAJEMEN TALENTA.md`](doc/BLUEPRINT%20READINESS%20-%20MODUL%20MANAJEMEN%20TALENTA.md) | Gap analysis data & modul yang jadi dasar seluruh desain |
 | [`doc/manajemen talenta 27 juli utk tim SIM.md`](doc/manajemen%20talenta%2027%20juli%20utk%20tim%20SIM.md) | Konteks organisasi, roadmap 3 fase, peta stakeholder |
 
-**Rencana eksekusi:** [`phase.md`](phase.md) (di root, bukan di `doc/`) — hierarki kebenaran (doc = aturan, DB dev = dummy yang kita kendalikan), spesifikasi `lib/scoring` yang dikunci dari `KERANGKA TALENT POOL.md`, standar mutu interaksi (loading/skeleton/chart), keputusan teknis, dan urutan fase. **Fase 0, 0.5, 1, 2, 3, 4, 5, dan 6 sudah selesai** — berikutnya Fase 7 (Auth & RBAC).
+**Rencana eksekusi:** [`phase.md`](phase.md) (di root, bukan di `doc/`) — hierarki kebenaran (doc = aturan, DB dev = dummy yang kita kendalikan), spesifikasi `lib/scoring` yang dikunci dari `KERANGKA TALENT POOL.md`, standar mutu interaksi (loading/skeleton/chart), keputusan teknis, dan urutan fase. **Fase 0, 0.5, 1, 2, 3, 4, 5, 6, dan 7 sudah selesai** — berikutnya Fase 8 (Laporan & Ekspor).
 
 **Sebelum mulai fitur apa pun:** cek dulu apakah itu sudah dirancang di PRD.md (§6 Inventaris Halaman) dan ERD.md. Kalau implementasi ternyata perlu menyimpang dari desain di sana, update dokumennya juga — jangan biarkan kode dan dokumen jadi tidak sinkron.
 
 ---
 
-## Keadaan Sekarang (per akhir Fase 6)
+## Keadaan Sekarang (per akhir Fase 7)
 
 ### Baseline verifikasi — kalau angka ini turun, ada yang regresi
 
 ```
-npm run verifikasi           → 346 uji unit lolos (10 berkas uji)
-npm run verifikasi:data      → 36/36 pemeriksaan (SQL murni, silang-uji isi DB)
+npm run verifikasi           → 392 uji unit lolos (13 berkas uji)
+npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
-npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4) · 44/44 (F5) · 39/39 (F6)
-npm run build                → sukses, 23 entri route (21 halaman + /_not-found + /icon.svg)
-npm run ukur:kueri           → 44 kueri = ~218 ms · :volume di 2.000 pegawai = ~515 ms, semua <150 ms
-npm run ukur:hitung-ulang    → ~114 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~2,5 s
+npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
+                               · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) = 268 pemeriksaan
+npm run build                → sukses, 30 entri route (28 halaman + /_not-found + /icon.svg) + middleware
+npm run ukur:kueri           → 54 kueri = ~400 ms · :volume di 2.000 pegawai = ~670 ms, semua <150 ms
+npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~4,4 s
 ```
 
 **Cara menjalankan smoke:** butuh dev server hidup. `npm run smoke` memakai `localhost:3000` (punya user). Untuk server sendiri: `npx next dev -p 3100` lalu `node e2e/fase-N.smoke.mjs .next/smoke http://localhost:3100`.
+
+**Sejak Fase 7 smoke benar-benar MASUK lewat halaman login** ([`e2e/_masuk.mjs`](e2e/_masuk.mjs)) — tidak ada lagi cookie `simt_dev_user`. Hasil login di-cache sebagai `storageState` per pengguna, jadi satu login per akun per proses meskipun satu berkas smoke membuat belasan konteks. Akun seed: `superadmin` · `martyanti.rbs` · `reza.kurniawan` · `dirjen` · `reviewer.bpsdm`, sandi dev `password123`.
+
+**Dua jebakan berulang saat menulis smoke** — keduanya menghasilkan langkah HIJAU yang salah, bukan galat:
+1. **Menunggu sebuah kata yang sudah ada di layar.** Kalimat akibat di dialog memuat kata status yang ditunggu ("Diverifikasi"), label penyaring memuat nama status, header tabel memuat kata "Sebelum". Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang** — mutasinya batal tanpa jejak. Tunggu **keadaan**: dialog tertutup, tombol lenyap, aksi baru muncul.
+2. **`innerText` menerapkan `text-transform`.** Label ber-`uppercase` terbaca "ANGGOTA POOL", bukan "Anggota pool". Dan `[role="dialog"]` **tidak pernah** cocok dengan `<dialog>` native — elemen itu punya *implicit* role tanpa atributnya; pakai `dialog[open]`.
 
 **Jangan `npm run build` sambil dev server hidup di direktori yang sama** — build produksi menulis ke `.next` yang sedang dipakai server dev, dan akibatnya route bersarang mendadak 404. Urutannya: smoke dulu, build terakhir. Kalau sudah terjadi, cukup restart dev server (matikan **hanya PID yang memegang portnya**, jangan `taskkill /IM node.exe`).
 
 ### Route yang sudah ada
 
-`/` (dashboard) · `/talenta` · `/talenta/[nip]` · `/peta-talenta` · `/bandingkan` · `/jabatan-target` · `/jabatan-target/[id]` · `/jabatan-target/[id]/kandidat` · `/jabatan-target/[id]/simulasi` · `/master/unit` · `/master/jabatan` · `/master/jabatan-kosong` · `/data/kelengkapan` · `/data/pembersihan` · `/data/konsolidasi` · `/master/hukuman-disiplin` · `/talent-pool` · `/nominasi` · `/nominasi/[id]` · `/rencana-pengembangan` · `/inbox`
+**Di dalam app shell** (grup `(app)`, wajib sesi): `/` (dashboard) · `/talenta` · `/talenta/[nip]` · `/peta-talenta` · `/bandingkan` · `/jabatan-target` · `/jabatan-target/[id]` · `/jabatan-target/[id]/kandidat` · `/jabatan-target/[id]/simulasi` · `/master/unit` · `/master/jabatan` · `/master/jabatan-kosong` · `/data/kelengkapan` · `/data/pembersihan` · `/data/konsolidasi` · `/master/hukuman-disiplin` · `/talent-pool` · `/nominasi` · `/nominasi/[id]` · `/rencana-pengembangan` · `/inbox` · `/profil` · `/admin/pengguna` · `/admin/audit-log` · `/admin/pengaturan`
 
-Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) — **naikkan angkanya saat fase selesai**, kalau tidak menu-nya tetap tampil abu-abu.
+**Di luar app shell** (grup `(auth)`, tanpa sidebar/navbar): `/masuk` · `/lupa-password` · `/ganti-sandi`
+
+Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) — **naikkan angkanya saat fase selesai**, kalau tidak menu-nya tetap tampil abu-abu. Item ber-`luarSidebar: true` (mis. Profil Saya) tetap ada di breadcrumb & command palette tapi tidak di sidebar.
 
 ### Utang yang ditunda dengan sengaja (bukan lupa)
 
@@ -57,10 +66,11 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 | Tombol trigger sinkronisasi manual | Mekanisme sumber produksi belum diputuskan (PRD §10.2: batch vs API/webhook). Tombol yang memanggil sumber yang belum ada **selalu gagal** → pengguna menyimpulkan sinkronisasi rusak. Aturan normalisasinya sendiri sudah siap di `lib/importer` | Fase 4 lanjutan, setelah §10.2 dijawab |
 | Pemetaan manual & tanda "diverifikasi" di Antrian Pembersihan | Butuh tempat menyimpan keputusan manusia (siapa/kapan/catatan) yang belum ada di skema; pemetaan riwayat jabatan lebih tepat dari editor riwayat pegawai | Fase 4 lanjutan / 5 |
 | Unggah berkas SK hukuman disiplin & arsip ijazah | Belum ada strategi penyimpanan berkas | Fase 8 |
-| Auth asli (login, sesi, middleware) | Sesuai permintaan: dashboard dulu. `getCurrentUser()` sudah jadi satu-satunya titik akses identitas, jadi Fase 7 cukup mengganti isinya | Fase 7 |
-| Progress determinate pada Hitung Ulang | Setelah jalur tulisnya di-batch, satu jabatan target di 1.960 pegawai selesai **2,5 detik** — pending state biasa sudah memadai. Kalau nanti dipakai untuk seluruh jabatan target sekaligus, itu barulah kasus job asinkron (U-10) | Fase 8, bila perlu |
+| Progress determinate pada Hitung Ulang | Setelah jalur tulisnya di-batch, satu jabatan target di 1.960 pegawai selesai **beberapa detik** (terukur 2,5–4,4 s tergantung beban mesin) — pending state biasa sudah memadai. Kalau nanti dipakai untuk seluruh jabatan target sekaligus, itu barulah kasus job asinkron (U-10) | Fase 8, bila perlu |
 | Syarat minimal kinerja/Kotak 9 di eligibility (U-11) | Perlu keputusan bisnis (phase.md §9 no. 5). Sementara ini Kotak 9 & predikat kinerja ditampilkan berdampingan dengan match score, jadi konteksnya ada walau tidak menyaring | setelah §9 no. 5 dijawab |
-| Penanda notifikasi belum dibaca di navbar/sidebar | Inbox sudah jadi item nav & antrian nominasi sudah jadi widget dashboard (PRD §6.2), jadi pekerjaan yang menunggu tidak tersembunyi. Yang belum ada cuma lencana angka — butuh pembacaan per permintaan di app shell, dan itu menyentuh setiap halaman | Fase 7, sekalian saat sesi asli dipasang |
+| Penanda notifikasi belum dibaca di navbar/sidebar | Inbox sudah jadi item nav & antrian nominasi sudah jadi widget dashboard (PRD §6.2), jadi pekerjaan yang menunggu tidak tersembunyi. Yang belum ada cuma lencana angka — butuh satu kueri hitung per permintaan di app shell, yang berarti tiap halaman membayar biayanya. Sekarang app shell sudah punya satu pembacaan sesi ber-`cache()`, jadi menumpangkannya di sana lebih murah daripada saat direncanakan | Fase 8 |
+| Pengiriman surel (reset sandi, notifikasi keluar) | Belum ada layanan surel yang diputuskan di PRD §4.3. Lupa Password **mengatakan** itu apa adanya dan dialihkan ke Super Admin, bukan menjanjikan email yang tidak akan datang. Begitu transportnya diputuskan, `permintaan_reset_password` tinggal ditambahi kolom token — alurnya sudah benar | setelah transport surel diputuskan |
+| 2FA untuk Super Admin & Admin Talenta (PRD §8) | Disebut sebagai *opsi* di PRD, bukan syarat. Penghambat tebak-sandi + sesi berbatas sudah menutup jalur serangan yang paling mungkin. 2FA menuntut keputusan operasional (TOTP? SMS? siapa yang memulihkan perangkat hilang?) yang belum ada pemiliknya | setelah kebijakan keamanan ditetapkan |
 | "Tarik nominasi" oleh unit pengaju | Unit yang salah mengajukan sekarang harus minta Admin Talenta menolaknya. Enum `nominasi.status` tidak punya nilai untuk "ditarik", dan menambahnya berarti satu keadaan baru di state machine yang belum diminta PRD. Jejaknya tetap utuh lewat jalur penolakan | setelah dikonfirmasi pemilik proses |
 
 ### Yang perlu diketahui soal data dev
@@ -72,18 +82,29 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 - Keadaan workflow dev: **6 nominasi** (2 disetujui · 2 menunggu verifikasi · 1 dikembalikan untuk revisi · 1 ditolak), **1 suksesor ditetapkan** dengan 2 rencana pengembangan, **6 notifikasi** (5 belum dibaca + 1 sudah). Kalau angkanya bergeser tanpa ada yang menyentuh workflow, jalankan `npm run verifikasi:data`.
 - Sisa temuan Antrian Pembersihan yang wajar ada: **27** riwayat jabatan belum terstruktur + **2** selisih Kotak 9. Kalau angkanya berubah drastis, cek apa yang menyentuh data.
 - Ketiga jabatan target dev berstatus **AKTIF** dengan rubrik yang lolos seluruh pemeriksaan; kandidat lolos syarat: **17 · 8 · 10**. Kalau angka ini berubah tanpa ada yang menyunting rubrik, jalankan `npm run verifikasi:skoring`.
+- **`012_auth.sql` menambah `sesi`, `pengaturan_sistem`, `permintaan_reset_password`** + empat kolom di `users` + indeks waktu di `audit_log`. **Sandi seluruh akun seed tetap `password123`** — dan sandi itu kini ada di daftar terlarang `lib/sandi.ts`, jadi tidak bisa dipakai lagi saat mengganti sandi. Itu disengaja: sandi dev tidak boleh ikut ke produksi lewat "sudah jalan di dev".
+- Tabel `sesi` **bertambah setiap kali smoke dijalankan** (satu login per akun per proses) dan dibersihkan oportunistik saat login berikutnya. Jumlahnya tidak masuk baseline; kalau ingin bersih: `DELETE FROM sesi`.
 
-### Titik masuk Fase 7 (Auth & RBAC)
+### Titik masuk Fase 8 (Laporan & Ekspor)
 
 Yang sudah siap dipakai, jangan dibangun ulang:
 
-- [`lib/auth.ts`](lib/auth.ts) — `getCurrentUser()` masih **satu-satunya** titik akses identitas. Fase 7 cukup mengganti isinya; tidak ada komponen yang membaca cookie langsung. Pengalih peran dev dijaga env flag `NEXT_PUBLIC_DEV_ROLE_SWITCH` dan **wajib mati** di produksi.
-- `assertPeran()` + `jalankanMutasi()` sudah menegakkan wewenang **di server** untuk seluruh mutasi sejak Fase 4 — jadi tidak ada "tambal RBAC" yang perlu dikerjakan, hanya sumber identitasnya yang berganti.
-- Wewenang workflow **tidak** ditulis di halaman: daftar tombol datang dari `aksiTersedia()` di [`lib/workflow.ts`](lib/workflow.ts) dan diperiksa ulang di server oleh `terapkanAksi()`. Menyembunyikan tombol dan menolak aksi memakai satu sumber yang sama, jadi keduanya tidak bisa berselisih.
-- Pembatasan data per unit sudah ada contoh kerjanya: `ambilTugas()` dan halaman Nominasi membatasi Pengelola Unit ke `unitOrganisasiId`-nya sendiri. Fase 7 memperluas pola itu, bukan memulainya.
-- `audit_log` sudah terisi lengkap (isi sebelum & sesudah per mutasi) dan `ambilAuditEntitas()` sudah ada di `lib/audit.ts` — halaman Audit Log Viewer tinggal menampilkannya.
-- Halaman data sensitif sudah punya contoh **penolakan baca di server sebelum kueri**: `app/(app)/master/hukuman-disiplin/page.tsx`. Ikuti itu untuk halaman lain yang perlu dibatasi.
-- Yang **belum** ada dan jadi inti Fase 7: Login/Lupa Password, sesi & timeout, middleware, Profil Saya, Manajemen Pengguna & Peran, Audit Log Viewer, dan mematikan pengalih peran dev.
+- **Seluruh angka laporan sudah punya sumbernya** di `lib/kueri/*` — Gap Analysis & Laporan Nominasi tidak perlu kueri baru dari nol, tapi **jangan** menyalin agregasinya ke berkas laporan. Kalau bentuknya berbeda, perluas kueri yang ada.
+- **Ekspor adalah satu-satunya bagian yang benar-benar baru**, dan U-10 sudah menetapkan bentuknya: job asinkron + progress + notifikasi selesai. Infrastruktur notifikasinya **sudah ada** (`lib/notifikasi.ts` + tabel `notifikasi` + Inbox), jadi yang perlu dibangun cuma antrean job-nya.
+- **Warna chart datang dari CSS variable** (`lib/warna-seri.ts`), jadi serialisasi SVG naif menghasilkan gambar tanpa warna. Ekspor gambar harus menyuntikkan nilai warna yang sudah dihitung, bukan menyalin `var(--chart-1)`.
+- `audit_log` sudah bisa dibaca berpaginasi & tersaring (`lib/kueri/admin.ts`), jadi "ekspor audit log" tinggal menyambung ke kueri yang sama dengan `LIMIT` berbeda.
+
+### Bagaimana auth bekerja (Fase 7) — baca sebelum menyentuh apa pun yang berkaitan dengan akses
+
+- **Satu titik identitas, masih.** [`lib/auth.ts`](lib/auth.ts) → `getCurrentUser()`. Isinya sekarang membaca sesi asli lewat [`lib/sesi.ts`](lib/sesi.ts). Tidak ada komponen yang membaca cookie sendiri, dan jangan mulai — mengganti ke SSO nanti harus tetap cukup menyentuh satu berkas.
+- **Tiga lapis, dengan pembagian tugas yang tegas:**
+  1. `middleware.ts` — **gerbang cepat, bukan otoritas.** Berjalan di edge, tidak bisa menyentuh MySQL, jadi ia hanya melihat ada tidaknya cookie. **Jangan menaruh RBAC di sini**: cookie yang sudah dicabut akan lolos, dan peran tidak tersimpan di cookie sama sekali.
+  2. `app/(app)/layout.tsx` — `wajibMasuk()`, tempat sesi **benar-benar** divalidasi. Karena ia membungkus seluruh halaman aplikasi, tidak ada route di bawahnya yang bisa lupa memasang penjagaan.
+  3. `assertPeran()` / `jalankanMutasi()` di setiap server action — penegakan wewenang, tidak peduli middleware berkata apa.
+- **Penolakan baca di halaman** memakai `<AksesDitolak>` ([`components/ui/akses-ditolak.tsx`](components/ui/akses-ditolak.tsx)) dan harus terjadi **sebelum kueri apa pun** — data yang sudah terkirim ke klien tidak bisa ditarik kembali. Contohnya di `master/hukuman-disiplin`, `bandingkan`, dan ketiga halaman `admin/*`.
+- **Pembatasan per unit** diputuskan di [`lib/lingkup.ts`](lib/lingkup.ts) (murni, teruji) dan ditegakkan **di SQL** lewat `unitWajib` pada filter kueri. Filter unit wajib dipasang **berdampingan** dengan filter pilihan pengguna — dua klausa unit beririsan dengan sendirinya, sehingga `?unit=` milik unit lain menghasilkan nol baris alih-alih diam-diam dialihkan ke unit sendiri.
+- **Peristiwa auth punya pintu tulis audit sendiri**, `catatPeristiwaAuth()` — `jalankanMutasi()` menuntut pengguna yang sudah masuk, jadi "masuk gagal" menurut definisi tidak bisa lewat sana. `grep 'jalankanMutasi\|catatPeristiwaAuth'` tetap menemukan seluruh jalur tulis ke `audit_log`.
+- **Yang tidak boleh dilonggarkan tanpa alasan tertulis:** balasan gagal login yang sama untuk semua sebab, sandi yang tidak pernah masuk URL (pakai `<form action>`, bukan `onSubmit`), sandi sementara yang hanya tampil sekali, dan larangan menonaktifkan Super Admin aktif terakhir.
 
 ## Peta Kode
 
@@ -102,26 +123,33 @@ Yang sudah siap dipakai, jangan dibangun ulang:
 | `lib/kueri/dasar.ts` | Potongan SQL lintas berkas: `CTE_ASESMEN_TERBARU` (asesmen mana yang berlaku) & `SUBKUERI_UNIT_TURUNAN` (unit + seluruh turunannya, rekursif) | Keduanya **aturan bisnis**, bukan kenyamanan menulis. Menyalinnya ke berkas lain = dua halaman menghitung populasi berbeda tanpa ketahuan |
 | `lib/urut.ts`, `lib/banding.ts`, `lib/warna-seri.ts` | Konstanta & aturan yang dipakai **server dan klien sekaligus** | Sengaja di luar `lib/kueri/*` (yang ber-`server-only`) dan di luar berkas `'use client'`. Semua ekspor dari berkas `'use client'` jadi client reference — fungsi di sana tidak bisa dipanggil Server Component |
 | `lib/db/schema.ts`, `relations.ts` | Hasil `npm run db:pull` | **Jangan diedit tangan** |
-| `lib/auth.ts` | `getCurrentUser()` — satu-satunya titik akses identitas | Fase 7 cukup mengganti isinya; tidak ada komponen yang membaca cookie langsung |
-| `components/ui/` | Primitif: Button (pending state bawaan), Skeleton, Badge, Panel, DataTable, Dialog, Toast, tiga keadaan kosong | `EmptyState` ada di berkas sendiri (bukan Client Component) karena tidak butuh interaktivitas |
+| `lib/auth.ts` | `getCurrentUser()`, `wajibMasuk()`, `assertPeran()` — satu-satunya titik akses identitas | Isinya sudah diganti ke sesi asli di Fase 7. Tetap satu titik: penggantian berikutnya (SSO) juga harus cukup menyentuh berkas ini |
+| `lib/sesi.ts` | Pembuatan, pembacaan, pencabutan sesi; daftar perangkat aktif | Ber-`server-only`. `bacaSesi()` di-`cache()` per permintaan — tanpa itu layout, halaman, dan tiap server action menembak kueri yang sama berkali-kali. Kedua tenggat diperiksa **di dalam SQL yang sama** dengan pengambilan penggunanya: memeriksanya di JavaScript memakai jam server aplikasi, sedangkan yang menulis `terakhir_aktif_pada` adalah jam MySQL, dan dua jam yang berbeda beberapa detik menghasilkan sesi yang kadang hidup kadang mati tanpa pola |
+| `lib/sandi.ts` | Hash bcrypt + **kebijakan sandi** | Bebas DB & Next supaya bisa diuji murni. Mengunci satu aturan yang tidak akan ditemukan siapa pun dengan mencoba-coba: **bcrypt memotong di 72 byte tanpa memberi tahu**, jadi dua sandi panjang yang berbeda di ujungnya akan saling cocok. Diukur dalam byte, bukan karakter |
+| `lib/lingkup.ts` | Aturan pembatasan data per unit | Murni & teruji, **bukan** `server-only` — dipakai juga komponen klien untuk menjelaskan batasannya. **Gagal tertutup:** Pengelola Unit tanpa unit tidak melihat apa-apa, bukan melihat semua. Penegakannya di SQL lewat `unitWajib` pada filter kueri |
+| `lib/pengaturan.ts` | Parameter sistem (masa berlaku asesmen, tenggat sesi, batas gagal masuk) | Nilai bawaannya **sama persis** dengan konstanta yang sudah dipakai sejak Fase 0, jadi baris yang hilang atau nilai rusak jatuh ke angka yang sudah terbukti — bukan ke nol atau ke error. `lib/scoring` tetap bebas DB: ia **menerima** `masaBerlakuTahun` sebagai argumen, pemanggilnya yang mengambil dari sini |
+| `lib/diff-audit.ts` | Bandingkan `data_sebelum` vs `data_sesudah` satu baris audit | Murni & teruji. Perbandingannya **longgar** terhadap beda tipe dari driver (`1` vs `true`, `"10"` vs `10`): riwayat yang penuh perubahan palsu tidak bisa dibedakan dari riwayat yang benar, dan pada baris ke-30 pemeriksanya berhenti membaca |
+| `components/ui/` | Primitif: Button (pending state bawaan), Skeleton, Badge, Panel, DataTable, Dialog, Toast, tiga keadaan kosong, `Bidang`+`kelasInput`, `AksesDitolak`, `CatatanLingkup` | `EmptyState` ada di berkas sendiri (bukan Client Component) karena tidak butuh interaktivitas. `Bidang` & `AksesDitolak` diangkat ke sini di Fase 7 setelah polanya tersalin di lima berkas — sepuluh salinan komponen penampil pesan kesalahan berarti sepuluh cara pesan itu bisa terlihat berbeda, dan yang paling mungkin tertinggal justru `role="alert"`-nya |
 | `components/charts/` | Wrapper chart sadar tema; warna dari token `--chart-1..4` lewat `lib/warna-seri.ts` | Kotak 9 pakai CSS Grid, bukan library chart. **Warna seri chart TIDAK BOLEH memakai warna status** (success/warning/danger) — itu punya makna tetap. Palet 4 warna sudah divalidasi untuk **semua pasangan** di kedua tema, tapi pemisahan terburuknya di pita CVD 6–8 → **setiap seri wajib punya pola garis berbeda** + legenda yang menggambar polanya + padanan tabel angka. Warna sendirian tidak cukup |
 | `lib/importer/` | Gerbang masuk data sumber: normalisasi §6 + **pencatatan temuan**. Bebas DB, bisa diuji murni | Mengorkestrasi `lib/normalisasi`/`lib/nip`/`lib/scoring`, bukan mengulangnya. Uji diorganisasi menurut **nomor aturan phase.md §6** supaya kelengkapannya terukur terhadap dokumen |
 | `lib/audit.ts` | `jalankanMutasi()` — **satu-satunya pintu tulis** | Ia memeriksa peran → baca keadaan sebelum → tulis → catat audit. Menulis DB tanpa lewat sini berarti mutasi tanpa jejak audit |
 | `lib/aksi/` | Server action: Zod di boundary, `HasilAksi` seragam, galat per-field | Tidak melempar untuk kesalahan wajar (validasi/wewenang/constraint) — melempar akan mengganti seluruh halaman padahal yang perlu cuma pesan di sebelah field |
-| `scripts/` | Generator SQL & pemeriksa: `gen-006-seed-perluasan`, `gen-008-seed-risiko`, `recompute`, `verifikasi-data`, `verifikasi-skoring`, `ukur-kueri`, `ukur-hitung-ulang` | Angka hasil hitung di DB **selalu** output kode, bukan tulisan tangan. `seed-volume.ts` memuat daftar berkas skema — **tambahkan berkas DDL baru ke sana**, kalau tidak `pupr_dev_volume` gagal dibangun (tabel master disalin dengan `SELECT *`, jadi satu kolom tertinggal = jumlah kolom tidak cocok) |
+| `scripts/` | Generator SQL & pemeriksa: `gen-006-seed-perluasan`, `gen-008-seed-risiko`, `recompute`, `verifikasi-data`, `verifikasi-skoring`, `ukur-kueri`, `ukur-hitung-ulang`, `jalankan-sql` | Angka hasil hitung di DB **selalu** output kode, bukan tulisan tangan. `seed-volume.ts` memuat daftar berkas skema — **tambahkan berkas DDL baru ke sana**, kalau tidak `pupr_dev_volume` gagal dibangun (tabel master disalin dengan `SELECT *`, jadi satu kolom tertinggal = jumlah kolom tidak cocok) |
 
 **Perintah yang sering dipakai:**
 
 ```
 npm run verifikasi          # typecheck + lint + uji unit
-npm run verifikasi:data     # 36 pemeriksaan isi pupr_dev (silang-uji SQL murni, termasuk konsistensi workflow)
+npm run verifikasi:data     # 46 pemeriksaan isi pupr_dev (silang-uji SQL murni: skoring, konsistensi workflow, keadaan auth)
 npm run verifikasi:skoring  # lib/skor-massal vs isi match_score — menangkap KODE yang menyimpang
-npm run smoke               # Playwright Fase 0 (shell) + 1 (dashboard) + 2 (direktori/profil) + 3 (peta/bandingkan) + 4 (master/kualitas) + 5 (rule engine) + 6 (talent pool/workflow)
+npm run smoke               # Playwright Fase 0 (shell) + 1 (dashboard) + 2 (direktori/profil) + 3 (peta/bandingkan)
+                            #           + 4 (master/kualitas) + 5 (rule engine) + 6 (talent pool/workflow) + 7 (auth & RBAC)
 npm run db:recompute        # hasilkan ulang doc/sql/007_recompute.sql dari lib/scoring
 npm run ukur:kueri          # waktu 44 kueri halaman Fase 1-6 (ambang 150 ms/kueri)
 npm run ukur:hitung-ulang   # waktu jalur TULIS Hitung Ulang (ambang 30 s/jabatan target)
 npm run db:gen-risiko       # hasilkan ulang doc/sql/008_seed_risiko_kekosongan.sql
 npm run db:volume           # bangun pupr_dev_volume (~2.000 pegawai)
+npm run db:sql doc/sql/0NN_*.sql   # jalankan satu berkas skema ke pupr_dev (tambah --db untuk DB lain)
 npm run ukur:kueri:volume   # waktu kueri pada skala produksi
 npm run ukur:hitung-ulang:volume  # waktu Hitung Ulang pada skala produksi
 npm run ukur:payload        # buktikan payload render tidak tumbuh linear
@@ -135,7 +163,8 @@ npm run ukur:payload        # buktikan payload render tidak tumbuh linear
 
 - MySQL 8-compatible (docker container lokal), host `127.0.0.1:3306`, database `pupr_dev`.
 - Kredensial dev: `devuser` / `dev123` (dev-only, container lokal — bukan kredensial produksi, jangan pernah dipakai/disamakan dengan environment lain).
-- Skema & seed sudah dieksekusi. Reset total = jalankan `doc/sql/001` → `009` **berurutan** (001 drop+recreate semua tabel). Rantai ini terbukti reproducible: dua kali jalan dari nol menghasilkan checksum tabel inti yang identik.
+- Skema & seed sudah dieksekusi. Reset total = jalankan `doc/sql/001` → `012` **berurutan** (001 drop+recreate semua tabel), mis. `npm run db:sql doc/sql/001_schema.sql` satu per satu. Rantai ini terbukti reproducible: dua kali jalan dari nol menghasilkan checksum tabel inti yang identik.
+- Setelah menambah berkas DDL baru: jalankan `npm run db:pull` (regenerasi `lib/db/schema.ts` — **jangan diedit tangan**) dan tambahkan berkasnya ke `BERKAS_SKEMA` di `scripts/seed-volume.ts`.
 - `007_recompute.sql` **dihasilkan program**, bukan ditulis tangan. Kalau `lib/scoring` berubah, jalankan `npm run db:recompute` untuk membuatnya ulang, lalu eksekusi.
 - `pupr_dev_volume` adalah database uji performa terpisah (~2.000 pegawai), dibangun ulang oleh `npm run db:volume`. Aman dihapus: `DROP DATABASE pupr_dev_volume`.
 
@@ -164,3 +193,4 @@ Target rasa: **profesional, bersih, seperti Notion** — bukan tampilan marketin
 
 - Data pegawai (NIP, kinerja, hukuman disiplin) adalah data ASN sensitif — perlakukan sesuai catatan kepatuhan di `doc/PRD.md` §7.3 (rujukan UU PDP No. 27/2022), jangan expose lebih dari yang diizinkan `scope_akses` di endpoint eksternal.
 - Ada beberapa keputusan desain yang masih berstatus **asumsi, belum dikonfirmasi user** — lihat `doc/ERD.md` §5 dan `doc/PRD.md` §10 sebelum mengambil keputusan implementasi yang bergantung padanya (mis. metode agregasi sub-indikator, siapa yang menjalankan tahap verifikasi kepegawaian, relasi dengan *karir.pu.go.id*).
+- **Sebelum produksi, tiga hal wajib diganti** dan tidak satu pun bisa ditemukan oleh uji: (1) **sandi seluruh akun seed** masih `password123` — atur ulang semuanya lewat Manajemen Pengguna supaya pemiliknya dipaksa mengganti saat masuk; (2) `NEXT_PUBLIC_DEV_ROLE_SWITCH` sudah tidak dipakai kode mana pun, hapus saja dari env; (3) **HTTPS wajib** — cookie sesi dipasang `secure` hanya ketika `NODE_ENV === 'production'`, jadi menjalankan build produksi di belakang HTTP polos berarti cookie sesi melintas terbuka.

@@ -21,6 +21,13 @@ export interface ItemNav {
   peran?: readonly Peran[]
   /** Kata kunci tambahan untuk command palette. */
   kataKunci?: string[]
+  /**
+   * Tidak ditampilkan di sidebar, tapi tetap ada di breadcrumb & command
+   * palette. Untuk halaman yang jalan masuknya dari tempat lain (Profil Saya
+   * dibuka dari menu pengguna) — didaftarkan di sini supaya breadcrumb-nya
+   * tidak kosong dan `Ctrl+K` tetap menemukannya.
+   */
+  luarSidebar?: boolean
 }
 
 export interface GrupNav {
@@ -241,10 +248,23 @@ export const NAVIGASI: GrupNav[] = [
       },
     ],
   },
+  {
+    label: 'Akun',
+    item: [
+      {
+        label: 'Profil Saya',
+        href: '/profil',
+        ikon: 'UserRound',
+        fase: 7,
+        luarSidebar: true,
+        kataKunci: ['akun', 'sandi', 'ganti password', 'sesi', 'perangkat', 'keluar'],
+      },
+    ],
+  },
 ]
 
 /** Fase yang halamannya sudah dibangun. Naikkan seiring fase selesai. */
-export const FASE_TERSEDIA = 6
+export const FASE_TERSEDIA = 7
 
 export function itemTersedia(item: ItemNav): boolean {
   return item.fase <= FASE_TERSEDIA
@@ -256,12 +276,25 @@ export function bolehLihat(item: ItemNav, peran: Peran | null): boolean {
   return item.peran.includes(peran)
 }
 
-/** Navigasi yang sudah disaring menurut peran pengguna. */
+/**
+ * Navigasi yang sudah disaring menurut peran pengguna.
+ *
+ * Menyertakan item `luarSidebar` — komponen yang merender sidebar-lah yang
+ * membuangnya (lihat `components/layout/sidebar.tsx`). Kalau disaring di sini,
+ * command palette & breadcrumb ikut kehilangan halamannya.
+ */
 export function navigasiUntuk(peran: Peran | null): GrupNav[] {
   return NAVIGASI.map((grup) => ({
     ...grup,
     item: grup.item.filter((item) => bolehLihat(item, peran)),
   })).filter((grup) => grup.item.length > 0)
+}
+
+/** Navigasi untuk sidebar: tanpa item yang jalan masuknya dari tempat lain. */
+export function navigasiSidebar(navigasi: GrupNav[]): GrupNav[] {
+  return navigasi
+    .map((grup) => ({ ...grup, item: grup.item.filter((i) => !i.luarSidebar) }))
+    .filter((grup) => grup.item.length > 0)
 }
 
 export function semuaItem(): ItemNav[] {

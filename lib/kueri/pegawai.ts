@@ -47,6 +47,17 @@ export const UKURAN_HALAMAN_DIREKTORI = 25
 export interface FilterDirektori {
   cari?: string
   unitId?: number
+  /**
+   * Batas unit yang WAJIB, dari peran pengguna (`lib/lingkup.ts`) — bukan
+   * pilihan yang bisa dihapus dari URL.
+   *
+   * Dipasang **berdampingan** dengan `unitId`, bukan menggantikannya: dua
+   * klausa unit menghasilkan irisan dengan sendirinya, sehingga Pengelola Unit
+   * yang mengetik `?unit=` milik unit lain mendapat nol baris — bukan diam-diam
+   * dialihkan ke unitnya sendiri, yang akan membuatnya mengira sedang melihat
+   * unit yang ia minta.
+   */
+  unitWajib?: number | null
   eselon?: string
   jenjang?: string
   tingkatPendidikan?: string
@@ -96,6 +107,10 @@ function bangunFilter(f: FilterDirektori): { where: string; params: unknown[] } 
     // keempat, pegawainya diam-diam hilang dari hasil filter.
     syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(f.unitId)
+  }
+  if (f.unitWajib !== undefined && f.unitWajib !== null) {
+    syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
+    params.push(f.unitWajib)
   }
   if (f.eselon) {
     syarat.push('j.eselon = ?')
@@ -291,7 +306,27 @@ export interface ProfilPegawai {
   lamaMenjabatTahun: number | null
 }
 
-export async function ambilProfil(nip: string): Promise<ProfilPegawai | null> {
+/**
+ * Profil satu pegawai.
+ *
+ * `unitWajib` menegakkan pembatasan data per unit **di dalam kueri**, bukan
+ * dengan memeriksa hasilnya setelah terambil. Bedanya bukan gaya: memeriksa
+ * setelahnya berarti barisnya sempat ada di memori proses, dan cara paling
+ * mudah agar ia bocor adalah seseorang menambahkan satu `console.log` atau
+ * satu prop ke komponen. Yang tidak pernah terbaca tidak bisa bocor.
+ *
+ * Pegawai di luar lingkup mengembalikan `null` — halaman memperlakukannya
+ * sama dengan NIP yang tidak ada. Itu disengaja: pesan "ada tapi Anda tidak
+ * boleh" mengonfirmasi keberadaan orangnya kepada yang tidak berhak tahu.
+ */
+export async function ambilProfil(
+  nip: string,
+  unitWajib?: number | null,
+): Promise<ProfilPegawai | null> {
+  const batasUnit =
+    unitWajib !== undefined && unitWajib !== null
+      ? ` AND u.id IN (${SUBKUERI_UNIT_TURUNAN})`
+      : ''
   const r = await kueriSatu<Record<string, unknown>>(
     `SELECT p.*, j.nama_jabatan, j.jenis_jabatan, j.jenjang, j.eselon,
             u.nama_unit, ui.nama_unit AS unit_induk
@@ -299,8 +334,8 @@ export async function ambilProfil(nip: string): Promise<ProfilPegawai | null> {
      LEFT JOIN jabatan j ON j.id = p.jabatan_id
      LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      LEFT JOIN unit_organisasi ui ON ui.id = u.parent_id
-     WHERE p.nip = ?`,
-    [nip],
+     WHERE p.nip = ?${batasUnit}`,
+    batasUnit === '' ? [nip] : [nip, unitWajib],
   )
   if (!r) return null
 

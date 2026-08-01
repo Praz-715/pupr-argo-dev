@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { konteksMasuk } from './_masuk.mjs'
 
 /**
  * Smoke test Fase 2 — Direktori Pegawai & Profil Talenta 360°.
@@ -58,7 +59,7 @@ const browser = await chromium.launch()
 
 try {
   for (const tema of ['light', 'dark']) {
-    const ctx = await browser.newContext({
+    const ctx = await konteksMasuk(browser, { base: BASE,
       viewport: { width: 1600, height: 1000 },
       colorScheme: tema,
     })
@@ -290,7 +291,7 @@ try {
     ['tablet 834px', 834],
     ['tablet sempit 768px', 768],
   ]) {
-    const ctx = await browser.newContext({ viewport: { width: lebar, height: 1180 } })
+    const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const page = await ctx.newPage()
     await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
     await tungguTabel(page)
