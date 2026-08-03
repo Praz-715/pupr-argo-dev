@@ -264,7 +264,7 @@ export const NAVIGASI: GrupNav[] = [
 ]
 
 /** Fase yang halamannya sudah dibangun. Naikkan seiring fase selesai. */
-export const FASE_TERSEDIA = 7
+export const FASE_TERSEDIA = 8
 
 export function itemTersedia(item: ItemNav): boolean {
   return item.fase <= FASE_TERSEDIA

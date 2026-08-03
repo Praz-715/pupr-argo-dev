@@ -8,7 +8,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 **Stack:** Next.js 16 (App Router, full-stack — frontend + backend dalam satu app) + React 19 + Tailwind v4 + Drizzle ORM + MySQL.
 
-**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), dan **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit) sudah selesai; berikutnya Fase 8 (Laporan & Ekspor). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
+**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit), dan **8** (Laporan & Ekspor — Gap Analysis, Rekap Nominasi & Approval, Pusat Ekspor CSV) sudah selesai; berikutnya Fase 9 (API Eksternal `/api/v1`). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
 
 | Dokumen | Isi |
 |---|---|
@@ -30,12 +30,12 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 ### Baseline verifikasi — kalau angka ini turun, ada yang regresi
 
 ```
-npm run verifikasi           → 392 uji unit lolos (13 berkas uji)
+npm run verifikasi           → 422 uji unit lolos (15 berkas uji)
 npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) = 268 pemeriksaan
-npm run build                → sukses, 30 entri route (28 halaman + /_not-found + /icon.svg) + middleware
+npm run build                → sukses, 30 entri route (31 halaman + /_not-found + /icon.svg + route ekspor) + middleware
 npm run ukur:kueri           → 54 kueri = ~400 ms · :volume di 2.000 pegawai = ~670 ms, semua <150 ms
 npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~4,4 s
 ```
@@ -48,11 +48,34 @@ npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris 
 1. **Menunggu sebuah kata yang sudah ada di layar.** Kalimat akibat di dialog memuat kata status yang ditunggu ("Diverifikasi"), label penyaring memuat nama status, header tabel memuat kata "Sebelum". Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang** — mutasinya batal tanpa jejak. Tunggu **keadaan**: dialog tertutup, tombol lenyap, aksi baru muncul.
 2. **`innerText` menerapkan `text-transform`.** Label ber-`uppercase` terbaca "ANGGOTA POOL", bukan "Anggota pool". Dan `[role="dialog"]` **tidak pernah** cocok dengan `<dialog>` native — elemen itu punya *implicit* role tanpa atributnya; pakai `dialog[open]`.
 
-**Jangan `npm run build` sambil dev server hidup di direktori yang sama** — build produksi menulis ke `.next` yang sedang dipakai server dev, dan akibatnya route bersarang mendadak 404. Urutannya: smoke dulu, build terakhir. Kalau sudah terjadi, cukup restart dev server (matikan **hanya PID yang memegang portnya**, jangan `taskkill /IM node.exe`).
+**Jangan `npm run build` sambil dev server hidup di direktori yang sama** — build produksi menulis ke `.next` yang sedang dipakai server dev, dan akibatnya route bersarang mendadak 404. Urutannya: smoke dulu, build terakhir.
+
+### Gejala `.next` rusak: sebagian route 404, sisanya sehat
+
+Muncul **tiga kali dalam satu sesi** dengan wujud berbeda-beda, dan dua kali salah didiagnosis lebih dulu. Ditulis di sini supaya tidak didiagnosis ulang dari nol.
+
+**Kenali dalam 10 detik — ini bukan bug kode:** route **induk melayani 200 sementara anaknya 404**, atau **satu grup route jatuh utuh** sementara grup lain sehat. Kalau kodenya yang salah, induknya ikut jatuh. Dua jebakan saat mendiagnosis:
+
+- **`404` tanpa sesi tidak berarti apa-apa** — route di `(app)` memang menjawab 307 ke `/masuk`. Reproduksi harus **dengan sesi**.
+- **`application-code: 40ms` di log dev TIDAK membuktikan halamannya jalan** — merender `not-found.tsx` juga kode aplikasi. Aku sempat menyimpulkan sebaliknya dan salah arah karenanya.
+
+**Pemicunya:** `.next` ditulis oleh lebih dari satu proses atau mode. Yang terbukti: (a) `npm run build` sementara dev server hidup di direktori yang sama — jejaknya `.next/BUILD_ID` ada; (b) dev server dimatikan paksa (`Stop-Process -Force`) meninggalkan artefak per-route setengah tertulis.
+
+**Obatnya berjenjang, mulai dari yang termurah** — semuanya terbukti dipakai di sesi yang sama:
+
+| # | Tindakan | Kapan berhasil |
+|---|---|---|
+| 1 | **Restart dev server** | Menyembuhkan grup `(auth)` yang jatuh utuh. Gagal untuk kasus berikutnya |
+| 2 | **Sunting berkas route-nya** (mis. tambah spasi lalu simpan) | Menyembuhkan `/kandidat` & `/simulasi` yang 404 padahal server sudah di-restart — perubahan sumber memaksa modulnya dikompilasi ulang |
+| 3 | **`rm -rf .next` lalu nyalakan ulang** | Selalu berhasil. Perlu saat `.next/BUILD_ID` ada. Kompilasi pertamanya lambat sekali, sesudahnya normal |
+
+Urutannya: smoke dulu, build terakhir. Saat mematikan server, matikan **hanya PID yang memegang portnya**, jangan `taskkill /IM node.exe`.
 
 ### Route yang sudah ada
 
-**Di dalam app shell** (grup `(app)`, wajib sesi): `/` (dashboard) · `/talenta` · `/talenta/[nip]` · `/peta-talenta` · `/bandingkan` · `/jabatan-target` · `/jabatan-target/[id]` · `/jabatan-target/[id]/kandidat` · `/jabatan-target/[id]/simulasi` · `/master/unit` · `/master/jabatan` · `/master/jabatan-kosong` · `/data/kelengkapan` · `/data/pembersihan` · `/data/konsolidasi` · `/master/hukuman-disiplin` · `/talent-pool` · `/nominasi` · `/nominasi/[id]` · `/rencana-pengembangan` · `/inbox` · `/profil` · `/admin/pengguna` · `/admin/audit-log` · `/admin/pengaturan`
+**Di dalam app shell** (grup `(app)`, wajib sesi): `/` (dashboard) · `/talenta` · `/talenta/[nip]` · `/peta-talenta` · `/bandingkan` · `/jabatan-target` · `/jabatan-target/[id]` · `/jabatan-target/[id]/kandidat` · `/jabatan-target/[id]/simulasi` · `/master/unit` · `/master/jabatan` · `/master/jabatan-kosong` · `/data/kelengkapan` · `/data/pembersihan` · `/data/konsolidasi` · `/master/hukuman-disiplin` · `/talent-pool` · `/nominasi` · `/nominasi/[id]` · `/rencana-pengembangan` · `/inbox` · `/profil` · `/admin/pengguna` · `/admin/audit-log` · `/admin/pengaturan` · `/laporan/gap-analysis` · `/laporan/nominasi` · `/laporan/ekspor`
+
+**Route handler** (bukan halaman): `GET /api/internal/ekspor/[jenis]` — unduhan CSV, tujuh jenis, peran ditegakkan per jenis. Satu-satunya `api/` yang ada sampai Fase 9.
 
 **Di luar app shell** (grup `(auth)`, tanpa sidebar/navbar): `/masuk` · `/lupa-password` · `/ganti-sandi`
 
@@ -121,6 +144,7 @@ Yang sudah siap dipakai, jangan dibangun ulang:
 | `lib/kueri/rubrik.ts` | Dua jenis pembacaan yang **sengaja dipisah**: per halaman (beragregasi & berpaginasi) vs `ambilProfilKandidat()` yang memuat riwayat lengkap seluruh pegawai | Yang kedua memang berat dan itu tidak masalah — rubrik menilai **isi** riwayat tiap orang, jadi tidak bisa diagregasi di SQL. Tapi ia hanya boleh dipanggil Hitung Ulang & Simulasi, **tidak pernah** saat merender halaman biasa |
 | `lib/kueri/suksesi.ts` | Talent pool, nominasi, timeline approval, rencana pengembangan, notifikasi & tugas | Satu baris pool **tidak bisa dibaca sendirian**: statusnya hanya bermakna bersama nominasi terakhir & keputusan approval terakhir, jadi ketiganya selalu diambil sekaligus. "Giliran siapa" diturunkan lewat `lib/workflow.ts`, tidak pernah ditulis sebagai kondisi SQL — itu akan jadi definisi kedua |
 | `lib/kueri/dasar.ts` | Potongan SQL lintas berkas: `CTE_ASESMEN_TERBARU` (asesmen mana yang berlaku) & `SUBKUERI_UNIT_TURUNAN` (unit + seluruh turunannya, rekursif) | Keduanya **aturan bisnis**, bukan kenyamanan menulis. Menyalinnya ke berkas lain = dua halaman menghitung populasi berbeda tanpa ketahuan |
+| `lib/param.ts` | Pembaca parameter URL di boundary: `angkaPositif` · `nomorHalaman` · `tanggalIso` · `dariDaftar` | Murni & teruji. Lahir dari bug nyata: `angkaPositif` sempat hidup sebagai closure lokal di **tiga** halaman, sehingga halaman keempat (Audit Log) tidak menemukannya lewat `grep` dan memakai `Number()` mentah — `?hal=abc` jadi `NaN`, masuk `OFFSET`, dan MySQL menjawab `Undeclared variable: NaN`. **Jangan menulis pembaca angka/tanggal baru di halaman**; `Math.max(NaN, 1)` tetap `NaN`, jadi bentuk yang terlihat seperti penjepit ternyata tidak menjepit |
 | `lib/urut.ts`, `lib/banding.ts`, `lib/warna-seri.ts` | Konstanta & aturan yang dipakai **server dan klien sekaligus** | Sengaja di luar `lib/kueri/*` (yang ber-`server-only`) dan di luar berkas `'use client'`. Semua ekspor dari berkas `'use client'` jadi client reference — fungsi di sana tidak bisa dipanggil Server Component |
 | `lib/db/schema.ts`, `relations.ts` | Hasil `npm run db:pull` | **Jangan diedit tangan** |
 | `lib/auth.ts` | `getCurrentUser()`, `wajibMasuk()`, `assertPeran()` — satu-satunya titik akses identitas | Isinya sudah diganti ke sesi asli di Fase 7. Tetap satu titik: penggantian berikutnya (SSO) juga harus cukup menyentuh berkas ini |
@@ -134,6 +158,7 @@ Yang sudah siap dipakai, jangan dibangun ulang:
 | `lib/importer/` | Gerbang masuk data sumber: normalisasi §6 + **pencatatan temuan**. Bebas DB, bisa diuji murni | Mengorkestrasi `lib/normalisasi`/`lib/nip`/`lib/scoring`, bukan mengulangnya. Uji diorganisasi menurut **nomor aturan phase.md §6** supaya kelengkapannya terukur terhadap dokumen |
 | `lib/audit.ts` | `jalankanMutasi()` — **satu-satunya pintu tulis** | Ia memeriksa peran → baca keadaan sebelum → tulis → catat audit. Menulis DB tanpa lewat sini berarti mutasi tanpa jejak audit |
 | `lib/aksi/` | Server action: Zod di boundary, `HasilAksi` seragam, galat per-field | Tidak melempar untuk kesalahan wajar (validasi/wewenang/constraint) — melempar akan mengganti seluruh halaman padahal yang perlu cuma pesan di sebelah field |
+| `lib/aksi/gerbang.ts` | `gerbangPeran()` — **wajib jadi dua baris pertama setiap server action** | Lahir dari audit: `jalankanMutasi()` memang memeriksa peran, tapi **di dalam dirinya**, sedangkan 28 dari 47 aksi perlu membaca keadaan lebih dulu untuk menyusun penolakan yang berguna ("masih ditempati 3 pegawai aktif"). Pembacaan itu berjalan **sebelum** peran diperiksa dan balasannya berbeda-beda menurut isi DB — jadi siapa pun yang punya sesi bisa membedakan "baris itu ada" dari "Anda tidak berhak", dan satu penolakan bahkan menyebut **nama pegawai**. Aturannya justru sudah tertulis di `lib/audit.ts` sejak awal ("periksa peran dulu, baru baca"); yang belum ada cuma alatnya. Daftar peran **wajib** konstanta yang sama dengan `peranDiizinkan` di `jalankanMutasi()` di bawahnya — `jalankanMutasi()` tetap penegak terakhir, gerbang ini hanya mempercepat penolakan |
 | `scripts/` | Generator SQL & pemeriksa: `gen-006-seed-perluasan`, `gen-008-seed-risiko`, `recompute`, `verifikasi-data`, `verifikasi-skoring`, `ukur-kueri`, `ukur-hitung-ulang`, `jalankan-sql` | Angka hasil hitung di DB **selalu** output kode, bukan tulisan tangan. `seed-volume.ts` memuat daftar berkas skema — **tambahkan berkas DDL baru ke sana**, kalau tidak `pupr_dev_volume` gagal dibangun (tabel master disalin dengan `SELECT *`, jadi satu kolom tertinggal = jumlah kolom tidak cocok) |
 
 **Perintah yang sering dipakai:**

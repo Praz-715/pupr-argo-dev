@@ -29,6 +29,8 @@ export type AksiAudit =
   | 'UBAH_STATUS'
   | 'IMPOR'
   | 'RECOMPUTE'
+  /** Ekspor data ke berkas (Fase 8) — lihat `catatEkspor()`. */
+  | 'EKSPOR'
   // Peristiwa autentikasi (Fase 7) — lihat `catatPeristiwaAuth()` di bawah.
   | 'MASUK'
   | 'MASUK_GAGAL'
@@ -111,6 +113,46 @@ export async function catatPeristiwaAuth(a: {
     entitasId: a.userId,
     sebelum: null,
     sesudah: a.detail ?? null,
+  })
+}
+
+/**
+ * Pintu tulis KETIGA — khusus **ekspor data** (Fase 8).
+ *
+ * Ekspor bukan mutasi: tidak ada yang berubah, jadi `jalankanMutasi()` tidak
+ * cocok (ia menuntut keadaan sebelum & sesudah). Tapi ia juga bukan peristiwa
+ * tanpa wewenang seperti `catatPeristiwaAuth()` — perannya justru diperiksa.
+ *
+ * Ia dicatat karena satu alasan yang tidak berlaku untuk pembacaan biasa: **data
+ * keluar dari batas aplikasi.** Sesudah berkasnya terunduh, tidak ada aturan
+ * akses aplikasi ini yang masih berlaku atasnya — ia bisa disalin, dikirim, dan
+ * dibuka siapa pun. Untuk data ASN yang tunduk UU PDP No. 27/2022 (PRD §7.3),
+ * "siapa mengunduh apa, kapan, dengan penyaring apa" adalah satu-satunya
+ * pertanyaan yang masih bisa dijawab setelahnya.
+ *
+ * Yang **tidak** boleh masuk: isi datanya. Yang dicatat cuma jenis, penyaring,
+ * dan jumlah baris — menyalin isi ekspor ke `audit_log` berarti menduplikasi data
+ * sensitif ke tabel dengan aturan akses yang berbeda.
+ *
+ * Dengan ini invariannya menjadi:
+ * `grep 'jalankanMutasi\|catatPeristiwaAuth\|catatEkspor'` menemukan seluruh
+ * jalur tulis ke `audit_log`.
+ */
+export async function catatEkspor(a: {
+  userId: number
+  /** Jenis ekspor, mis. `gap-indikator`. */
+  jenis: string
+  /** Penyaring yang berlaku — konteks, bukan isi. */
+  penyaring: Record<string, unknown>
+  jumlahBaris: number
+}): Promise<void> {
+  await tulisAudit({
+    userId: a.userId,
+    aksi: 'EKSPOR',
+    entitas: 'ekspor',
+    entitasId: null,
+    sebelum: null,
+    sesudah: { jenis: a.jenis, penyaring: a.penyaring, jumlahBaris: a.jumlahBaris },
   })
 }
 

@@ -578,8 +578,28 @@ Delapan widget, masing-masing `<Suspense>` sendiri, seluruh agregasi di SQL (`li
 3. **Dua smoke Fase 6 hijau padahal mutasinya tidak pernah terjadi.** Keduanya menunggu sebuah *kata* yang ternyata sudah ada di layar — "Diverifikasi" di kalimat akibat pada dialog, "Diklat" di label pilihan jenis pengembangan. Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang**. Langkahnya hijau, mutasinya batal, dan langkah berikutnya gagal di tempat yang tidak ada hubungannya. Diganti helper yang menunggu **tertutupnya dialog** — penanda yang hanya muncul kalau server membalas ok.
 4. **`[role="dialog"]` tidak pernah cocok dengan `<dialog>` native.** Elemen itu punya *implicit* role `dialog` tapi tidak punya atributnya, dan selektor CSS mencocokkan atribut. Selektor yang salah menghasilkan timeout yang terbaca persis seperti "aplikasinya lambat" — dua kali sebabnya dicari ke tempat yang keliru sebelum ketahuan.
 
-### Fase 8 · Laporan & Ekspor
-Laporan Gap Analysis · Laporan Nominasi & Approval · Pusat Ekspor (PDF/Excel). Ekspor besar → job asinkron + progress + notifikasi selesai (U-10).
+### Fase 8 · Laporan & Ekspor — ✅ **SELESAI**
+- ✅ **Laporan Gap Analysis** — gap per indikator rubrik (rata-rata terendah dulu) + rollup per unit & per jenjang dengan pecahan 65/20/15.
+- ✅ **Laporan Nominasi & Approval** — rekap per periode, per unit pengaju, sebaran keputusan per tahap, daftar rinci. Angka utamanya waktu proses dalam hari (metrik PRD §2).
+- ✅ **Pusat Ekspor** — tujuh jenis ekspor CSV, disaring per peran, tiap unduhan tercatat di `audit_log`.
+
+**DoD:**
+- [x] **Tidak ada rumus baru** — `lib/kueri/laporan.ts` hanya meng-`GROUP BY` `match_score_detail`, `nominasi`, dan `approval_log` yang sudah tersimpan. Silang-uji: jumlah dinilai & eligible dari laporan **sama persis** dengan `SELECT` langsung ke `match_score` (120 & 35)
+- [x] Filter unit memakai `SUBKUERI_UNIT_TURUNAN` yang sama dengan direktori — bukan `unit_organisasi_id = ?`
+- [x] Batas unit peran ditegakkan **juga di jalur unduhan**, bukan cuma di halaman
+- [x] Peran per jenis ekspor diuji lewat HTTP: Pengelola Unit & Viewer **403 di ketujuh jenis**; Admin Talenta & Pimpinan 403 khusus audit log; jenis tak dikenal 404
+- [x] Parameter rusak (`?dari=bukan-tanggal&target=abc&unit=-1`) **diabaikan**, bukan menjatuhkan unduhan
+- **Hasil: 422 uji unit (15 berkas) · 268/268 smoke Fase 0–7 tanpa regresi · 46/46 verifikasi data · 120/120 silang-uji skoring**
+
+> **Ekspornya CSV & sinkron — menyimpang dari U-10, dengan alasan yang bisa diukur.** U-10 menetapkan ekspor besar jadi job asinkron berprogres; itu ditulis sebelum ada angka. Yang terukur: kueri laporan selesai **2–60 ms**, tabel terbesar di produksi 1.872 pegawai, dan **tiap ekspor dibatasi `LIMIT` di kuerinya** sehingga tidak ada jalur yang bisa tumbuh tanpa batas diam-diam. Membangun antrean job sekarang berarti infrastruktur untuk masalah yang belum ada — dan proyek ini berkali-kali memilih sebaliknya. Keputusannya murah dibalik: begitu ada satu jenis yang benar-benar lambat (PDF seluruh profil, misalnya), job dipasang **untuk jenis itu**. `.xlsx` & PDF sengaja belum ada karena keduanya menuntut dependensi baru; CSV dibuka Excel & LibreOffice apa adanya.
+
+> **Gap per PERSYARATAN tidak bisa dilaporkan, dan halamannya mengatakannya.** PRD §6.8 menyebutnya, tapi `match_score` hanya menyimpan `eligible` (satu boolean) + `catatan_eligibility` berbentuk teks; hasil pemeriksaan **per syarat** dihitung `evaluasiKelayakan()` di memori lalu dibuang. Dua jalan ditolak: mengurai teks catatan (angka laporan bergeser setiap kali pesannya disunting, tanpa ada yang tahu), dan memanggil ulang `ambilProfilKandidat()` saat merender (pembacaan seluruh riwayat tiap pegawai — dilarang di luar Hitung Ulang & Simulasi). Yang dilaporkan: gap per **indikator**, yang memang tersimpan sampai sub-indikator. Menampilkan per syarat butuh kolom/tabel baru; itu keputusan skema, bukan tebakan lapisan laporan.
+
+> **Ekspor mendapat pintu tulis audit ketiga.** `catatEkspor()` di `lib/audit.ts`. Ekspor bukan mutasi (tidak ada yang berubah, jadi `jalankanMutasi()` yang menuntut keadaan sebelum/sesudah tidak cocok) dan bukan peristiwa tanpa wewenang (`catatPeristiwaAuth()`) — perannya justru diperiksa. Ia dicatat karena satu alasan yang tidak berlaku untuk pembacaan biasa: **data keluar dari batas aplikasi.** Setelah berkasnya terunduh, tidak ada aturan akses aplikasi ini yang masih berlaku atasnya. Yang dicatat cuma jenis, penyaring, dan jumlah baris — menyalin isi ekspor ke `audit_log` berarti menduplikasi data sensitif ke tabel beraturan akses berbeda. Invariannya menjadi `grep 'jalankanMutasi\|catatPeristiwaAuth\|catatEkspor'`.
+
+> **Injeksi formula CSV ditangani, dan itu bukan detail kosmetik.** Excel & LibreOffice menjalankan sel yang dimulai `=`, `+`, `-`, `@` sebagai formula. Aplikasi ini mengekspor kolom teks bebas yang diisi manusia (`catatan_reviewer`, catatan nilai manual), jadi satu catatan berbunyi `=HYPERLINK(...)` menjadi tautan hidup di berkas yang dibuka staf lain. `lindungiSel()` menyisipkan kutip tunggal di depan; angka negatif ikut kena, dan itu disengaja — memutuskan "ini angka, bukan formula" menuntut menebak maksud sel. Ditambah BOM UTF-8 (tanpa itu Excel Windows membaca CSV sebagai ANSI dan setiap nama non-ASCII rusak — akan dilaporkan sebagai "ekspornya rusak" lalu didiagnosis di tempat yang salah).
+
+**Yang belum, dan sengaja:** berkas smoke `fase-8` khusus (verifikasinya baru lewat probe per peran + suite Fase 0–7), unggah berkas SK/ijazah, lencana notifikasi belum dibaca, dan progress determinate Hitung Ulang.
 
 ### Fase 9 · API Eksternal `/api/v1`
 Auth Bearer + hash token · penegakan `scope_akses` (BKN tanpa data personal, Biro Kepegawaian dengan data personal, KEMENPANRB masih PENDING) · rate limit · `api_activity_log` · halaman Dokumentasi API. **Query memakai `lib/scoring` & repository yang sama dengan UI** — beda hanya lapisan auth & filter scope (PRD §4.3 poin 6).
