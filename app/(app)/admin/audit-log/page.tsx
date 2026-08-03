@@ -4,6 +4,7 @@ import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { wajibMasuk } from '@/lib/auth'
 import { formatAngka, formatTanggal } from '@/lib/format'
 import { ambilAuditLog, ambilOpsiAudit } from '@/lib/kueri/admin'
+import { angkaPositif, nomorHalaman, tanggalIso } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { FilterAudit } from './_komponen/filter-audit'
 import { PaginasiAudit } from './_komponen/paginasi-audit'
@@ -50,20 +51,36 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Par
   }
 
   const sp = await searchParams
+
+  /**
+   * Seluruh param divalidasi di boundary lewat `lib/param` — bukan diteruskan
+   * apa adanya. Sebelum ini, `Number(sp.hal)` meneruskan `NaN` ke `OFFSET` dan
+   * `sp.dari` meneruskan teks bebas ke pembanding `DATETIME`, sehingga satu
+   * karakter salah di URL menjatuhkan halaman dengan galat MySQL.
+   *
+   * Tanggal yang tidak sah **diabaikan**, bukan ditolak dengan pesan galat:
+   * penyaring tanggal bukan bagian identitas halaman, dan URL yang rusak
+   * biasanya tautan yang terpotong saat dibagikan. Yang diabaikan tetap
+   * terlihat, karena `adaFilter` di bawah dihitung dari nilai yang **lolos**
+   * validasi — jadi keadaan kosong menyebut "belum ada jejak", bukan
+   * "tidak ada yang cocok dengan filter" yang tidak pernah dipakai.
+   */
+  const dari = tanggalIso(sp.dari)
+  const sampai = tanggalIso(sp.sampai)
   const filter = {
-    userId: sp.pengguna ? Number(sp.pengguna) : undefined,
+    userId: angkaPositif(sp.pengguna),
     entitas: sp.entitas,
     aksi: sp.aksi,
-    dari: sp.dari,
-    sampai: sp.sampai,
+    dari,
+    sampai,
     cari: sp.cari,
-    halaman: sp.hal ? Number(sp.hal) : 1,
+    halaman: nomorHalaman(sp.hal),
   }
 
   const [hasil, opsi] = await Promise.all([ambilAuditLog(filter), ambilOpsiAudit()])
 
   const adaFilter = Boolean(
-    sp.pengguna || sp.entitas || sp.aksi || sp.dari || sp.sampai || sp.cari,
+    filter.userId || sp.entitas || sp.aksi || dari || sampai || sp.cari,
   )
 
   return (
@@ -86,11 +103,14 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Par
           <FilterAudit
             opsi={opsi}
             nilai={{
-              pengguna: sp.pengguna ?? '',
+              // Yang ditampilkan adalah nilai yang LOLOS validasi, bukan isi
+              // URL apa adanya — kalau `?dari=` rusak lalu tetap dipantulkan ke
+              // input, penyaringnya terlihat aktif padahal kueri mengabaikannya.
+              pengguna: filter.userId ? String(filter.userId) : '',
               entitas: sp.entitas ?? '',
               aksi: sp.aksi ?? '',
-              dari: sp.dari ?? '',
-              sampai: sp.sampai ?? '',
+              dari: dari ?? '',
+              sampai: sampai ?? '',
               cari: sp.cari ?? '',
             }}
           />

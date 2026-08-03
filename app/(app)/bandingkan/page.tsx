@@ -17,6 +17,7 @@ import {
   cariKandidat,
   type KandidatBanding,
 } from '@/lib/kueri/perbandingan'
+import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { PanelRadar } from './_komponen/panel-radar'
 import { PemilihKandidat } from './_komponen/pemilih-kandidat'
@@ -66,8 +67,7 @@ export default async function BandingkanPage({ searchParams }: { searchParams: P
   const params = await searchParams
   const daftarNip = bacaDaftarNip(params.nip)
   const cari = params.cari?.slice(0, 100) ?? ''
-  const targetParam = Number(params.target)
-  const targetId = Number.isInteger(targetParam) && targetParam > 0 ? targetParam : null
+  const targetId = angkaPositif(params.target) ?? null
 
   return (
     <div className="space-y-5">

@@ -15,6 +15,7 @@ import {
   ambilRingkasPool,
   ambilTalentPool,
 } from '@/lib/kueri/suksesi'
+import { angkaPositif } from '@/lib/param'
 import { aksiTersedia, LABEL_POOL, type StatusPool } from '@/lib/workflow'
 import { PemilihTarget } from './_komponen/pemilih-target'
 import { TabelPool } from './_komponen/tabel-pool'
@@ -48,7 +49,7 @@ export default async function TalentPoolPage({ searchParams }: { searchParams: C
   const pengguna = await getCurrentUser()
 
   const opsiTarget = await ambilOpsiTargetPool()
-  const targetDiminta = Number(p.target ?? 0)
+  const targetDiminta = angkaPositif(p.target)
   // Tanpa `?target=`, dahulukan jabatan target yang PUNYA pekerjaan menunggu.
   // Mendarat di jabatan target yang antriannya kosong membuat kartu "Menunggu
   // tindakan 0" terbaca sebagai nol secara keseluruhan, padahal itu nol untuk

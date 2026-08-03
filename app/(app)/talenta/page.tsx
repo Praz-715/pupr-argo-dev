@@ -11,12 +11,18 @@ import {
   type FilterDirektori,
 } from '@/lib/kueri/pegawai'
 import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
+import { angkaPositif, dariDaftar, nomorHalaman } from '@/lib/param'
 import { FilterDirektori as KontrolFilter } from './_komponen/filter-direktori'
 import { TabelDirektori } from './_komponen/tabel-direktori'
 
 export const metadata = { title: 'Direktori Pegawai' }
 
 type ParamHalaman = Promise<Record<string, string | undefined>>
+
+/** Nilai yang diterima dari query string — cocok dengan ENUM-nya di DB. */
+const ESELON = ['I', 'II', 'III', 'IV', 'NON_ESELON'] as const
+const TINGKAT_PENDIDIKAN = ['SLTA', 'D3', 'S1_D4', 'S2', 'S3'] as const
+const STATUS_ASESMEN = ['Berlaku', 'Expired', 'Draft', 'TANPA_ASESMEN'] as const
 
 /**
  * Direktori Pegawai (PRD §6.3).
@@ -93,35 +99,21 @@ function DirektoriSkeleton() {
 
 /** Validasi seluruh param di boundary — jangan percaya isi query string. */
 function bacaFilter(params: Record<string, string | undefined>): FilterDirektori {
-  const angkaPositif = (nilai: string | undefined): number | undefined => {
-    if (!nilai) return undefined
-    const n = Number(nilai)
-    return Number.isInteger(n) && n > 0 ? n : undefined
-  }
-
   const kotak = angkaPositif(params.kotak)
 
   return {
     cari: params.cari?.slice(0, 100),
     unitId: angkaPositif(params.unit),
-    eselon: ['I', 'II', 'III', 'IV', 'NON_ESELON'].includes(params.eselon ?? '')
-      ? params.eselon
-      : undefined,
+    eselon: dariDaftar(params.eselon, ESELON),
     jenjang: params.jenjang?.slice(0, 60),
-    tingkatPendidikan: ['SLTA', 'D3', 'S1_D4', 'S2', 'S3'].includes(params.pendidikan ?? '')
-      ? params.pendidikan
-      : undefined,
+    tingkatPendidikan: dariDaftar(params.pendidikan, TINGKAT_PENDIDIKAN),
     kotak9: kotak !== undefined && kotak <= 9 ? kotak : undefined,
-    statusAsesmen: ['Berlaku', 'Expired', 'Draft', 'TANPA_ASESMEN'].includes(
-      params.statusAsesmen ?? '',
-    )
-      ? params.statusAsesmen
-      : undefined,
+    statusAsesmen: dariDaftar(params.statusAsesmen, STATUS_ASESMEN),
     urut: params.urut,
     // Dibiarkan undefined kalau tidak diminta → kueri memakai arah bawaan
     // kolomnya (nama A→Z, skor tertinggi dulu). Memaksa 'desc' di sini membuat
     // direktori terbuka dalam urutan Z→A.
-    arah: params.arah === 'asc' ? 'asc' : params.arah === 'desc' ? 'desc' : undefined,
-    halaman: angkaPositif(params.hal) ?? 1,
+    arah: dariDaftar(params.arah, ['asc', 'desc'] as const),
+    halaman: nomorHalaman(params.hal),
   }
 }

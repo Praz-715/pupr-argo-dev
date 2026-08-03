@@ -18,6 +18,7 @@ import {
   ambilSumberDuplikasi,
   cariJabatanUntukTarget,
 } from '@/lib/kueri/rubrik'
+import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { validasiRubrik } from '@/lib/scoring'
 import { AksiStatus } from './_komponen/aksi-status'
@@ -41,7 +42,10 @@ type KunciTab = (typeof TAB)[number]['kunci']
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { id } = await params
-  const target = await ambilJabatanTarget(Number(id))
+  // Lihat catatan di halaman Kandidat: `generateMetadata` tidak ikut dijaga oleh
+  // penjagaan di badan halaman, dan NaN yang lolos jadi galat SQL yang senyap.
+  const idTarget = angkaPositif(id)
+  const target = idTarget === undefined ? null : await ambilJabatanTarget(idTarget)
   return { title: target === null ? 'Jabatan Target' : target.namaTarget }
 }
 
@@ -64,8 +68,8 @@ export default async function EditorJabatanTargetPage({
   searchParams: Cari
 }) {
   const { id } = await params
-  const idTarget = Number(id)
-  if (!Number.isInteger(idTarget) || idTarget <= 0) notFound()
+  const idTarget = angkaPositif(id)
+  if (idTarget === undefined) notFound()
 
   const [target, pengguna] = await Promise.all([ambilJabatanTarget(idTarget), getCurrentUser()])
   if (target === null) notFound()

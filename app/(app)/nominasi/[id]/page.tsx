@@ -11,6 +11,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 import { formatNip, formatSkor, formatTanggal, formatTanggalWaktu } from '@/lib/format'
 import { ambilEntriPool, ambilNominasi, ambilRiwayatApproval } from '@/lib/kueri/suksesi'
+import { angkaPositif } from '@/lib/param'
 import {
   aksiTersedia,
   LABEL_GILIRAN,
@@ -25,7 +26,10 @@ type Params = Promise<{ id: string }>
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { id } = await params
-  const n = await ambilNominasi(Number(id))
+  // Lihat catatan di halaman Kandidat: NaN dari `generateMetadata` jadi galat SQL
+  // yang ditelan Next, jadi tidak pernah terlihat dari browser.
+  const idNominasi = angkaPositif(id)
+  const n = idNominasi === undefined ? null : await ambilNominasi(idNominasi)
   return { title: n === null ? 'Nominasi' : `Nominasi ${n.nama}` }
 }
 
@@ -38,8 +42,8 @@ export async function generateMetadata({ params }: { params: Params }) {
  */
 export default async function DetailNominasiPage({ params }: { params: Params }) {
   const { id } = await params
-  const idNominasi = Number(id)
-  if (!Number.isInteger(idNominasi) || idNominasi <= 0) notFound()
+  const idNominasi = angkaPositif(id)
+  if (idNominasi === undefined) notFound()
 
   const nominasi = await ambilNominasi(idNominasi)
   if (nominasi === null) notFound()

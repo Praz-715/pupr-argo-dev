@@ -18,6 +18,7 @@ import {
   type FilterPeta as TipeFilterPeta,
 } from '@/lib/kueri/peta-talenta'
 import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
+import { angkaPositif, dariDaftar, nomorHalaman } from '@/lib/param'
 import { DESKRIPSI_KOTAK_9, kategoriDariKotak9, type Kotak9 } from '@/lib/scoring'
 import { DaftarSel } from './_komponen/daftar-sel'
 import { FilterPeta } from './_komponen/filter-peta'
@@ -48,7 +49,7 @@ export default async function PetaTalentaPage({ searchParams }: { searchParams: 
   // tentang populasi yang tidak boleh dilihat pemiliknya.
   const filter = { ...bacaFilterPeta(params), unitWajib: unitWajib(lingkup) }
   const kotak = bacaKotak(params.kotak)
-  const halaman = bacaHalaman(params.hal)
+  const halaman = nomorHalaman(params.hal)
 
   return (
     <div className="space-y-5">
@@ -334,20 +335,14 @@ function SelSkeleton() {
 // Validasi param di boundary — jangan percaya isi query string
 // ---------------------------------------------------------------------------
 
-function bacaFilterPeta(params: Record<string, string | undefined>): TipeFilterPeta {
-  const angkaPositif = (nilai: string | undefined): number | undefined => {
-    if (!nilai) return undefined
-    const n = Number(nilai)
-    return Number.isInteger(n) && n > 0 ? n : undefined
-  }
+const ESELON = ['I', 'II', 'III', 'IV', 'NON_ESELON'] as const
 
+function bacaFilterPeta(params: Record<string, string | undefined>): TipeFilterPeta {
   const tahun = angkaPositif(params.tahun)
 
   return {
     unitId: angkaPositif(params.unit),
-    eselon: ['I', 'II', 'III', 'IV', 'NON_ESELON'].includes(params.eselon ?? '')
-      ? params.eselon
-      : undefined,
+    eselon: dariDaftar(params.eselon, ESELON),
     jenjang: params.jenjang?.slice(0, 60),
     // Rentang tahun dibatasi supaya `?tahun=99999999` tidak dikirim ke SQL.
     tahun: tahun !== undefined && tahun >= 1990 && tahun <= 2100 ? tahun : undefined,
@@ -356,13 +351,6 @@ function bacaFilterPeta(params: Record<string, string | undefined>): TipeFilterP
 }
 
 function bacaKotak(nilai: string | undefined): number | null {
-  if (!nilai) return null
-  const n = Number(nilai)
-  return Number.isInteger(n) && n >= 1 && n <= 9 ? n : null
-}
-
-function bacaHalaman(nilai: string | undefined): number {
-  if (!nilai) return 1
-  const n = Number(nilai)
-  return Number.isInteger(n) && n > 0 ? n : 1
+  const n = angkaPositif(nilai)
+  return n !== undefined && n <= 9 ? n : null
 }

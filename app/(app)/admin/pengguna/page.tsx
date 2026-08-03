@@ -7,6 +7,7 @@ import {
   ambilOpsiUnitRingkas,
   ambilPermintaanReset,
 } from '@/lib/kueri/admin'
+import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { AntrianReset } from './_komponen/antrian-reset'
 import { FilterPengguna } from './_komponen/filter-pengguna'
@@ -53,7 +54,7 @@ export default async function ManajemenPenggunaPage({
   const [daftar, opsiPeran, opsiUnit, permintaan] = await Promise.all([
     ambilDaftarPengguna({
       cari: sp.cari,
-      roleId: sp.peran ? Number(sp.peran) : undefined,
+      roleId: angkaPositif(sp.peran),
       status: sp.status === 'aktif' || sp.status === 'nonaktif' ? sp.status : undefined,
     }),
     ambilOpsiPeran(),

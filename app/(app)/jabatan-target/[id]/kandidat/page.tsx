@@ -15,6 +15,7 @@ import {
   ambilPohonRubrik,
   ambilRincianSkor,
 } from '@/lib/kueri/rubrik'
+import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { FilterKandidat } from './_komponen/filter-kandidat'
 import { PanelRincian } from './_komponen/panel-rincian'
@@ -28,7 +29,12 @@ const UKURAN_HALAMAN = 25
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { id } = await params
-  const target = await ambilJabatanTarget(Number(id))
+  // `generateMetadata` berjalan TERPISAH dari badan halaman, jadi penjagaan di
+  // sana tidak melindunginya. `Number('abc')` = NaN, dan NaN sampai ke MySQL
+  // sebagai `Unknown column 'NaN' in 'where clause'`. Galat metadata ditelan
+  // Next — halamannya tetap tampil — sehingga ini hanya terlihat di log server.
+  const idTarget = angkaPositif(id)
+  const target = idTarget === undefined ? null : await ambilJabatanTarget(idTarget)
   return { title: target === null ? 'Kandidat' : `Kandidat — ${target.namaTarget}` }
 }
 
@@ -49,8 +55,8 @@ export default async function KandidatPage({
   searchParams: Cari
 }) {
   const { id } = await params
-  const idTarget = Number(id)
-  if (!Number.isInteger(idTarget) || idTarget <= 0) notFound()
+  const idTarget = angkaPositif(id)
+  if (idTarget === undefined) notFound()
 
   const [target, pengguna] = await Promise.all([ambilJabatanTarget(idTarget), getCurrentUser()])
   if (target === null) notFound()

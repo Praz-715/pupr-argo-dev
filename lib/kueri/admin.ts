@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { kueri, kueriSatu } from '../db'
+import { tanggalIso } from '../param'
 import type { Peran } from '../peran'
 
 /**
@@ -226,6 +227,20 @@ export interface HasilAudit {
   perHalaman: number
 }
 
+/**
+ * Jepit nilai ke bilangan bulat dalam rentang, dengan nilai bawaan untuk apa pun
+ * yang bukan angka terhingga.
+ *
+ * Ada karena `Math.min(Math.max(x, min), max)` **meneruskan NaN** — ketiga
+ * fungsi itu mengembalikan NaN kalau salah satu argumennya NaN, jadi bentuk yang
+ * terlihat seperti penjepit ternyata tidak menjepit apa pun pada kasus yang
+ * paling perlu dijepit.
+ */
+function batasiBulat(nilai: number | undefined, bawaan: number, min: number, maks: number): number {
+  if (nilai === undefined || !Number.isFinite(nilai)) return bawaan
+  return Math.min(Math.max(Math.trunc(nilai), min), maks)
+}
+
 function syaratAudit(f: FilterAudit): { where: string; params: unknown[] } {
   const syarat: string[] = []
   const params: unknown[] = []
@@ -242,13 +257,19 @@ function syaratAudit(f: FilterAudit): { where: string; params: unknown[] } {
     syarat.push('a.aksi = ?')
     params.push(f.aksi)
   }
-  if (f.dari) {
+  // Tanggal diperiksa ULANG di sini, bukan hanya di halaman. Fungsi ini akan
+  // dipakai ekspor audit log (Fase 8) dengan `LIMIT` berbeda, dan pemanggil
+  // kedua yang lupa memvalidasi menghasilkan galat MySQL, bukan hasil kosong.
+  // `tanggalIso` mengembalikan undefined untuk apa pun yang bukan tanggal nyata.
+  const dari = tanggalIso(f.dari)
+  const sampai = tanggalIso(f.sampai)
+  if (dari) {
     syarat.push('a.created_at >= ?')
-    params.push(`${f.dari} 00:00:00`)
+    params.push(`${dari} 00:00:00`)
   }
-  if (f.sampai) {
+  if (sampai) {
     syarat.push('a.created_at <= ?')
-    params.push(`${f.sampai} 23:59:59`)
+    params.push(`${sampai} 23:59:59`)
   }
   if (f.cari && f.cari.trim() !== '') {
     // Pencarian menyentuh isi JSON sebelum/sesudah. Sengaja LIKE dan bukan
@@ -264,8 +285,10 @@ function syaratAudit(f: FilterAudit): { where: string; params: unknown[] } {
 }
 
 export async function ambilAuditLog(f: FilterAudit = {}): Promise<HasilAudit> {
-  const perHalaman = Math.min(Math.max(f.perHalaman ?? 25, 5), 100)
-  const halaman = Math.max(f.halaman ?? 1, 1)
+  // `Math.max(NaN, 1)` adalah NaN, bukan 1 — jadi menjepit saja tidak cukup.
+  // `OFFSET NaN` sampai ke MySQL sebagai `Undeclared variable: NaN`.
+  const perHalaman = batasiBulat(f.perHalaman, 25, 5, 100)
+  const halaman = batasiBulat(f.halaman, 1, 1, Number.MAX_SAFE_INTEGER)
   const { where, params } = syaratAudit(f)
 
   const total = await kueriSatu<{ n: number }>(

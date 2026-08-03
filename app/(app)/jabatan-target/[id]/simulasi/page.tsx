@@ -15,6 +15,7 @@ import {
   ambilRubrikUntukHitung,
   ambilSkorTersimpan,
 } from '@/lib/kueri/rubrik'
+import { angkaPositif } from '@/lib/param'
 import { ambilPengaturan } from '@/lib/pengaturan'
 import { validasiRubrik } from '@/lib/scoring'
 import { bandingkanSkor, hitungSkorMassal, type BarisDiff } from '@/lib/skor-massal'
@@ -24,7 +25,10 @@ type Params = Promise<{ id: string }>
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { id } = await params
-  const target = await ambilJabatanTarget(Number(id))
+  // Lihat catatan di halaman Kandidat: NaN dari `generateMetadata` jadi galat SQL
+  // yang ditelan Next, jadi tidak pernah terlihat dari browser.
+  const idTarget = angkaPositif(id)
+  const target = idTarget === undefined ? null : await ambilJabatanTarget(idTarget)
   return { title: target === null ? 'Simulasi' : `Simulasi — ${target.namaTarget}` }
 }
 
@@ -47,8 +51,8 @@ export async function generateMetadata({ params }: { params: Params }) {
  */
 export default async function SimulasiPage({ params }: { params: Params }) {
   const { id } = await params
-  const idTarget = Number(id)
-  if (!Number.isInteger(idTarget) || idTarget <= 0) notFound()
+  const idTarget = angkaPositif(id)
+  if (idTarget === undefined) notFound()
 
   const target = await ambilJabatanTarget(idTarget)
   if (target === null) notFound()

@@ -9,6 +9,7 @@ import {
   ambilOpsiJabatan,
   type FilterJabatan,
 } from '@/lib/kueri/master'
+import { angkaPositif, dariDaftar, nomorHalaman } from '@/lib/param'
 import { FilterMasterJabatan } from './_komponen/filter-jabatan'
 import { TabelJabatan } from './_komponen/tabel-jabatan'
 
@@ -68,28 +69,18 @@ async function IsiJabatan({ filter }: { filter: FilterJabatan }) {
   )
 }
 
-function bacaFilter(params: Record<string, string | undefined>): FilterJabatan {
-  const angkaPositif = (n: string | undefined): number | undefined => {
-    if (!n) return undefined
-    const v = Number(n)
-    return Number.isInteger(v) && v > 0 ? v : undefined
-  }
+const ESELON = ['I', 'II', 'III', 'IV', 'NON_ESELON'] as const
+const JENIS_JABATAN = ['STRUKTURAL', 'FUNGSIONAL_TERTENTU', 'FUNGSIONAL_UMUM'] as const
+const STATUS_JABATAN = ['TERISI', 'KOSONG', 'DIHAPUS'] as const
 
+function bacaFilter(params: Record<string, string | undefined>): FilterJabatan {
   return {
     cari: params.cari?.slice(0, 100),
     unitId: angkaPositif(params.unit),
-    eselon: ['I', 'II', 'III', 'IV', 'NON_ESELON'].includes(params.eselon ?? '')
-      ? params.eselon
-      : undefined,
-    jenisJabatan: ['STRUKTURAL', 'FUNGSIONAL_TERTENTU', 'FUNGSIONAL_UMUM'].includes(
-      params.jenis ?? '',
-    )
-      ? params.jenis
-      : undefined,
-    status: ['TERISI', 'KOSONG', 'DIHAPUS'].includes(params.status ?? '')
-      ? params.status
-      : undefined,
-    halaman: angkaPositif(params.hal) ?? 1,
+    eselon: dariDaftar(params.eselon, ESELON),
+    jenisJabatan: dariDaftar(params.jenis, JENIS_JABATAN),
+    status: dariDaftar(params.status, STATUS_JABATAN),
+    halaman: nomorHalaman(params.hal),
   }
 }
 
