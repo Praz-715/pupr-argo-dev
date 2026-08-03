@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { jalankanMutasi } from '../audit'
 import { getCurrentUser } from '../auth'
 import { eksekusi, kueriSatu } from '../db'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -72,6 +73,9 @@ async function bacaHukuman(id: number) {
 }
 
 export async function buatHukuman(masukan: unknown): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_DISIPLIN)
+  if (tolak) return tolak
+
   const urai = SkemaHukuman.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -134,6 +138,9 @@ export async function buatHukuman(masukan: unknown): Promise<HasilAksi<{ id: num
 }
 
 export async function ubahHukuman(id: unknown, masukan: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_DISIPLIN)
+  if (tolak) return tolak
+
   const idH = z.number().int().positive().safeParse(id)
   if (!idH.success) return gagal('Catatan tidak dikenali.')
 
@@ -194,6 +201,9 @@ export async function ubahHukuman(id: unknown, masukan: unknown): Promise<HasilA
  * jawabkan lagi ("kenapa integritasnya 75 padahal tidak ada catatan?").
  */
 export async function nonaktifkanHukuman(id: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_DISIPLIN)
+  if (tolak) return tolak
+
   const idH = z.number().int().positive().safeParse(id)
   if (!idH.success) return gagal('Catatan tidak dikenali.')
 

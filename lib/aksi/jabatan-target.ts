@@ -7,6 +7,7 @@ import { jalankanMutasi } from '../audit'
 import { eksekusi, kueriSatu } from '../db'
 import { ambilPohonRubrik } from '../kueri/rubrik'
 import { validasiRubrik } from '../scoring'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -70,6 +71,9 @@ function segarkan(id?: number): void {
 export async function buatJabatanTarget(
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const urai = SkemaTarget.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -106,6 +110,9 @@ export async function ubahJabatanTarget(
   id: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(id)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
 
@@ -158,6 +165,9 @@ export async function ubahStatusJabatanTarget(
   id: unknown,
   status: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(id)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
 
@@ -227,6 +237,9 @@ async function halanganAktivasi(jabatanTargetId: number): Promise<string | null>
  * jabatan target bisa menghapus rantai nominasi & approval tanpa peringatan.
  */
 export async function hapusJabatanTarget(id: unknown): Promise<HasilAksi<{ diarsipkan: boolean }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(id)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
 
@@ -279,6 +292,9 @@ export async function tambahAnggotaJabatan(
   jabatanTargetId: unknown,
   jabatanId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idJabatan = idPositif.safeParse(jabatanId)
   if (!idTarget.success || !idJabatan.success) return gagal('Pilihan jabatan tidak dikenali.')
@@ -323,6 +339,9 @@ export async function hapusAnggotaJabatan(
   jabatanTargetId: unknown,
   jabatanId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idJabatan = idPositif.safeParse(jabatanId)
   if (!idTarget.success || !idJabatan.success) return gagal('Pilihan jabatan tidak dikenali.')
@@ -414,6 +433,9 @@ export async function simpanPersyaratan(
   persyaratanId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
   const idSyarat = persyaratanId === null ? null : idPositif.safeParse(persyaratanId)
@@ -467,6 +489,9 @@ export async function hapusPersyaratan(
   jabatanTargetId: unknown,
   persyaratanId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idSyarat = idPositif.safeParse(persyaratanId)
   if (!idTarget.success || !idSyarat.success) return gagal('Persyaratan tidak dikenali.')
@@ -516,6 +541,9 @@ export async function duplikasiRubrik(
   jabatanTargetId: unknown,
   dariJabatanTargetId: unknown,
 ): Promise<HasilAksi<{ jumlahKomponen: number; jumlahIndikator: number; jumlahKategori: number }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
   const idTujuan = idPositif.safeParse(jabatanTargetId)
   const idSumber = idPositif.safeParse(dariJabatanTargetId)
   if (!idTujuan.success || !idSumber.success) return gagal('Jabatan target tidak dikenali.')

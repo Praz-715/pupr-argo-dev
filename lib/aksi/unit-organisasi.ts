@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { jalankanMutasi } from '../audit'
 import { eksekusi, kueri, kueriSatu } from '../db'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -78,6 +79,9 @@ async function akanJadiSiklus(id: number, calonParent: number): Promise<boolean>
 }
 
 export async function buatUnit(masukan: unknown): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_UNIT)
+  if (tolak) return tolak
+
   const urai = SkemaUnit.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -106,6 +110,9 @@ export async function buatUnit(masukan: unknown): Promise<HasilAksi<{ id: number
 }
 
 export async function ubahUnit(id: unknown, masukan: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_UNIT)
+  if (tolak) return tolak
+
   const idUnit = z.number().int().positive().safeParse(id)
   if (!idUnit.success) return gagal('Unit tidak dikenali.')
 
@@ -150,6 +157,9 @@ export async function ubahUnit(id: unknown, masukan: unknown): Promise<HasilAksi
  * tanpa sebab memaksa pengguna menebak apa yang harus dibereskan dulu.
  */
 export async function hapusUnit(id: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_UNIT)
+  if (tolak) return tolak
+
   const idUnit = z.number().int().positive().safeParse(id)
   if (!idUnit.success) return gagal('Unit tidak dikenali.')
 

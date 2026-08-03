@@ -7,6 +7,7 @@ import { jalankanMutasi } from '../audit'
 import { getCurrentUser } from '../auth'
 import { eksekusi, kueriSatu } from '../db'
 import { KUNCI_PENGATURAN } from '../pengaturan'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, type HasilAksi } from './hasil'
 
 /**
@@ -30,6 +31,9 @@ const SkemaUbah = z.object({
 })
 
 export async function ubahPengaturan(masukan: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_PENGATURAN)
+  if (tolak) return tolak
+
   const urai = SkemaUbah.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const { kunci, nilai } = urai.data

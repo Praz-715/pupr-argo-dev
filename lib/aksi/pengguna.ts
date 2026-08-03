@@ -11,6 +11,7 @@ import { eksekusi, kueriSatu } from '../db'
 import { SEMUA_PERAN } from '../peran'
 import { hashSandi, periksaKebijakanSandi } from '../sandi'
 import { cabutSesiPengguna } from '../sesi'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -100,6 +101,9 @@ async function superAdminTerakhir(userId: number): Promise<boolean> {
 export async function buatPengguna(
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number; sandiSementara: string }>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const urai = SkemaPengguna.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -164,6 +168,9 @@ export async function buatPengguna(
 }
 
 export async function ubahPengguna(id: number, masukan: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const urai = SkemaPengguna.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -226,6 +233,9 @@ export async function ubahPengguna(id: number, masukan: unknown): Promise<HasilA
 }
 
 export async function ubahStatusPengguna(id: number, aktif: boolean): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const saya = await getCurrentUser()
   const lama = await bacaPengguna(id)
   if (!lama) return gagal('Pengguna tidak ditemukan.')
@@ -272,6 +282,9 @@ export async function resetSandiPengguna(
   id: number,
   permintaanResetId?: number,
 ): Promise<HasilAksi<{ sandiSementara: string }>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const lama = await bacaPengguna(id)
   if (!lama) return gagal('Pengguna tidak ditemukan.')
 
@@ -318,6 +331,9 @@ export async function resetSandiPengguna(
 
 /** Buka kunci akun yang terkena penghambat tebak-sandi. */
 export async function bukaKunciPengguna(id: number): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const lama = await bacaPengguna(id)
   if (!lama) return gagal('Pengguna tidak ditemukan.')
 
@@ -344,6 +360,9 @@ export async function tandaiResetDitangani(
   permintaanId: number,
   catatan: string,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_ADMIN)
+  if (tolak) return tolak
+
   const saya = await getCurrentUser()
   if (!saya || saya.peran !== 'Super Admin') return gagal('Hanya Super Admin.')
   if (catatan.trim().length < 3) {

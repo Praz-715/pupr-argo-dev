@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { jalankanMutasi } from '../audit'
 import { eksekusi, kueriSatu } from '../db'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -73,6 +74,9 @@ async function namaPenghuni(idJabatan: number): Promise<string[]> {
 }
 
 export async function buatJabatan(masukan: unknown): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_JABATAN)
+  if (tolak) return tolak
+
   const urai = SkemaJabatan.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
@@ -111,6 +115,9 @@ export async function buatJabatan(masukan: unknown): Promise<HasilAksi<{ id: num
 }
 
 export async function ubahJabatan(id: unknown, masukan: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_JABATAN)
+  if (tolak) return tolak
+
   const idJab = z.number().int().positive().safeParse(id)
   if (!idJab.success) return gagal('Jabatan tidak dikenali.')
 
@@ -171,6 +178,9 @@ export async function ubahStatusJabatan(
   id: unknown,
   status: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_JABATAN)
+  if (tolak) return tolak
+
   const idJab = z.number().int().positive().safeParse(id)
   if (!idJab.success) return gagal('Jabatan tidak dikenali.')
 
@@ -209,6 +219,9 @@ export async function ubahStatusJabatan(
  * dan membuat jejak karier mereka bolong tanpa jejak apa pun.
  */
 export async function hapusJabatan(id: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_MASTER_JABATAN)
+  if (tolak) return tolak
+
   const idJab = z.number().int().positive().safeParse(id)
   if (!idJab.success) return gagal('Jabatan tidak dikenali.')
 

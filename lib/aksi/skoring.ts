@@ -16,6 +16,7 @@ import { ambilPengaturan } from '../pengaturan'
 import { validasiRubrik } from '../scoring'
 import { hitungSkorMassal } from '../skor-massal'
 import { tulisHasilSkor } from '../skoring-tulis'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, type HasilAksi } from './hasil'
 
 /**
@@ -56,6 +57,9 @@ export interface RingkasHitungUlang {
 export async function hitungUlangSkor(
   jabatanTargetId: unknown,
 ): Promise<HasilAksi<RingkasHitungUlang>> {
+  const tolak = await gerbangPeran(PERAN_HITUNG)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
 
@@ -188,6 +192,9 @@ export async function simpanNilaiManual(
   rubrikIndikatorId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_HITUNG)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idPegawai = idPositif.safeParse(pegawaiId)
   const idIndikator = idPositif.safeParse(rubrikIndikatorId)

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { jalankanMutasi } from '../audit'
 import { eksekusi, kueriSatu } from '../db'
 import { KUNCI_INDIKATOR } from '../penilaian'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, type HasilAksi } from './hasil'
 
 /**
@@ -59,6 +60,9 @@ export async function simpanKomponen(
   komponenId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
   const idKomponen = komponenId === null ? null : idPositif.safeParse(komponenId)
@@ -106,6 +110,9 @@ export async function hapusKomponen(
   jabatanTargetId: unknown,
   komponenId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idKomponen = idPositif.safeParse(komponenId)
   if (!idTarget.success || !idKomponen.success) return gagal('Komponen tidak dikenali.')
@@ -184,6 +191,9 @@ export async function simpanIndikator(
   parentIndikatorId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idKomponen = idPositif.safeParse(komponenId)
   if (!idTarget.success || !idKomponen.success) return gagal('Komponen tidak dikenali.')
@@ -301,6 +311,9 @@ export async function hapusIndikator(
   jabatanTargetId: unknown,
   indikatorId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idIndikator = idPositif.safeParse(indikatorId)
   if (!idTarget.success || !idIndikator.success) return gagal('Indikator tidak dikenali.')
@@ -369,6 +382,9 @@ export async function simpanKategori(
   kategoriId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idIndikator = idPositif.safeParse(indikatorId)
   if (!idTarget.success || !idIndikator.success) return gagal('Indikator tidak dikenali.')
@@ -457,6 +473,9 @@ export async function hapusKategori(
   jabatanTargetId: unknown,
   kategoriId: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idKategori = idPositif.safeParse(kategoriId)
   if (!idTarget.success || !idKategori.success) return gagal('Kategori tidak dikenali.')
@@ -504,6 +523,9 @@ export async function geserUrutan(
   id: unknown,
   arah: unknown,
 ): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_RUBRIK)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idBaris = idPositif.safeParse(id)
   const uraiJenis = z.enum(['KOMPONEN', 'INDIKATOR', 'KATEGORI']).safeParse(jenis)

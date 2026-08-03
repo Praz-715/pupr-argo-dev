@@ -8,7 +8,14 @@ import { getCurrentUser } from '../auth'
 import { eksekusi, kueriSatu } from '../db'
 import { ambilEntriPool } from '../kueri/suksesi'
 import { kirimSemua, kirimanUntukAksi } from '../notifikasi'
-import { giliranSiapa, terapkanAksi, type AksiWorkflow, type StatusPool } from '../workflow'
+import {
+  giliranSiapa,
+  PERAN_WORKFLOW,
+  terapkanAksi,
+  type AksiWorkflow,
+  type StatusPool,
+} from '../workflow'
+import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -73,6 +80,9 @@ export async function jalankanAksiWorkflow(
   aksi: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<HasilAksiWorkflow>> {
+  const tolak = await gerbangPeran(PERAN_WORKFLOW)
+  if (tolak) return tolak
+
   const idPool = idPositif.safeParse(talentPoolId)
   if (!idPool.success) return gagal('Entri talent pool tidak dikenali.')
 
@@ -258,6 +268,9 @@ export async function tambahKePool(
   jabatanTargetId: unknown,
   pegawaiId: unknown,
 ): Promise<HasilAksi<{ talentPoolId: number }>> {
+  const tolak = await gerbangPeran(PERAN_POOL)
+  if (tolak) return tolak
+
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idPegawai = idPositif.safeParse(pegawaiId)
   if (!idTarget.success || !idPegawai.success) return gagal('Pilihan kandidat tidak dikenali.')
@@ -283,7 +296,7 @@ export async function tambahKePool(
     const hasil = await jalankanMutasi({
       entitas: 'talent_pool',
       aksi: 'BUAT',
-      peranDiizinkan: ['Super Admin', 'Admin Talenta'],
+      peranDiizinkan: PERAN_POOL,
       jalankan: async () => {
         const { insertId } = await eksekusi(
           `INSERT INTO talent_pool (pegawai_id, jabatan_target_id, match_score_id, status)
@@ -345,11 +358,21 @@ export type MasukanRencana = z.infer<typeof SkemaRencana>
 
 const PERAN_RENCANA = ['Super Admin', 'Admin Talenta', 'Pimpinan'] as const
 
+/**
+ * Peran yang boleh memasukkan kandidat ke pool. Diangkat jadi konstanta supaya
+ * gerbang di awal aksi dan `peranDiizinkan` pada `jalankanMutasi()` membaca
+ * daftar yang **sama** — dua daftar yang bisa berselisih adalah dua aturan.
+ */
+const PERAN_POOL = ['Super Admin', 'Admin Talenta'] as const
+
 export async function simpanRencana(
   talentPoolId: unknown,
   rencanaId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_RENCANA)
+  if (tolak) return tolak
+
   const idPool = idPositif.safeParse(talentPoolId)
   if (!idPool.success) return gagal('Entri talent pool tidak dikenali.')
   const idRencana = rencanaId === null ? null : idPositif.safeParse(rencanaId)
@@ -424,6 +447,9 @@ export async function simpanRencana(
 }
 
 export async function hapusRencana(rencanaId: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_RENCANA)
+  if (tolak) return tolak
+
   const idRencana = idPositif.safeParse(rencanaId)
   if (!idRencana.success) return gagal('Rencana tidak dikenali.')
 

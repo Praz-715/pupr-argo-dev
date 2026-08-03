@@ -233,6 +233,20 @@ export const AKSI: Record<AksiWorkflow, DefinisiAksi> = {
   },
 }
 
+/**
+ * Gabungan seluruh peran yang bisa menjalankan aksi workflow apa pun.
+ *
+ * **Diturunkan** dari tabel transisi, bukan ditulis ulang — menambah aksi baru
+ * dengan peran baru tidak boleh menuntut seseorang ingat memperbarui daftar
+ * kedua. Dipakai sebagai gerbang kasar di `jalankanAksiWorkflow()`: peran yang
+ * tidak ada di sini tidak akan pernah lolos aksi mana pun, jadi ia tidak perlu
+ * sampai membaca entri pool-nya lebih dulu. Penegakan yang sebenarnya tetap
+ * per-aksi lewat `terapkanAksi()`.
+ */
+export const PERAN_WORKFLOW: readonly Peran[] = [
+  ...new Set(Object.values(AKSI).flatMap((d) => d.peranDiizinkan)),
+]
+
 /** Semua aksi yang sah untuk satu keadaan — tanpa memandang peran. */
 export function aksiUntukKeadaan(keadaan: KeadaanWorkflow): DefinisiAksi[] {
   return Object.values(AKSI).filter(
