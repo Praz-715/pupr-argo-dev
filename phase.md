@@ -646,8 +646,12 @@ Semua non-blocking — sudah ada keputusan default yang dipakai, tinggal dikonfi
 | 8 | Relasi dengan *karir.pu.go.id* — berdiri sendiri lalu ekspos API, atau menyatu? | berdiri sendiri (PRD §10.1) | Fase 9 |
 | 9 | SSO Kementerian PU atau akun lokal? | **terpasang di Fase 7: akun lokal** (username atau email + sandi bcrypt). Penggantian ke SSO menyentuh satu berkas (`lib/auth.ts`) | — sudah jalan; tinggal dikonfirmasi apakah SSO diinginkan sebelum produksi |
 | 10 | Siapa menjalankan "Verifikasi Kepegawaian"? | **terpasang di Fase 6**: peran Admin Talenta, tahap `Verifikasi Kepegawaian`, diikuti tahap `Persetujuan Pimpinan` (ERD §5.1) | — sudah jalan; tinggal dikonfirmasi apakah perlu tahap ketiga di Kementerian |
+| 11 | Daftar aktor: paket `doc_tambahan` memakai 6 aktor termasuk *Admin Data* & *Pejabat Reviewer* tapi **tanpa Pengelola Unit** — mana yang berlaku? | 5 peran seperti sekarang; keduanya dibaca sebagai penamaan lain (PRD §10.13) | **memblokir apa pun yang menyentuh peran** — Pengelola Unit dasar pembatasan unit |
+| 12 | Kandidat gagal syarat: masuk ranking atau tidak? `doc_tambahan` bertentangan dengan dirinya sendiri (Blueprint §3 vs diagram §7) | **masuk**, sesuai diagram §7 & PRD §6.5 (PRD §10.14) | dokumen sumbernya perlu didamaikan lebih dulu |
 
-**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5 → 6 → 7, dan sebagian besar Fase 4. Itu sudah mencakup seluruh permukaan aplikasi internal: dashboard, direktori, profil talenta, peta talenta, perbandingan kandidat, rule engine, workflow suksesi, dan autentikasi.
+**Paket dokumen tambahan (v1.0 Juli 2026) sudah didisposisi**, bukan dibiarkan menggantung: lihat [`doc/doc_tambahan/DISPOSISI.md`](doc/doc_tambahan/DISPOSISI.md). Ringkasnya — ia diperlakukan sebagai **peta jalan, bukan cetak biru pengganti**; 7 konsep sudah sama dengan yang terpasang, **3 diambil** (versioning rubrik · `missing_policy` REVIEW+EXCLUDE · penanda belum-terpetakan), **3 ditunda** sampai PRD §10.2 dijawab (raw intake, staging, source registry — membangun adapter untuk protokol yang belum diketahui itu merancang buta), dan **4 ditolak dengan alasan** (operator whitelist memindahkan logika ke baris tabel sehingga rumus tidak bisa diuji unit; batas modul per-domain menukar batas yang dijaga kompiler dengan batas yang dijaga niat; feature flag & materialized summary menjawab masalah yang belum terukur).
+
+**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5 → 6 → 7 → 8, dan sebagian besar Fase 4. Itu sudah mencakup seluruh permukaan aplikasi internal: dashboard, direktori, profil talenta, peta talenta, perbandingan kandidat, rule engine, workflow suksesi, dan autentikasi.
 
 ---
 
