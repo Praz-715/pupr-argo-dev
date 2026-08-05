@@ -34,21 +34,24 @@ npm run verifikasi           → 442 uji unit lolos (16 berkas uji)
 npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
-                               · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) = 268 pemeriksaan
-                               ⚠ Fase 8 & 9 BELUM punya berkas smoke sendiri — lihat Utang di bawah
+                               · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) · 30/30 (F8) · 39/39 (F9)
+                               = 337 pemeriksaan
 npm run build                → sukses, 30 entri route (31 halaman + /_not-found + /icon.svg + route ekspor) + middleware
 npm run ukur:kueri           → 54 kueri = ~400 ms · :volume di 2.000 pegawai = ~670 ms, semua <150 ms
 npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~4,4 s
 ```
 
-**Cara menjalankan smoke:** butuh dev server hidup. `npm run smoke` memakai `localhost:3000` (punya user). Untuk server sendiri: `npx next dev -p 3100` lalu `node e2e/fase-N.smoke.mjs .next/smoke http://localhost:3100`.
+**Cara menjalankan smoke:** butuh dev server hidup. `npm run smoke` memakai `localhost:3000` (punya user) untuk **kesepuluh** berkasnya. Untuk server sendiri: `npx next dev -p 3100` lalu `node e2e/fase-N.smoke.mjs .next/smoke http://localhost:3100`.
+
+`fase-0` sempat sendirian default ke port **3210** — sisa server sekali-pakai saat fase itu dikerjakan. Karena skrip gabungan tidak meneruskan base-url ke satu pun berkasnya, `npm run smoke` **selalu berhenti di langkah pertama** dengan `ERR_CONNECTION_REFUSED`, dan sembilan berkas sesudahnya tidak pernah jalan lewat jalur itu. Kalau menambah berkas smoke baru, defaultnya 3000.
 
 **Sejak Fase 7 smoke benar-benar MASUK lewat halaman login** ([`e2e/_masuk.mjs`](e2e/_masuk.mjs)) — tidak ada lagi cookie `simt_dev_user`. Hasil login di-cache sebagai `storageState` per pengguna, jadi satu login per akun per proses meskipun satu berkas smoke membuat belasan konteks. Akun seed: `superadmin` · `martyanti.rbs` · `reza.kurniawan` · `dirjen` · `reviewer.bpsdm`, sandi dev `password123`.
 
-**Dua jebakan berulang saat menulis smoke** — keduanya menghasilkan langkah HIJAU yang salah, bukan galat:
+**Empat jebakan berulang saat menulis smoke** — semuanya menghasilkan langkah HIJAU yang salah, bukan galat:
 1. **Menunggu sebuah kata yang sudah ada di layar.** Kalimat akibat di dialog memuat kata status yang ditunggu ("Diverifikasi"), label penyaring memuat nama status, header tabel memuat kata "Sebelum". Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang** — mutasinya batal tanpa jejak. Tunggu **keadaan**: dialog tertutup, tombol lenyap, aksi baru muncul.
 2. **`innerText` menerapkan `text-transform`.** Label ber-`uppercase` terbaca "ANGGOTA POOL", bukan "Anggota pool". Dan `[role="dialog"]` **tidak pernah** cocok dengan `<dialog>` native — elemen itu punya *implicit* role tanpa atributnya; pakai `dialog[open]`.
 3. **`hasText` mencocokkan sebagian, dan dialog konfirmasi hidup di baris yang sama.** `locator('tr', {hasText: label}).locator('button', {hasText: 'Cabut'})` cocok dengan **dua** elemen: tombol baris, dan tombol "Cabut token" milik `DialogKonfirmasi` yang dirender sebagai saudaranya. Pakai regex berjangkar: `{hasText: /^Cabut$/}`.
+4. **Asersi "tidak ada" lolos ketika lokatornya yang salah.** `locator('section, div').filter({hasText: kode}).last()` cocok dengan puluhan div bersarang, dan `.last()` mengembalikan yang **terdalam** — yang memang tidak memuat tombol apa pun. Jadi `expect(count === 0)` untuk "klien PENDING belum bisa menerbitkan token" LULUS karena tombolnya tidak *ditemukan*, bukan karena tidak *ada*. Terjadi di smoke Fase 9 dan hanya ketahuan karena langkah **sesudahnya** gagal mengeklik. Obatnya dua-duanya sekaligus: **tegaskan lokatornya cocok tepat satu elemen** (`Panel` merender `<section>`, jadi `main section`), dan sertakan **kontrol positif** — sesuatu yang memang ada di wadah itu (tombol "Ubah") harus ditemukan, supaya hitungan nol benar-benar berarti nol.
 
 **Jangan menyunting berkas Markdown lewat pipa teks PowerShell.** `Get-Content -Raw` + `Set-Content -Encoding utf8` pada berkas berisi non-ASCII **merusak encoding** (`→` menjadi `â†'`) dan menyisipkan BOM — terjadi ke CLAUDE.md di sesi ini, 77 baris rusak. Mojibake CP1252 itu deterministik jadi bisa dibalik, tapi jangan diulang: pakai alat Edit.
 
@@ -95,7 +98,6 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 
 | Yang ditunda | Alasan | Target |
 |---|---|---|
-| **Berkas smoke `fase-8` & `fase-9`** | Keduanya diverifikasi lewat probe sekali-pakai (sudah dihapus) + suite Fase 0–7. Menyimpang dari konvensi DoD proyek ini — **utang paling nyata sekarang**, dan pas dikerjakan bersama Fase 10 | Fase 10 |
 | Ekspor **Excel (.xlsx) & PDF**, ekspor gambar chart | CSV sudah jalan (Fase 8) tanpa dependensi apa pun. `.xlsx` & PDF menuntut pustaka baru — keputusan yang pantas diambil sadar, bukan diselipkan. Gambar chart: warna dari CSS variable, serialisasi SVG naif menghasilkan gambar tanpa warna; harus menyuntikkan nilai warna terhitung, bukan menyalin `var(--chart-1)` | setelah dependensi diputuskan |
 | Job asinkron ekspor (U-10) | **Ditolak untuk sekarang, dengan alasan terukur**: kueri laporan 2–60 ms, tiap ekspor dibatasi `LIMIT`. Antrean job = infrastruktur untuk masalah yang belum ada. Dipasang **per jenis** begitu ada satu yang benar-benar lambat | bila ada ekspor lambat |
 | `openapi.yaml` untuk `/api/v1` | Halaman Dokumentasi API sudah memuat isinya (endpoint, scope, galat, rate limit) dan daftarnya diturunkan dari konstanta yang sama dengan gerbang. Spesifikasi mesin belum ada | Fase 10 |
@@ -123,8 +125,9 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 - **`012_auth.sql` menambah `sesi`, `pengaturan_sistem`, `permintaan_reset_password`** + empat kolom di `users` + indeks waktu di `audit_log`. **Sandi seluruh akun seed tetap `password123`** — dan sandi itu kini ada di daftar terlarang `lib/sandi.ts`, jadi tidak bisa dipakai lagi saat mengganti sandi. Itu disengaja: sandi dev tidak boleh ikut ke produksi lewat "sudah jalan di dev".
 - Tabel `sesi` **bertambah setiap kali smoke dijalankan** (satu login per akun per proses) dan dibersihkan oportunistik saat login berikutnya. Jumlahnya tidak masuk baseline; kalau ingin bersih: `DELETE FROM sesi`.
 - **`013_token_api_dev.sql` (dihasilkan program) membetulkan `token_hash` yang di `002` ternyata PLACEHOLDER** — bukan SHA-256 dari apa pun, salah satunya cuma 63 karakter hex, sehingga tidak ada satu pun token dev yang bisa memanggil `/api/v1`. Plaintext-nya **sengaja bukan acak** dan menyebut dirinya dev (token acak berbeda tiap generate sehingga smoke tak bisa memakainya), jadi **ketiganya publik karena ada di repo** — berlaku hanya untuk `pupr_dev`. Token dev: `simt_dev-bkn-hanya-untuk-pupr_dev` (BKN, tanpa data personal) · `simt_dev-birokepeg-hanya-untuk-pupr_dev` (Biro Kepegawaian, **dengan** data personal) · `simt_dev-bkn-lama-sudah-dicabut` (DICABUT + kedaluwarsa, untuk menguji penolakan).
-- `api_activity_log` & `api_token.last_used_at` **bertambah/berubah setiap kali API diuji**. Tidak masuk baseline.
-- **Tidak ada klien dev dengan `endpoints:['pegawai']` TAPI `data_personal:false`**, jadi cabang `GalatScopePersonal` di `/api/v1/pegawai/{nip}` belum pernah dieksekusi — BKN tertolak lebih dulu oleh gerbang endpoint. Kalau cabang itu perlu diuji, tambah klien dev keempat.
+- `api_activity_log` & `api_token.last_used_at` **bertambah/berubah setiap kali API diuji**. Tidak masuk baseline. Smoke Fase 9 menambah **~130 baris** dalam satu jalannya (uji rate limit menembakkan 120 permintaan), tapi seluruhnya milik klien uji `UJIF9` dan **ikut terhapus** saat pembersihan — klien dev tidak ikut terpengaruh. Kalau `UJIF9` masih ada di Klien & Token API, berarti smoke-nya mati di tengah; hapus dari DB.
+- **Tidak ada klien dev dengan `endpoints:['pegawai']` TAPI `data_personal:false`**, jadi cabang `GalatScopePersonal` di `/api/v1/pegawai/{nip}` belum pernah dieksekusi — BKN tertolak lebih dulu oleh gerbang endpoint (smoke Fase 9 mencetak catatan ini setiap kali jalan). Kalau cabang itu perlu diuji, tambah klien dev keempat.
+- **Pembatasan unit pada ekspor (`unitWajib`) juga belum pernah dieksekusi**, sebab alasan yang sejenis: satu-satunya peran berlingkup unit — Pengelola Unit — tidak berwenang mengunduh laporan apa pun (PRD §6.7–6.8), jadi cabangnya tak tercapai lewat HTTP. Ia **dipertahankan** sebagai pertahanan berlapis; yang perlu diingat cuma bahwa ia belum terbukti berjalan, jadi jangan memperluas daftar peran laporan tanpa menguji ulang lingkupnya.
 
 ### Keputusan yang MENUNGGU pemilik proses — jangan diputuskan sendiri
 
@@ -140,7 +143,7 @@ Disposisi lengkap paket `doc_tambahan` (7 sudah sama · 3 diambil · 3 ditunda �
 
 ### Titik masuk Fase 10 (Hardening)
 
-- **Utang paling nyata: berkas smoke `fase-8` & `fase-9`.** Keduanya sudah terbukti jalan lewat probe sekali-pakai, tapi tidak ada berkas permanen. Pola yang dipakai probe-nya: halaman × peran (harap terbaca/ditolak), lalu siklus mutasi utuh (terbitkan token → pakai ke `/api/v1` → cabut → 401).
+- ~~Berkas smoke `fase-8` & `fase-9`~~ **sudah ada** (30 + 39 pemeriksaan). Yang tersisa dari daftar ini: openapi.yaml, uji volume laporan & API, review indeks, audit aksesibilitas.
 - **Uji volume sudah ada alatnya**: `npm run db:volume` + `ukur:kueri:volume` + `ukur:hitung-ulang:volume` + `ukur:payload`. Yang belum diukur di skala volume: kueri laporan Fase 8 dan `/api/v1`.
 - **Indeks yang disebut PRD §8** (`nip`, `unit_organisasi_id`, `jabatan_target_id`, `(pegawai_id, tahun_asesmen)`) belum pernah di-review sistematis terhadap `EXPLAIN`.
 - **Aksesibilitas**: tiap chart sudah punya padanan tabel, palet sudah divalidasi CVD di kedua tema. Yang belum: audit fokus keyboard & `aria-label` menyeluruh.
@@ -202,6 +205,7 @@ npm run verifikasi:data     # 46 pemeriksaan isi pupr_dev (silang-uji SQL murni:
 npm run verifikasi:skoring  # lib/skor-massal vs isi match_score — menangkap KODE yang menyimpang
 npm run smoke               # Playwright Fase 0 (shell) + 1 (dashboard) + 2 (direktori/profil) + 3 (peta/bandingkan)
                             #           + 4 (master/kualitas) + 5 (rule engine) + 6 (talent pool/workflow) + 7 (auth & RBAC)
+                            #           + 8 (laporan/ekspor CSV) + 9 (API eksternal) — 337 pemeriksaan, ~9 menit
 npm run db:recompute        # hasilkan ulang doc/sql/007_recompute.sql dari lib/scoring
 npm run ukur:kueri          # waktu 54 kueri halaman Fase 1-7 (ambang 150 ms/kueri)
                             # kueri laporan Fase 8 & /api/v1 BELUM masuk daftar ini

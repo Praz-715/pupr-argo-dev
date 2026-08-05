@@ -16,7 +16,11 @@ import { AKUN, konteksMasuk } from './_masuk.mjs'
  *   node e2e/fase-0.smoke.mjs [folder-screenshot] [base-url]
  */
 
-const BASE = process.argv[3] ?? 'http://localhost:3210'
+// 3000, sama dengan sembilan berkas smoke lainnya. Sebelumnya 3210 — sisa dari
+// server sekali-pakai saat Fase 0 dikerjakan — sehingga `npm run smoke`, yang
+// tidak meneruskan base-url ke satu pun berkasnya, selalu berhenti di langkah
+// pertama dengan ERR_CONNECTION_REFUSED sebelum berkas lain sempat jalan.
+const BASE = process.argv[3] ?? 'http://localhost:3000'
 const OUT = process.argv[2] ?? '.'
 
 const errors = []
