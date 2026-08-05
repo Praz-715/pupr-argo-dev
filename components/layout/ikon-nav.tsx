@@ -1,4 +1,6 @@
 import {
+  Activity,
+  BookOpen,
   Briefcase,
   Building2,
   ChartNoAxesCombined,
@@ -53,6 +55,8 @@ const PETA_IKON: Record<string, LucideIcon> = {
   UserCog,
   UserRound,
   KeyRound,
+  Activity,
+  BookOpen,
   ScrollText,
   Settings,
 }

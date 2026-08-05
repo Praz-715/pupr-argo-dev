@@ -601,8 +601,37 @@ Delapan widget, masing-masing `<Suspense>` sendiri, seluruh agregasi di SQL (`li
 
 **Yang belum, dan sengaja:** berkas smoke `fase-8` khusus (verifikasinya baru lewat probe per peran + suite Fase 0–7), unggah berkas SK/ijazah, lencana notifikasi belum dibaca, dan progress determinate Hitung Ulang.
 
-### Fase 9 · API Eksternal `/api/v1`
-Auth Bearer + hash token · penegakan `scope_akses` (BKN tanpa data personal, Biro Kepegawaian dengan data personal, KEMENPANRB masih PENDING) · rate limit · `api_activity_log` · halaman Dokumentasi API. **Query memakai `lib/scoring` & repository yang sama dengan UI** — beda hanya lapisan auth & filter scope (PRD §4.3 poin 6).
+### Fase 9 · API Eksternal `/api/v1` — ✅ **SELESAI**
+- ✅ **Empat endpoint**: `GET /api/v1/kotak-9/summary` · `/pegawai` · `/pegawai/{nip}` · `/talent-pool`.
+- ✅ **Auth Bearer + hash SHA-256** (`lib/api/token.ts`), penegakan `scope_akses` (`scope.ts`), rate limit & jejak (`gerbang.ts`), pembungkus route (`bungkus.ts`).
+- ✅ **Manajemen Klien & Token API · Log Aktivitas API · Dokumentasi API** (PRD §6.9).
+
+**DoD:**
+- [x] **Tidak ada kueri baru** — endpoint memanggil `ambilDirektori`/`ambilProfil`/`ambilTalentPool`/`ambilSebaranKotak9` yang sama dengan halaman (PRD §4.3 poin 6). Angka yang dikirim ke BKN tidak mungkin berbeda dari yang dilihat Dirjen di layar
+- [x] Balasan **401 seragam** untuk token tidak ada / tidak dikenali / dicabut / kedaluwarsa — diuji keempatnya
+- [x] Scope ditegakkan per endpoint: BKN 403 di `/pegawai`, Biro Kepegawaian 200; jenis tak dikenal 404
+- [x] **Payload klien tanpa scope personal tidak punya field `nip`/`nama` sama sekali** — diperiksa di payload nyata, bukan cuma uji unit
+- [x] `id_anonim` untuk orang yang sama **berbeda antar klien** — diuji dengan membandingkan keluaran dua token
+- [x] Token plaintext & hash **nol** baris di `audit_log` — diuji dengan `LIKE '%simt\_%' OR '%sha256:%'`
+- [x] Terbitkan token → **benar-benar bisa dipakai** ke `/api/v1` → dicabut → **401 seketika**, diuji lewat UI
+- [x] Klien AKTIF tanpa nomor MoU ditolak di server; token hanya terbit untuk klien AKTIF
+- **Hasil: 442 uji unit (16 berkas) · 268/268 smoke Fase 0–7 tanpa regresi · 46/46 verifikasi data**
+
+> **Hash token di seed ternyata placeholder.** `002_seed.sql` memuat tiga `token_hash` yang bukan SHA-256 dari apa pun — salah satunya hanya 63 karakter hex. Jadi tidak ada satu pun token dev yang bisa memanggil `/api/v1`, dan itu baru ketahuan saat endpoint pertama diuji. Diganti `doc/sql/013_token_api_dev.sql` (**output generator**, seperti `007_recompute`). Plaintext-nya sengaja **bukan acak** dan menyebut dirinya dev: token acak berbeda tiap kali di-generate sehingga smoke tidak bisa memakainya. Konsekuensinya diterima terang-terangan — **ketiga token itu publik karena ada di repositori**, berlaku hanya untuk `pupr_dev`, dan penerbitan produksi wajib lewat halaman Manajemen Token.
+
+> **Middleware mengalihkan `/api/*` ke halaman masuk.** Matcher-nya mencakup segalanya kecuali aset statis, jadi kedelapan permintaan `/api/v1` menjawab **307 ke `/masuk`** alih-alih 401/403/200 — gerbang cookie sesi diterapkan ke permukaan yang autentikasinya Bearer. Yang membuat ini lebih dari penghalang Fase 9: **ekspor CSV Fase 8 punya bug yang sama**, dan sesi kedaluwarsa di tengah unduhan akan menghasilkan berkas HTML bernama `.csv` — persis yang sudah dicegah *di dalam* route handler-nya, tapi middleware memotong lebih dulu. Tidak terlihat karena seluruh pengujian dilakukan dengan sesi yang masih hidup.
+
+> **`id_anonim` di-HMAC dengan `kode_instansi`, bukan sekadar hash NIP.** Klien agregat tetap perlu membedakan baris (menghitung sebaran tanpa menggandakan orang), tapi pengenal yang sama di dua instansi menjadi **kunci gabung lintas instansi** — dua pihak yang membandingkan keluaran bisa menyimpulkan bahwa pengenal mereka menunjuk orang yang sama. Dengan pembeda per klien itu tidak mungkin. NIP ASN sendiri berformat tanggal lahir + TMT + gender, jadi meneruskannya apa adanya kepada klien tanpa MoU sama dengan meneruskan data pribadi.
+
+> **Rate limit dari `api_activity_log`, bukan penghitung di memori.** Alasan yang sama dengan penghambat tebak-sandi Fase 7 yang ditaruh di baris pengguna: Next bisa berjalan lebih dari satu instans, dan penghitung per-proses berarti batasnya terkalikan jumlah instans tanpa ada yang menyadarinya. Tabel jejaknya sudah ada, sudah ditulis tiap permintaan, dan sudah punya indeks `(api_client_id, created_at)`.
+
+> **Penyamaran dibangun ALLOWLIST.** `samarkanPegawai()` menyusun balasan dari field yang diizinkan, bukan menyalin baris lalu `delete baris.nip`. Bedanya baru terasa nanti: begitu seseorang menambah kolom ke kueri (`email`, `tanggal_lahir`), bentuk blocklist meneruskannya **diam-diam** ke klien tanpa MoU dan tidak ada uji yang gagal — karena tidak ada yang tahu kolom itu ada. Ada uji khusus untuk kasus itu.
+
+> **Detail satu pegawai tidak punya versi tersamarkan.** Endpoint daftar masih bisa dilayani tanpa scope personal dengan menyamarkan `nip`/`nama`, tapi `/pegawai/{nip}` tidak: pemanggilnya **sudah memegang NIP**. Menyamarkannya akan terasa konsisten dengan endpoint daftar, dan justru itu yang keliru — yang tersisa tetap "data seseorang yang identitasnya sudah diketahui pemanggil". Jadi tanpa scope personal balasannya **403, bukan 200 yang disamarkan**.
+
+**Dua batas dicatat, bukan disembunyikan:** (1) `api_activity_log.api_client_id` NOT NULL, jadi permintaan bertoken **tidak dikenali** tidak punya klien untuk diatribusikan dan tidak bisa masuk tabel itu — "seseorang memindai token acak" tidak terlihat di Log Aktivitas API, hanya di log server; (2) rate limit 120/menit masih konstanta, padahal idealnya per-klien di `api_client` (MoU berbeda, kuota berbeda). Keduanya keputusan skema.
+
+**Yang belum:** berkas smoke `fase-9` khusus (verifikasi baru lewat probe per peran + siklus token, plus suite Fase 0–7), dan `openapi.yaml`.
 
 ### Fase 10 · Hardening
 Uji volume ±2.000 pegawai · review index (`nip`, `unit_organisasi_id`, `jabatan_target_id`, `(pegawai_id, tahun_asesmen)`) · Lighthouse · aksesibilitas (kontras kedua tema, fokus keyboard, `aria-label`, chart punya padanan tabel) · suite Playwright penuh · konsistensi Bahasa Indonesia · backup & staging.

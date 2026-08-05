@@ -26,6 +26,47 @@ import type { EndpointV1 } from './scope'
  * diputuskan.
  */
 
+/**
+ * Galat yang **sengaja** dilempar handler untuk membalas selain 200.
+ *
+ * Dilempar, bukan di-`return`: handler mengembalikan `BalasanApi` yang bentuknya
+ * sudah dipatok, dan menambahkan varian galat ke tipe itu memaksa setiap endpoint
+ * lain memikirkan cabang yang tidak pernah mereka pakai. Yang penting, galat
+ * bertipe ini **tetap tercatat** di `api_activity_log` dengan status yang benar —
+ * berbeda dari galat tak terduga yang jadi 500.
+ */
+export class GalatApi extends Error {
+  constructor(
+    readonly status: 400 | 403 | 404,
+    readonly kode: string,
+    pesan: string,
+  ) {
+    super(pesan)
+  }
+}
+
+export class GalatPermintaan extends GalatApi {
+  constructor(pesan: string) {
+    super(400, 'PERMINTAAN_TIDAK_SAH', pesan)
+  }
+}
+
+export class GalatTidakAda extends GalatApi {
+  constructor(pesan: string) {
+    super(404, 'TIDAK_DITEMUKAN', pesan)
+  }
+}
+
+export class GalatScopePersonal extends GalatApi {
+  constructor() {
+    super(
+      403,
+      'SCOPE_TIDAK_MENCAKUP',
+      'Detail profil satu pegawai selalu merupakan data pribadi, jadi endpoint ini menuntut scope "data_personal" — tidak ada versi tersamarkan. Ajukan penyesuaian MoU/PKS ke Super Admin SIMT DJBK.',
+    )
+  }
+}
+
 export interface KonteksApi {
   klien: KlienApi
   /** Pengenal semu per klien — sudah ber-HMAC `kode_instansi`. */
@@ -120,8 +161,23 @@ export function tanganiV1<T>(
       })
       return balasan
     } catch (e) {
-      // Galat tak terduga tetap dicatat & dibalas dalam bentuk yang sama. Isi
-      // galatnya TIDAK dibocorkan ke klien eksternal — pesan MySQL bisa memuat
+      // Galat yang SENGAJA dilempar handler (400/403/404) dibalas apa adanya —
+      // pesannya ditulis untuk klien eksternal dan memang perlu sampai.
+      if (e instanceof GalatApi) {
+        await catatAktivitasApi({
+          klienId: klien.klienId,
+          tokenId: klien.tokenId,
+          endpoint: jalur,
+          method: permintaan.method,
+          responseCode: e.status,
+          responseTimeMs: Date.now() - mulai,
+          ip,
+        })
+        return json({ error: { kode: e.kode, pesan: e.message } }, e.status)
+      }
+
+      // Galat TAK TERDUGA tetap dicatat & dibalas dalam bentuk yang sama, tapi
+      // isinya TIDAK dibocorkan ke klien eksternal — pesan MySQL bisa memuat
       // nama tabel, kolom, dan potongan nilai.
       console.error(`[api] galat pada ${jalur} untuk klien ${klien.kodeInstansi}:`, e)
       await catatAktivitasApi({

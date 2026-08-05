@@ -228,7 +228,25 @@ export const NAVIGASI: GrupNav[] = [
         ikon: 'KeyRound',
         fase: 9,
         peran: ['Super Admin'],
-        kataKunci: ['bearer', 'instansi', 'bkn', 'mou', 'scope'],
+        kataKunci: ['bearer', 'instansi', 'bkn', 'mou', 'scope', 'api'],
+      },
+      {
+        label: 'Log Aktivitas API',
+        href: '/admin/api/log',
+        ikon: 'Activity',
+        fase: 9,
+        peran: ['Super Admin'],
+        luarSidebar: true,
+        kataKunci: ['api', 'rate limit', 'anomali', '401', '403', '429'],
+      },
+      {
+        label: 'Dokumentasi API',
+        href: '/admin/api/dokumentasi',
+        ikon: 'BookOpen',
+        fase: 9,
+        peran: ['Super Admin', 'Admin Talenta'],
+        luarSidebar: true,
+        kataKunci: ['api', 'endpoint', 'bearer', 'scope', 'openapi'],
       },
       {
         label: 'Audit Log',
@@ -264,7 +282,7 @@ export const NAVIGASI: GrupNav[] = [
 ]
 
 /** Fase yang halamannya sudah dibangun. Naikkan seiring fase selesai. */
-export const FASE_TERSEDIA = 8
+export const FASE_TERSEDIA = 9
 
 export function itemTersedia(item: ItemNav): boolean {
   return item.fase <= FASE_TERSEDIA
@@ -301,14 +319,31 @@ export function semuaItem(): ItemNav[] {
   return NAVIGASI.flatMap((grup) => grup.item)
 }
 
-/** Cari item nav untuk satu pathname — dipakai breadcrumb & judul halaman. */
+/**
+ * Cari item nav untuk satu pathname — dipakai breadcrumb & judul halaman.
+ *
+ * Yang **paling spesifik menang**, bukan yang pertama ditemukan. Versi lama
+ * mengembalikan kecocokan pertama, sehingga `/admin/api/log` mengaku sebagai
+ * "Klien & Token API" — sebab `/admin/api` terdaftar lebih dulu dan awalannya
+ * cocok. Breadcrumb yang menyebut halaman lain bukan cuma salah label: jejak
+ * kembali ke halaman induknya ikut hilang, dan pengguna kehilangan cara pulang.
+ *
+ * Kekeliruan yang sama sudah pernah terjadi di `/talenta/{nip}` (Fase 2). Waktu
+ * itu diperbaiki dengan menambahkan entri khusus; sekarang perbaikannya di
+ * pencariannya sendiri, jadi setiap route bersarang berikutnya ikut benar tanpa
+ * ada yang perlu ingat.
+ */
 export function itemDariPath(pathname: string): { grup: GrupNav; item: ItemNav } | null {
+  let terbaik: { grup: GrupNav; item: ItemNav } | null = null
+
   for (const grup of NAVIGASI) {
     for (const item of grup.item) {
-      if (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) {
-        return { grup, item }
+      const cocok = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+      if (!cocok) continue
+      if (terbaik === null || item.href.length > terbaik.item.href.length) {
+        terbaik = { grup, item }
       }
     }
   }
-  return null
+  return terbaik
 }

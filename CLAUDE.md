@@ -8,7 +8,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 **Stack:** Next.js 16 (App Router, full-stack — frontend + backend dalam satu app) + React 19 + Tailwind v4 + Drizzle ORM + MySQL.
 
-**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit), dan **8** (Laporan & Ekspor — Gap Analysis, Rekap Nominasi & Approval, Pusat Ekspor CSV) sudah selesai; berikutnya Fase 9 (API Eksternal `/api/v1`). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
+**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit), **8** (Laporan & Ekspor — Gap Analysis, Rekap Nominasi & Approval, Pusat Ekspor CSV), dan **9** (API Eksternal `/api/v1` — Bearer + scope, Klien & Token API, Log Aktivitas, Dokumentasi) sudah selesai; berikutnya Fase 10 (Hardening). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
 
 | Dokumen | Isi |
 |---|---|
@@ -30,7 +30,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 ### Baseline verifikasi — kalau angka ini turun, ada yang regresi
 
 ```
-npm run verifikasi           → 422 uji unit lolos (15 berkas uji)
+npm run verifikasi           → 442 uji unit lolos (16 berkas uji)
 npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
@@ -75,7 +75,13 @@ Urutannya: smoke dulu, build terakhir. Saat mematikan server, matikan **hanya PI
 
 **Di dalam app shell** (grup `(app)`, wajib sesi): `/` (dashboard) · `/talenta` · `/talenta/[nip]` · `/peta-talenta` · `/bandingkan` · `/jabatan-target` · `/jabatan-target/[id]` · `/jabatan-target/[id]/kandidat` · `/jabatan-target/[id]/simulasi` · `/master/unit` · `/master/jabatan` · `/master/jabatan-kosong` · `/data/kelengkapan` · `/data/pembersihan` · `/data/konsolidasi` · `/master/hukuman-disiplin` · `/talent-pool` · `/nominasi` · `/nominasi/[id]` · `/rencana-pengembangan` · `/inbox` · `/profil` · `/admin/pengguna` · `/admin/audit-log` · `/admin/pengaturan` · `/laporan/gap-analysis` · `/laporan/nominasi` · `/laporan/ekspor`
 
-**Route handler** (bukan halaman): `GET /api/internal/ekspor/[jenis]` — unduhan CSV, tujuh jenis, peran ditegakkan per jenis. Satu-satunya `api/` yang ada sampai Fase 9.
+Ditambah Fase 9: `/admin/api` · `/admin/api/log` · `/admin/api/dokumentasi`.
+
+**Route handler** (bukan halaman):
+- `GET /api/internal/ekspor/[jenis]` — unduhan CSV, tujuh jenis, peran ditegakkan per jenis (sesi internal).
+- `GET /api/v1/{kotak-9/summary,pegawai,pegawai/[nip],talent-pool}` — API eksternal, **auth Bearer**, scope per klien.
+
+**`api/` sengaja DILEWATI middleware** — gerbang di sana memeriksa cookie sesi, dan kedua permukaan `api/` tidak memakainya (`api/v1` pakai Bearer; `api/internal` membalas berkas unduhan, dan pengalihan menghasilkan HTML bernama `.csv`). Keduanya menegakkan aksesnya sendiri di route handler. Alasan lengkapnya ada di `middleware.ts`.
 
 **Di luar app shell** (grup `(auth)`, tanpa sidebar/navbar): `/masuk` · `/lupa-password` · `/ganti-sandi`
 
@@ -218,4 +224,4 @@ Target rasa: **profesional, bersih, seperti Notion** — bukan tampilan marketin
 
 - Data pegawai (NIP, kinerja, hukuman disiplin) adalah data ASN sensitif — perlakukan sesuai catatan kepatuhan di `doc/PRD.md` §7.3 (rujukan UU PDP No. 27/2022), jangan expose lebih dari yang diizinkan `scope_akses` di endpoint eksternal.
 - Ada beberapa keputusan desain yang masih berstatus **asumsi, belum dikonfirmasi user** — lihat `doc/ERD.md` §5 dan `doc/PRD.md` §10 sebelum mengambil keputusan implementasi yang bergantung padanya (mis. metode agregasi sub-indikator, siapa yang menjalankan tahap verifikasi kepegawaian, relasi dengan *karir.pu.go.id*).
-- **Sebelum produksi, tiga hal wajib diganti** dan tidak satu pun bisa ditemukan oleh uji: (1) **sandi seluruh akun seed** masih `password123` — atur ulang semuanya lewat Manajemen Pengguna supaya pemiliknya dipaksa mengganti saat masuk; (2) `NEXT_PUBLIC_DEV_ROLE_SWITCH` sudah tidak dipakai kode mana pun, hapus saja dari env; (3) **HTTPS wajib** — cookie sesi dipasang `secure` hanya ketika `NODE_ENV === 'production'`, jadi menjalankan build produksi di belakang HTTP polos berarti cookie sesi melintas terbuka.
+- **Sebelum produksi, EMPAT hal wajib diganti** dan tidak satu pun bisa ditemukan oleh uji: (1) **sandi seluruh akun seed** masih `password123` — atur ulang semuanya lewat Manajemen Pengguna supaya pemiliknya dipaksa mengganti saat masuk; (2) `NEXT_PUBLIC_DEV_ROLE_SWITCH` sudah tidak dipakai kode mana pun, hapus saja dari env; (3) **HTTPS wajib** — cookie sesi dipasang `secure` hanya ketika `NODE_ENV === 'production'`, jadi menjalankan build produksi di belakang HTTP polos berarti cookie sesi melintas terbuka; (4) **ketiga token API dev di `doc/sql/013_token_api_dev.sql` PUBLIK** — plaintext-nya ada di repositori (disengaja, supaya smoke bisa memakainya). Cabut ketiganya lewat halaman Klien & Token API lalu terbitkan yang baru; token produksi acak 256 bit dan ditampilkan sekali. Kalau `pupr_dev` pernah dipromosikan ke environment lain, ketiga token itu ikut.
