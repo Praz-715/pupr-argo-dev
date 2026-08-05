@@ -14,7 +14,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 |---|---|
 | [`doc/PRD.md`](doc/PRD.md) | Spesifikasi produk lengkap: tujuan, role, alur proses, inventaris halaman, desain API eksternal, fase implementasi. §10 memuat 12 keputusan terbuka (⚙️ = sudah ada default yang jalan di kode) |
 | [`doc/ERD.md`](doc/ERD.md) | Skema database (31 tabel), relasi, aturan bisnis level data | 
-| [`doc/sql/`](doc/sql/) | DDL & data dev, **dijalankan berurutan `001` → `012`**. Sumber kebenaran skema; perubahan berikutnya jadi berkas bernomor baru, bukan menyunting yang sudah tereksekusi |
+| [`doc/sql/`](doc/sql/) | DDL & data dev, **dijalankan berurutan `001` → `013`**. Sumber kebenaran skema; perubahan berikutnya jadi berkas bernomor baru, bukan menyunting yang sudah tereksekusi |
 | [`doc/KERANGKA TALENT POOL.md`](doc/KERANGKA%20TALENT%20POOL.md) | Rubrik penilaian talenta yang harus direplikasi di rule engine (Komponen→Indikator→Kategori Skor) |
 | [`doc/BLUEPRINT READINESS - MODUL MANAJEMEN TALENTA.md`](doc/BLUEPRINT%20READINESS%20-%20MODUL%20MANAJEMEN%20TALENTA.md) | Gap analysis data & modul yang jadi dasar seluruh desain |
 | [`doc/manajemen talenta 27 juli utk tim SIM.md`](doc/manajemen%20talenta%2027%20juli%20utk%20tim%20SIM.md) | Konteks organisasi, roadmap 3 fase, peta stakeholder |
@@ -25,7 +25,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 ---
 
-## Keadaan Sekarang (per akhir Fase 7)
+## Keadaan Sekarang (per akhir Fase 9)
 
 ### Baseline verifikasi — kalau angka ini turun, ada yang regresi
 
@@ -35,6 +35,7 @@ npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) = 268 pemeriksaan
+                               ⚠ Fase 8 & 9 BELUM punya berkas smoke sendiri — lihat Utang di bawah
 npm run build                → sukses, 30 entri route (31 halaman + /_not-found + /icon.svg + route ekspor) + middleware
 npm run ukur:kueri           → 54 kueri = ~400 ms · :volume di 2.000 pegawai = ~670 ms, semua <150 ms
 npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~4,4 s
@@ -47,6 +48,9 @@ npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris 
 **Dua jebakan berulang saat menulis smoke** — keduanya menghasilkan langkah HIJAU yang salah, bukan galat:
 1. **Menunggu sebuah kata yang sudah ada di layar.** Kalimat akibat di dialog memuat kata status yang ditunggu ("Diverifikasi"), label penyaring memuat nama status, header tabel memuat kata "Sebelum". Penantiannya lolos seketika, `ctx.close()` menyusul, dan **konteks yang ditutup membatalkan POST server action yang masih terbang** — mutasinya batal tanpa jejak. Tunggu **keadaan**: dialog tertutup, tombol lenyap, aksi baru muncul.
 2. **`innerText` menerapkan `text-transform`.** Label ber-`uppercase` terbaca "ANGGOTA POOL", bukan "Anggota pool". Dan `[role="dialog"]` **tidak pernah** cocok dengan `<dialog>` native — elemen itu punya *implicit* role tanpa atributnya; pakai `dialog[open]`.
+3. **`hasText` mencocokkan sebagian, dan dialog konfirmasi hidup di baris yang sama.** `locator('tr', {hasText: label}).locator('button', {hasText: 'Cabut'})` cocok dengan **dua** elemen: tombol baris, dan tombol "Cabut token" milik `DialogKonfirmasi` yang dirender sebagai saudaranya. Pakai regex berjangkar: `{hasText: /^Cabut$/}`.
+
+**Jangan menyunting berkas Markdown lewat pipa teks PowerShell.** `Get-Content -Raw` + `Set-Content -Encoding utf8` pada berkas berisi non-ASCII **merusak encoding** (`→` menjadi `â†'`) dan menyisipkan BOM — terjadi ke CLAUDE.md di sesi ini, 77 baris rusak. Mojibake CP1252 itu deterministik jadi bisa dibalik, tapi jangan diulang: pakai alat Edit.
 
 **Jangan `npm run build` sambil dev server hidup di direktori yang sama** — build produksi menulis ke `.next` yang sedang dipakai server dev, dan akibatnya route bersarang mendadak 404. Urutannya: smoke dulu, build terakhir.
 
@@ -91,11 +95,16 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 
 | Yang ditunda | Alasan | Target |
 |---|---|---|
-| Ekspor CSV/Excel/PDF & ekspor gambar chart | Butuh infrastruktur job asinkron (U-10); dua implementasi ekspor kalau dibuat sekarang. Warna chart dari CSS variable, serialisasi SVG naif menghasilkan gambar tanpa warna | Fase 8 |
+| **Berkas smoke `fase-8` & `fase-9`** | Keduanya diverifikasi lewat probe sekali-pakai (sudah dihapus) + suite Fase 0–7. Menyimpang dari konvensi DoD proyek ini — **utang paling nyata sekarang**, dan pas dikerjakan bersama Fase 10 | Fase 10 |
+| Ekspor **Excel (.xlsx) & PDF**, ekspor gambar chart | CSV sudah jalan (Fase 8) tanpa dependensi apa pun. `.xlsx` & PDF menuntut pustaka baru — keputusan yang pantas diambil sadar, bukan diselipkan. Gambar chart: warna dari CSS variable, serialisasi SVG naif menghasilkan gambar tanpa warna; harus menyuntikkan nilai warna terhitung, bukan menyalin `var(--chart-1)` | setelah dependensi diputuskan |
+| Job asinkron ekspor (U-10) | **Ditolak untuk sekarang, dengan alasan terukur**: kueri laporan 2–60 ms, tiap ekspor dibatasi `LIMIT`. Antrean job = infrastruktur untuk masalah yang belum ada. Dipasang **per jenis** begitu ada satu yang benar-benar lambat | bila ada ekspor lambat |
+| `openapi.yaml` untuk `/api/v1` | Halaman Dokumentasi API sudah memuat isinya (endpoint, scope, galat, rate limit) dan daftarnya diturunkan dari konstanta yang sama dengan gerbang. Spesifikasi mesin belum ada | Fase 10 |
 | Tombol trigger sinkronisasi manual | Mekanisme sumber produksi belum diputuskan (PRD §10.2: batch vs API/webhook). Tombol yang memanggil sumber yang belum ada **selalu gagal** → pengguna menyimpulkan sinkronisasi rusak. Aturan normalisasinya sendiri sudah siap di `lib/importer` | Fase 4 lanjutan, setelah §10.2 dijawab |
 | Pemetaan manual & tanda "diverifikasi" di Antrian Pembersihan | Butuh tempat menyimpan keputusan manusia (siapa/kapan/catatan) yang belum ada di skema; pemetaan riwayat jabatan lebih tepat dari editor riwayat pegawai | Fase 4 lanjutan / 5 |
 | Unggah berkas SK hukuman disiplin & arsip ijazah | Belum ada strategi penyimpanan berkas | Fase 8 |
-| Progress determinate pada Hitung Ulang | Setelah jalur tulisnya di-batch, satu jabatan target di 1.960 pegawai selesai **beberapa detik** (terukur 2,5–4,4 s tergantung beban mesin) — pending state biasa sudah memadai. Kalau nanti dipakai untuk seluruh jabatan target sekaligus, itu barulah kasus job asinkron (U-10) | Fase 8, bila perlu |
+| Progress determinate pada Hitung Ulang | Setelah jalur tulisnya di-batch, satu jabatan target di 1.960 pegawai selesai **beberapa detik** (terukur 2,5–4,4 s tergantung beban mesin) — pending state biasa sudah memadai. Kalau nanti dipakai untuk seluruh jabatan target sekaligus, itu barulah kasus job asinkron (U-10) | bila perlu |
+| Rate limit `/api/v1` **per klien**, bukan konstanta global | Sekarang 120/menit sebagai konstanta di `lib/api/gerbang.ts`. MoU berbeda berarti kuota berbeda, jadi tempatnya di kolom `api_client` — keputusan skema | setelah kebijakan kuota ditetapkan |
+| Jejak percobaan token API yang **tidak dikenali** | `api_activity_log.api_client_id` NOT NULL, jadi permintaan bertoken asing tidak punya klien untuk diatribusikan → tidak masuk tabel itu, hanya log server. Akibatnya "seseorang memindai token acak" tidak terlihat di Log Aktivitas API, dan halamannya mengatakan itu apa adanya. Butuh kolom nullable atau tabel terpisah | keputusan skema |
 | Syarat minimal kinerja/Kotak 9 di eligibility (U-11) | Perlu keputusan bisnis (phase.md §9 no. 5). Sementara ini Kotak 9 & predikat kinerja ditampilkan berdampingan dengan match score, jadi konteksnya ada walau tidak menyaring | setelah §9 no. 5 dijawab |
 | Penanda notifikasi belum dibaca di navbar/sidebar | Inbox sudah jadi item nav & antrian nominasi sudah jadi widget dashboard (PRD §6.2), jadi pekerjaan yang menunggu tidak tersembunyi. Yang belum ada cuma lencana angka — butuh satu kueri hitung per permintaan di app shell, yang berarti tiap halaman membayar biayanya. Sekarang app shell sudah punya satu pembacaan sesi ber-`cache()`, jadi menumpangkannya di sana lebih murah daripada saat direncanakan | Fase 8 |
 | Pengiriman surel (reset sandi, notifikasi keluar) | Belum ada layanan surel yang diputuskan di PRD §4.3. Lupa Password **mengatakan** itu apa adanya dan dialihkan ke Super Admin, bukan menjanjikan email yang tidak akan datang. Begitu transportnya diputuskan, `permintaan_reset_password` tinggal ditambahi kolom token — alurnya sudah benar | setelah transport surel diputuskan |
@@ -113,17 +122,32 @@ Menu diaktifkan lewat `FASE_TERSEDIA` di [`lib/navigasi.ts`](lib/navigasi.ts) �
 - Ketiga jabatan target dev berstatus **AKTIF** dengan rubrik yang lolos seluruh pemeriksaan; kandidat lolos syarat: **17 · 8 · 10**. Kalau angka ini berubah tanpa ada yang menyunting rubrik, jalankan `npm run verifikasi:skoring`.
 - **`012_auth.sql` menambah `sesi`, `pengaturan_sistem`, `permintaan_reset_password`** + empat kolom di `users` + indeks waktu di `audit_log`. **Sandi seluruh akun seed tetap `password123`** — dan sandi itu kini ada di daftar terlarang `lib/sandi.ts`, jadi tidak bisa dipakai lagi saat mengganti sandi. Itu disengaja: sandi dev tidak boleh ikut ke produksi lewat "sudah jalan di dev".
 - Tabel `sesi` **bertambah setiap kali smoke dijalankan** (satu login per akun per proses) dan dibersihkan oportunistik saat login berikutnya. Jumlahnya tidak masuk baseline; kalau ingin bersih: `DELETE FROM sesi`.
+- **`013_token_api_dev.sql` (dihasilkan program) membetulkan `token_hash` yang di `002` ternyata PLACEHOLDER** — bukan SHA-256 dari apa pun, salah satunya cuma 63 karakter hex, sehingga tidak ada satu pun token dev yang bisa memanggil `/api/v1`. Plaintext-nya **sengaja bukan acak** dan menyebut dirinya dev (token acak berbeda tiap generate sehingga smoke tak bisa memakainya), jadi **ketiganya publik karena ada di repo** — berlaku hanya untuk `pupr_dev`. Token dev: `simt_dev-bkn-hanya-untuk-pupr_dev` (BKN, tanpa data personal) · `simt_dev-birokepeg-hanya-untuk-pupr_dev` (Biro Kepegawaian, **dengan** data personal) · `simt_dev-bkn-lama-sudah-dicabut` (DICABUT + kedaluwarsa, untuk menguji penolakan).
+- `api_activity_log` & `api_token.last_used_at` **bertambah/berubah setiap kali API diuji**. Tidak masuk baseline.
+- **Tidak ada klien dev dengan `endpoints:['pegawai']` TAPI `data_personal:false`**, jadi cabang `GalatScopePersonal` di `/api/v1/pegawai/{nip}` belum pernah dieksekusi — BKN tertolak lebih dulu oleh gerbang endpoint. Kalau cabang itu perlu diuji, tambah klien dev keempat.
 
-### Titik masuk Fase 8 (Laporan & Ekspor)
+### Keputusan yang MENUNGGU pemilik proses — jangan diputuskan sendiri
 
-Yang sudah siap dipakai, jangan dibangun ulang:
+Ketiganya sudah dianalisis, punya default yang berjalan, dan **mengubah siapa boleh apa**. Menyentuhnya tanpa jawaban berarti mengubah desain, bukan memperbaiki cacat.
 
-- **Seluruh angka laporan sudah punya sumbernya** di `lib/kueri/*` — Gap Analysis & Laporan Nominasi tidak perlu kueri baru dari nol, tapi **jangan** menyalin agregasinya ke berkas laporan. Kalau bentuknya berbeda, perluas kueri yang ada.
-- **Ekspor adalah satu-satunya bagian yang benar-benar baru**, dan U-10 sudah menetapkan bentuknya: job asinkron + progress + notifikasi selesai. Infrastruktur notifikasinya **sudah ada** (`lib/notifikasi.ts` + tabel `notifikasi` + Inbox), jadi yang perlu dibangun cuma antrean job-nya.
-- **Warna chart datang dari CSS variable** (`lib/warna-seri.ts`), jadi serialisasi SVG naif menghasilkan gambar tanpa warna. Ekspor gambar harus menyuntikkan nilai warna yang sudah dihitung, bukan menyalin `var(--chart-1)`.
-- `audit_log` sudah bisa dibaca berpaginasi & tersaring (`lib/kueri/admin.ts`), jadi "ekspor audit log" tinggal menyambung ke kueri yang sama dengan `LIMIT` berbeda.
+| # | Keputusan | Default yang berjalan | Tercatat di |
+|---|---|---|---|
+| 1 | **34 selisih gerbang baca halaman vs PRD §6** — Viewer & Pengelola Unit bisa membuka `/master/unit`, `/jabatan-target/*`, `/data/*`, `/talent-pool`, `/rencana-pengembangan` lewat URL langsung (menu disembunyikan, tapi URL tembus). PRD-nya kurang lengkap, atau halamannya kurang gerbang? | seperti sekarang | audit sesi; belum masuk PRD |
+| 2 | **Daftar aktor `doc_tambahan`** memakai 6 aktor termasuk *Admin Data* & *Pejabat Reviewer* tapi **tanpa Pengelola Unit** — padahal itu dasar seluruh pembatasan unit | 5 peran; keduanya dibaca sebagai penamaan lain | PRD §10.13 · phase.md §9 no. 11 |
+| 3 | **Kandidat FAIL masuk ranking atau tidak** — `doc_tambahan` bertentangan dengan dirinya sendiri (Blueprint §3 vs diagram §7) | **masuk**, sesuai diagram §7 & PRD §6.5 | PRD §10.14 · phase.md §9 no. 12 |
 
-### Bagaimana auth bekerja (Fase 7) — baca sebelum menyentuh apa pun yang berkaitan dengan akses
+Disposisi lengkap paket `doc_tambahan` (7 sudah sama · 3 diambil · 3 ditunda · 4 ditolak, semuanya beralasan) ada di [`doc/doc_tambahan/DISPOSISI.md`](doc/doc_tambahan/DISPOSISI.md). **Dua pekerjaan dari sana siap jalan tanpa menunggu siapa pun:** versioning rubrik `DRAFT→PUBLISHED→RETIRED` (menutup lubang nyata — `rubrik_snapshot` menyelamatkan angka tapi bukan aturannya, jadi skor suksesor yang sudah DITETAPKAN tidak bisa dipertanggungjawabkan setelah ambang berubah) dan `missing_policy` REVIEW+EXCLUDE (Gap Analysis sekarang tidak bisa membedakan "tidak ada datanya" dari "buruk", sehingga rata-rata unit tertarik ke bawah oleh ketiadaan data).
+
+### Titik masuk Fase 10 (Hardening)
+
+- **Utang paling nyata: berkas smoke `fase-8` & `fase-9`.** Keduanya sudah terbukti jalan lewat probe sekali-pakai, tapi tidak ada berkas permanen. Pola yang dipakai probe-nya: halaman × peran (harap terbaca/ditolak), lalu siklus mutasi utuh (terbitkan token → pakai ke `/api/v1` → cabut → 401).
+- **Uji volume sudah ada alatnya**: `npm run db:volume` + `ukur:kueri:volume` + `ukur:hitung-ulang:volume` + `ukur:payload`. Yang belum diukur di skala volume: kueri laporan Fase 8 dan `/api/v1`.
+- **Indeks yang disebut PRD §8** (`nip`, `unit_organisasi_id`, `jabatan_target_id`, `(pegawai_id, tahun_asesmen)`) belum pernah di-review sistematis terhadap `EXPLAIN`.
+- **Aksesibilitas**: tiap chart sudah punya padanan tabel, palet sudah divalidasi CVD di kedua tema. Yang belum: audit fokus keyboard & `aria-label` menyeluruh.
+
+### Bagaimana auth bekerja (Fase 7 + 9) — baca sebelum menyentuh apa pun yang berkaitan dengan akses
+
+**Ada DUA permukaan autentikasi, dan keduanya tidak boleh dicampur.** Sesi ber-cookie untuk UI internal (`lib/auth.ts` → `lib/sesi.ts`), dan Bearer token untuk `/api/v1` (`lib/api/gerbang.ts`). Konsekuensi paling mudah dilupakan: **`api/` sengaja dilewati `middleware.ts`** — gerbang di sana hanya melihat cookie, dan menerapkannya ke `api/` membuat instansi eksternal menerima 307 + HTML halaman login alih-alih 401 JSON (benar-benar terjadi saat Fase 9 pertama diuji), serta membuat unduhan CSV bersesi mati menghasilkan berkas HTML bernama `.csv`. Keduanya menegakkan aksesnya sendiri di route handler.
 
 - **Satu titik identitas, masih.** [`lib/auth.ts`](lib/auth.ts) → `getCurrentUser()`. Isinya sekarang membaca sesi asli lewat [`lib/sesi.ts`](lib/sesi.ts). Tidak ada komponen yang membaca cookie sendiri, dan jangan mulai — mengganti ke SSO nanti harus tetap cukup menyentuh satu berkas.
 - **Tiga lapis, dengan pembagian tugas yang tegas:**
@@ -164,6 +188,9 @@ Yang sudah siap dipakai, jangan dibangun ulang:
 | `lib/importer/` | Gerbang masuk data sumber: normalisasi §6 + **pencatatan temuan**. Bebas DB, bisa diuji murni | Mengorkestrasi `lib/normalisasi`/`lib/nip`/`lib/scoring`, bukan mengulangnya. Uji diorganisasi menurut **nomor aturan phase.md §6** supaya kelengkapannya terukur terhadap dokumen |
 | `lib/audit.ts` | `jalankanMutasi()` — **satu-satunya pintu tulis** | Ia memeriksa peran → baca keadaan sebelum → tulis → catat audit. Menulis DB tanpa lewat sini berarti mutasi tanpa jejak audit |
 | `lib/aksi/` | Server action: Zod di boundary, `HasilAksi` seragam, galat per-field | Tidak melempar untuk kesalahan wajar (validasi/wewenang/constraint) — melempar akan mengganti seluruh halaman padahal yang perlu cuma pesan di sebelah field |
+| `lib/api/` | Permukaan API eksternal: `token.ts` (buat/hash/baca header — murni) · `scope.ts` (penegakan `scope_akses` + penyamaran — murni) · `gerbang.ts` (auth → scope → rate limit → jejak) · `bungkus.ts` (`tanganiV1()`) | Dua yang murni diuji tanpa DB (20 uji), dikelompokkan menurut **cara data bisa bocor**. Dua aturan yang tidak boleh dilonggarkan: **gagal tertutup** (`scope_akses` tak terbaca = nol endpoint, bukan semua) dan **penyamaran allowlist** — `samarkanPegawai()` menyusun balasan dari field yang diizinkan, bukan `delete baris.nip`; dengan blocklist, kolom yang ditambahkan ke kueri nanti menetes diam-diam ke klien tanpa MoU dan tidak ada uji yang gagal. `tanganiV1()` jadi pembungkus supaya endpoint berikutnya tidak **bisa** lupa memanggil gerbang |
+| `lib/ekspor.ts` | Serialisasi CSV (murni, 16 uji) | Tiga hal yang baru terlihat setelah berkasnya dibuka orang lain di aplikasi lain: **injeksi formula** (Excel menjalankan sel berawalan `=` `+` `-` `@`, dan aplikasi ini mengekspor catatan teks bebas yang diisi manusia), **BOM UTF-8** (tanpa itu Excel Windows membaca CSV sebagai ANSI dan setiap nama non-ASCII rusak — akan dilaporkan sebagai "ekspornya rusak" lalu didiagnosis di tempat yang salah), dan pengutipan RFC 4180 |
+| `lib/kueri/laporan.ts` · `lib/kueri/api.ts` | Agregat laporan Fase 8 · klien/token/log aktivitas Fase 9 | Keduanya hanya `GROUP BY` data yang sudah ada — **tidak ada rumus baru**. `api.ts` tidak pernah menyeleksi `token_hash`, alasan yang sama dengan `password_hash` di `admin.ts` |
 | `lib/aksi/gerbang.ts` | `gerbangPeran()` — **wajib jadi dua baris pertama setiap server action** | Lahir dari audit: `jalankanMutasi()` memang memeriksa peran, tapi **di dalam dirinya**, sedangkan 28 dari 47 aksi perlu membaca keadaan lebih dulu untuk menyusun penolakan yang berguna ("masih ditempati 3 pegawai aktif"). Pembacaan itu berjalan **sebelum** peran diperiksa dan balasannya berbeda-beda menurut isi DB — jadi siapa pun yang punya sesi bisa membedakan "baris itu ada" dari "Anda tidak berhak", dan satu penolakan bahkan menyebut **nama pegawai**. Aturannya justru sudah tertulis di `lib/audit.ts` sejak awal ("periksa peran dulu, baru baca"); yang belum ada cuma alatnya. Daftar peran **wajib** konstanta yang sama dengan `peranDiizinkan` di `jalankanMutasi()` di bawahnya — `jalankanMutasi()` tetap penegak terakhir, gerbang ini hanya mempercepat penolakan |
 | `scripts/` | Generator SQL & pemeriksa: `gen-006-seed-perluasan`, `gen-008-seed-risiko`, `recompute`, `verifikasi-data`, `verifikasi-skoring`, `ukur-kueri`, `ukur-hitung-ulang`, `jalankan-sql` | Angka hasil hitung di DB **selalu** output kode, bukan tulisan tangan. `seed-volume.ts` memuat daftar berkas skema — **tambahkan berkas DDL baru ke sana**, kalau tidak `pupr_dev_volume` gagal dibangun (tabel master disalin dengan `SELECT *`, jadi satu kolom tertinggal = jumlah kolom tidak cocok) |
 
@@ -176,9 +203,11 @@ npm run verifikasi:skoring  # lib/skor-massal vs isi match_score — menangkap K
 npm run smoke               # Playwright Fase 0 (shell) + 1 (dashboard) + 2 (direktori/profil) + 3 (peta/bandingkan)
                             #           + 4 (master/kualitas) + 5 (rule engine) + 6 (talent pool/workflow) + 7 (auth & RBAC)
 npm run db:recompute        # hasilkan ulang doc/sql/007_recompute.sql dari lib/scoring
-npm run ukur:kueri          # waktu 44 kueri halaman Fase 1-6 (ambang 150 ms/kueri)
+npm run ukur:kueri          # waktu 54 kueri halaman Fase 1-7 (ambang 150 ms/kueri)
+                            # kueri laporan Fase 8 & /api/v1 BELUM masuk daftar ini
 npm run ukur:hitung-ulang   # waktu jalur TULIS Hitung Ulang (ambang 30 s/jabatan target)
 npm run db:gen-risiko       # hasilkan ulang doc/sql/008_seed_risiko_kekosongan.sql
+npm run db:gen-token-api    # hasilkan ulang doc/sql/013_token_api_dev.sql (hash token dev)
 npm run db:volume           # bangun pupr_dev_volume (~2.000 pegawai)
 npm run db:sql doc/sql/0NN_*.sql   # jalankan satu berkas skema ke pupr_dev (tambah --db untuk DB lain)
 npm run ukur:kueri:volume   # waktu kueri pada skala produksi
