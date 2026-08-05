@@ -65,6 +65,26 @@ export const config = {
    * Aset statis & berkas Next dilewati di sini, bukan dengan `if` di dalam
    * fungsi: middleware yang jalan untuk setiap potongan JavaScript adalah
    * biaya yang dibayar ribuan kali per halaman.
+   *
+   * **`api/` juga dilewati, dan itu bukan kelonggaran.** Gerbang di berkas ini
+   * memeriksa **cookie sesi** — mekanisme yang sama sekali tidak dipakai kedua
+   * permukaan `api/`:
+   *
+   *   - `api/v1/*` diautentikasi **Bearer token** (Fase 9). Mengalihkannya ke
+   *     `/masuk` membuat instansi eksternal menerima **307 + HTML halaman login**
+   *     alih-alih 401 JSON — klien akan menyimpulkan endpoint-nya pindah, bukan
+   *     bahwa tokennya salah. Ini benar-benar terjadi saat Fase 9 pertama diuji.
+   *   - `api/internal/*` dipakai peramban yang memang bawa cookie, tapi
+   *     balasannya **berkas unduhan**. Sesi yang kedaluwarsa di tengah jalan akan
+   *     menghasilkan berkas HTML bernama `.csv` — bentuk kegagalan yang paling
+   *     membingungkan yang bisa dipilih.
+   *
+   * Keduanya menegakkan aksesnya sendiri di route handler (`getCurrentUser()` →
+   * 401 untuk internal, `gerbangApi()` → 401/403 untuk v1), jadi melewatkannya di
+   * sini tidak melonggarkan apa pun — ia memindahkan penolakan ke lapisan yang
+   * bisa membalas dalam bentuk yang dimengerti pemanggilnya.
    */
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)'],
+  matcher: [
+    '/((?!api/|_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)',
+  ],
 }
