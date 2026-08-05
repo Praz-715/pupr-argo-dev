@@ -35,14 +35,64 @@ async function main() {
 
   console.log(`Database: ${process.env.DATABASE_NAME}\n`)
 
+  /**
+   * `--semua` menghitung SELURUH jabatan target, bukan yang pertama saja.
+   *
+   * Bukan untuk mengukur Hitung Ulang (tombolnya memang per jabatan target, dan
+   * itulah yang diukur mode biasa), tapi untuk membuat `pupr_dev_volume`
+   * **representatif** sebelum `ukur:kueri:volume` dijalankan. `seed-volume.ts`
+   * menulis `match_score` lewat SQL tapi TIDAK bisa menulis
+   * `match_score_detail` — rincian per indikator lahir dari mesin rubrik, bukan
+   * dari ekspresi SQL. Akibatnya DB volume hanya punya rincian untuk jabatan
+   * target yang pernah dihitung; kalau cuma satu dari tiga, kueri Gap Analysis
+   * memindai sepertiga baris yang seharusnya dan hasil ukurnya **melegakan
+   * secara keliru**.
+   */
+  const semua = process.argv.includes('--semua')
   const target = await kueri<{ id: number; nama_target: string }>(
-    `SELECT id, nama_target FROM jabatan_target ORDER BY id LIMIT 1`,
+    `SELECT id, nama_target FROM jabatan_target ORDER BY id${semua ? '' : ' LIMIT 1'}`,
   )
-  const idTarget = Number(target[0]?.id ?? 0)
-  if (idTarget === 0) {
+  if (target.length === 0) {
     console.error('Tidak ada jabatan target.')
     process.exit(1)
   }
+
+  if (semua) {
+    let totalRincian = 0
+    for (const t of target) {
+      const mulai = Date.now()
+      const siapT = await ambilRubrikUntukHitung(t.id)
+      if (siapT === null) {
+        console.log(`target ${t.id} — rubrik tidak terbaca, dilewati`)
+        continue
+      }
+      const [profilT, manualT, jejakT] = await Promise.all([
+        ambilProfilKandidat(),
+        ambilNilaiManual(t.id),
+        ambilJejakManual(t.id),
+      ])
+      const hasilT = hitungSkorMassal(siapT.rubrik, profilT, { nilaiManual: manualT })
+      const ringkasT = await tulisHasilSkor(
+        t.id,
+        hasilT.hasil,
+        JSON.stringify(hasilT.snapshotRubrik),
+        jejakT,
+      )
+      totalRincian += ringkasT.jumlahRincian
+      console.log(
+        `target ${String(t.id).padStart(3)} — ${hasilT.hasil.length} pegawai, ` +
+          `${ringkasT.jumlahRincian} baris rincian, ${((Date.now() - mulai) / 1000).toFixed(1)} s  ` +
+          `${t.nama_target.slice(0, 50)}`,
+      )
+    }
+    console.log(
+      `\n${target.length} jabatan target dihitung · ${totalRincian} baris rincian total.\n` +
+        `Sekarang \`ukur:kueri:volume\` mengukur beban Gap Analysis yang sebenarnya.`,
+    )
+    process.exit(0)
+  }
+
+  const idTarget = Number(target[0]!.id)
 
   const t0 = Date.now()
   const siap = await ambilRubrikUntukHitung(idTarget)

@@ -27,6 +27,7 @@
     "verifikasi:skoring": "tsx --conditions react-server scripts/verifikasi-skoring.ts",
     "ukur:hitung-ulang": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts",
     "ukur:hitung-ulang:volume": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts --volume",
+    "ukur:hitung-ulang:volume:semua": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts --volume --semua",
     "db:gen-token-api": "tsx scripts/gen-013-token-api.ts"
   },
   "dependencies": {
