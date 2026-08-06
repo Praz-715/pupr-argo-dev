@@ -1,5 +1,6 @@
 import {
   Activity,
+  BadgeCheck,
   BookOpen,
   Briefcase,
   Building2,
@@ -9,6 +10,7 @@ import {
   FileText,
   Gauge,
   GitCompareArrows,
+  GraduationCap,
   Grid3x3,
   Inbox,
   KeyRound,
@@ -36,6 +38,8 @@ const PETA_IKON: Record<string, LucideIcon> = {
   LayoutDashboard,
   Inbox,
   Users,
+  BadgeCheck,
+  GraduationCap,
   Grid3x3,
   GitCompareArrows,
   Target,

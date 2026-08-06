@@ -249,6 +249,22 @@ const aktivitasApi = await ukur('aktivitasApi(hal 1)', () => ap.ambilAktivitasAp
 await ukur('aktivitasApi(ditolak)', () => ap.ambilAktivitasApi({ golongan: 'ditolak' }))
 await ukur('ringkasAktivitasApi', ap.ambilRingkasAktivitasApi)
 
+// -- Fase 10: Kategori & Validasi Riwayat ----------------------------------
+// `antrianDiklat` yang perlu diawasi: penghitung "dipakai berapa pegawai"
+// adalah subkueri berkorelasi yang mengembangkan `pegawai.riwayat_diklat`
+// lewat JSON_TABLE, dan `ORDER BY` memakainya — jadi ia dihitung untuk SELURUH
+// baris antrian sebelum dipotong LIMIT, bukan cuma 25 baris yang tampil.
+const kr = await import('../lib/kueri/kategori-riwayat')
+await ukur('kategoriDiklat', () => kr.ambilKategoriDiklat({ termasukNonaktif: true }))
+const antrianDiklat = await ukurLaporan('antrianDiklat', () =>
+  kr.ambilAntrianDiklat({ perHalaman: 25 }),
+)
+await ukurLaporan('antrianDiklat(berunit)', () =>
+  kr.ambilAntrianDiklat({ perHalaman: 25, unitWajib: 2 }),
+)
+await ukur('antrianJabatan', () => kr.ambilAntrianJabatan({ batas: 100 }))
+await ukur('ringkasValidasiRiwayat', () => kr.ambilRingkasValidasiRiwayat(null))
+
 /**
  * Pembacaan profil untuk PERHITUNGAN, bukan untuk render halaman.
  *
@@ -283,6 +299,10 @@ console.log('kandidat banding    :', `${kandidat.length} orang, ${targetBanding.
 console.log(
   'laporan             :',
   `${gapIndikator.length} baris gap indikator, ${nominasiRinci.length} nominasi rinci, opsi: ${opsiLaporan.jabatanTarget.length} target / ${opsiLaporan.unit.length} unit / ${opsiLaporan.jenjang.length} jenjang`,
+)
+console.log(
+  'validasi riwayat    :',
+  `${antrianDiklat.total} nama diklat di antrian (${antrianDiklat.baris.length}/halaman)`,
 )
 console.log('gap analysis        :', bentukGap.ringkas)
 if (bentukGap.peringatan !== null) console.log('                     ', bentukGap.peringatan)

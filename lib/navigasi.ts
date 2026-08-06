@@ -137,6 +137,16 @@ export const NAVIGASI: GrupNav[] = [
         kataKunci: ['anomali', 'validasi', 'normalisasi', 'cleansing'],
       },
       {
+        label: 'Validasi Riwayat',
+        href: '/data/validasi-riwayat',
+        ikon: 'BadgeCheck',
+        fase: 10,
+        // Termasuk Pengelola Unit — PRD §3: "Input/validasi riwayat data pegawai
+        // unitnya". Ini satu-satunya halaman Data & Kualitas yang dibukanya.
+        peran: ['Super Admin', 'Admin Talenta', 'Pengelola Unit'],
+        kataKunci: ['diklat', 'kategori', 'plt', 'plh', 'penugasan', 'pemetaan', 'kamus'],
+      },
+      {
         label: 'Kelengkapan Data',
         href: '/data/kelengkapan',
         ikon: 'Gauge',
@@ -172,6 +182,14 @@ export const NAVIGASI: GrupNav[] = [
         fase: 4,
         peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
         kataKunci: ['lowong', 'bup', 'pensiun', 'kekosongan'],
+      },
+      {
+        label: 'Kategori Riwayat Diklat',
+        href: '/master/kategori-diklat',
+        ikon: 'GraduationCap',
+        fase: 10,
+        peran: ['Super Admin', 'Admin Talenta'],
+        kataKunci: ['diklat', 'pelatihan', 'pim', 'manajerial', 'teknis', 'kamus', 'kategori'],
       },
       {
         label: 'Hukuman Disiplin',
@@ -282,7 +300,7 @@ export const NAVIGASI: GrupNav[] = [
 ]
 
 /** Fase yang halamannya sudah dibangun. Naikkan seiring fase selesai. */
-export const FASE_TERSEDIA = 9
+export const FASE_TERSEDIA = 10
 
 export function itemTersedia(item: ItemNav): boolean {
   return item.fase <= FASE_TERSEDIA
