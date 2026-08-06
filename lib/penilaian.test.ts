@@ -27,6 +27,10 @@ function riwayat(p: Partial<RiwayatJabatanUntukSkor> = {}): RiwayatJabatanUntukS
     unitOrganisasiId: 7,
     tanggalMulai: new Date(2020, 0, 1, 12),
     tanggalAkhir: new Date(2023, 0, 1, 12),
+    // Bawaannya DEFINITIF, yaitu "sudah diperiksa manusia, dan bukan Plt/Plh".
+    // Sengaja bukan `null`: fixture yang bawaannya "belum divalidasi" membuat
+    // setiap uji Substansi mengembalikan null dan lulusnya jadi kebetulan.
+    jenisPenugasan: 'DEFINITIF',
     ...p,
   }
 }
@@ -84,29 +88,43 @@ describe('Kesesuaian Bidang Ilmu (§B.2.2)', () => {
   })
 })
 
-describe('Pengembangan Kompetensi (§B.2.3)', () => {
-  it('punya diklat relevan → 100', () => {
-    expect(
-      nilaiPengembanganKompetensi(
-        ['Diklat Pengadaan Barang/Jasa Tingkat Lanjut'],
-        ['pengadaan'],
-      ),
-    ).toBe(100)
+describe('Pengembangan Kompetensi (§B.2.3) — dari kategori TERVALIDASI', () => {
+  it('punya minimal satu kategori yang disyaratkan → 100', () => {
+    expect(nilaiPengembanganKompetensi(['PBJ'], ['PIM_IV', 'PBJ', 'HUKUM_KONTRAK'])).toBe(100)
   })
 
-  it('tidak punya diklat relevan → 50', () => {
-    expect(nilaiPengembanganKompetensi(['Diklat Kearsipan'], ['pengadaan'])).toBe(50)
+  it('minimal SATU cukup — rubriknya cuma punya dua kategori skor', () => {
+    // Tidak ada tempat membedakan "punya 1 dari 3" dari "punya 3 dari 3", jadi
+    // menuntut semuanya berarti mengarang kategori skor yang tidak ada.
+    expect(nilaiPengembanganKompetensi(['PBJ'], ['PIM_IV', 'PBJ', 'HUKUM_KONTRAK'])).toBe(
+      nilaiPengembanganKompetensi(['PBJ', 'PIM_IV', 'HUKUM_KONTRAK'], ['PIM_IV', 'PBJ', 'HUKUM_KONTRAK']),
+    )
   })
 
-  it('"semua" TIDAK membebaskan syarat diklat', () => {
-    // "semua jurusan diperbolehkan" adalah kelonggaran pendidikan formal,
-    // bukan pembebasan relevansi diklat.
-    expect(nilaiPengembanganKompetensi(['Diklat Kearsipan'], ['semua'])).toBe(50)
-    expect(nilaiPengembanganKompetensi(['Diklat Pengadaan'], ['semua', 'pengadaan'])).toBe(100)
+  it('punya kategori tervalidasi tapi tak satu pun disyaratkan → 50', () => {
+    expect(nilaiPengembanganKompetensi(['FUNGSIONAL_PJK'], ['PBJ'])).toBe(50)
   })
 
-  it('tanpa riwayat diklat → 50', () => {
-    expect(nilaiPengembanganKompetensi([], ['pengadaan'])).toBe(50)
+  it('BELUM ada kategori tervalidasi → null, BUKAN 50', () => {
+    // Inti peralihan `doc/sql/014`: dulu keadaan ini memberi 50, yang terbaca
+    // sebagai "sudah diperiksa dan memang tidak punya". Sekarang ia "tidak
+    // diketahui", dan mesin rubrik menandainya perluReview.
+    expect(nilaiPengembanganKompetensi([], ['PBJ'])).toBeNull()
+  })
+
+  it('jabatan target belum menetapkan syarat pelatihan → null', () => {
+    // Tidak ada yang bisa dibandingkan. Memberi 50 di sini menghukum pegawai
+    // atas rubrik yang belum diisi.
+    expect(nilaiPengembanganKompetensi(['PBJ'], [])).toBeNull()
+    expect(nilaiPengembanganKompetensi([], [])).toBeNull()
+  })
+
+  it('tidak lagi membaca teks nama diklat', () => {
+    // Nama diklat yang "kelihatan" relevan tidak berpengaruh — yang dihitung
+    // hanya kode kategori hasil validasi. Ini yang membuat "Bimtek Pengelolaan
+    // Kontrak Konstruksi" bisa dinilai benar meski tidak memuat frasa
+    // "hukum kontrak".
+    expect(nilaiPengembanganKompetensi(['Diklat Pengadaan Barang/Jasa'], ['PBJ'])).toBe(50)
   })
 })
 
@@ -216,66 +234,79 @@ describe('Keragaman Riwayat Jabatan (§B.2.4.b)', () => {
   })
 })
 
-describe('Substansi Riwayat Jabatan (§B.2.4.c)', () => {
+describe('Substansi Riwayat Jabatan (§B.2.4.c) — dari jenis_penugasan TERVALIDASI', () => {
   it('Plt pada jenjang lebih tinggi → 100', () => {
-    expect(
-      nilaiSubstansiJabatan(
-        [riwayat({ jabatanNamaMentah: 'Plt Kepala Balai BP2JK Wilayah DKI', eselon: 'III' })],
-        'IV',
-      ),
-    ).toBe(100)
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: 'PLT', eselon: 'III' })], 'IV')).toBe(100)
   })
 
   it('Plt pada jenjang setara → 80', () => {
-    expect(
-      nilaiSubstansiJabatan(
-        [riwayat({ jabatanNamaMentah: 'Pelaksana Tugas Kepala Seksi Pengadaan', eselon: 'IV' })],
-        'IV',
-      ),
-    ).toBe(80)
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: 'PLT', eselon: 'IV' })], 'IV')).toBe(80)
   })
 
   it('Plh pada jenjang lebih tinggi → 60', () => {
-    expect(
-      nilaiSubstansiJabatan(
-        [riwayat({ jabatanNamaMentah: 'Plh Kepala Subdirektorat Pengadaan', eselon: 'III' })],
-        'IV',
-      ),
-    ).toBe(60)
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: 'PLH', eselon: 'III' })], 'IV')).toBe(60)
   })
 
   it('Plh pada jenjang setara → 40', () => {
-    expect(
-      nilaiSubstansiJabatan(
-        [riwayat({ jabatanNamaMentah: 'Pelaksana Harian Kepala Seksi', eselon: 'IV' })],
-        'IV',
-      ),
-    ).toBe(40)
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: 'PLH', eselon: 'IV' })], 'IV')).toBe(40)
   })
 
-  it('tanpa riwayat non-definitif → 0', () => {
-    expect(nilaiSubstansiJabatan([riwayat()], 'IV')).toBe(0)
+  it('sudah diperiksa & seluruhnya definitif → 0', () => {
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: 'DEFINITIF' })], 'IV')).toBe(0)
   })
 
   it('mengambil yang paling menguntungkan bila ada beberapa', () => {
     expect(
       nilaiSubstansiJabatan(
         [
-          riwayat({ jabatanNamaMentah: 'Plh Kepala Seksi', eselon: 'IV' }),
-          riwayat({ jabatanNamaMentah: 'Plt Kepala Balai', eselon: 'III' }),
+          riwayat({ jenisPenugasan: 'PLH', eselon: 'IV' }),
+          riwayat({ jenisPenugasan: 'PLT', eselon: 'III' }),
         ],
         'IV',
       ),
     ).toBe(100)
   })
 
-  it('tidak salah tangkap kata "Pelaksana" pada jabatan definitif', () => {
+  it('BELUM divalidasi → null, BUKAN 0', () => {
+    // Dua hal yang dulu sama-sama 0: "sudah diperiksa, semua definitif" dan
+    // "belum ada yang memeriksa". Yang kedua fakta tentang DATANYA, bukan tentang
+    // orangnya, dan memberinya angka membuat kekurangan data terlihat seperti
+    // kekurangan orang.
+    expect(nilaiSubstansiJabatan([riwayat({ jenisPenugasan: null })], 'IV')).toBeNull()
+  })
+
+  it('tanpa riwayat jabatan sama sekali → null', () => {
+    expect(nilaiSubstansiJabatan([], 'IV')).toBeNull()
+  })
+
+  it('baris yang belum divalidasi DIABAIKAN, bukan dianggap definitif', () => {
+    // Satu baris Plt tervalidasi + satu baris belum diperiksa → tetap 100.
+    // Kalau yang belum diperiksa dianggap definitif, hasilnya tetap 100 di sini
+    // juga; yang membedakan uji berikutnya.
     expect(
       nilaiSubstansiJabatan(
-        [riwayat({ jabatanNamaMentah: 'Kepala Balai Pelaksana Pemilihan Jasa Konstruksi' })],
-        'III',
+        [riwayat({ jenisPenugasan: 'PLT', eselon: 'III' }), riwayat({ jenisPenugasan: null })],
+        'IV',
+      ),
+    ).toBe(100)
+  })
+
+  it('teks jabatan TIDAK lagi berpengaruh', () => {
+    // Regex lama akan membaca ini sebagai Plt dan memberi 80–100. Sekarang yang
+    // menentukan hanya kolom keputusan — termasuk untuk "Pelaksana Tugas Belajar"
+    // yang bukan penugasan jabatan.
+    expect(
+      nilaiSubstansiJabatan(
+        [riwayat({ jabatanNamaMentah: 'Plt Kepala Balai', jenisPenugasan: 'DEFINITIF' })],
+        'IV',
       ),
     ).toBe(0)
+    expect(
+      nilaiSubstansiJabatan(
+        [riwayat({ jabatanNamaMentah: 'Kepala Balai Pelaksana Pemilihan', jenisPenugasan: 'PLT', eselon: 'III' })],
+        'IV',
+      ),
+    ).toBe(100)
   })
 })
 
@@ -336,6 +367,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         tingkatPendidikan: 'S2',
         bidangStudi: ['Teknik Sipil'],
         riwayatDiklat: ['Diklat Pengadaan Barang/Jasa'],
+        kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2019, 0, 1, 12),
@@ -350,6 +382,11 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
           }),
           riwayat({
             jabatanNamaMentah: 'Plt Kepala Subdirektorat Pengadaan',
+            // `jenisPenugasan` WAJIB dinyatakan sekarang. Dulu maksud "ini Plt"
+            // tersirat dari teksnya dan ditebak regex; sejak `doc/sql/014` yang
+            // dihitung hanya keputusan tervalidasi, jadi fixture yang cuma
+            // menulis "Plt" di nama jabatan sudah tidak menyatakan apa pun.
+            jenisPenugasan: 'PLT',
             jenjang: 'Administrator',
             eselon: 'II',
             unitOrganisasiId: 7,
@@ -360,7 +397,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         potkom: 100,
         hukumanDisiplin: [],
       },
-      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'] },
+      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
       SEKARANG,
     )
@@ -382,6 +419,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         tingkatPendidikan: 'S2',
         bidangStudi: ['Teknik Sipil'],
         riwayatDiklat: ['Diklat Pengadaan'],
+        kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2025, 6, 18, 12),
@@ -389,7 +427,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         potkom: 115.1,
         hukumanDisiplin: [],
       },
-      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'] },
+      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
       SEKARANG,
     )
@@ -409,6 +447,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         tingkatPendidikan: 'S1_D4',
         bidangStudi: ['Teknik Sipil'],
         riwayatDiklat: [],
+        kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2025, 1, 10, 12),
@@ -416,7 +455,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         potkom: 82,
         hukumanDisiplin: [{ tingkatHukuman: 'Ringan', statusAktif: true }],
       },
-      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'] },
+      { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
       SEKARANG,
     )
@@ -432,6 +471,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         tingkatPendidikan: 'S2',
         bidangStudi: ['Teknik Sipil'],
         riwayatDiklat: [],
+        kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Ahli Utama',
         eselonSaatIni: 'NON_ESELON',
         tmtJabatan: new Date(2019, 3, 1, 12),
@@ -439,7 +479,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         potkom: 97,
         hukumanDisiplin: [{ tingkatHukuman: 'Sedang', statusAktif: false }],
       },
-      { jabatanTargetId: 3, kataKunciRelevansi: ['teknik', 'konstruksi'] },
+      { jabatanTargetId: 3, kataKunciRelevansi: ['teknik', 'konstruksi'], syaratKategoriDiklat: ['MANAJEMEN_KONSTRUKSI'] },
       idIndikator,
       SEKARANG,
     )

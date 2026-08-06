@@ -64,19 +64,53 @@ export function nilaiKesesuaianBidangIlmu(bidangStudi: string[], kataKunci: stri
 }
 
 /**
- * KERANGKA §B.2.3 — Pengembangan Kompetensi: 100 bila punya riwayat diklat/
- * sertifikasi di bidang yang sesuai jabatan target, 50 bila tidak.
+ * KERANGKA §B.2.3 — Pengembangan Kompetensi: 100 bila punya riwayat diklat di
+ * kategori yang disyaratkan jabatan target, 50 bila tidak, **`null` bila tidak
+ * bisa dinilai**.
  *
- * Catatan: kata kunci "semua" TIDAK berlaku di sini — "semua jurusan
- * diperbolehkan" adalah kelonggaran pendidikan formal, bukan pembebasan syarat
- * diklat. Untuk indikator ini dipakai kata kunci selain "semua".
+ * ## Yang berubah dari versi kata kunci (`doc/sql/014`–`015`)
+ *
+ * Sebelumnya nama diklat dicocokkan sebagai teks terhadap
+ * `jabatan_target.kata_kunci_relevansi`. Terukur di `pupr_dev`: dari 182 nama
+ * diklat nyata hanya 36 cocok dengan pola kategori mana pun — "Bimtek
+ * Pengelolaan Kontrak Konstruksi" tidak cocok dengan "hukum kontrak" padahal
+ * isinya kontrak konstruksi. Sekarang yang dipakai **kategori yang sudah
+ * divalidasi manusia** (`pemetaan_diklat.status = 'TERVALIDASI'`) dan **syarat
+ * per jabatan target** (`jabatan_target_syarat_diklat`).
+ *
+ * ## Kenapa bisa `null`, dan kenapa itu perbaikan
+ *
+ * Dua keadaan yang dulu diam-diam jadi **50** padahal bukan "tidak punya":
+ *
+ *   1. pegawai yang **belum satu pun** diklatnya divalidasi — tidak diketahui;
+ *   2. jabatan target yang **belum menetapkan** syarat pelatihan — tidak ada
+ *      yang bisa dibandingkan.
+ *
+ * `null` membuat mesin rubrik menandainya `perluReview` dengan alasan
+ * `NILAI_KOSONG` alih-alih memberi angka yang terlihat sah. Itu menyelaraskannya
+ * dengan `nilaiLamaJabatan()` & `nilaiKeragamanJabatan()` yang **sudah** memakai
+ * `null` untuk maksud yang sama; dua dari empat indikator Kualifikasi Jabatan
+ * memberi angka untuk data yang tidak ada, dan dua tidak — ketidakseragaman itu
+ * yang sebenarnya bug.
+ *
+ * **Konsekuensi yang harus disadari:** mesin rubrik memberi `skor 0` untuk nilai
+ * `null` (bukan mengecualikannya dari rata-rata berbobot). Jadi selama antrian
+ * validasi belum dikerjakan, indikator ini menurunkan skor — dan itu terlihat
+ * sebagai `perlu_review`, bukan senyap. Mengecualikan alih-alih menol-kan adalah
+ * keputusan terpisah (`missing_policy` REVIEW+EXCLUDE, lihat DISPOSISI.md).
+ *
+ * Ambang "punya" tetap **minimal satu** kategori yang disyaratkan, bukan semua:
+ * rubriknya hanya punya dua kategori skor (100/50), jadi tidak ada tempat
+ * membedakan "punya 1 dari 3" dari "punya 3 dari 3".
  */
 export function nilaiPengembanganKompetensi(
-  riwayatDiklat: string[],
-  kataKunci: string[],
-): number {
-  const kunciDiklat = kataKunci.filter((k) => k.trim().toLowerCase() !== 'semua')
-  return adaYangRelevan(riwayatDiklat, kunciDiklat) ? 100 : 50
+  kategoriTervalidasi: string[],
+  syaratKategori: string[],
+): number | null {
+  if (syaratKategori.length === 0) return null
+  if (kategoriTervalidasi.length === 0) return null
+  const dimiliki = new Set(kategoriTervalidasi)
+  return syaratKategori.some((k) => dimiliki.has(k)) ? 100 : 50
 }
 
 export interface RiwayatJabatanUntukSkor {
@@ -88,6 +122,11 @@ export interface RiwayatJabatanUntukSkor {
   unitOrganisasiId: number | null
   tanggalMulai: Date | null
   tanggalAkhir: Date | null
+  /**
+   * Jenis penugasan hasil **validasi manusia** (`doc/sql/014`).
+   * `null` = belum diperiksa. Usulan regex tidak pernah masuk ke sini.
+   */
+  jenisPenugasan: 'DEFINITIF' | 'PLT' | 'PLH' | null
 }
 
 /**
@@ -151,32 +190,51 @@ export function nilaiKeragamanJabatan(riwayat: RiwayatJabatanUntukSkor[]): numbe
   return unit.size >= 2 ? 80 : 60
 }
 
-const POLA_PLT = /\b(plt|pelaksana tugas)\b/i
-const POLA_PLH = /\b(plh|pelaksana harian)\b/i
-
 /**
  * KERANGKA §B.2.4.c — Substansi Riwayat Jabatan (penugasan non-definitif).
  *
  * Plt lebih tinggi → 100 · Plt setara → 80 · Plh lebih tinggi → 60 ·
- * Plh setara → 40 · tidak punya riwayat non-definitif → 0.
+ * Plh setara → 40 · seluruh riwayatnya definitif → 0 (kategori terendah rubrik:
+ * "Tidak Memiliki riwayat jabatan yang berkaitan dengan jabatan non definitif").
  * "Lebih tinggi/setara" dibandingkan terhadap eselon jabatan pegawai sekarang.
+ *
+ * ## Yang berubah dari versi regex (`doc/sql/014`)
+ *
+ * Dulu Plt/Plh dideteksi dengan `/\b(plt|pelaksana tugas)\b/i` pada teks jabatan
+ * mentah dari eHRM. Dua arah kekeliruan, keduanya tanpa galat: ejaan yang tidak
+ * tertangkap menurunkan skor, dan `"Pelaksana Tugas Belajar"` menaikkannya —
+ * tugas belajar bukan penugasan jabatan. Sekarang yang dipakai kolom
+ * `riwayat_jabatan.jenis_penugasan`, yang **hanya berisi keputusan manusia**.
+ * Usulan regex-nya tetap ada, tapi di `lib/kategori-riwayat.ts` sebagai pengisi
+ * antrian pemeriksaan — bukan sebagai angka.
+ *
+ * ## Kenapa `null` sekarang mungkin
+ *
+ * Versi lama mengembalikan `0` untuk dua hal yang berbeda: "sudah diperiksa,
+ * seluruh riwayatnya definitif" dan "belum ada yang memeriksa". Yang kedua bukan
+ * fakta tentang pegawainya, melainkan tentang datanya — dan memberinya angka
+ * membuat kekurangan data terlihat seperti kekurangan orang. Pertanyaan itu
+ * bahkan ditanyakan dokumen sumbernya sendiri (kolom komentar `sample(1).md`
+ * lembar 7: *"Bagaimana jika tidak ada riwayat Plt/Plh"*).
+ *
+ * Pegawai **tanpa riwayat jabatan sama sekali** juga `null`, bukan 0: tidak ada
+ * yang bisa disimpulkan dari daftar kosong.
  */
 export function nilaiSubstansiJabatan(
   riwayat: RiwayatJabatanUntukSkor[],
   eselonSaatIni: Eselon | null,
-): number {
+): number | null {
+  const divalidasi = riwayat.filter((r) => r.jenisPenugasan !== null)
+  if (divalidasi.length === 0) return null
+
   const dasar = eselonSaatIni ? URUTAN_ESELON[eselonSaatIni] : -1
   let terbaik = 0
 
-  for (const r of riwayat) {
-    const plt = POLA_PLT.test(r.jabatanNamaMentah)
-    const plh = POLA_PLH.test(r.jabatanNamaMentah)
-    if (!plt && !plh) continue
-
+  for (const r of divalidasi) {
+    if (r.jenisPenugasan === 'DEFINITIF') continue
     const tingkat = r.eselon ? URUTAN_ESELON[r.eselon] : -1
     const lebihTinggi = tingkat > dasar
-
-    const skor = plt ? (lebihTinggi ? 100 : 80) : lebihTinggi ? 60 : 40
+    const skor = r.jenisPenugasan === 'PLT' ? (lebihTinggi ? 100 : 80) : lebihTinggi ? 60 : 40
     if (skor > terbaik) terbaik = skor
   }
 
@@ -187,7 +245,18 @@ export interface ProfilPenilaian {
   pegawaiId: number
   tingkatPendidikan: TingkatPendidikan | null
   bidangStudi: string[]
+  /**
+   * Nama diklat apa adanya dari eHRM. **Tidak lagi dipakai menghitung skor**
+   * (lihat `kategoriDiklatTervalidasi`); tetap dibawa karena profil & halaman
+   * kualitas data menampilkannya, dan karena antrian validasi lahir darinya.
+   */
   riwayatDiklat: string[]
+  /**
+   * Kode kategori diklat yang **sudah divalidasi manusia** untuk pegawai ini
+   * (`pemetaan_diklat.status = 'TERVALIDASI'`). Larik kosong = belum satu pun
+   * diklatnya diperiksa, yang berbeda dari "tidak punya diklat relevan".
+   */
+  kategoriDiklatTervalidasi: string[]
   jenjangSaatIni: string | null
   eselonSaatIni: Eselon | null
   tmtJabatan: Date | null
@@ -205,8 +274,21 @@ export interface ProfilPenilaian {
 
 export interface TargetPenilaian {
   jabatanTargetId: number
-  /** Kata kunci relevansi bidang ilmu & diklat untuk jabatan target ini. */
+  /**
+   * Kata kunci relevansi **bidang ilmu** untuk jabatan target ini.
+   *
+   * Sejak `doc/sql/015` ia tidak lagi dipakai indikator diklat — kolom yang sama
+   * dipakai dua maksud adalah sebabnya `"semua"` harus diperlakukan berbeda di
+   * antara keduanya, dan menambah kata kunci untuk salah satunya diam-diam
+   * mengubah yang lain.
+   */
   kataKunciRelevansi: string[]
+  /**
+   * Kode kategori diklat yang dianggap relevan untuk jabatan target ini
+   * (`jabatan_target_syarat_diklat`). Kosong = belum ditetapkan → indikator
+   * Pengembangan Kompetensi bernilai "tidak diketahui", bukan gagal.
+   */
+  syaratKategoriDiklat: string[]
 }
 
 /**
@@ -254,7 +336,7 @@ export const SUMBER_KUNCI: Record<KunciIndikator, { label: string; asal: string 
   },
   PENGEMBANGAN_KOMPETENSI: {
     label: 'Pengembangan kompetensi',
-    asal: 'pegawai.riwayat_diklat × kata kunci relevansi jabatan target',
+    asal: 'pemetaan_diklat TERVALIDASI × jabatan_target_syarat_diklat',
   },
   LAMA_JABATAN: {
     label: 'Lama jabatan (tahun)',
@@ -266,7 +348,7 @@ export const SUMBER_KUNCI: Record<KunciIndikator, { label: string; asal: string 
   },
   SUBSTANSI_JABATAN: {
     label: 'Substansi riwayat jabatan',
-    asal: 'riwayat_jabatan — penugasan Plt/Plh',
+    asal: 'riwayat_jabatan.jenis_penugasan (divalidasi manusia)',
   },
   INTEGRITAS: {
     label: 'Rekam jejak disiplin',
@@ -301,7 +383,10 @@ export function nilaiUntukKunci(
     case 'KESESUAIAN_BIDANG_ILMU':
       return nilaiKesesuaianBidangIlmu(profil.bidangStudi, target.kataKunciRelevansi)
     case 'PENGEMBANGAN_KOMPETENSI':
-      return nilaiPengembanganKompetensi(profil.riwayatDiklat, target.kataKunciRelevansi)
+      return nilaiPengembanganKompetensi(
+        profil.kategoriDiklatTervalidasi,
+        target.syaratKategoriDiklat,
+      )
     case 'LAMA_JABATAN':
       return nilaiLamaJabatan(
         profil.riwayatJabatan,

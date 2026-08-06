@@ -651,7 +651,12 @@ async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
         deskripsi={
           profil.riwayatDiklat.length === 0
             ? undefined
-            : `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · input indikator Pengembangan Kompetensi`
+            : // Sengaja TIDAK lagi menulis "input indikator Pengembangan Kompetensi":
+              // sejak doc/sql/014-015 yang menjadi input adalah KATEGORI hasil
+              // validasi, bukan daftar nama ini. Label lama akan membuat orang
+              // menyimpulkan skornya sudah terhitung padahal diklatnya belum
+              // dikategorikan — dan itu justru keadaan yang paling sering terjadi.
+              `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · indikator Pengembangan Kompetensi memakai kategori hasil validasi, bukan daftar ini`
         }
       />
       <DaftarDiklat diklat={profil.riwayatDiklat} />

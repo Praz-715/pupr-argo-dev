@@ -685,7 +685,8 @@ export async function ambilJejakManual(jabatanTargetId: number): Promise<JejakMa
  * saat merender halaman (phase.md §3 K-5).
  */
 export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
-  const [pegawaiRaw, pendidikanRaw, riwayatRaw, hukumanRaw, asesmenRaw] = await Promise.all([
+  const [pegawaiRaw, pendidikanRaw, riwayatRaw, hukumanRaw, kategoriRaw, asesmenRaw] =
+    await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT p.id, p.nip, p.nama_lengkap, p.tingkat_pendidikan, p.bidang_studi_terakhir,
               p.riwayat_diklat, p.tmt_jabatan, j.jenjang, j.eselon
@@ -697,6 +698,7 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
     kueri<Record<string, unknown>>(`SELECT pegawai_id, bidang_studi FROM riwayat_pendidikan`),
     kueri<Record<string, unknown>>(
       `SELECT r.pegawai_id, r.jabatan_nama_mentah, r.jabatan_id, r.tanggal_mulai, r.tanggal_akhir,
+              r.jenis_penugasan,
               j.jenjang, j.eselon, j.unit_organisasi_id
        FROM riwayat_jabatan r
        LEFT JOIN jabatan j ON j.id = r.jabatan_id
@@ -704,6 +706,28 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
     ),
     kueri<Record<string, unknown>>(
       `SELECT pegawai_id, tingkat_hukuman, status_aktif FROM hukuman_disiplin`,
+    ),
+    /**
+     * Kategori diklat TERVALIDASI per pegawai (`doc/sql/014`).
+     *
+     * Satu kueri untuk seluruh pegawai, bukan per pegawai: jalur ini dipanggil
+     * Hitung Ulang untuk 1.960 orang sekaligus, dan satu kueri per orang di situ
+     * adalah 1.960 perjalanan ke DB. Collation `JSON_TABLE` disebut eksplisit —
+     * tanpa itu perbandingannya melempar "Illegal mix of collations" **lewat
+     * driver aplikasi** meski lolos di `mysql` CLI.
+     */
+    kueri<Record<string, unknown>>(
+      `SELECT DISTINCT p.id AS pegawai_id, k.kode
+         FROM pegawai p,
+              JSON_TABLE(p.riwayat_diklat, '$[*]'
+                COLUMNS (nama VARCHAR(300) CHARACTER SET utf8mb4
+                         COLLATE utf8mb4_0900_ai_ci PATH '$')) jt
+         JOIN pemetaan_diklat pd
+           ON pd.nama_normal = LOWER(TRIM(REGEXP_REPLACE(jt.nama, '[[:space:]]+', ' ')))
+         JOIN master_kategori_riwayat_diklat k ON k.id = pd.kategori_id
+        WHERE p.riwayat_diklat IS NOT NULL
+          AND pd.status = 'TERVALIDASI'
+          AND k.aktif = 1`,
     ),
     kueri<Record<string, unknown>>(
       `${CTE_ASESMEN_TERBARU}
@@ -732,6 +756,10 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
         unitOrganisasiId: r.unit_organisasi_id === null ? null : Number(r.unit_organisasi_id),
         tanggalMulai: tanggal(r.tanggal_mulai),
         tanggalAkhir: tanggal(r.tanggal_akhir),
+        jenisPenugasan:
+          r.jenis_penugasan === null
+            ? null
+            : (String(r.jenis_penugasan) as 'DEFINITIF' | 'PLT' | 'PLH'),
       },
     ])
   }
@@ -746,6 +774,12 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
         statusAktif: Number(r.status_aktif) === 1,
       },
     ])
+  }
+
+  const kategoriPer = new Map<number, string[]>()
+  for (const r of kategoriRaw) {
+    const id = Number(r.pegawai_id)
+    kategoriPer.set(id, [...(kategoriPer.get(id) ?? []), String(r.kode)])
   }
 
   const asesmenPer = new Map<number, ProfilKandidat['asesmen'] & { potkom: number | null; predikat: Predikat | null }>()
@@ -773,6 +807,7 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
         p.tingkat_pendidikan === null ? null : (String(p.tingkat_pendidikan) as TingkatPendidikan),
       bidangStudi: bidang,
       riwayatDiklat: bacaJsonTeks(p.riwayat_diklat),
+      kategoriDiklatTervalidasi: kategoriPer.get(pegawaiId) ?? [],
       jenjangSaatIni: p.jenjang === null ? null : String(p.jenjang),
       eselonSaatIni: p.eselon === null ? null : (String(p.eselon) as Eselon),
       tmtJabatan: tanggal(p.tmt_jabatan),
@@ -803,6 +838,26 @@ function tanggal(nilai: unknown): Date | null {
  * Satu pintu untuk perhitungan ulang & simulasi, supaya keduanya pasti memakai
  * rubrik, persyaratan, dan kata kunci yang sama.
  */
+/**
+ * Kode kategori diklat yang relevan untuk sebuah jabatan target (`doc/sql/015`).
+ *
+ * Hanya kategori **aktif** yang ikut. Kategori yang dinonaktifkan tetap tercatat
+ * sebagai syarat (barisnya tidak dihapus, supaya jejak "dulu ini disyaratkan"
+ * bertahan), tapi tidak boleh lagi menentukan skor — kalau ikut, sebuah kategori
+ * yang sudah diputuskan tidak dipakai masih menaikkan nilai orang.
+ */
+export async function ambilSyaratKategoriDiklat(jabatanTargetId: number): Promise<string[]> {
+  const baris = await kueri<{ kode: string }>(
+    `SELECT k.kode
+       FROM jabatan_target_syarat_diklat s
+       JOIN master_kategori_riwayat_diklat k ON k.id = s.kategori_id
+      WHERE s.jabatan_target_id = ? AND k.aktif = 1
+      ORDER BY k.kode`,
+    [jabatanTargetId],
+  )
+  return baris.map((b) => b.kode)
+}
+
 export async function ambilRubrikUntukHitung(
   jabatanTargetId: number,
 ): Promise<{ rubrik: RubrikJabatanTarget; komponen: KomponenRubrik[] } | null> {
@@ -818,6 +873,7 @@ export async function ambilRubrikUntukHitung(
     rubrik: {
       jabatanTargetId,
       kataKunciRelevansi: target.kataKunciRelevansi,
+      syaratKategoriDiklat: await ambilSyaratKategoriDiklat(jabatanTargetId),
       komponen,
       indikatorBerkunci: indikatorBerkunciDari(komponen),
       persyaratan: persyaratan.map((p) => ({

@@ -29,6 +29,7 @@ function rubrik(ubah: Partial<RubrikJabatanTarget> = {}): RubrikJabatanTarget {
   return {
     jabatanTargetId: 1,
     kataKunciRelevansi: ['pengadaan', 'semua'],
+    syaratKategoriDiklat: ['PBJ'],
     komponen: rubrikJabatanTarget(),
     indikatorBerkunci: BERKUNCI,
     persyaratan: [
@@ -46,6 +47,7 @@ function kandidat(ubah: Partial<ProfilKandidat> = {}): ProfilKandidat {
     tingkatPendidikan: 'S2',
     bidangStudi: ['Teknik Sipil'],
     riwayatDiklat: ['Diklat Pengadaan Barang/Jasa'],
+    kategoriDiklatTervalidasi: ['PBJ'],
     jenjangSaatIni: 'Administrator',
     eselonSaatIni: 'III',
     tmtJabatan: new Date(2019, 0, 1, 12),
@@ -58,6 +60,7 @@ function kandidat(ubah: Partial<ProfilKandidat> = {}): ProfilKandidat {
         unitOrganisasiId: 7,
         tanggalMulai: new Date(2019, 0, 1, 12),
         tanggalAkhir: null,
+        jenisPenugasan: 'DEFINITIF',
       },
     ],
     potkom: 85,

@@ -43,6 +43,13 @@ const TABEL_MASTER = [
   // `master_kategori_riwayat_diklat` SENGAJA tidak di sini: isinya lahir dari
   // INSERT di dalam `014_kategori_riwayat.sql` sendiri, yang sudah ikut dipasang
   // lewat BERKAS_SKEMA. Menyalinnya lagi menabrak primary key.
+  //
+  // `jabatan_target_syarat_diklat` SEBALIKNYA harus disalin: `015` mengisinya
+  // lewat `INSERT … SELECT FROM jabatan_target`, dan di alur volume tabel itu
+  // masih kosong saat skema dipasang — jadi hasilnya nol baris. Tanpa disalin,
+  // seluruh jabatan target di volume jadi "tanpa syarat pelatihan" dan indikator
+  // Pengembangan Kompetensi tidak pernah menghasilkan 100 maupun 50 di sana.
+  'jabatan_target_syarat_diklat',
 ]
 
 /** Ekspresi Kotak 9 versi SQL (ambang Lampiran A). Lihat catatan di bawah. */
@@ -90,6 +97,7 @@ async function main() {
     'doc/sql/011_notifikasi.sql',
     'doc/sql/012_auth.sql',
     'doc/sql/014_kategori_riwayat.sql',
+    'doc/sql/015_syarat_diklat_target.sql',
   ]
 
   await langkah(`pasang skema (${BERKAS_SKEMA.length} berkas)`, async () => {

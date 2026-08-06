@@ -47,7 +47,10 @@ export interface ProfilKandidat extends ProfilPenilaian {
 
 export interface RubrikJabatanTarget {
   jabatanTargetId: number
+  /** Kata kunci relevansi **bidang ilmu** (bukan diklat — lihat `doc/sql/015`). */
   kataKunciRelevansi: string[]
+  /** Kode kategori diklat yang relevan (`jabatan_target_syarat_diklat`). */
+  syaratKategoriDiklat: string[]
   komponen: KomponenNode[]
   /** Indikator daun + kunci sumber datanya (`rubrik_indikator.kunci_sistem`). */
   indikatorBerkunci: IndikatorBerkunci[]
@@ -107,6 +110,7 @@ export function hitungSkorMassal(
   const target = {
     jabatanTargetId: rubrik.jabatanTargetId,
     kataKunciRelevansi: rubrik.kataKunciRelevansi,
+    syaratKategoriDiklat: rubrik.syaratKategoriDiklat,
   }
 
   const hasil = kandidat.map((profil): HasilSkorKandidat => {
