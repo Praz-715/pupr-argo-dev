@@ -8,7 +8,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 **Stack:** Next.js 16 (App Router, full-stack — frontend + backend dalam satu app) + React 19 + Tailwind v4 + Drizzle ORM + MySQL.
 
-**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit), **8** (Laporan & Ekspor — Gap Analysis, Rekap Nominasi & Approval, Pusat Ekspor CSV), dan **9** (API Eksternal `/api/v1` — Bearer + scope, Klien & Token API, Log Aktivitas, Dokumentasi) sudah selesai; berikutnya Fase 10 (Hardening). Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
+**Status:** implementasi berjalan. **Fase 0** (fondasi + rule engine), **0.5** (rapikan data dev), **1** (Dashboard Utama), **2** (Direktori & Profil Talenta), **3** (Peta Talenta & Perbandingan Kandidat), **4** (Master Data, Importer & Kualitas Data), **5** (Rule Engine — jabatan target, editor rubrik, simulasi & diff), **6** (Talent Pool & Workflow Nominasi + Inbox Tugas), **7** (Auth & RBAC — sesi asli, manajemen pengguna, audit log viewer, pengaturan sistem, pembatasan data per unit), **8** (Laporan & Ekspor — Gap Analysis, Rekap Nominasi & Approval, Pusat Ekspor CSV), **9** (API Eksternal `/api/v1` — Bearer + scope, Klien & Token API, Log Aktivitas, Dokumentasi), dan **10** (Kategori Riwayat Diklat, Validasi Riwayat, + peralihan skoring ke kategori tervalidasi) sudah selesai. Sisa Fase 10 (Hardening) yang belum: review indeks terhadap `EXPLAIN`, audit aksesibilitas keyboard, `openapi.yaml`, dan tiga verifikasi ulang yang tertunda — lihat "Titik masuk Fase 10". Dokumen di `doc/` tetap **source of truth** — kode mengikuti dokumen, bukan sebaliknya:
 
 | Dokumen | Isi |
 |---|---|
@@ -25,7 +25,7 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 ---
 
-## Keadaan Sekarang (per akhir Fase 9)
+## Keadaan Sekarang (per akhir Fase 10 — commit `56c3d10`)
 
 ### Baseline verifikasi — kalau angka ini turun, ada yang regresi
 
@@ -36,7 +36,8 @@ npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyim
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) · 30/30 (F8) · 39/39 (F9)
                                · 23/23 (F10) = 360 pemeriksaan
-npm run build                → sukses, 30 entri route (31 halaman + /_not-found + /icon.svg + route ekspor) + middleware
+npm run build                → BELUM dijalankan ulang sejak Fase 10 menambah 2 halaman
+                               (terakhir terverifikasi: 30 entri route pada akhir Fase 9)
 npm run ukur:kueri           → 74 kueri = ~315 ms · :volume di 2.000 pegawai = ~900 ms
                                ambang 150 ms/kueri; agregat laporan 500 ms (alasannya di skripnya)
                                terberat di volume: gapIndikator 254 ms · antrianDiklat 153 ms · ringkasGap 132 ms
@@ -61,6 +62,29 @@ npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris 
 2. **`ORDER BY` atas kolom terhitung membatalkan penghematan `LIMIT`.** Antrian diklat diurutkan menurut "dipakai berapa pegawai", yang dihitung dari `pegawai.riwayat_diklat`. Sebagai subkueri berkorelasi, MySQL menghitungnya untuk **seluruh** 182 baris sebelum memotong 25 — 182 × 2.000 pegawai × ekspansi JSON = **5.677 ms** di volume. Diubah jadi satu `WITH … GROUP BY` yang memindai `pegawai` sekali: **153 ms**. Selama pengurutannya menurut kolom **tersimpan**, subkueri per baris hanya berjalan untuk baris yang tampil. Di dev 141 ms → 6 ms — dan 141 ms itulah yang membuatnya dicurigai lalu diperiksa di volume.
 
 **Jangan menyunting berkas Markdown lewat pipa teks PowerShell.** `Get-Content -Raw` + `Set-Content -Encoding utf8` pada berkas berisi non-ASCII **merusak encoding** (`→` menjadi `â†'`) dan menyisipkan BOM — terjadi ke CLAUDE.md di sesi ini, 77 baris rusak. Mojibake CP1252 itu deterministik jadi bisa dibalik, tapi jangan diulang: pakai alat Edit.
+
+### Kehabisan memori terlihat seperti kode rusak — kenali dulu sebelum mendiagnosis
+
+Terjadi setelah beberapa jam menjalankan smoke berulang kali, dan **sempat salah kudiagnosis dua kali**. Gejalanya berturut-turut:
+
+| Gejala | Yang sebenarnya terjadi |
+|---|---|
+| ESLint mati dengan jejak tumpukan V8 + `Could not determine Node.js install directory` | Bukan konfigurasi ESLint. V8 gagal mengalokasikan heap |
+| `vitest`: `Worker exited unexpectedly`, hanya 8 dari 17 berkas jalan | Worker fork dibunuh OS, bukan uji yang gagal |
+| MySQL `ECONNREFUSED 3306`, `docker ps` menjawab *Internal Server Error* | Service `com.docker.service` berhenti. **Menyalakannya butuh elevasi admin** — tidak bisa dari sesi ini |
+| Halaman 404 / dev server tidak menjawab | Server mati, bukan `.next` rusak — jangan langsung `rm -rf .next` |
+
+**Cara memastikan dalam satu perintah** (PowerShell, bukan pipa bash — `$o` akan ditelan bash):
+
+```powershell
+$o = Get-CimInstance Win32_OperatingSystem
+"RAM bebas : {0} GB / {1} GB" -f [math]::Round($o.FreePhysicalMemory/1MB,1), [math]::Round($o.TotalVisibleMemorySize/1MB,1)
+"proses node: $(@(Get-Process node -ErrorAction SilentlyContinue).Count)"
+```
+
+Pernah terbaca **1.128 proses node** sekaligus — sisa Playwright & dev server yang dimatikan paksa. Di mesin 11,7 GB, RAM bebas turun ke 0,7 GB dan semua di atas menyusul.
+
+**Membereskannya tetap TIDAK boleh dengan `taskkill /IM node.exe`** (aturan di bawah masih berlaku — itu membunuh dev server user). Yang aman: matikan **hanya PID yang memegang portnya**, `Get-NetTCPConnection -LocalPort <port> -State Listen` → `Stop-Process -Id`. Kalau perlu server sendiri, pakai port lain (3100) dan matikan hanya PID itu.
 
 **Jangan `npm run build` sambil dev server hidup di direktori yang sama** — build produksi menulis ke `.next` yang sedang dipakai server dev, dan akibatnya route bersarang mendadak 404. Urutannya: smoke dulu, build terakhir.
 
@@ -160,11 +184,22 @@ Disposisi lengkap paket `doc_tambahan` (7 sudah sama · 3 diambil · 3 ditunda �
 
 ### Titik masuk Fase 10 (Hardening)
 
-- ~~Berkas smoke `fase-8` & `fase-9`~~ **sudah ada** (30 + 39 pemeriksaan, masuk `npm run smoke`).
-- ~~Kueri laporan Fase 8 & Fase 9 belum diukur~~ **sudah masuk `ukur:kueri`** (69 kueri). Lihat temuan di bawah.
+- ~~Berkas smoke `fase-8` & `fase-9`~~ **sudah ada** (30 + 39), ditambah `fase-10` (23) — 360 pemeriksaan di 11 berkas.
+- ~~Kueri laporan Fase 8 & Fase 9 belum diukur~~ **sudah masuk `ukur:kueri`** (74 kueri, termasuk Fase 10). Lihat temuan di bawah.
+- ~~Kamus kategori diklat & validasi riwayat~~ **selesai** (`doc/sql/014`–`015`, dua halaman, skoring sudah dialihkan — lihat "Keadaan Sekarang").
 - **Yang MASIH belum terukur di skala volume: `aktivitasApi`.** `pupr_dev_volume` punya **0 baris** `api_activity_log` (seed-nya menyalin `api_client`/`api_token` tapi tidak menghasilkan aktivitas), jadi angka 3 ms itu mengukur tabel kosong — bukan bukti apa pun. Ia sekelas `auditLog`: hanya bertambah, tidak pernah dipangkas, dan **satu baris per permintaan `/api/v1`**. Kalau ada kueri yang akan melambat seiring waktu, ini dia.
 - **Indeks yang disebut PRD §8** (`nip`, `unit_organisasi_id`, `jabatan_target_id`, `(pegawai_id, tahun_asesmen)`) belum pernah di-review sistematis terhadap `EXPLAIN`.
 - **Aksesibilitas**: tiap chart sudah punya padanan tabel, palet sudah divalidasi CVD di kedua tema. Yang belum: audit fokus keyboard & `aria-label` menyeluruh.
+
+#### Tiga hal yang BELUM diverifikasi ulang setelah peralihan skoring Tahap 2 (`56c3d10`)
+
+Ditulis di sini supaya tidak dikira sudah beres. Ketiganya terhenti karena **mesinnya kehabisan memori**, bukan karena kode — lihat catatan lingkungan di bawah.
+
+1. **Smoke `fase-10`** — 23/23 lolos **sebelum** peralihan, dan berkas itu tidak menyentuh skor sama sekali (ia menguji kamus & antrian), tapi belum dijalankan sesudahnya.
+2. **Rebuild `pupr_dev_volume` dengan `015`** — `BERKAS_SKEMA` & `TABEL_MASTER` di `seed-volume.ts` sudah diperbarui, tapi `npm run db:volume` belum dijalankan sejak itu. Sampai dijalankan, `ukur:kueri:volume` mengukur volume DB versi lama.
+3. **`npm run lint` & `vitest`** — keduanya bersih sebelum mesinnya melemah (466 uji), lalu crash. Bukan bukti ada yang rusak, tapi juga bukan bukti tidak ada.
+
+**`npm run build` juga belum dijalankan ulang** sejak Fase 10 menambah dua halaman; jumlah route di baseline masih angka akhir Fase 9.
 
 #### Temuan pengukuran Fase 8: `gapIndikator` & alat ukur yang sempat menipu
 
@@ -237,7 +272,8 @@ npm run verifikasi:data     # 46 pemeriksaan isi pupr_dev (silang-uji SQL murni:
 npm run verifikasi:skoring  # lib/skor-massal vs isi match_score — menangkap KODE yang menyimpang
 npm run smoke               # Playwright Fase 0 (shell) + 1 (dashboard) + 2 (direktori/profil) + 3 (peta/bandingkan)
                             #           + 4 (master/kualitas) + 5 (rule engine) + 6 (talent pool/workflow) + 7 (auth & RBAC)
-                            #           + 8 (laporan/ekspor CSV) + 9 (API eksternal) — 337 pemeriksaan, ~9 menit
+                            #           + 8 (laporan/ekspor CSV) + 9 (API eksternal)
+                            #           + 10 (kategori & validasi riwayat) — 360 pemeriksaan, ~11 menit
 npm run db:recompute        # hasilkan ulang doc/sql/007_recompute.sql dari lib/scoring
 npm run ukur:kueri          # waktu 69 kueri halaman Fase 1-9 (150 ms/kueri · 500 ms agregat laporan)
 npm run ukur:hitung-ulang   # waktu jalur TULIS Hitung Ulang (ambang 30 s/jabatan target)
