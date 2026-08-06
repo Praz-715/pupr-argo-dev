@@ -40,7 +40,7 @@ const HALAMAN = [
   { url: '/jabatan-target/1/kandidat', prd: [SA, AT, PM], ref: '§6.5 Kandidat' },
   { url: '/master/unit', prd: [SA], ref: '§6.4' },
   { url: '/master/jabatan', prd: [SA, AT], ref: '§6.4' },
-  { url: '/master/jabatan-kosong', prd: [SA, AT, PM], ref: '§6.4' },
+  { url: '/jabatan-target', prd: [SA, AT, PM], ref: '§6.4' },
   { url: '/master/hukuman-disiplin', prd: [SA, AT], ref: '§6.4 (UU PDP)' },
   { url: '/talent-pool', prd: [SA, AT, PU, PM], ref: '§6.6' },
   { url: '/nominasi', prd: [SA, AT, PU, PM], ref: '§6.6 antrian + timeline' },

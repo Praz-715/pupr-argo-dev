@@ -1,59 +1,42 @@
 import { ArrowRight, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
-import { Suspense } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
-import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
+import { Panel, PanelHeader } from '@/components/ui/panel'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import { formatAngka, formatNip, formatSkorRingkas } from '@/lib/format'
 import { ambilJabatanKosongRinci, ambilPejabatBerisiko } from '@/lib/kueri/master'
-
-export const metadata = { title: 'Jabatan Kosong & Risiko Kekosongan' }
-
-type ParamHalaman = Promise<Record<string, string | undefined>>
+import { TombolJadikanDraft } from './tombol-jadikan-draft'
 
 /**
- * Jabatan Kosong & Risiko Kekosongan (U-6 — perluasan PRD §6.4 "Status Jabatan
- * Kosong").
+ * Jabatan Kosong & Risiko Kekosongan — **dipindahkan** dari `/master/jabatan-kosong`
+ * ke halaman Jabatan Target (Fase 11 no. 2, U-14).
  *
- * PRD hanya mencakup jabatan yang **sudah** kosong. Lampiran B langkah 2 meminta
- * jabatan yang **berisiko** kosong — dan itu pertanyaan yang berbeda secara
- * operasional: kekosongan yang sudah terjadi berarti sudah terlambat, sedangkan
- * kekosongan yang akan datang masih bisa disiapkan suksesornya.
+ * Alasannya bukan penghematan halaman. Begitu Peta Talenta bisa disaring per
+ * jabatan target, kekosongan **tanpa** jabatan target berubah dari catatan jadi
+ * penghalang: di `pupr_dev` ada 6 jabatan KOSONG tapi hanya 2 yang punya rubrik,
+ * jadi empat sisanya tidak bisa dinilai sama sekali. Menaruh daftarnya di halaman
+ * yang sama dengan tempat rubrik dibuat mengubahnya jadi **antrean kerja dengan
+ * tombolnya sendiri**, alih-alih dua halaman yang harus dicocokkan sendiri oleh
+ * pembacanya.
  *
- * Bahan untuk bagian "berisiko" tidak butuh kolom baru maupun data baru: tanggal
- * lahir ada di dalam NIP (phase.md §3 K-6) → usia → proyeksi Batas Usia Pensiun
- * per jenis jabatan (58/60/65).
+ * Peran nav kedua halaman **sudah identik** (Super Admin · Admin Talenta ·
+ * Pimpinan), jadi peleburan ini tidak menggeser siapa boleh melihat apa. Itu
+ * diperiksa lebih dulu, bukan diasumsikan.
  */
-export default async function JabatanKosongPage({ searchParams }: { searchParams: ParamHalaman }) {
-  const params = await searchParams
-  const ambang = bacaAmbang(params.ambang)
-  const hanyaStrategis = params.strategis === '1'
 
-  return (
-    <div className="space-y-5">
-      <PageHeader
-        judul="Jabatan Kosong & Risiko Kekosongan"
-        deskripsi="Jabatan yang sudah kosong, dan jabatan yang akan kosong karena pejabatnya mendekati Batas Usia Pensiun."
-      />
-
-      <Suspense fallback={<KosongSkeleton />}>
-        <IsiKosong hanyaStrategis={hanyaStrategis} />
-      </Suspense>
-
-      <Suspense key={ambang} fallback={<RisikoSkeleton />}>
-        <IsiRisiko ambang={ambang} />
-      </Suspense>
-    </div>
-  )
-}
-
-async function IsiKosong({ hanyaStrategis }: { hanyaStrategis: boolean }) {
+export async function PanelJabatanKosong({
+  hanyaStrategis,
+  bolehUbah,
+}: {
+  hanyaStrategis: boolean
+  bolehUbah: boolean
+}) {
   const { daftar, total, tanpaTarget } = await ambilJabatanKosongRinci(hanyaStrategis)
 
   return (
-    <Panel padat>
+    <Panel padat id="jabatan-kosong">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3.5 py-3">
         <PanelHeader
           judul="Sudah kosong"
@@ -64,13 +47,24 @@ async function IsiKosong({ hanyaStrategis }: { hanyaStrategis: boolean }) {
           }
         />
         <Link
-          href={hanyaStrategis ? '/master/jabatan-kosong' : '/master/jabatan-kosong?strategis=1'}
+          href={hanyaStrategis ? '/jabatan-target#jabatan-kosong' : '/jabatan-target?strategis=1#jabatan-kosong'}
           scroll={false}
           className="text-[11px] whitespace-nowrap text-accent hover:underline"
         >
           {hanyaStrategis ? 'Tampilkan semua eselon' : 'Hanya eselon I–III'}
         </Link>
       </div>
+
+      {tanpaTarget > 0 ? (
+        <p className="border-b border-border bg-warning-subtle px-3.5 py-2.5 text-[12px] leading-relaxed text-text-muted">
+          <strong className="font-medium text-warning">
+            {formatAngka(tanpaTarget)} dari {formatAngka(total)} jabatan kosong belum punya jabatan
+            target
+          </strong>{' '}
+          — kandidatnya belum bisa dinilai sama sekali, dan jabatan itu tidak muncul di pemilih Peta
+          Talenta. {bolehUbah ? 'Tekan “Jadikan draft” pada barisnya untuk mulai.' : null}
+        </p>
+      ) : null}
 
       {total === 0 ? (
         <div className="p-4">
@@ -90,6 +84,7 @@ async function IsiKosong({ hanyaStrategis }: { hanyaStrategis: boolean }) {
                 <th className="px-3 py-2">Kesiapan suksesi</th>
                 <th className="px-3 py-2 text-right">Kandidat pool</th>
                 <th className="px-3 py-2 text-right">Siap</th>
+                {bolehUbah ? <th className="px-3 py-2 text-right">Aksi</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -126,6 +121,22 @@ async function IsiKosong({ hanyaStrategis }: { hanyaStrategis: boolean }) {
                   <td className="tabular px-3 py-2 text-right font-medium text-text">
                     {formatAngka(d.jumlahKandidatSiap)}
                   </td>
+                  {bolehUbah ? (
+                    <td className="px-3 py-2 text-right">
+                      {/*
+                        Tombol hanya untuk yang BELUM punya target. Yang sudah punya
+                        tidak diberi tombol "buat lagi": dua rubrik untuk posisi yang
+                        sama berarti dua skor untuk orang yang sama tanpa ada yang
+                        tahu mana yang berlaku. Server menolaknya juga — halaman bisa
+                        basi.
+                      */}
+                      {!d.adaJabatanTarget ? (
+                        <TombolJadikanDraft jabatanId={d.id} namaJabatan={d.namaJabatan} />
+                      ) : (
+                        <span className="text-[11px] text-text-subtle">—</span>
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -142,11 +153,11 @@ async function IsiKosong({ hanyaStrategis }: { hanyaStrategis: boolean }) {
   )
 }
 
-async function IsiRisiko({ ambang }: { ambang: number }) {
+export async function PanelRisikoKekosongan({ ambang }: { ambang: number }) {
   const { daftar, totalDiperiksa, nipTidakTerbaca } = await ambilPejabatBerisiko(ambang)
 
   return (
-    <Panel padat>
+    <Panel padat id="risiko-kekosongan">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3.5 py-3">
         <PanelHeader
           judul="Akan kosong — pejabat mendekati Batas Usia Pensiun"
@@ -165,7 +176,7 @@ async function IsiRisiko({ ambang }: { ambang: number }) {
           {[1, 3, 5, 10].map((n) => (
             <Link
               key={n}
-              href={`/master/jabatan-kosong?ambang=${n}`}
+              href={`/jabatan-target?ambang=${n}#risiko-kekosongan`}
               scroll={false}
               className={
                 n === ambang
@@ -288,24 +299,19 @@ async function IsiRisiko({ ambang }: { ambang: number }) {
   )
 }
 
-function bacaAmbang(nilai: string | undefined): number {
-  const n = Number(nilai)
-  return Number.isInteger(n) && n >= 1 && n <= 20 ? n : 3
-}
-
-function KosongSkeleton() {
+export function KosongSkeleton() {
   return (
     <Panel padat>
       <div className="border-b border-border px-3.5 py-3">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="mt-2 h-3 w-full max-w-md" />
       </div>
-      <TableSkeleton rows={6} cols={['2fr', '2fr', '0.6fr', '1.4fr', '0.8fr', '0.5fr']} />
+      <TableSkeleton rows={6} cols={['2fr', '2fr', '0.6fr', '1.4fr', '0.8fr', '0.5fr', '0.9fr']} />
     </Panel>
   )
 }
 
-function RisikoSkeleton() {
+export function RisikoSkeleton() {
   return (
     <Panel padat>
       <div className="border-b border-border px-3.5 py-3">
@@ -315,4 +321,10 @@ function RisikoSkeleton() {
       <TableSkeleton rows={4} cols={['1.6fr', '2fr', '0.5fr', '0.5fr', '0.6fr', '0.8fr', '1.2fr']} />
     </Panel>
   )
+}
+
+/** Ambang tahun menuju BUP dari `?ambang=`; divalidasi di boundary. */
+export function bacaAmbang(nilai: string | undefined): number {
+  const n = Number(nilai)
+  return Number.isInteger(n) && n >= 1 && n <= 20 ? n : 3
 }

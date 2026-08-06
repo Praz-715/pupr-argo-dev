@@ -176,12 +176,18 @@ export const NAVIGASI: GrupNav[] = [
         kataKunci: ['posisi', 'eselon', 'jenjang'],
       },
       {
+        // Isinya melebur ke halaman Jabatan Target di Fase 11 (U-14), jadi
+        // entrinya `luarSidebar`: tetap ditemukan lewat command palette dengan
+        // kata yang benar-benar dipakai orang ("bup", "pensiun", "lowong") tapi
+        // tidak menambah entri sidebar kedua yang tujuannya sama — dua entri
+        // menuju satu halaman membuat pengguna ragu apakah ia salah klik.
         label: 'Jabatan Kosong & Risiko',
-        href: '/master/jabatan-kosong',
+        href: '/jabatan-target#jabatan-kosong',
         ikon: 'TriangleAlert',
         fase: 4,
         peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
-        kataKunci: ['lowong', 'bup', 'pensiun', 'kekosongan'],
+        kataKunci: ['lowong', 'bup', 'pensiun', 'kekosongan', 'risiko'],
+        luarSidebar: true,
       },
       {
         label: 'Kategori Riwayat Diklat',

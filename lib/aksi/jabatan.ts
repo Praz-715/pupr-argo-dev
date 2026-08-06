@@ -105,7 +105,7 @@ export async function buatJabatan(masukan: unknown): Promise<HasilAksi<{ id: num
       },
     })
     revalidatePath('/master/jabatan')
-    revalidatePath('/master/jabatan-kosong')
+    revalidatePath('/jabatan-target')
     return berhasil({ id: hasil.entitasId ?? 0 }, `Jabatan "${d.namaJabatan}" ditambahkan.`)
   } catch (e) {
     const pesan = pesanDariGalatDb(e, { unik: `Kode jabatan "${d.kodeJabatan}"` })
@@ -160,7 +160,7 @@ export async function ubahJabatan(id: unknown, masukan: unknown): Promise<HasilA
       },
     })
     revalidatePath('/master/jabatan')
-    revalidatePath('/master/jabatan-kosong')
+    revalidatePath('/jabatan-target')
     return berhasil(undefined, `Jabatan "${d.namaJabatan}" disimpan.`)
   } catch (e) {
     const pesan = pesanDariGalatDb(e, { unik: `Kode jabatan "${d.kodeJabatan}"` })
@@ -208,7 +208,7 @@ export async function ubahStatusJabatan(
   })
 
   revalidatePath('/master/jabatan')
-  revalidatePath('/master/jabatan-kosong')
+  revalidatePath('/jabatan-target')
   revalidatePath('/')
   return berhasil(undefined, `Status jabatan diubah menjadi ${st.data}.`)
 }
@@ -260,7 +260,7 @@ export async function hapusJabatan(id: unknown): Promise<HasilAksi<void>> {
       },
     })
     revalidatePath('/master/jabatan')
-    revalidatePath('/master/jabatan-kosong')
+    revalidatePath('/jabatan-target')
     return berhasil(
       undefined,
       `Jabatan diarsipkan (status DIHAPUS), bukan dihapus permanen — masih tersangkut ${sebab.join(' dan ')}.`,
@@ -279,7 +279,7 @@ export async function hapusJabatan(id: unknown): Promise<HasilAksi<void>> {
       },
     })
     revalidatePath('/master/jabatan')
-    revalidatePath('/master/jabatan-kosong')
+    revalidatePath('/jabatan-target')
     return berhasil(undefined, 'Jabatan dihapus.')
   } catch (e) {
     const pesan = pesanDariGalatDb(e, {})

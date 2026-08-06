@@ -42,7 +42,7 @@ function tegaskan(kondisi, pesan) {
 const RUTE = [
   ['/master/unit', 'Master Unit Organisasi'],
   ['/master/jabatan', 'Master Jabatan'],
-  ['/master/jabatan-kosong', 'Jabatan Kosong & Risiko Kekosongan'],
+  ['/jabatan-target', 'Jabatan Target & Kekosongan'], // melebur di Fase 11 (U-14)
   ['/data/kelengkapan', 'Kelengkapan Data'],
   ['/data/pembersihan', 'Antrian Pembersihan Data'],
   ['/data/konsolidasi', 'Konsolidasi & Sinkronisasi Data'],
@@ -80,7 +80,7 @@ try {
     }
 
     if (tema === 'light') {
-      await page.goto(`${BASE}/master/jabatan-kosong`, { waitUntil: 'networkidle' })
+      await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
       await page.screenshot({ path: `${OUT}/f4-risiko-light.png`, fullPage: true })
       await page.goto(`${BASE}/data/kelengkapan`, { waitUntil: 'networkidle' })
       await page.screenshot({ path: `${OUT}/f4-kelengkapan-light.png`, fullPage: true })
@@ -100,7 +100,7 @@ try {
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 
-    await page.goto(`${BASE}/master/jabatan-kosong`, { waitUntil: 'networkidle' })
+    await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
 
     await langkah('U-6: dua bagian terpisah — sudah kosong & akan kosong', async () => {
       const teks = await page.locator('main').innerText()
@@ -123,10 +123,10 @@ try {
 
     await langkah('U-6: mengubah ambang mengubah jumlahnya & tersinkron URL', async () => {
       await page.locator('a[href="/master/jabatan-keosong?ambang=1"]').count() // no-op guard
-      await page.goto(`${BASE}/master/jabatan-kosong?ambang=1`, { waitUntil: 'networkidle' })
+      await page.goto(`${BASE}/jabatan-target?ambang=1`, { waitUntil: 'networkidle' })
       const teks1 = await page.locator('main').innerText()
       const m1 = /(\d+)\s+dari\s+\d+\s+pejabat aktif/.exec(teks1)
-      await page.goto(`${BASE}/master/jabatan-kosong?ambang=10`, { waitUntil: 'networkidle' })
+      await page.goto(`${BASE}/jabatan-target?ambang=10`, { waitUntil: 'networkidle' })
       const teks10 = await page.locator('main').innerText()
       const m10 = /(\d+)\s+dari\s+\d+\s+pejabat aktif/.exec(teks10)
       tegaskan(m1 !== null && m10 !== null, 'jumlah tidak terbaca')
@@ -138,7 +138,7 @@ try {
     })
 
     await langkah('U-6: menandai jabatan tanpa suksesor siap', async () => {
-      await page.goto(`${BASE}/master/jabatan-kosong`, { waitUntil: 'networkidle' })
+      await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
       const teks = await page.locator('main').innerText()
       tegaskan(
         /tanpa suksesor siap|belum ada jabatan target/i.test(teks),
@@ -148,7 +148,7 @@ try {
     })
 
     await langkah('param ambang sampah diabaikan, halaman tetap 200', async () => {
-      const r = await page.request.get(`${BASE}/master/jabatan-kosong?ambang=abc&strategis=xyz`)
+      const r = await page.request.get(`${BASE}/jabatan-target?ambang=abc&strategis=xyz`)
       tegaskan(r.status() === 200, `HTTP ${r.status()}`)
       return 'param tidak valid jatuh ke bawaan'
     })
@@ -452,7 +452,7 @@ try {
   ]) {
     const ctx = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const page = await ctx.newPage()
-    for (const rute of ['/master/unit', '/data/kelengkapan', '/master/jabatan-kosong']) {
+    for (const rute of ['/master/unit', '/data/kelengkapan', '/jabatan-target']) {
       await page.goto(`${BASE}${rute}`, { waitUntil: 'networkidle' })
       await page.waitForTimeout(600)
       await langkah(`${nama}: ${rute} tanpa scroll horizontal halaman`, async () => {

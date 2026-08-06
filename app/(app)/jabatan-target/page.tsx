@@ -7,10 +7,19 @@ import { getCurrentUser } from '@/lib/auth'
 import { formatAngka } from '@/lib/format'
 import { ambilDaftarJabatanTarget } from '@/lib/kueri/rubrik'
 import { punyaPeran } from '@/lib/peran'
+import {
+  bacaAmbang,
+  KosongSkeleton,
+  PanelJabatanKosong,
+  PanelRisikoKekosongan,
+  RisikoSkeleton,
+} from './_komponen/panel-kekosongan'
 import { TabelTarget } from './_komponen/tabel-target'
 import { TombolBuatTarget } from './_komponen/form-target'
 
-export const metadata = { title: 'Jabatan Target' }
+export const metadata = { title: 'Jabatan Target & Kekosongan' }
+
+type ParamHalaman = Promise<Record<string, string | undefined>>
 
 const PERAN_UBAH = ['Super Admin', 'Admin Talenta'] as const
 
@@ -22,20 +31,38 @@ const PERAN_UBAH = ['Super Admin', 'Admin Talenta'] as const
  * yang harus ada sebelum rubrik bisa diaktifkan, dan kapan skornya terakhir
  * dihitung menentukan apakah angka di halaman kandidat masih bisa dipercaya.
  */
-export default async function JabatanTargetPage() {
+export default async function JabatanTargetPage({ searchParams }: { searchParams: ParamHalaman }) {
+  const params = await searchParams
   const pengguna = await getCurrentUser()
   const bolehUbah = punyaPeran(pengguna, PERAN_UBAH)
+  const ambang = bacaAmbang(params.ambang)
+  const hanyaStrategis = params.strategis === '1'
 
   return (
     <div className="space-y-5">
       <PageHeader
-        judul="Jabatan Target"
-        deskripsi="Profil jabatan yang menjadi sasaran suksesi: jabatan anggotanya, syarat minimalnya, dan rubrik penilaian yang dipakai menghitung match score kandidat."
+        judul="Jabatan Target & Kekosongan"
+        deskripsi="Profil jabatan yang menjadi sasaran suksesi — jabatan anggotanya, syarat minimalnya, dan rubrik penilaian match score — berdampingan dengan jabatan yang sudah kosong dan yang akan kosong."
         aksi={bolehUbah ? <TombolBuatTarget /> : null}
       />
 
       <Suspense fallback={<DaftarSkeleton />}>
         <IsiDaftar bolehUbah={bolehUbah} />
+      </Suspense>
+
+      {/*
+        Dipindahkan dari `/master/jabatan-kosong` (Fase 11 no. 2). Kekosongan dan
+        jabatan target adalah dua sisi satu pekerjaan: yang pertama menyatakan apa
+        yang perlu diisi, yang kedua adalah alat menilai siapa yang bisa mengisinya.
+        Selama keduanya di halaman berbeda, "6 kosong tapi hanya 2 punya rubrik"
+        harus dicocokkan sendiri oleh pembacanya — dan tidak ada yang melakukannya.
+      */}
+      <Suspense key={`kosong-${hanyaStrategis}`} fallback={<KosongSkeleton />}>
+        <PanelJabatanKosong hanyaStrategis={hanyaStrategis} bolehUbah={bolehUbah} />
+      </Suspense>
+
+      <Suspense key={`risiko-${ambang}`} fallback={<RisikoSkeleton />}>
+        <PanelRisikoKekosongan ambang={ambang} />
       </Suspense>
     </div>
   )

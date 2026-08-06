@@ -380,9 +380,14 @@ async function IsiSel({
 function PetaSkeleton() {
   return (
     <div className="space-y-4">
+      {/*
+        Kunci pakai indeks, bukan nama kelasnya: lebarnya berulang (`w-40` dan
+        `w-44` masing-masing dua kali), jadi kelas sebagai kunci menghasilkan
+        duplikat yang diperingatkan React dan bisa membuat satu skeleton hilang.
+      */}
       <div className="flex flex-wrap gap-2">
-        {['w-56', 'w-44', 'w-40', 'w-40', 'w-44'].map((w) => (
-          <Skeleton key={w} className={`h-8 ${w}`} />
+        {['w-[26rem]', 'w-56', 'w-44', 'w-40', 'w-40', 'w-44'].map((w, i) => (
+          <Skeleton key={i} className={`h-8 ${w}`} />
         ))}
       </div>
       <Skeleton className="h-3 w-full max-w-2xl" />

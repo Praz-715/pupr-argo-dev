@@ -106,6 +106,110 @@ export async function buatJabatanTarget(
   }
 }
 
+/**
+ * Buat jabatan target DRAFT dari sebuah jabatan kosong (Fase 11 no. 2, U-14).
+ *
+ * Lahir dari lubang yang baru terlihat setelah Peta Talenta bisa disaring per
+ * jabatan target: `pupr_dev` punya **6 jabatan KOSONG tapi hanya 2** yang jadi
+ * anggota sebuah target, sehingga empat sisanya tidak bisa dinilai sama sekali —
+ * dan tidak ada satu tempat pun yang menyatakan itu sebagai pekerjaan.
+ *
+ * Tidak menambah kolom apa pun: hasilnya satu baris `jabatan_target` berstatus
+ * DRAFT + satu `jabatan_target_anggota`. Relasi "target ini lahir dari jabatan
+ * itu" sudah terwakili oleh keanggotaannya, jadi kolom asal-usul akan jadi
+ * definisi kedua yang bisa berselisih.
+ *
+ * Kode & nama diturunkan dari jabatannya, bukan diminta ke pengguna: satu klik
+ * dari daftar kekosongan gunanya justru menghilangkan langkah mengisi form.
+ * Keduanya tetap bisa disunting sesudahnya dari Editor Jabatan Target — DRAFT
+ * memang untuk itu.
+ */
+export async function buatTargetDariJabatan(
+  jabatanId: unknown,
+): Promise<HasilAksi<{ id: number }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
+  const idJabatan = idPositif.safeParse(jabatanId)
+  if (!idJabatan.success) return gagal('Pilihan jabatan tidak dikenali.')
+
+  const jabatan = await kueriSatu<{
+    kode_jabatan: string
+    nama_jabatan: string
+    status_jabatan: string
+    nama_target_ada: string | null
+  }>(
+    `SELECT j.kode_jabatan, j.nama_jabatan, j.status_jabatan,
+            (SELECT t.nama_target FROM jabatan_target_anggota a
+               JOIN jabatan_target t ON t.id = a.jabatan_target_id
+              WHERE a.jabatan_id = j.id LIMIT 1) AS nama_target_ada
+       FROM jabatan j WHERE j.id = ?`,
+    [idJabatan.data],
+  )
+  if (jabatan === null) return gagal('Jabatan itu tidak ada. Muat ulang halaman lalu coba lagi.')
+  if (jabatan.status_jabatan === 'DIHAPUS') {
+    return gagal(`"${jabatan.nama_jabatan}" sudah diarsipkan di master jabatan.`)
+  }
+  // Ditolak walaupun tombolnya memang hanya tampil untuk jabatan tanpa target —
+  // halaman bisa basi, dan membuat target kedua untuk jabatan yang sama berarti
+  // dua rubrik menilai orang untuk posisi yang sama tanpa ada yang tahu mana
+  // yang berlaku.
+  if (jabatan.nama_target_ada !== null) {
+    return gagal(
+      `"${jabatan.nama_jabatan}" sudah termasuk jabatan target "${jabatan.nama_target_ada}". Sunting yang itu alih-alih membuat draft kedua.`,
+    )
+  }
+
+  const kodeTarget = `JT-${jabatan.kode_jabatan}`.slice(0, 40)
+  const namaTarget = jabatan.nama_jabatan.slice(0, 250)
+
+  try {
+    const hasil = await jalankanMutasi({
+      entitas: 'jabatan_target',
+      aksi: 'BUAT',
+      peranDiizinkan: PERAN_JABATAN_TARGET,
+      jalankan: async () => {
+        const { insertId } = await eksekusi(
+          `INSERT INTO jabatan_target (kode_target, nama_target, deskripsi, kata_kunci_relevansi, status)
+           VALUES (?, ?, ?, JSON_ARRAY(), 'DRAFT')`,
+          [
+            kodeTarget,
+            namaTarget,
+            `Dibuat dari jabatan kosong ${jabatan.kode_jabatan}. Lengkapi persyaratan & rubrik sebelum diaktifkan.`,
+          ],
+        )
+        // Satu mutasi, dua baris. Kalau keanggotaannya dipisah jadi aksi kedua,
+        // kegagalan di tengah meninggalkan jabatan target tanpa anggota — yang
+        // tampil sebagai draft kosong tanpa petunjuk asal-usulnya.
+        await eksekusi(
+          `INSERT INTO jabatan_target_anggota (jabatan_target_id, jabatan_id) VALUES (?, ?)`,
+          [insertId, idJabatan.data],
+        )
+        return {
+          entitasId: insertId,
+          sesudah: {
+            id: insertId,
+            kodeTarget,
+            namaTarget,
+            status: 'DRAFT',
+            dariJabatanId: idJabatan.data,
+          },
+        }
+      },
+    })
+    segarkan(hasil.entitasId ?? undefined)
+    revalidatePath('/jabatan-target')
+    return berhasil(
+      { id: hasil.entitasId ?? 0 },
+      `Draft jabatan target "${namaTarget}" dibuat. Lengkapi persyaratan & rubriknya, lalu aktifkan.`,
+    )
+  } catch (e) {
+    const pesan = pesanDariGalatDb(e, { unik: `Kode target "${kodeTarget}"` })
+    if (pesan) return gagal(pesan)
+    throw e
+  }
+}
+
 export async function ubahJabatanTarget(
   id: unknown,
   masukan: unknown,

@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 import { AKUN, konteksMasuk } from './_masuk.mjs'
 
@@ -60,6 +61,31 @@ async function langkah(nama, fn) {
 function tegaskan(kondisi, pesan) {
   if (!kondisi) throw new Error(pesan)
   return pesan
+}
+
+// ---------------------------------------------------------------------------
+// DB — untuk memeriksa hasil mutasi & membersihkan jejaknya
+// ---------------------------------------------------------------------------
+function bacaEnv() {
+  const isi = readFileSync('.env.local', 'utf8')
+  const ambil = (k) => isi.match(new RegExp(`^${k}\\s*=\\s*"?([^"\\r\\n]+)"?`, 'm'))?.[1]?.trim()
+  return {
+    host: ambil('DATABASE_HOST') ?? '127.0.0.1',
+    port: Number(ambil('DATABASE_PORT') ?? 3306),
+    user: ambil('DATABASE_USER'),
+    password: ambil('DATABASE_PASSWORD'),
+    database: ambil('DATABASE_NAME'),
+  }
+}
+
+async function denganDb(fn) {
+  const mysql = await import('mysql2/promise')
+  const c = await mysql.default.createConnection(bacaEnv())
+  try {
+    return await fn(c)
+  } finally {
+    await c.end()
+  }
 }
 
 /**
@@ -309,6 +335,148 @@ async function main() {
       `Reset menghapus ?target= (URL sekarang ${url.search})`,
     )
     return `unit dibersihkan, target #${targetId} tetap terpasang`
+  })
+
+  // -------------------------------------------------------------------------
+  // No. 2 — Jabatan Kosong melebur ke Jabatan Target
+  // -------------------------------------------------------------------------
+  let tanpaTarget = 0
+  let idDraftBaru = null
+
+  await langkah('Rute lama /master/jabatan-kosong dialihkan, bukan 404', async () => {
+    // Diuji lewat navigasi sungguhan, bukan status header: yang perlu dijamin
+    // adalah **apa yang dilihat pengguna** saat membuka tautan lama dari riwayat
+    // peramban atau pesan rekan kerja. Status 307 vs 308 bukan yang menentukan.
+    const r = await page.goto(`${BASE}/master/jabatan-kosong?ambang=5`, {
+      waitUntil: 'domcontentloaded',
+    })
+    tegaskan(r !== null && r.status() < 400, `rute lama menjawab ${r?.status()}`)
+    const url = page.url()
+    tegaskan(url.includes('/jabatan-target'), `berakhir di ${url}, bukan di /jabatan-target`)
+    // Query string harus ikut — kalau tidak, tautan berfilter yang dikirim antar
+    // staf membuka pemandangan bawaan dan selisihnya tidak pernah dipertanyakan.
+    tegaskan(url.includes('ambang=5'), `?ambang=5 hilang saat dialihkan (${url})`)
+    await page.locator('#risiko-kekosongan').waitFor()
+    const teks = await page.locator('#risiko-kekosongan').innerText()
+    tegaskan(/dalam 5 tahun menuju BUP/i.test(teks), 'ambang 5 tahun tidak benar-benar diterapkan')
+    return `${r.status()} → ${url}`
+  })
+
+  await langkah('Halaman Jabatan Target memuat kedua bagian kekosongan', async () => {
+    await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'domcontentloaded' })
+    await page.locator('#jabatan-kosong').waitFor()
+    await page.locator('#risiko-kekosongan').waitFor()
+    const teks = await page.locator('main').innerText()
+    tegaskan(/sudah kosong/i.test(teks), 'bagian "sudah kosong" tidak ada')
+    tegaskan(/akan kosong/i.test(teks), 'bagian "akan kosong" tidak ada')
+    tegaskan(/batas usia pensiun/i.test(teks), 'BUP tidak disebut')
+    tegaskan(/daftar jabatan target/i.test(teks), 'daftar jabatan target hilang setelah peleburan')
+    return 'daftar target + sudah kosong + akan kosong dalam satu halaman'
+  })
+
+  await langkah('Jumlah kekosongan tanpa jabatan target disebut & cocok dengan DB', async () => {
+    const panel = page.locator('#jabatan-kosong')
+    const teks = await panel.innerText()
+    const dariDb = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT COUNT(*) AS n FROM jabatan j
+          WHERE j.status_jabatan = 'KOSONG'
+            AND NOT EXISTS (SELECT 1 FROM jabatan_target_anggota a WHERE a.jabatan_id = j.id)`,
+      )
+      return Number(r[0].n)
+    })
+    tanpaTarget = dariDb
+    tegaskan(dariDb > 0, 'tidak ada jabatan kosong tanpa target di DB — kasusnya tidak teruji')
+    tegaskan(
+      teks.includes(String(dariDb)),
+      `panel tidak menyebut angka ${dariDb} (jabatan kosong tanpa target)`,
+    )
+    tegaskan(
+      /belum bisa dinilai sama sekali/i.test(teks),
+      'panel tidak menjelaskan akibat tidak punya jabatan target',
+    )
+    return `${dariDb} jabatan kosong tanpa target, disebut di halaman`
+  })
+
+  await langkah('Tombol "Jadikan draft" hanya untuk yang belum punya target', async () => {
+    const panel = page.locator('#jabatan-kosong')
+    const tombol = panel.locator('button', { hasText: /^Jadikan draft$/ })
+    const n = await tombol.count()
+    tegaskan(
+      n === tanpaTarget,
+      `ada ${n} tombol "Jadikan draft" untuk ${tanpaTarget} jabatan tanpa target`,
+    )
+    // Kontrol positif: barisnya memang ada dan memuat sesuatu selain tombol,
+    // supaya kecocokan angka di atas tidak kebetulan (jebakan #4).
+    const baris = panel.locator('tbody tr')
+    tegaskan((await baris.count()) >= tanpaTarget, 'jumlah baris tabel lebih kecil dari tombolnya')
+    return `${n} tombol = ${tanpaTarget} jabatan tanpa target`
+  })
+
+  await langkah('Menekan "Jadikan draft" membuat DRAFT + 1 anggota, lalu membuka editornya', async () => {
+    const panel = page.locator('#jabatan-kosong')
+    const tombol = panel.locator('button', { hasText: /^Jadikan draft$/ }).first()
+    const label = (await tombol.getAttribute('aria-label')) ?? ''
+    await tombol.click()
+    // Tunggu KEADAAN: berpindah ke editor. Menunggu teks toast akan lolos seketika
+    // karena kalimatnya memuat kata yang sudah ada di layar (jebakan #1).
+    await page.waitForURL(/\/jabatan-target\/\d+$/, { timeout: 15000 })
+    idDraftBaru = Number(page.url().match(/\/jabatan-target\/(\d+)$/)[1])
+
+    const cek = await denganDb(async (c) => {
+      const [t] = await c.query('SELECT status, kode_target FROM jabatan_target WHERE id = ?', [
+        idDraftBaru,
+      ])
+      const [a] = await c.query(
+        'SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?',
+        [idDraftBaru],
+      )
+      return { status: t[0]?.status, kode: t[0]?.kode_target, anggota: Number(a[0].n) }
+    })
+    tegaskan(cek.status === 'DRAFT', `status target baru ${cek.status}, seharusnya DRAFT`)
+    tegaskan(cek.anggota === 1, `target baru punya ${cek.anggota} anggota, seharusnya tepat 1`)
+    return `#${idDraftBaru} ${cek.kode} · DRAFT · 1 anggota · dari ${label}`
+  })
+
+  await langkah('Draft baru TIDAK muncul di pemilih Peta Talenta (hanya AKTIF)', async () => {
+    await page.goto(`${BASE}/peta-talenta`, { waitUntil: 'domcontentloaded' })
+    const nilai = await page
+      .locator('select[aria-label="Dasar sumbu Potensial"] option')
+      .evaluateAll((o) => o.map((x) => x.value))
+    tegaskan(
+      !nilai.includes(String(idDraftBaru)),
+      `draft #${idDraftBaru} ikut ditawarkan padahal rubriknya belum lolos pemeriksaan`,
+    )
+    return `pemilih memuat ${nilai.length - 1} target AKTIF, draft baru tidak termasuk`
+  })
+
+  await langkah('Membuat draft kedua untuk jabatan yang sama DITOLAK', async () => {
+    await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'domcontentloaded' })
+    const panel = page.locator('#jabatan-kosong')
+    await panel.waitFor()
+    const tombol = panel.locator('button', { hasText: /^Jadikan draft$/ })
+    tegaskan(
+      (await tombol.count()) === tanpaTarget - 1,
+      `tombol tersisa ${await tombol.count()}, seharusnya ${tanpaTarget - 1} setelah satu dipakai`,
+    )
+    return `tombol berkurang jadi ${tanpaTarget - 1} — jabatan yang sudah punya target tidak diberi tombol lagi`
+  })
+
+  await langkah('Bersihkan draft uji', async () => {
+    const sisa = await denganDb(async (c) => {
+      await c.query('DELETE FROM jabatan_target WHERE id = ?', [idDraftBaru])
+      const [t] = await c.query('SELECT COUNT(*) AS n FROM jabatan_target WHERE id = ?', [
+        idDraftBaru,
+      ])
+      const [a] = await c.query(
+        'SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?',
+        [idDraftBaru],
+      )
+      return { target: Number(t[0].n), anggota: Number(a[0].n) }
+    })
+    tegaskan(sisa.target === 0, 'jabatan target uji masih ada')
+    tegaskan(sisa.anggota === 0, `${sisa.anggota} baris anggota tertinggal (cascade tidak jalan)`)
+    return `#${idDraftBaru} dihapus · anggotanya ikut terhapus lewat cascade`
   })
 
   await langkah('Screenshot kedua tampilan', async () => {
