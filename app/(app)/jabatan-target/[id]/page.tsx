@@ -14,6 +14,7 @@ import {
   ambilAnggotaJabatan,
   ambilJabatanTarget,
   ambilPersyaratan,
+  ambilOpsiSyaratDiklat,
   ambilPohonRubrik,
   ambilSelisihBidangIlmu,
   ambilSumberDuplikasi,
@@ -26,6 +27,7 @@ import { AksiStatus } from './_komponen/aksi-status'
 import { PanelValidasi } from './_komponen/panel-validasi'
 import { TabAnggota } from './_komponen/tab-anggota'
 import { TabRubrik } from './_komponen/tab-rubrik'
+import { PanelSyaratDiklat } from './_komponen/panel-syarat-diklat'
 import { TabSyarat } from './_komponen/tab-syarat'
 
 type Params = Promise<{ id: string }>
@@ -274,17 +276,33 @@ async function IsiTabAnggota({
 }
 
 async function IsiTabSyarat({ idTarget, bolehUbah }: { idTarget: number; bolehUbah: boolean }) {
-  const [syarat, selisih] = await Promise.all([
+  const [syarat, selisih, opsiDiklat] = await Promise.all([
     ambilPersyaratan(idTarget),
     ambilSelisihBidangIlmu(idTarget),
+    ambilOpsiSyaratDiklat(idTarget),
   ])
   return (
-    <TabSyarat
-      jabatanTargetId={idTarget}
-      syarat={syarat}
-      selisihBidangIlmu={selisih}
-      bolehUbah={bolehUbah}
-    />
+    <>
+      <TabSyarat
+        jabatanTargetId={idTarget}
+        syarat={syarat}
+        selisihBidangIlmu={selisih}
+        bolehUbah={bolehUbah}
+      />
+      {/*
+        Syarat pelatihan panel tersendiri, bukan baris di daftar persyaratan:
+        bentuknya relasi ke kamus kategori (banyak pilihan bercentang), bukan satu
+        `nilai_minimal` bebas. Memaksanya jadi baris teks berarti pengguna mengetik
+        kode kategori dari hafalan.
+      */}
+      <div className="mt-4">
+        <PanelSyaratDiklat
+          jabatanTargetId={idTarget}
+          opsi={opsiDiklat}
+          bolehUbah={bolehUbah}
+        />
+      </div>
+    </>
   )
 }
 

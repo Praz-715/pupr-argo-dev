@@ -919,6 +919,58 @@ export async function ambilSyaratKategoriDiklat(jabatanTargetId: number): Promis
   return baris.map((b) => b.kode)
 }
 
+/**
+ * Pilihan syarat diklat untuk editor jabatan target (Fase 11 no. 3 lanjutan).
+ *
+ * **Hanya kategori yang boleh dipilih** — yang punya induk (`parent_id IS NOT
+ * NULL`) dan masih aktif. Rumpun (`Pelatihan Manajerial`, `Pelatihan Teknis`)
+ * sengaja tidak ditawarkan: menuntut "Pelatihan Teknis" tanpa menyebut teknis apa
+ * membuat pemeriksaan syarat tidak bisa membedakan Pengadaan dari Hukum Kontrak,
+ * yaitu aturan yang sama dengan larangan memetakan diklat ke rumpun (Fase 10).
+ *
+ * Kategori **nonaktif yang sudah terpilih** ikut dikembalikan dan ditandai, bukan
+ * dibuang: membuangnya membuat syarat yang masih tersimpan di DB lenyap dari
+ * layar, dan pengguna menyimpulkan syaratnya sudah tidak ada padahal masih
+ * dipakai `ambilSyaratKategoriDiklat()`.
+ */
+export interface OpsiSyaratDiklat {
+  id: number
+  kode: string
+  nama: string
+  namaRumpun: string
+  setaraJenjang: string | null
+  dipilih: boolean
+  aktif: boolean
+}
+
+export async function ambilOpsiSyaratDiklat(
+  jabatanTargetId: number,
+): Promise<OpsiSyaratDiklat[]> {
+  const baris = await kueri<Record<string, unknown>>(
+    `SELECT k.id, k.kode, k.nama, k.setara_jenjang, k.aktif,
+            p.nama AS nama_rumpun,
+            EXISTS (SELECT 1 FROM jabatan_target_syarat_diklat s
+                     WHERE s.kategori_id = k.id AND s.jabatan_target_id = ?) AS dipilih
+       FROM master_kategori_riwayat_diklat k
+       JOIN master_kategori_riwayat_diklat p ON p.id = k.parent_id
+      WHERE k.parent_id IS NOT NULL
+        AND (k.aktif = 1 OR EXISTS (SELECT 1 FROM jabatan_target_syarat_diklat s2
+                                     WHERE s2.kategori_id = k.id AND s2.jabatan_target_id = ?))
+      ORDER BY p.urutan, k.urutan, k.nama`,
+    [jabatanTargetId, jabatanTargetId],
+  )
+
+  return baris.map((r) => ({
+    id: Number(r.id),
+    kode: String(r.kode),
+    nama: String(r.nama),
+    namaRumpun: String(r.nama_rumpun),
+    setaraJenjang: r.setara_jenjang === null ? null : String(r.setara_jenjang),
+    dipilih: Number(r.dipilih) === 1,
+    aktif: Number(r.aktif) === 1,
+  }))
+}
+
 export async function ambilRubrikUntukHitung(
   jabatanTargetId: number,
 ): Promise<{ rubrik: RubrikJabatanTarget; komponen: KomponenRubrik[] } | null> {

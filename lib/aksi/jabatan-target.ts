@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { jalankanMutasi } from '../audit'
-import { eksekusi, kueriSatu } from '../db'
+import { eksekusi, kueri, kueriSatu } from '../db'
 import { ambilPohonRubrik } from '../kueri/rubrik'
 import { validasiRubrik } from '../scoring'
 import { gerbangPeran } from './gerbang'
@@ -646,6 +646,97 @@ export async function simpanPersyaratan(
     bidangIlmu === null
       ? 'Persyaratan disimpan. Kelayakan kandidat berubah setelah skor dihitung ulang.'
       : `Bidang ilmu disimpan untuk gerbang kelayakan DAN indikator rubrik (${bidangIlmu.length} kata kunci). Jalankan Hitung Ulang agar skornya ikut.`,
+  )
+}
+
+/**
+ * Simpan syarat pelatihan jabatan target (Fase 11 no. 3 lanjutan, U-15).
+ *
+ * Sebelum ini `jabatan_target_syarat_diklat` **hanya bisa diubah lewat SQL** —
+ * satu-satunya bagian lembar 6 tanpa permukaan UI, padahal ia menentukan indikator
+ * Pengembangan Kompetensi (5%) untuk seluruh kandidat. Sekarang ia dideklarasikan
+ * dari tab yang sama dengan pendidikan, bidang ilmu, dan pengalaman.
+ *
+ * Ditulis sebagai **ganti seluruhnya** (hapus lalu isi ulang), bukan tambah/kurang
+ * per baris: yang dinyatakan pengguna adalah "inilah daftar syaratnya", dan daftar
+ * yang disusun dari beberapa mutasi terpisah bisa berhenti di tengah — meninggalkan
+ * syarat separuh yang tetap dipakai menghitung skor.
+ *
+ * **Rumpun ditolak di server, bukan cuma tidak ditawarkan di UI.** Menuntut
+ * "Pelatihan Teknis" tanpa menyebut teknis apa membuat `penuhiSyaratPelatihan()`
+ * tidak bisa membedakan Pengadaan dari Hukum Kontrak, dan indikatornya berhenti
+ * bermakna. Halaman bisa basi; gerbangnya tidak boleh.
+ */
+export async function simpanSyaratDiklat(
+  jabatanTargetId: unknown,
+  kategoriIds: unknown,
+): Promise<HasilAksi<{ jumlah: number }>> {
+  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  if (tolak) return tolak
+
+  const idTarget = idPositif.safeParse(jabatanTargetId)
+  if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
+
+  const uraiId = z.array(idPositif).max(50, 'Terlalu banyak kategori').safeParse(kategoriIds)
+  if (!uraiId.success) return gagal('Pilihan kategori pelatihan tidak dikenali.')
+  const diminta = [...new Set(uraiId.data)]
+
+  if (diminta.length > 0) {
+    const sah = await kueri<{ id: number; kode: string; nama: string; parent_id: number | null }>(
+      `SELECT id, kode, nama, parent_id FROM master_kategori_riwayat_diklat
+        WHERE id IN (${diminta.map(() => '?').join(',')})`,
+      diminta,
+    )
+    if (sah.length !== diminta.length) {
+      return gagal('Ada kategori pelatihan yang sudah tidak ada. Muat ulang halaman lalu coba lagi.')
+    }
+    const rumpun = sah.filter((k) => k.parent_id === null)
+    if (rumpun.length > 0) {
+      return gagal(
+        `${rumpun.map((k) => `"${k.nama}"`).join(', ')} adalah rumpun, bukan kategori yang bisa disyaratkan — pilih turunannya (mis. PIM IV, Pengadaan Barang dan Jasa) supaya syaratnya bisa diperiksa.`,
+      )
+    }
+  }
+
+  await jalankanMutasi({
+    entitas: 'jabatan_target_syarat_diklat',
+    aksi: 'UBAH',
+    peranDiizinkan: PERAN_JABATAN_TARGET,
+    sebelum: async (): Promise<Record<string, unknown>> => {
+      const baris = await kueri<{ kode: string }>(
+        `SELECT k.kode FROM jabatan_target_syarat_diklat s
+           JOIN master_kategori_riwayat_diklat k ON k.id = s.kategori_id
+          WHERE s.jabatan_target_id = ? ORDER BY k.kode`,
+        [idTarget.data],
+      )
+      return { kategori: baris.map((r) => r.kode) }
+    },
+    jalankan: async () => {
+      await eksekusi(`DELETE FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = ?`, [
+        idTarget.data,
+      ])
+      for (const id of diminta) {
+        // `wajib` selalu 1: kolomnya ada di skema tapi BELUM dipakai perhitungan
+        // (ERD §3.2) — indikator Pengembangan Kompetensi hanya punya dua kategori
+        // skor, jadi tidak ada tempat membedakan "punya 1 dari 3" dari "punya 3
+        // dari 3". Menawarkan penanda wajib/opsional di UI berarti kontrol yang
+        // tidak berakibat apa pun.
+        await eksekusi(
+          `INSERT INTO jabatan_target_syarat_diklat (jabatan_target_id, kategori_id, wajib)
+           VALUES (?, ?, 1)`,
+          [idTarget.data, id],
+        )
+      }
+      return { entitasId: idTarget.data, sesudah: { jumlah: diminta.length, kategoriIds: diminta } }
+    },
+  })
+
+  segarkan(idTarget.data)
+  return berhasil(
+    { jumlah: diminta.length },
+    diminta.length === 0
+      ? 'Syarat pelatihan dikosongkan. Indikator Pengembangan Kompetensi jadi "tidak diketahui" — bukan gagal. Jalankan Hitung Ulang agar skornya ikut.'
+      : `${diminta.length} kategori pelatihan disimpan. Jalankan Hitung Ulang agar skor Pengembangan Kompetensi ikut berubah.`,
   )
 }
 

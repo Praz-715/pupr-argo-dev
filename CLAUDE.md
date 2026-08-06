@@ -31,12 +31,13 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 
 ```
 npm run verifikasi           → 466 uji unit lolos (17 berkas uji)
-npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
+npm run verifikasi:data      → 48/48 pemeriksaan (SQL murni, silang-uji isi DB)
+                               dua terbaru menjaga gerbang tetap terpisah dari skor (Fase 11)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
                                + 441/441 pasangan (Y,X): ekspresi SQL Kotak 9 setara hitungKotak9()
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) · 30/30 (F8) · 39/39 (F9)
-                               · 23/23 (F10) · 22/22 (F11) = 382 pemeriksaan
+                               · 23/23 (F10) · 27/27 (F11) = 387 pemeriksaan
 npm run build                → BELUM dijalankan ulang sejak Fase 10 menambah 2 halaman
                                (terakhir terverifikasi: 30 entri route pada akhir Fase 9)
 npm run ukur:kueri           → 77 kueri = ~327 ms · :volume di 2.000 pegawai = ~900 ms (BELUM diukur ulang
@@ -199,11 +200,11 @@ Disposisi lengkap paket `doc_tambahan` (7 sudah sama · 3 diambil · 3 ditunda �
 
 Ditulis di sini supaya tidak dikira sudah beres. Ketiganya terhenti karena **mesinnya kehabisan memori**, bukan karena kode — lihat catatan lingkungan di bawah.
 
-1. **Smoke `fase-10`** — 23/23 lolos **sebelum** peralihan, dan berkas itu tidak menyentuh skor sama sekali (ia menguji kamus & antrian), tapi belum dijalankan sesudahnya.
+1. ~~**Smoke `fase-10`**~~ — **sudah dijalankan sesudah peralihan: 23/23 lolos, tanpa error konsol** (dikerjakan di sela Fase 11).
 2. **Rebuild `pupr_dev_volume` dengan `015`** — `BERKAS_SKEMA` & `TABEL_MASTER` di `seed-volume.ts` sudah diperbarui, tapi `npm run db:volume` belum dijalankan sejak itu. Sampai dijalankan, `ukur:kueri:volume` mengukur volume DB versi lama.
-3. **`npm run lint` & `vitest`** — keduanya bersih sebelum mesinnya melemah (466 uji), lalu crash. Bukan bukti ada yang rusak, tapi juga bukan bukti tidak ada.
+3. ~~**`npm run lint` & `vitest`**~~ — **sudah bersih**: lint tanpa temuan, 466 uji lolos (17 berkas). Kuncinya `npx vitest run --no-file-parallelism` — di RAM bebas ~1 GB, worker paralel dibunuh OS dan gejalanya `Worker exited unexpectedly`, yang terbaca seperti uji gagal. Jalankan berurutan dulu sebelum mencurigai kode.
 
-**`npm run build` juga belum dijalankan ulang** sejak Fase 10 menambah dua halaman; jumlah route di baseline masih angka akhir Fase 9.
+**`npm run build` masih belum dijalankan ulang** sejak Fase 10 menambah dua halaman, dan Fase 11 mengubah jumlah route lagi (`/master/jabatan-kosong` dihapus, dialihkan dari `next.config`). Jumlah route di baseline masih angka akhir Fase 9.
 
 #### Temuan pengukuran Fase 8: `gapIndikator` & alat ukur yang sempat menipu
 

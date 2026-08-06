@@ -89,6 +89,28 @@ async function denganDb(fn) {
 }
 
 /**
+ * Tunggu sampai DB memenuhi syarat, bukan sampai UI berubah bentuk.
+ *
+ * Lahir dari kekeliruan nyata di uji ini: tombol simpan memakai `labelPending`,
+ * jadi teksnya berubah dari "Simpan …" menjadi "Menyimpan…" **selama** aksinya
+ * terbang. Menunggu teks lama lenyap karena itu lolos SEKETIKA — bukan karena
+ * pekerjaannya selesai, tapi karena indikator pending-nya sendiri yang
+ * mengubahnya — dan pembacaan DB sesudahnya mendahului INSERT. Ini varian
+ * jebakan #1 di CLAUDE.md yang bahkan tidak butuh kata yang sudah ada di layar.
+ */
+async function tungguDb(fn, pesan, batasMs = 15000) {
+  const mulai = Number(process.hrtime.bigint() / 1000000n)
+  for (;;) {
+    const hasil = await denganDb(fn)
+    if (hasil !== null && hasil !== undefined && hasil !== false) return hasil
+    if (Number(process.hrtime.bigint() / 1000000n) - mulai > batasMs) {
+      throw new Error(`${pesan} (menunggu ${batasMs} ms)`)
+    }
+    await new Promise((r) => setTimeout(r, 250))
+  }
+}
+
+/**
  * Baca jumlah per kotak dari grid.
  *
  * Diambil dari `aria-label` tiap sel, bukan dari `innerText`: teks sel memuat
@@ -612,6 +634,86 @@ async function main() {
       ])
     })
     return `satu simpan → gerbang "${sesudah.gerbang}" + rubrik ${JSON.stringify(sesudah.rubrik)} · dipulihkan`
+  })
+
+  // -------------------------------------------------------------------------
+  // No. 3 lanjutan — syarat pelatihan punya UI (sebelumnya SQL-only)
+  // -------------------------------------------------------------------------
+  await langkah('Panel syarat pelatihan tampil & rumpun TIDAK bisa dicentang', async () => {
+    // Target 3 (BJKW) sengaja tanpa syarat pelatihan — lembar 6 tidak memuat BJKW.
+    await page.goto(`${BASE}/jabatan-target/3?tab=syarat`, { waitUntil: 'domcontentloaded' })
+    const panel = page.locator('main section').filter({ hasText: 'Syarat pelatihan' })
+    tegaskan((await panel.count()) === 1, `panel syarat pelatihan cocok ${await panel.count()} elemen`)
+    const teks = await panel.innerText()
+
+    const kotak = panel.locator('input[type="checkbox"]')
+    const jml = await kotak.count()
+    const dariDb = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT COUNT(*) AS n FROM master_kategori_riwayat_diklat WHERE parent_id IS NOT NULL AND aktif = 1`,
+      )
+      const [g] = await c.query(
+        `SELECT COUNT(*) AS n FROM master_kategori_riwayat_diklat WHERE parent_id IS NULL`,
+      )
+      return { turunan: Number(r[0].n), rumpun: Number(g[0].n) }
+    })
+    tegaskan(
+      jml === dariDb.turunan,
+      `${jml} kotak centang untuk ${dariDb.turunan} kategori turunan aktif`,
+    )
+    tegaskan(dariDb.rumpun > 0, 'tidak ada rumpun di DB — kasusnya tidak teruji')
+    // Rumpun tampil sebagai JUDUL kelompok, bukan sebagai pilihan.
+    tegaskan(/Pelatihan Manajerial/i.test(teks), 'rumpun tidak dipakai sebagai judul kelompok')
+    tegaskan(
+      /tidak diketahui/i.test(teks),
+      'panel tidak menyatakan bahwa kosong berarti tidak diketahui',
+    )
+    tegaskan(
+      /melonggarkan/i.test(teks),
+      'panel tidak menjelaskan bahwa menambah kategori melonggarkan syarat',
+    )
+    return `${jml} kotak centang = ${dariDb.turunan} turunan aktif · ${dariDb.rumpun} rumpun jadi judul, bukan pilihan`
+  })
+
+  await langkah('Menyimpan syarat pelatihan menulis tabelnya, lalu dipulihkan', async () => {
+    const semula = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT kategori_id FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3 ORDER BY kategori_id`,
+      )
+      return r.map((x) => Number(x.kategori_id))
+    })
+    tegaskan(semula.length === 0, `target 3 seharusnya tanpa syarat diklat, ada ${semula.length}`)
+
+    const panel = page.locator('main section').filter({ hasText: 'Syarat pelatihan' })
+    await panel.locator('input[type="checkbox"]').first().check()
+    await panel.locator('button', { hasText: /^Simpan syarat pelatihan$/ }).click()
+
+    // Ditunggu di DB, BUKAN di UI — lihat catatan pada `tungguDb()`.
+    const sesudah = await tungguDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT s.kategori_id, s.wajib, k.parent_id
+           FROM jabatan_target_syarat_diklat s
+           JOIN master_kategori_riwayat_diklat k ON k.id = s.kategori_id
+          WHERE s.jabatan_target_id = 3`,
+      )
+      if (r.length === 0) return false
+      return r.map((x) => ({
+        id: Number(x.kategori_id),
+        wajib: Number(x.wajib),
+        rumpun: x.parent_id === null,
+      }))
+    }, 'syarat pelatihan tidak tersimpan')
+    tegaskan(sesudah.length === 1, `tersimpan ${sesudah.length} baris, seharusnya 1`)
+    tegaskan(!sesudah[0].rumpun, 'yang tersimpan justru rumpun')
+
+    await denganDb(async (c) => {
+      await c.query('DELETE FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3')
+      const [r] = await c.query(
+        'SELECT COUNT(*) AS n FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3',
+      )
+      tegaskan(Number(r[0].n) === 0, 'syarat uji tidak berhasil dibersihkan')
+    })
+    return `1 kategori tersimpan (wajib=${sesudah[0].wajib}, bukan rumpun) · dipulihkan ke kosong`
   })
 
   await langkah('Screenshot kedua tampilan', async () => {
