@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { apiClient, apiActivityLog, apiToken, users, approvalLog, nominasi, pegawai, asesmenTalenta, auditLog, hukumanDisiplin, unitOrganisasi, jabatan, jabatanTarget, jabatanTargetAnggota, jabatanTargetPersyaratan, kinerjaPeriode, matchScore, matchScoreDetail, rubrikIndikator, talentPool, notifikasi, pengaturanSistem, permintaanResetPassword, rencanaPengembangan, riwayatJabatan, riwayatPendidikan, rubrikKomponen, rubrikKategoriSkor, sesi, syncLog, roles } from "./schema";
+import { apiClient, apiActivityLog, apiToken, users, approvalLog, nominasi, pegawai, asesmenTalenta, auditLog, hukumanDisiplin, unitOrganisasi, jabatan, jabatanTarget, jabatanTargetAnggota, jabatanTargetPersyaratan, kinerjaPeriode, masterKategoriRiwayatDiklat, matchScore, matchScoreDetail, rubrikIndikator, talentPool, notifikasi, pemetaanDiklat, pengaturanSistem, permintaanResetPassword, rencanaPengembangan, riwayatJabatan, riwayatPendidikan, rubrikKomponen, rubrikKategoriSkor, sesi, syncLog, roles } from "./schema";
 
 export const apiActivityLogRelations = relations(apiActivityLog, ({one}) => ({
 	apiClient: one(apiClient, {
@@ -43,6 +43,8 @@ export const usersRelations = relations(users, ({one, many}) => ({
 	notifikasis_userId: many(notifikasi, {
 		relationName: "notifikasi_userId_users_id"
 	}),
+	pegawais: many(pegawai),
+	pemetaanDiklats: many(pemetaanDiklat),
 	pengaturanSistems: many(pengaturanSistem),
 	permintaanResetPasswords_ditanganiOleh: many(permintaanResetPassword, {
 		relationName: "permintaanResetPassword_ditanganiOleh_users_id"
@@ -51,6 +53,7 @@ export const usersRelations = relations(users, ({one, many}) => ({
 		relationName: "permintaanResetPassword_userId_users_id"
 	}),
 	rencanaPengembangans: many(rencanaPengembangan),
+	riwayatJabatans: many(riwayatJabatan),
 	sesis: many(sesi),
 	syncLogs: many(syncLog),
 	talentPools: many(talentPool),
@@ -106,6 +109,10 @@ export const pegawaiRelations = relations(pegawai, ({one, many}) => ({
 	jabatan: one(jabatan, {
 		fields: [pegawai.jabatanId],
 		references: [jabatan.id]
+	}),
+	user: one(users, {
+		fields: [pegawai.riwayatDivalidasiOleh],
+		references: [users.id]
 	}),
 	riwayatJabatans: many(riwayatJabatan),
 	riwayatPendidikans: many(riwayatPendidikan),
@@ -189,6 +196,18 @@ export const kinerjaPeriodeRelations = relations(kinerjaPeriode, ({one}) => ({
 		fields: [kinerjaPeriode.pegawaiId],
 		references: [pegawai.id]
 	}),
+}));
+
+export const masterKategoriRiwayatDiklatRelations = relations(masterKategoriRiwayatDiklat, ({one, many}) => ({
+	masterKategoriRiwayatDiklat: one(masterKategoriRiwayatDiklat, {
+		fields: [masterKategoriRiwayatDiklat.parentId],
+		references: [masterKategoriRiwayatDiklat.id],
+		relationName: "masterKategoriRiwayatDiklat_parentId_masterKategoriRiwayatDiklat_id"
+	}),
+	masterKategoriRiwayatDiklats: many(masterKategoriRiwayatDiklat, {
+		relationName: "masterKategoriRiwayatDiklat_parentId_masterKategoriRiwayatDiklat_id"
+	}),
+	pemetaanDiklats: many(pemetaanDiklat),
 }));
 
 export const matchScoreRelations = relations(matchScore, ({one, many}) => ({
@@ -281,6 +300,17 @@ export const notifikasiRelations = relations(notifikasi, ({one}) => ({
 	}),
 }));
 
+export const pemetaanDiklatRelations = relations(pemetaanDiklat, ({one}) => ({
+	masterKategoriRiwayatDiklat: one(masterKategoriRiwayatDiklat, {
+		fields: [pemetaanDiklat.kategoriId],
+		references: [masterKategoriRiwayatDiklat.id]
+	}),
+	user: one(users, {
+		fields: [pemetaanDiklat.divalidasiOleh],
+		references: [users.id]
+	}),
+}));
+
 export const pengaturanSistemRelations = relations(pengaturanSistem, ({one}) => ({
 	user: one(users, {
 		fields: [pengaturanSistem.diubahOleh],
@@ -320,6 +350,10 @@ export const riwayatJabatanRelations = relations(riwayatJabatan, ({one}) => ({
 	pegawai: one(pegawai, {
 		fields: [riwayatJabatan.pegawaiId],
 		references: [pegawai.id]
+	}),
+	user: one(users, {
+		fields: [riwayatJabatan.divalidasiOleh],
+		references: [users.id]
 	}),
 }));
 

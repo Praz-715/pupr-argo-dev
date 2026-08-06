@@ -195,6 +195,32 @@ export const kinerjaPeriode = mysqlTable("kinerja_periode", {
 	primaryKey({ columns: [table.id], name: "kinerja_periode_id"}),
 ]);
 
+export const masterKategoriRiwayatDiklat = mysqlTable("master_kategori_riwayat_diklat", {
+	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
+	kode: varchar({ length: 60 }).notNull(),
+	nama: varchar({ length: 150 }).notNull(),
+	jenis: mysqlEnum(['MANAJERIAL','TEKNIS','FUNGSIONAL','SOSIAL_KULTURAL']).notNull(),
+	parentId: bigint("parent_id", { mode: "number", unsigned: true }),
+	setaraJenjang: mysqlEnum("setara_jenjang", ['II','III','IV']),
+	polaCocok: json("pola_cocok"),
+	keterangan: varchar({ length: 500 }),
+	urutan: smallint({ unsigned: true }).notNull(),
+	aktif: tinyint().default(1).notNull(),
+	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+	updatedAt: datetime("updated_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("idx_mkrd_jenis").on(table.jenis),
+	index("idx_mkrd_parent").on(table.parentId),
+	foreignKey({
+			columns: [table.parentId],
+			foreignColumns: [table.id],
+			name: "fk_mkrd_parent"
+		}).onDelete("set null"),
+	primaryKey({ columns: [table.id], name: "master_kategori_riwayat_diklat_id"}),
+	unique("uk_mkrd_kode").on(table.kode),
+]);
+
 export const matchScore = mysqlTable("match_score", {
 	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
 	pegawaiId: bigint("pegawai_id", { mode: "number", unsigned: true }).notNull().references(() => pegawai.id, { onDelete: "cascade" } ),
@@ -292,13 +318,36 @@ export const pegawai = mysqlTable("pegawai", {
 	sumberSinkron: mysqlEnum("sumber_sinkron", ['eHRM','eNominasi','manual']).default('manual').notNull(),
 	lastSyncedAt: datetime("last_synced_at", { mode: 'string'}),
 	riwayatDiklat: json("riwayat_diklat"),
+	riwayatDivalidasiOleh: bigint("riwayat_divalidasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	riwayatDivalidasiPada: datetime("riwayat_divalidasi_pada", { mode: 'string'}),
+	riwayatCatatanValidasi: varchar("riwayat_catatan_validasi", { length: 500 }),
 	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 	updatedAt: datetime("updated_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
 (table) => [
 	index("idx_pegawai_jabatan").on(table.jabatanId),
+	index("idx_pegawai_riwayat_validasi").on(table.riwayatDivalidasiPada),
 	primaryKey({ columns: [table.id], name: "pegawai_id"}),
 	unique("uk_pegawai_nip").on(table.nip),
+]);
+
+export const pemetaanDiklat = mysqlTable("pemetaan_diklat", {
+	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
+	namaNormal: varchar("nama_normal", { length: 300 }).notNull(),
+	namaMentah: varchar("nama_mentah", { length: 300 }).notNull(),
+	kategoriId: bigint("kategori_id", { mode: "number", unsigned: true }).references(() => masterKategoriRiwayatDiklat.id, { onDelete: "set null" } ),
+	status: mysqlEnum(['USULAN','TERVALIDASI','DITOLAK']).default('USULAN').notNull(),
+	divalidasiOleh: bigint("divalidasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	divalidasiPada: datetime("divalidasi_pada", { mode: 'string'}),
+	catatan: varchar({ length: 500 }),
+	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+	updatedAt: datetime("updated_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("idx_pemetaan_diklat_kategori").on(table.kategoriId),
+	index("idx_pemetaan_diklat_status").on(table.status),
+	primaryKey({ columns: [table.id], name: "pemetaan_diklat_id"}),
+	unique("uk_pemetaan_diklat_nama").on(table.namaNormal),
 ]);
 
 export const pengaturanSistem = mysqlTable("pengaturan_sistem", {
@@ -354,6 +403,8 @@ export const riwayatJabatan = mysqlTable("riwayat_jabatan", {
 	urutan: smallint({ unsigned: true }).notNull(),
 	jabatanNamaMentah: varchar("jabatan_nama_mentah", { length: 500 }).notNull(),
 	jabatanId: bigint("jabatan_id", { mode: "number", unsigned: true }).references(() => jabatan.id, { onDelete: "set null" } ),
+	jenisPenugasan: mysqlEnum("jenis_penugasan", ['DEFINITIF','PLT','PLH']),
+	relevanSubstansi: tinyint("relevan_substansi"),
 	unitKerjaMentah: varchar("unit_kerja_mentah", { length: 500 }),
 	// you can use { mode: 'date' }, if you want to have Date as type for this column
 	tanggalMulai: date("tanggal_mulai", { mode: 'string' }),
@@ -361,10 +412,13 @@ export const riwayatJabatan = mysqlTable("riwayat_jabatan", {
 	tanggalAkhir: date("tanggal_akhir", { mode: 'string' }),
 	noSk: varchar("no_sk", { length: 80 }),
 	urlArsipDigital: varchar("url_arsip_digital", { length: 500 }),
+	divalidasiOleh: bigint("divalidasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	divalidasiPada: datetime("divalidasi_pada", { mode: 'string'}),
 },
 (table) => [
 	index("idx_riwayat_jabatan_pegawai").on(table.pegawaiId),
 	index("idx_riwayat_jabatan_jabatan").on(table.jabatanId),
+	index("idx_riwayat_jabatan_penugasan").on(table.jenisPenugasan),
 	primaryKey({ columns: [table.id], name: "riwayat_jabatan_id"}),
 ]);
 

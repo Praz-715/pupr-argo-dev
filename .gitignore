@@ -39,3 +39,5 @@ yarn-error.log*
 # supaya perkakas yang sama bisa dipasang ulang tanpa membawa payload-nya.
 /.claude/skills/
 /.agents/
+doc/doc_tambahan_2/riwayat_jabatan.json
+doc/doc_tambahan_2/riwayat_pendidikan.json

@@ -40,6 +40,9 @@ const TABEL_MASTER = [
   'rubrik_kategori_skor',
   'api_client',
   'api_token',
+  // `master_kategori_riwayat_diklat` SENGAJA tidak di sini: isinya lahir dari
+  // INSERT di dalam `014_kategori_riwayat.sql` sendiri, yang sudah ikut dipasang
+  // lewat BERKAS_SKEMA. Menyalinnya lagi menabrak primary key.
 ]
 
 /** Ekspresi Kotak 9 versi SQL (ambang Lampiran A). Lihat catatan di bawah. */
@@ -86,6 +89,7 @@ async function main() {
     'doc/sql/010_kunci_indikator.sql',
     'doc/sql/011_notifikasi.sql',
     'doc/sql/012_auth.sql',
+    'doc/sql/014_kategori_riwayat.sql',
   ]
 
   await langkah(`pasang skema (${BERKAS_SKEMA.length} berkas)`, async () => {
@@ -201,6 +205,29 @@ async function main() {
              IF(p.id % 4 = 0, NULL, 2005 + (p.id % 15)),
              IF(p.id % 3 = 0, CONCAT('/arsip/ijazah/', p.nip, '.pdf'), NULL)
       FROM \`${TUJUAN}\`.pegawai p
+    `)
+  })
+
+  /**
+   * Benih antrian pemetaan diklat — WAJIB di sini, bukan di berkas skemanya.
+   *
+   * `014_kategori_riwayat.sql` mengisi `pemetaan_diklat` dari
+   * `pegawai.riwayat_diklat`, tapi di alur volume berkas skema dipasang saat
+   * tabel `pegawai` masih KOSONG. Akibatnya antriannya nol baris padahal 2.000
+   * pegawai punya riwayat diklat — dan pengukuran halaman antrian nanti akan
+   * mengukur tabel kosong lalu melaporkannya sebagai cepat. Persis kekeliruan
+   * yang sama sudah terjadi pada `gapIndikator`, jadi diulang di sini akan jadi
+   * kelalaian, bukan kejutan.
+   */
+  await langkah('benih pemetaan diklat', async () => {
+    await conn.query(`
+      INSERT IGNORE INTO \`${TUJUAN}\`.pemetaan_diklat (nama_normal, nama_mentah, kategori_id, status)
+      SELECT LOWER(TRIM(REGEXP_REPLACE(jt.nama, '[[:space:]]+', ' '))) AS nama_normal,
+             MIN(TRIM(jt.nama)), NULL, 'USULAN'
+        FROM \`${TUJUAN}\`.pegawai p,
+             JSON_TABLE(p.riwayat_diklat, '$[*]' COLUMNS (nama VARCHAR(300) PATH '$')) jt
+       WHERE p.riwayat_diklat IS NOT NULL AND jt.nama IS NOT NULL AND TRIM(jt.nama) <> ''
+       GROUP BY nama_normal
     `)
   })
 
