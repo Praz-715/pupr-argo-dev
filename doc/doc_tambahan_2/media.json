@@ -1,0 +1,36 @@
+{
+  "_catatan": "Transkripsi gambar tersemat sample(1).xlsx, dibaca dari PNG-nya (bukan hasil parsing). Dipakai scripts/xlsx-ke-md.mjs sebagai argumen ke-3. Nama image1..5 hanya berlaku untuk workbook ini.",
+  "pengantar": [
+    "Kelimanya **tangkapan layar baris header tabel di `karir.pu.go.id`** — bukan diagram maupun data.",
+    "Fungsinya menunjukkan kolom apa yang benar-benar tersedia di sumber untuk setiap indikator rubrik,",
+    "jadi ia melengkapi kolom `Kebutuhan Data` & `Sumber` di lembar `TALENT POOLdata-*`. Kelimanya",
+    "tertaut ke ketiga lembar `TALENT POOLdata-*` sekaligus, bukan satu gambar per lembar."
+  ],
+  "gambar": [
+    {
+      "berkas": "image1.png",
+      "layar": "Direktori / daftar talenta",
+      "kolom": "No · NIP dan Nama Lengkap · Jabatan · Eselon · Unit Organisasi · Pangkat · Jenis Asesmen · Potkom (Jabatan Saat ini) · Nilai Integritas · Predikat Kinerja · Jenjang · Kotak 9"
+    },
+    {
+      "berkas": "image2.png",
+      "layar": "Rekapitulasi Kinerja Pegawai — \"Monitoring evaluasi kinerja per periode\"",
+      "kolom": "No · Jabatan · Tahun · Periode SKP · lalu **Nilai Kinerja** bertingkat: Triwulan 1 / Triwulan 2 / Triwulan 3 / Akhir Tahun, masing-masing dipecah jadi Kinerja, Perilaku, Predikat"
+    },
+    {
+      "berkas": "image3.png",
+      "layar": "Riwayat pendidikan",
+      "kolom": "NO · PENDIDIKAN · JURUSAN / BIDANG STUDI · TAHUN LULUS · TGL ISI DATA · IJAZAH · TRANSKRIP · PERTEK BKN · TERAKHIR DIPERBARUI · AKSI"
+    },
+    {
+      "berkas": "image4.png",
+      "layar": "Riwayat diklat / sertifikat",
+      "kolom": "NO · JENIS DIKLAT / SERTIFIKAT · LOKASI DIKLAT / SERTIFIKAT · TMT · ARSIP · ARSIP BPSDM · TANGGAL DIPERBARUI · AKSI"
+    },
+    {
+      "berkas": "image5.png",
+      "layar": "Riwayat jabatan",
+      "kolom": "NO · URAIAN JABATAN · NAMA JABATAN · JENJANG JABATAN · STATUS JABATAN · MULAI · AKHIR · NO SK · ARSIP DIGITAL · TERAKHIR DIPERBARUI · AKSI"
+    }
+  ]
+}
