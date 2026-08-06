@@ -33,12 +33,14 @@ Panduan kerja untuk Claude Code di project ini. Baca ini duluan sebelum menyentu
 npm run verifikasi           → 466 uji unit lolos (17 berkas uji)
 npm run verifikasi:data      → 46/46 pemeriksaan (SQL murni, silang-uji isi DB)
 npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyimpang
+                               + 441/441 pasangan (Y,X): ekspresi SQL Kotak 9 setara hitungKotak9()
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) · 30/30 (F8) · 39/39 (F9)
-                               · 23/23 (F10) = 360 pemeriksaan
+                               · 23/23 (F10) · 22/22 (F11) = 382 pemeriksaan
 npm run build                → BELUM dijalankan ulang sejak Fase 10 menambah 2 halaman
                                (terakhir terverifikasi: 30 entri route pada akhir Fase 9)
-npm run ukur:kueri           → 74 kueri = ~315 ms · :volume di 2.000 pegawai = ~900 ms
+npm run ukur:kueri           → 77 kueri = ~327 ms · :volume di 2.000 pegawai = ~900 ms (BELUM diukur ulang
+                               sejak Fase 11 menambah 3 kueri Kotak 9 per jabatan target)
                                ambang 150 ms/kueri; agregat laporan 500 ms (alasannya di skripnya)
                                terberat di volume: gapIndikator 254 ms · antrianDiklat 153 ms · ringkasGap 132 ms
 npm run ukur:hitung-ulang    → ~195 ms · :volume 1.960 pegawai (17.640 baris rincian) = ~4,4 s
@@ -116,6 +118,8 @@ Urutannya: smoke dulu, build terakhir. Saat mematikan server, matikan **hanya PI
 Ditambah Fase 9: `/admin/api` · `/admin/api/log` · `/admin/api/dokumentasi`.
 
 Ditambah Fase 10: `/master/kategori-diklat` (Super Admin + Admin Talenta) · `/data/validasi-riwayat` (**+ Pengelola Unit**, PRD §3 — satu-satunya halaman `data/*` yang dibukanya).
+
+**Fase 11 mengubah dua rute, tidak menambah:** `/master/jabatan-kosong` **DIHAPUS** — isinya melebur ke `/jabatan-target` (dua panel: `#jabatan-kosong` & `#risiko-kekosongan`), dan alamat lamanya dialihkan **308 lewat `redirects()` di `next.config.ts`**. Pengalihannya sengaja **bukan** halaman ber-`permanentRedirect()`: versi itu sudah dicoba dan **tersangkut di batas `<Suspense>`** — HTTP 200, URL tidak bergerak, skeleton tidak pernah selesai. Lebih buruk daripada 404 karena tidak menyatakan apa pun. `/peta-talenta` sekarang menerima `?target=<id jabatan target>` yang mengganti **definisi sumbu X**, bukan menyaring populasi.
 
 **Route handler** (bukan halaman):
 - `GET /api/internal/ekspor/[jenis]` — unduhan CSV, tujuh jenis, peran ditegakkan per jenis (sesi internal).
