@@ -312,6 +312,67 @@ export async function ambilPersyaratan(jabatanTargetId: number): Promise<BarisPe
   }))
 }
 
+/**
+ * Selisih antara **dua penyimpanan lama** untuk satu deklarasi bidang ilmu
+ * (Fase 11 no. 3, U-15).
+ *
+ * Sejak Fase 11 keduanya ditulis bersama oleh `simpanPersyaratan()`, jadi selisih
+ * hanya bisa berasal dari **data yang sudah ada sebelum itu** — dan di `pupr_dev`
+ * memang ada: target 3 menyimpan 3 kata kunci di gerbang tapi 5 di rubrik, target
+ * 1–2 masih menyimpan kata *diklat* (`ppbj`, `kepemimpinan`) di daftar bidang ilmu
+ * sebagai sisa sebelum `doc/sql/015`.
+ *
+ * Selisihnya **ditampilkan, bukan dibetulkan sendiri.** Menyeragamkannya otomatis
+ * berarti membuang kata kunci yang sekarang masih menggerakkan skor Kesesuaian
+ * Bidang Ilmu — yaitu mengubah skor orang tanpa ada yang memutuskannya. Yang
+ * dilakukan halaman: menyatakan bahwa keduanya berbeda, menunjukkan isi
+ * masing-masing, dan menyebut bahwa menyimpan akan menyeragamkan (dan menggeser
+ * skor). Keputusannya milik manusia.
+ */
+export interface SelisihBidangIlmu {
+  /** Kata kunci yang dipakai GERBANG kelayakan (`persyaratan.nilai_minimal`). */
+  gerbang: string[]
+  /** Kata kunci yang dipakai indikator RUBRIK (`kata_kunci_relevansi`). */
+  rubrik: string[]
+  /** Ada di rubrik tapi tidak di gerbang — akan HILANG kalau syaratnya disimpan. */
+  hanyaDiRubrik: string[]
+  /** Ada di gerbang tapi tidak di rubrik. */
+  hanyaDiGerbang: string[]
+}
+
+export async function ambilSelisihBidangIlmu(
+  jabatanTargetId: number,
+): Promise<SelisihBidangIlmu | null> {
+  const r = await kueriSatu<{ kata_kunci: unknown; nilai_minimal: string | null }>(
+    `SELECT t.kata_kunci_relevansi AS kata_kunci,
+            (SELECT p.nilai_minimal FROM jabatan_target_persyaratan p
+              WHERE p.jabatan_target_id = t.id AND p.jenis_syarat = 'BIDANG_ILMU' LIMIT 1)
+              AS nilai_minimal
+       FROM jabatan_target t WHERE t.id = ?`,
+    [jabatanTargetId],
+  )
+  if (r === null) return null
+
+  const bersih = (v: string) => v.trim().toLowerCase()
+  const rubrik = (Array.isArray(r.kata_kunci) ? (r.kata_kunci as unknown[]) : [])
+    .map((v) => bersih(String(v)))
+    .filter((v) => v !== '')
+  const gerbang = (r.nilai_minimal ?? '')
+    .split(',')
+    .map(bersih)
+    .filter((v) => v !== '')
+
+  // Tidak ada satu pun yang terisi → belum dideklarasikan, bukan menyimpang.
+  if (rubrik.length === 0 && gerbang.length === 0) return null
+
+  return {
+    gerbang,
+    rubrik,
+    hanyaDiRubrik: rubrik.filter((k) => !gerbang.includes(k)),
+    hanyaDiGerbang: gerbang.filter((k) => !rubrik.includes(k)),
+  }
+}
+
 export interface JabatanAnggota {
   id: number
   kodeJabatan: string

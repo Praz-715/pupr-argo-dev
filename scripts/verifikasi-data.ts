@@ -57,6 +57,39 @@ const PEMERIKSAAN: Periksa[] = [
           ) x WHERE kotak_9 <> hitung`,
   },
   {
+    // Pengaman Fase 11 no. 3. Deklarasi syarat disatukan (satu tempat tulis untuk
+    // gerbang & rubrik), tapi FUNGSINYA sengaja tetap dua: gerbang menjawab "lolos
+    // atau tidak", rubrik menjawab "berapa poin".
+    //
+    // Yang memikul beban pemisahan itu adalah **inversi**: ada kandidat yang tidak
+    // lolos syarat tapi skornya di atas kandidat yang lolos. Kalau syarat dilebur
+    // jadi indikator rubrik, ketidaklolosan akan menekan skornya sendiri dan
+    // inversi seperti ini tidak mungkin lagi ada — jadi hilangnya inversi adalah
+    // tanda paling awal bahwa pemisahannya sudah runtuh.
+    //
+    // Dihitung sebagai jumlah jabatan target yang punya inversi; harus ketiganya.
+    nama: 'Gerbang terpisah dari skor: ada kandidat tak lolos syarat yang skornya di atas yang lolos',
+    sql: `SELECT COUNT(DISTINCT a.jabatan_target_id) n
+          FROM match_score a
+          JOIN match_score b ON b.jabatan_target_id = a.jabatan_target_id
+          WHERE a.eligible = 0 AND b.eligible = 1 AND a.skor_total > b.skor_total`,
+    harapan: 3,
+  },
+  {
+    // Kasus bernama untuk inversi di atas, supaya kegagalannya bisa ditelusuri ke
+    // satu baris konkret alih-alih ke agregat. Yuliana Wijaya bukan skor tertinggi
+    // (Budi Santoso 91,85 lebih tinggi dan LOLOS) — ia yang tertinggi **di antara
+    // yang tidak lolos**, dan itulah yang membuatnya berguna: skor 90,88 di atas
+    // banyak kandidat yang lolos, tapi eselon tertingginya NON_ESELON, di bawah
+    // syarat minimal III.
+    nama: 'Kasus bernama: Yuliana Wijaya 90,88 di Direktur Pengadaan, eligible = 0',
+    sql: `SELECT COUNT(*) n FROM match_score m
+          JOIN pegawai p ON p.id = m.pegawai_id
+          JOIN jabatan_target t ON t.id = m.jabatan_target_id
+          WHERE t.kode_target = 'JT-DIREKTUR-PENGADAAN' AND p.nama_lengkap = 'Yuliana Wijaya'
+            AND (m.eligible <> 0 OR ABS(m.skor_total - 90.88) > 0.01)`,
+  },
+  {
     nama: 'nilai_talenta = 50% Y + 50% X',
     sql: `SELECT COUNT(*) n FROM asesmen_talenta
           WHERE ABS(nilai_talenta - ROUND(0.5*nilai_kinerja_y + 0.5*nilai_potensial_x, 2)) > 0.01`,

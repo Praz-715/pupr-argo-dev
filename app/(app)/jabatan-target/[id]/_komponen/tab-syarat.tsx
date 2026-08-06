@@ -1,6 +1,6 @@
 'use client'
 
-import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ListChecks, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +11,7 @@ import { Panel, PanelHeader } from '@/components/ui/panel'
 import { useToast } from '@/components/ui/toast'
 import { hapusPersyaratan, simpanPersyaratan } from '@/lib/aksi/jabatan-target'
 import { cn } from '@/lib/cn'
-import type { BarisPersyaratan } from '@/lib/kueri/rubrik'
+import type { BarisPersyaratan, SelisihBidangIlmu } from '@/lib/kueri/rubrik'
 import type { JenisSyarat } from '@/lib/scoring/eligibility'
 
 /**
@@ -35,7 +35,8 @@ const JENIS: Array<{ nilai: JenisSyarat; label: string; contoh: string; keterang
     nilai: 'BIDANG_ILMU',
     label: 'Bidang ilmu',
     contoh: 'teknik, sipil, konstruksi',
-    keterangan: 'Daftar kata kunci dipisah koma; "semua" berarti semua bidang diperbolehkan',
+    keterangan:
+      'Daftar kata kunci dipisah koma; "semua" berarti semua bidang diperbolehkan. Dipakai gerbang kelayakan DAN indikator rubrik Kesesuaian Bidang Ilmu — satu deklarasi, dua pembaca',
   },
   {
     nilai: 'PENGALAMAN_MIN',
@@ -61,10 +62,12 @@ const LABEL_JENIS: Record<JenisSyarat, string> = {
 export function TabSyarat({
   jabatanTargetId,
   syarat,
+  selisihBidangIlmu,
   bolehUbah,
 }: {
   jabatanTargetId: number
   syarat: BarisPersyaratan[]
+  selisihBidangIlmu: SelisihBidangIlmu | null
   bolehUbah: boolean
 }) {
   const { tampilkan } = useToast()
@@ -89,8 +92,63 @@ export function TabSyarat({
 
   const tanpaNilai = syarat.filter((s) => (s.nilaiMinimal ?? '').trim() === '')
 
+  // Selisih hanya bisa berasal dari data sebelum Fase 11 — sejak fase itu kedua
+  // penyimpanan ditulis bersama. Ditampilkan, TIDAK dibetulkan sendiri: menyamakan
+  // otomatis berarti membuang kata kunci yang masih menggerakkan skor, yaitu
+  // mengubah skor orang tanpa ada yang memutuskannya.
+  const menyimpang =
+    selisihBidangIlmu !== null &&
+    (selisihBidangIlmu.hanyaDiRubrik.length > 0 || selisihBidangIlmu.hanyaDiGerbang.length > 0)
+
   return (
     <div className="space-y-4">
+      {menyimpang && selisihBidangIlmu !== null ? (
+        <Panel>
+          <div className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
+            <div className="min-w-0 space-y-2">
+              <p className="text-[13px] font-medium text-text">
+                Bidang ilmu tersimpan dua kali dengan isi berbeda
+              </p>
+              <p className="text-[12px] leading-relaxed text-text-muted">
+                Gerbang kelayakan dan indikator rubrik Kesesuaian Bidang Ilmu membaca daftar kata
+                kunci yang <strong className="font-medium text-text">tidak sama</strong>. Ini sisa
+                keadaan sebelum keduanya disatukan — sejak sekarang menyimpan syarat bidang ilmu
+                menulis kedua-duanya, jadi selisih tidak bisa muncul lagi.
+              </p>
+              <dl className="grid gap-1.5 text-[12px] sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="text-[11px] text-text-subtle">Dipakai gerbang kelayakan</dt>
+                  <dd className="text-text-muted">
+                    {selisihBidangIlmu.gerbang.length === 0
+                      ? '— belum diisi'
+                      : selisihBidangIlmu.gerbang.join(' · ')}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-[11px] text-text-subtle">Dipakai indikator rubrik</dt>
+                  <dd className="text-text-muted">
+                    {selisihBidangIlmu.rubrik.length === 0
+                      ? '— belum diisi'
+                      : selisihBidangIlmu.rubrik.join(' · ')}
+                  </dd>
+                </div>
+              </dl>
+              {selisihBidangIlmu.hanyaDiRubrik.length > 0 ? (
+                <p className="text-[12px] leading-relaxed text-text-muted">
+                  Menyimpan syarat bidang ilmu akan{' '}
+                  <strong className="font-medium text-warning">membuang</strong>{' '}
+                  {selisihBidangIlmu.hanyaDiRubrik.map((k) => `“${k}”`).join(', ')} dari indikator
+                  rubrik. Kata kunci itu sekarang masih menaikkan skor sebagian kandidat, jadi{' '}
+                  <strong className="font-medium text-text-muted">skor akan bergeser</strong> —
+                  jalankan Simulasi &amp; Diff lebih dulu kalau ingin melihat siapa saja.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </Panel>
+      ) : null}
+
       <Panel padat>
         <div className="border-b border-border px-3.5 py-3">
           <PanelHeader

@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
@@ -13,13 +13,15 @@ import { cn } from '@/lib/cn'
 import type { BarisJabatanTarget } from '@/lib/kueri/rubrik'
 
 /**
- * Form profil jabatan target (buat & ubah).
+ * Form profil jabatan target (buat & ubah) — **identitas saja**: kode, nama,
+ * deskripsi.
  *
- * Kata kunci relevansi diberi porsi besar karena dampaknya tidak kelihatan dari
- * namanya: dua indikator (Kesesuaian Bidang Ilmu & Pengembangan Kompetensi)
- * bernilai 100 bila ada kata kunci yang cocok dan **50 bila tidak** — jadi
- * jabatan target tanpa kata kunci menghukum setiap kandidat pada dua indikator
- * sekaligus, tanpa pesan apa pun di skornya (U-12).
+ * Kata kunci relevansi dulu disunting di sini, dan itu dicabut di Fase 11 no. 3
+ * (U-15). Isinya bukan properti identitas melainkan **deklarasi syarat bidang
+ * ilmu**, dan syarat yang sama juga dibaca gerbang kelayakan lewat baris
+ * persyaratan `BIDANG_ILMU`. Dua form yang bisa menulis satu deklarasi berarti
+ * menyunting nama jabatan target dapat menimpa syaratnya tanpa menyebutnya — dan
+ * yang bergeser adalah skor, bukan label. Sekarang satu tempat: tab Persyaratan.
  */
 export function TombolBuatTarget() {
   const [buka, setBuka] = useState(false)
@@ -50,19 +52,6 @@ export function FormTarget({
   const [kodeTarget, setKodeTarget] = useState(target?.kodeTarget ?? '')
   const [namaTarget, setNamaTarget] = useState(target?.namaTarget ?? '')
   const [deskripsi, setDeskripsi] = useState(target?.deskripsi ?? '')
-  const [kataKunci, setKataKunci] = useState<string[]>(target?.kataKunciRelevansi ?? [])
-  const [kunciBaru, setKunciBaru] = useState('')
-
-  function tambahKunci() {
-    const bersih = kunciBaru.trim().toLowerCase()
-    if (bersih === '') return
-    if (kataKunci.some((k) => k.toLowerCase() === bersih)) {
-      setKunciBaru('')
-      return
-    }
-    setKataKunci([...kataKunci, bersih])
-    setKunciBaru('')
-  }
 
   function simpan() {
     setGalat({})
@@ -70,7 +59,6 @@ export function FormTarget({
       kodeTarget,
       namaTarget,
       deskripsi: deskripsi.trim() === '' ? null : deskripsi,
-      kataKunciRelevansi: kataKunci,
     }
 
     function tanganiGagal(pesan: string, galatField?: Record<string, string>) {
@@ -109,7 +97,7 @@ export function FormTarget({
       deskripsi={
         mode === 'buat'
           ? 'Jabatan target baru selalu lahir sebagai draft — ia belum bisa menilai siapa pun sebelum punya jabatan anggota dan rubrik yang lolos pemeriksaan.'
-          : 'Mengubah kata kunci relevansi mengubah skor dua indikator; jalankan Hitung Ulang setelah menyimpan.'
+          : 'Yang diubah di sini hanya identitas jabatan target. Syarat & rubriknya tidak tersentuh, jadi skor kandidat tidak bergeser.'
       }
       aksi={
         <>
@@ -157,69 +145,19 @@ export function FormTarget({
           />
         </Bidang>
 
-        <Bidang
-          label="Kata kunci relevansi"
-          galat={galat.kataKunciRelevansi}
-          keterangan="dipakai indikator Kesesuaian Bidang Ilmu & Pengembangan Kompetensi"
-        >
-          <div className="flex gap-2">
-            <input
-              value={kunciBaru}
-              onChange={(e) => setKunciBaru(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  tambahKunci()
-                }
-              }}
-              disabled={pending}
-              placeholder="mis. pengadaan, teknik sipil, semua"
-              className={kelasInput(galat.kataKunciRelevansi)}
-            />
-            <Button size="sm" variant="sekunder" onClick={tambahKunci} disabled={pending}>
-              Tambah
-            </Button>
-          </div>
-          {kataKunci.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {kataKunci.map((k) => (
-                <span
-                  key={k}
-                  className="inline-flex items-center gap-1 rounded-full border border-accent-border bg-accent-subtle px-2 py-0.5 text-[11px] text-accent"
-                >
-                  {k}
-                  <button
-                    type="button"
-                    onClick={() => setKataKunci(kataKunci.filter((x) => x !== k))}
-                    disabled={pending}
-                    aria-label={`Hapus kata kunci ${k}`}
-                    className="hover:text-text"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </Bidang>
-
-        <div className="rounded-md border border-warning-border bg-warning-subtle px-3 py-2.5">
+        {/*
+          Kata kunci relevansi TIDAK lagi disunting di sini (Fase 11 no. 3).
+          Isinya adalah deklarasi syarat bidang ilmu, dan syarat itu punya satu
+          tempat: tab Persyaratan. Selama form profil juga bisa menulisnya,
+          mengganti nama jabatan target bisa menimpa syaratnya tanpa menyebutnya —
+          dan skor bergeser karena tindakan yang kelihatannya cuma menyunting label.
+        */}
+        <div className="rounded-md border border-border bg-surface-2 px-3 py-2.5">
           <p className="text-[11px] leading-relaxed text-text-muted">
-            {kataKunci.length === 0 ? (
-              <>
-                <strong className="font-medium text-text">Tanpa kata kunci</strong>, indikator
-                Kesesuaian Bidang Ilmu dan Pengembangan Kompetensi akan bernilai{' '}
-                <strong className="font-medium text-text">50 untuk semua kandidat</strong> — tidak
-                membedakan siapa pun, tapi juga menahan skor mereka.
-              </>
-            ) : (
-              <>
-                Kata kunci <strong className="font-medium text-text">&quot;semua&quot;</strong>{' '}
-                membebaskan syarat bidang ilmu formal, tapi{' '}
-                <strong className="font-medium text-text">tidak</strong> berlaku untuk indikator
-                diklat — kelonggaran jurusan bukan pembebasan syarat pengembangan kompetensi.
-              </>
-            )}
+            Bidang ilmu, pendidikan minimal, pelatihan, dan pengalaman diatur di{' '}
+            <strong className="font-medium text-text">tab Persyaratan</strong> pada editor jabatan
+            target — satu tempat untuk seluruh syarat, sehingga gerbang kelayakan dan indikator
+            rubrik tidak bisa lagi menyimpan dua daftar yang berbeda.
           </p>
         </div>
       </div>

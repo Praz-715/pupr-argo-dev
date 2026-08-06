@@ -38,13 +38,6 @@ const SkemaTarget = z.object({
     .min(5, 'Nama jabatan target minimal 5 karakter')
     .max(250, 'Nama jabatan target maksimal 250 karakter'),
   deskripsi: z.string().trim().max(2000, 'Deskripsi maksimal 2.000 karakter').nullable(),
-  /**
-   * Kata kunci relevansi (U-12). Dipakai indikator Kesesuaian Bidang Ilmu &
-   * Pengembangan Kompetensi; tanpa isi, keduanya selalu bernilai 50.
-   */
-  kataKunciRelevansi: z
-    .array(z.string().trim().min(2, 'Kata kunci minimal 2 karakter').max(60))
-    .max(20, 'Maksimal 20 kata kunci'),
 })
 
 export type MasukanTarget = z.infer<typeof SkemaTarget>
@@ -86,10 +79,14 @@ export async function buatJabatanTarget(
       jalankan: async () => {
         // Selalu lahir DRAFT: jabatan target tanpa rubrik & anggota belum bisa
         // menilai siapa pun, jadi status AKTIF pada saat dibuat akan berbohong.
+        // `kata_kunci_relevansi` lahir kosong dan **hanya** ditulis lewat tab
+        // Persyaratan (Fase 11 no. 3). Form profil ini mengurus identitas jabatan
+        // target — kode, nama, deskripsi — bukan syaratnya; dua form yang bisa
+        // menulis satu kolom adalah cara kolom itu berselisih dengan dirinya.
         const { insertId } = await eksekusi(
           `INSERT INTO jabatan_target (kode_target, nama_target, deskripsi, kata_kunci_relevansi, status)
-           VALUES (?, ?, ?, ?, 'DRAFT')`,
-          [d.kodeTarget, d.namaTarget, d.deskripsi, JSON.stringify(d.kataKunciRelevansi)],
+           VALUES (?, ?, ?, JSON_ARRAY(), 'DRAFT')`,
+          [d.kodeTarget, d.namaTarget, d.deskripsi],
         )
         return { entitasId: insertId, sesudah: { id: insertId, ...d, status: 'DRAFT' } }
       },
@@ -231,17 +228,14 @@ export async function ubahJabatanTarget(
       peranDiizinkan: PERAN_JABATAN_TARGET,
       sebelum: () => bacaTarget(idTarget.data),
       jalankan: async () => {
+        // `kata_kunci_relevansi` SENGAJA tidak ada di sini — satu-satunya jalur
+        // tulisnya adalah syarat BIDANG_ILMU di tab Persyaratan (Fase 11 no. 3).
+        // Selama form ini juga bisa menulisnya, menyunting profil akan menimpa
+        // deklarasi syarat tanpa menyebutnya, dan skor bergeser karena tindakan
+        // yang kelihatannya cuma mengganti nama.
         await eksekusi(
-          `UPDATE jabatan_target
-           SET kode_target = ?, nama_target = ?, deskripsi = ?, kata_kunci_relevansi = ?
-           WHERE id = ?`,
-          [
-            d.kodeTarget,
-            d.namaTarget,
-            d.deskripsi,
-            JSON.stringify(d.kataKunciRelevansi),
-            idTarget.data,
-          ],
+          `UPDATE jabatan_target SET kode_target = ?, nama_target = ?, deskripsi = ? WHERE id = ?`,
+          [d.kodeTarget, d.namaTarget, d.deskripsi, idTarget.data],
         )
         return { entitasId: idTarget.data, sesudah: { id: idTarget.data, ...d } }
       },
@@ -249,7 +243,7 @@ export async function ubahJabatanTarget(
     segarkan(idTarget.data)
     return berhasil(
       undefined,
-      'Profil jabatan target disimpan. Kata kunci relevansi baru berlaku setelah skor dihitung ulang.',
+      'Profil jabatan target disimpan. Bidang ilmu & syarat lain diubah dari tab Persyaratan.',
     )
   } catch (e) {
     const pesan = pesanDariGalatDb(e, { unik: `Kode target "${d.kodeTarget}"` })
@@ -532,6 +526,50 @@ function periksaNilaiMinimal(d: MasukanSyarat): string | null {
   return null
 }
 
+/**
+ * Pecah daftar bidang ilmu dari satu teks berkoma.
+ *
+ * Satu definisi untuk dua penyimpanan — lihat catatan di `simpanPersyaratan()`.
+ * Dinormalisasi (trim, huruf kecil, buang duplikat) supaya `"Teknik, teknik "`
+ * tidak tersimpan sebagai dua kata kunci yang mesin anggap berbeda.
+ */
+function pecahBidangIlmu(nilai: string): string[] {
+  const hasil: string[] = []
+  for (const bagian of nilai.split(',')) {
+    const k = bagian.trim().toLowerCase()
+    if (k !== '' && !hasil.includes(k)) hasil.push(k)
+  }
+  return hasil
+}
+
+/**
+ * Simpan satu persyaratan jabatan target.
+ *
+ * **Untuk `BIDANG_ILMU`, aksi ini juga menulis `jabatan_target.kata_kunci_relevansi`
+ * — dan itu inti Fase 11 no. 3 (U-15).**
+ *
+ * Sebelum ini, "bidang ilmu apa yang dianggap sesuai" dideklarasikan di **dua**
+ * tempat dengan dua jalur tulis: baris persyaratan `BIDANG_ILMU` (dibaca gerbang
+ * kelayakan, `lib/scoring/eligibility.ts`) dan kolom `kata_kunci_relevansi`
+ * (dibaca indikator rubrik Kesesuaian Bidang Ilmu, `lib/penilaian.ts`). Keduanya
+ * menyimpan **informasi yang sama** — daftar kata kunci, dengan `"semua"`
+ * bermakna sama di keduanya — hanya berbeda format.
+ *
+ * Akibatnya sudah terjadi, bukan diperkirakan: di `pupr_dev` target 3 menyimpan
+ * 3 kata kunci di gerbang tapi **5** di rubrik, dan target 1–2 masih menyimpan
+ * kata *diklat* (`ppbj`, `kepemimpinan`) di daftar bidang ilmu — sisa sebelum
+ * `doc/sql/015` memindahkan syarat diklat ke tabelnya sendiri. Dua jalur tulis
+ * berarti menyunting salah satunya menggeser skor **atau** kelayakan, tapi tidak
+ * pernah keduanya, dan tidak ada apa pun yang menunjukkan mana yang tertinggal.
+ *
+ * Yang **tidak** dilebur: fungsinya. Gerbang menjawab "lolos syarat atau tidak",
+ * rubrik menjawab "berapa poin" — dan pemisahan itu memikul beban nyata berupa
+ * **inversi**: di dev ada kandidat yang tidak lolos syarat tapi skornya di atas
+ * kandidat yang lolos (Yuliana Wijaya 90,88, eselon tertinggi NON_ESELON). Kalau
+ * syarat dilebur jadi indikator rubrik, ketidaklolosan akan menekan skornya
+ * sendiri dan inversi seperti itu tidak mungkin lagi ada — dijaga dua pemeriksaan
+ * di `scripts/verifikasi-data.ts`.
+ */
 export async function simpanPersyaratan(
   jabatanTargetId: unknown,
   persyaratanId: unknown,
@@ -552,6 +590,10 @@ export async function simpanPersyaratan(
   const galatNilai = periksaNilaiMinimal(d)
   if (galatNilai !== null) return gagal(galatNilai, { nilaiMinimal: galatNilai })
 
+  // Satu daftar, dua penyimpanan. Diturunkan di sini — bukan di dua pemanggil —
+  // supaya tidak mungkin ada jalur yang menulis salah satunya saja.
+  const bidangIlmu = d.jenisSyarat === 'BIDANG_ILMU' ? pecahBidangIlmu(d.nilaiMinimal ?? '') : null
+
   const hasil = await jalankanMutasi({
     entitas: 'jabatan_target_persyaratan',
     aksi: idSyarat === null ? 'BUAT' : 'UBAH',
@@ -561,31 +603,49 @@ export async function simpanPersyaratan(
         ? undefined
         : () =>
             kueriSatu(
-              `SELECT id, jenis_syarat, deskripsi, nilai_minimal FROM jabatan_target_persyaratan WHERE id = ?`,
+              `SELECT p.id, p.jenis_syarat, p.deskripsi, p.nilai_minimal,
+                      (SELECT t.kata_kunci_relevansi FROM jabatan_target t WHERE t.id = p.jabatan_target_id)
+                        AS kata_kunci_relevansi
+                 FROM jabatan_target_persyaratan p WHERE p.id = ?`,
               [idSyarat.data],
             ),
     jalankan: async () => {
+      // Ditulis di dalam mutasi yang sama, bukan sesudahnya: kalau yang kedua
+      // gagal sementara yang pertama sudah masuk, kedua penyimpanan berselisih —
+      // keadaan yang justru sedang dihapuskan oleh aksi ini.
+      if (bidangIlmu !== null) {
+        await eksekusi(`UPDATE jabatan_target SET kata_kunci_relevansi = ? WHERE id = ?`, [
+          JSON.stringify(bidangIlmu),
+          idTarget.data,
+        ])
+      }
+
       if (idSyarat === null) {
         const { insertId } = await eksekusi(
           `INSERT INTO jabatan_target_persyaratan (jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal)
            VALUES (?, ?, ?, ?)`,
           [idTarget.data, d.jenisSyarat, d.deskripsi, d.nilaiMinimal || null],
         )
-        return { entitasId: insertId, sesudah: { id: insertId, ...d } }
+        return { entitasId: insertId, sesudah: { id: insertId, ...d, kataKunciRelevansi: bidangIlmu } }
       }
       await eksekusi(
         `UPDATE jabatan_target_persyaratan SET jenis_syarat = ?, deskripsi = ?, nilai_minimal = ?
          WHERE id = ? AND jabatan_target_id = ?`,
         [d.jenisSyarat, d.deskripsi, d.nilaiMinimal || null, idSyarat.data, idTarget.data],
       )
-      return { entitasId: idSyarat.data, sesudah: { id: idSyarat.data, ...d } }
+      return {
+        entitasId: idSyarat.data,
+        sesudah: { id: idSyarat.data, ...d, kataKunciRelevansi: bidangIlmu },
+      }
     },
   })
 
   segarkan(idTarget.data)
   return berhasil(
     { id: hasil.entitasId ?? 0 },
-    'Persyaratan disimpan. Kelayakan kandidat berubah setelah skor dihitung ulang.',
+    bidangIlmu === null
+      ? 'Persyaratan disimpan. Kelayakan kandidat berubah setelah skor dihitung ulang.'
+      : `Bidang ilmu disimpan untuk gerbang kelayakan DAN indikator rubrik (${bidangIlmu.length} kata kunci). Jalankan Hitung Ulang agar skornya ikut.`,
   )
 }
 
@@ -599,6 +659,12 @@ export async function hapusPersyaratan(
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idSyarat = idPositif.safeParse(persyaratanId)
   if (!idTarget.success || !idSyarat.success) return gagal('Persyaratan tidak dikenali.')
+
+  const lama = await kueriSatu<{ jenis_syarat: string }>(
+    `SELECT jenis_syarat FROM jabatan_target_persyaratan WHERE id = ? AND jabatan_target_id = ?`,
+    [idSyarat.data, idTarget.data],
+  )
+  if (lama === null) return gagal('Persyaratan itu sudah tidak ada. Muat ulang halaman.')
 
   await jalankanMutasi({
     entitas: 'jabatan_target_persyaratan',
@@ -614,6 +680,17 @@ export async function hapusPersyaratan(
         `DELETE FROM jabatan_target_persyaratan WHERE id = ? AND jabatan_target_id = ?`,
         [idSyarat.data, idTarget.data],
       )
+      // Menghapus syarat BIDANG_ILMU ikut mengosongkan `kata_kunci_relevansi`.
+      // Tanpa ini, gerbang berhenti memeriksa bidang ilmu sementara indikator
+      // rubrik **tetap** menilainya dari kata kunci yang tidak lagi punya pemilik
+      // — kata kunci yatim yang masih menggerakkan skor dan tidak tampil di layar
+      // mana pun.
+      if (lama.jenis_syarat === 'BIDANG_ILMU') {
+        await eksekusi(
+          `UPDATE jabatan_target SET kata_kunci_relevansi = JSON_ARRAY() WHERE id = ?`,
+          [idTarget.data],
+        )
+      }
       return { entitasId: idSyarat.data, sesudah: null }
     },
   })

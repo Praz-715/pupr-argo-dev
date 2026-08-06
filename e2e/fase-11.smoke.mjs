@@ -479,6 +479,141 @@ async function main() {
     return `#${idDraftBaru} dihapus · anggotanya ikut terhapus lewat cascade`
   })
 
+  // -------------------------------------------------------------------------
+  // No. 3 — satu tempat mendeklarasikan bidang ilmu
+  // -------------------------------------------------------------------------
+  await langkah('Form profil jabatan target TIDAK lagi menyunting kata kunci', async () => {
+    await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'domcontentloaded' })
+    await page.locator('main button', { hasText: /^Buat jabatan target$/ }).click()
+    const dialog = page.locator('dialog[open]')
+    await dialog.waitFor()
+    const teks = await dialog.innerText()
+    // Kontrol positif dulu: dialognya memang terbuka dan memuat field identitas.
+    tegaskan(/Kode target/i.test(teks), 'kontrol positif gagal — dialog tidak memuat Kode target')
+    tegaskan(/Nama jabatan target/i.test(teks), 'dialog tidak memuat Nama jabatan target')
+    tegaskan(
+      !/Kata kunci relevansi/i.test(teks),
+      'form profil masih menyunting kata kunci relevansi — jalur tulis kedua masih hidup',
+    )
+    tegaskan(
+      /tab Persyaratan/i.test(teks),
+      'dialog tidak memberi tahu di mana syarat sekarang diatur',
+    )
+    await page.keyboard.press('Escape')
+    return 'dialog memuat identitas saja + menunjuk ke tab Persyaratan'
+  })
+
+  let selisihAwal = null
+
+  await langkah('Tab Persyaratan menandai bidang ilmu yang tersimpan dua kali beda isi', async () => {
+    selisihAwal = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT t.id, t.kata_kunci_relevansi AS rubrik,
+                (SELECT p.nilai_minimal FROM jabatan_target_persyaratan p
+                  WHERE p.jabatan_target_id=t.id AND p.jenis_syarat='BIDANG_ILMU' LIMIT 1) AS gerbang
+           FROM jabatan_target t ORDER BY t.id`,
+      )
+      return r.map((x) => ({
+        id: Number(x.id),
+        rubrik: (typeof x.rubrik === 'string' ? JSON.parse(x.rubrik) : x.rubrik) ?? [],
+        gerbang: (x.gerbang ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
+      }))
+    })
+    const menyimpang = selisihAwal.find(
+      (t) => t.rubrik.some((k) => !t.gerbang.includes(k)) || t.gerbang.some((k) => !t.rubrik.includes(k)),
+    )
+    tegaskan(menyimpang !== undefined, 'tidak ada target yang menyimpang — kasusnya tidak teruji')
+
+    await page.goto(`${BASE}/jabatan-target/${menyimpang.id}?tab=syarat`, {
+      waitUntil: 'domcontentloaded',
+    })
+    const teks = await page.locator('main').innerText()
+    tegaskan(
+      /tersimpan dua kali dengan isi berbeda/i.test(teks),
+      'tab Persyaratan tidak menandai selisihnya',
+    )
+    tegaskan(/Dipakai gerbang kelayakan/i.test(teks), 'isi versi gerbang tidak ditampilkan')
+    tegaskan(/Dipakai indikator rubrik/i.test(teks), 'isi versi rubrik tidak ditampilkan')
+    // Yang paling penting: halaman menyatakan bahwa menyimpan MENGGESER SKOR.
+    tegaskan(
+      /skor akan bergeser/i.test(teks),
+      'halaman tidak memperingatkan bahwa menyeragamkan menggeser skor',
+    )
+    return `target #${menyimpang.id}: gerbang [${menyimpang.gerbang.join(' ')}] vs rubrik [${menyimpang.rubrik.join(' ')}]`
+  })
+
+  await langkah('Menyimpan syarat bidang ilmu menulis KEDUA penyimpanan sekaligus', async () => {
+    // Dipakai target 1 (gerbang & rubrik sudah sama-sama memuat "semua"), jadi
+    // menulis ulang tidak menggeser skor siapa pun — yang diuji jalur tulisnya,
+    // bukan dampaknya.
+    const target = selisihAwal[0]
+    const semula = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT p.id, p.nilai_minimal, p.deskripsi,
+                (SELECT t.kata_kunci_relevansi FROM jabatan_target t WHERE t.id=p.jabatan_target_id) AS rubrik
+           FROM jabatan_target_persyaratan p
+          WHERE p.jabatan_target_id=? AND p.jenis_syarat='BIDANG_ILMU' LIMIT 1`,
+        [target.id],
+      )
+      return r[0]
+    })
+    tegaskan(semula !== undefined, `target #${target.id} tidak punya syarat BIDANG_ILMU`)
+
+    await page.goto(`${BASE}/jabatan-target/${target.id}?tab=syarat`, {
+      waitUntil: 'domcontentloaded',
+    })
+    // Tombolnya ikon tanpa teks — dicari lewat `aria-label`, yang memang ada
+    // untuk aksesibilitas. `hasText: /Ubah/` tidak akan pernah cocok.
+    const tombolUbah = page.locator('button[aria-label="Ubah syarat Bidang ilmu"]')
+    tegaskan(
+      (await tombolUbah.count()) === 1,
+      `tombol ubah syarat bidang ilmu cocok ${await tombolUbah.count()} elemen`,
+    )
+    await tombolUbah.click()
+    const dialog = page.locator('dialog[open]')
+    await dialog.waitFor()
+    const input = dialog.locator('input').last()
+    await input.fill('semua, ujif11')
+    await dialog.locator('button', { hasText: /^Simpan$/ }).click()
+    // Tunggu KEADAAN: dialog tertutup. Menunggu kata "semua" akan lolos seketika.
+    await dialog.waitFor({ state: 'detached', timeout: 15000 })
+
+    const sesudah = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT p.nilai_minimal,
+                (SELECT t.kata_kunci_relevansi FROM jabatan_target t WHERE t.id=p.jabatan_target_id) AS rubrik
+           FROM jabatan_target_persyaratan p WHERE p.id=?`,
+        [semula.id],
+      )
+      const x = r[0]
+      return {
+        gerbang: x.nilai_minimal,
+        rubrik: typeof x.rubrik === 'string' ? JSON.parse(x.rubrik) : x.rubrik,
+      }
+    })
+    tegaskan(
+      (sesudah.gerbang ?? '').includes('ujif11'),
+      `gerbang tidak ikut tertulis: ${sesudah.gerbang}`,
+    )
+    tegaskan(
+      Array.isArray(sesudah.rubrik) && sesudah.rubrik.includes('ujif11'),
+      `rubrik TIDAK ikut tertulis: ${JSON.stringify(sesudah.rubrik)} — jalur tulisnya belum menyatu`,
+    )
+
+    // Pulihkan keduanya ke keadaan semula.
+    await denganDb(async (c) => {
+      await c.query(`UPDATE jabatan_target_persyaratan SET nilai_minimal=? WHERE id=?`, [
+        semula.nilai_minimal,
+        semula.id,
+      ])
+      await c.query(`UPDATE jabatan_target SET kata_kunci_relevansi=? WHERE id=?`, [
+        typeof semula.rubrik === 'string' ? semula.rubrik : JSON.stringify(semula.rubrik),
+        target.id,
+      ])
+    })
+    return `satu simpan → gerbang "${sesudah.gerbang}" + rubrik ${JSON.stringify(sesudah.rubrik)} · dipulihkan`
+  })
+
   await langkah('Screenshot kedua tampilan', async () => {
     // `caret: 'initial'` — bawaannya `hide`, yang MENYUNTIK `caret-color:
     // transparent` ke DOM. Kalau suntikan itu mendarat sementara React masih

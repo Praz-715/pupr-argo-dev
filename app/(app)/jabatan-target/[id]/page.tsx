@@ -15,6 +15,7 @@ import {
   ambilJabatanTarget,
   ambilPersyaratan,
   ambilPohonRubrik,
+  ambilSelisihBidangIlmu,
   ambilSumberDuplikasi,
   cariJabatanUntukTarget,
 } from '@/lib/kueri/rubrik'
@@ -273,8 +274,18 @@ async function IsiTabAnggota({
 }
 
 async function IsiTabSyarat({ idTarget, bolehUbah }: { idTarget: number; bolehUbah: boolean }) {
-  const syarat = await ambilPersyaratan(idTarget)
-  return <TabSyarat jabatanTargetId={idTarget} syarat={syarat} bolehUbah={bolehUbah} />
+  const [syarat, selisih] = await Promise.all([
+    ambilPersyaratan(idTarget),
+    ambilSelisihBidangIlmu(idTarget),
+  ])
+  return (
+    <TabSyarat
+      jabatanTargetId={idTarget}
+      syarat={syarat}
+      selisihBidangIlmu={selisih}
+      bolehUbah={bolehUbah}
+    />
+  )
 }
 
 async function IsiTabRubrik({ idTarget, bolehUbah }: { idTarget: number; bolehUbah: boolean }) {
