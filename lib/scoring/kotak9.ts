@@ -76,6 +76,57 @@ export function hitungKotak9(nilaiKinerjaY: number, nilaiPotensialX: number): Ha
   }
 }
 
+/**
+ * Ekspresi SQL `CASE` untuk nomor Kotak 9 — **dihasilkan** dari `AMBANG_SUMBU` &
+ * `MATRIKS_KOTAK_9`, bukan ditulis ulang.
+ *
+ * Ada karena dua tuntutan yang bertabrakan. Agregasi peta talenta **wajib di
+ * SQL** (`GROUP BY`, phase.md §3 K-5), sementara Kotak 9 per jabatan target
+ * **tidak tersimpan di kolom mana pun**: sumbu X-nya `match_score.skor_total`
+ * (§2.10), jadi kotaknya lahir saat kueri berjalan. Menulis `CASE`-nya langsung
+ * di berkas kueri berarti matriks Lampiran A punya **definisi kedua** yang bisa
+ * berselisih dengan `hitungKotak9()` tanpa satu pun uji gagal — larangan
+ * CLAUDE.md #2. Emitter ini membuat SQL-nya turunan, bukan salinan.
+ *
+ * Urutan cabangnya penting dan bukan kebetulan: `CASE` SQL memakai cabang
+ * pertama yang cocok, jadi setiap baris matriks diurutkan dari ambang tertinggi
+ * ke terendah, dan sel paling bawah-kiri jadi `ELSE`.
+ *
+ * Kedua argumen **disisipkan apa adanya** ke SQL, jadi hanya boleh diisi nama
+ * kolom literal yang ditulis di kode (`a.nilai_kinerja_y`) — tidak pernah nilai
+ * dari pengguna. Nilai di DB sudah dijamin 0–100 sejak impor (§2.1), sehingga
+ * `clampSkor()` yang ada di `hitungKotak9()` tidak perlu ditirukan di sini.
+ */
+export function ekspresiSqlKotak9(kolomY: string, kolomX: string): string {
+  const barisY: Array<[KategoriSumbuY, string | null]> = [
+    ['Di Atas Ekspektasi', `${kolomY} >= ${AMBANG_SUMBU.atas}`],
+    ['Sesuai Ekspektasi', `${kolomY} >= ${AMBANG_SUMBU.tengah}`],
+    ['Di Bawah Ekspektasi', null],
+  ]
+  const kolomX9: Array<[KategoriSumbuX, string | null]> = [
+    ['Tinggi', `${kolomX} >= ${AMBANG_SUMBU.atas}`],
+    ['Menengah', `${kolomX} >= ${AMBANG_SUMBU.tengah}`],
+    ['Rendah', null],
+  ]
+
+  const cabang: string[] = []
+  let terbawah: Kotak9 = MATRIKS_KOTAK_9['Di Bawah Ekspektasi']['Rendah']
+
+  for (const [ky, syaratY] of barisY) {
+    for (const [kx, syaratX] of kolomX9) {
+      const kotak = MATRIKS_KOTAK_9[ky][kx]
+      const syarat = [syaratY, syaratX].filter((s): s is string => s !== null)
+      if (syarat.length === 0) {
+        terbawah = kotak
+        continue
+      }
+      cabang.push(`WHEN ${syarat.join(' AND ')} THEN ${kotak}`)
+    }
+  }
+
+  return `CASE ${cabang.join(' ')} ELSE ${terbawah} END`
+}
+
 export interface PerbandinganKotak9 {
   kotakHitung: Kotak9
   kotakSumber: number | null

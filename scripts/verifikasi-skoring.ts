@@ -91,6 +91,43 @@ async function main() {
     )
   }
 
+  // -------------------------------------------------------------------------
+  // Ekspresi SQL Kotak 9 vs hitungKotak9() — pengaman Fase 11
+  // -------------------------------------------------------------------------
+  // Peta Talenta per jabatan target menghitung kotaknya **di SQL**: sumbu X-nya
+  // `match_score.skor_total`, yang tidak tersimpan sebagai kotak di kolom mana
+  // pun. Jadi ada dua jalur yang wajib selalu sepakat — `ekspresiSqlKotak9()`
+  // yang dijalankan MySQL, dan `hitungKotak9()` di TypeScript.
+  //
+  // Keduanya memang turun dari `MATRIKS_KOTAK_9` yang sama, tapi itu tidak
+  // menjamin **urutan cabang `CASE`**-nya benar: `CASE` memakai cabang pertama
+  // yang cocok, sehingga satu baris tertukar hanya salah di sekitar ambang — 60
+  // dan 80 — yaitu justru tempat yang paling jarang diperiksa orang dan paling
+  // sering menentukan kotak seseorang. Karena itu diuji **exhaustif** atas kisi
+  // 0–100 langkah 5 (441 pasangan), bukan atas baris yang kebetulan ada di DB.
+  const { ekspresiSqlKotak9, hitungKotak9 } = await import('../lib/scoring')
+  const kisi = await kueri<{ y: number; x: number; kotak: number }>(
+    `WITH RECURSIVE n(v) AS (SELECT 0 UNION ALL SELECT v + 5 FROM n WHERE v < 100)
+     SELECT ny.v AS y, nx.v AS x, ${ekspresiSqlKotak9('ny.v', 'nx.v')} AS kotak
+     FROM n ny CROSS JOIN n nx`,
+  )
+
+  let bedaKisi = 0
+  for (const r of kisi) {
+    const dariTs = hitungKotak9(Number(r.y), Number(r.x)).kotak
+    if (Number(r.kotak) !== dariTs) {
+      bedaKisi++
+      if (contoh.length < 10) {
+        contoh.push(`  kisi Y=${r.y} X=${r.x}: SQL memberi ${r.kotak}, hitungKotak9 memberi ${dariTs}`)
+      }
+    }
+  }
+  menyimpang += bedaKisi
+  console.log(
+    `\nekspresi SQL Kotak 9 — ${kisi.length} pasangan (Y,X) diperiksa: ` +
+      `${bedaKisi === 0 ? 'setara dengan hitungKotak9()' : `${bedaKisi} MENYIMPANG`}`,
+  )
+
   console.log(`\n${diperiksa} baris skor diperiksa · ${menyimpang} menyimpang`)
   if (contoh.length > 0) {
     console.log('\ncontoh selisih:')
@@ -99,12 +136,16 @@ async function main() {
 
   if (menyimpang > 0) {
     console.error(
-      '\nGAGAL: hasil lib/skor-massal berbeda dari isi match_score. Salah satunya salah —\n' +
-        'periksa perubahan terakhir di lib/scoring, lib/penilaian, atau lib/skor-massal.',
+      '\nGAGAL: hasil lib/skor-massal berbeda dari isi match_score, atau ekspresi SQL Kotak 9\n' +
+        'berbeda dari hitungKotak9(). Salah satunya salah — periksa perubahan terakhir di\n' +
+        'lib/scoring, lib/penilaian, atau lib/skor-massal.',
     )
     process.exit(1)
   }
-  console.log('\nOK: lib/skor-massal melahirkan ulang seluruh isi match_score.')
+  console.log(
+    '\nOK: lib/skor-massal melahirkan ulang seluruh isi match_score, dan ekspresi SQL\n' +
+      'Kotak 9 setara dengan hitungKotak9() pada seluruh kisi ambang.',
+  )
   process.exit(0)
 }
 

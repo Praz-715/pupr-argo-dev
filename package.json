@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node e2e/fase-0.smoke.mjs .next/smoke && node e2e/fase-1.smoke.mjs .next/smoke && node e2e/fase-2.smoke.mjs .next/smoke && node e2e/fase-3.smoke.mjs .next/smoke && node e2e/fase-4.smoke.mjs .next/smoke && node e2e/fase-5.smoke.mjs .next/smoke && node e2e/fase-6.smoke.mjs .next/smoke && node e2e/fase-7.smoke.mjs .next/smoke && node e2e/fase-8.smoke.mjs .next/smoke && node e2e/fase-9.smoke.mjs .next/smoke && node e2e/fase-10.smoke.mjs .next/smoke",
+    "smoke": "node e2e/fase-0.smoke.mjs .next/smoke && node e2e/fase-1.smoke.mjs .next/smoke && node e2e/fase-2.smoke.mjs .next/smoke && node e2e/fase-3.smoke.mjs .next/smoke && node e2e/fase-4.smoke.mjs .next/smoke && node e2e/fase-5.smoke.mjs .next/smoke && node e2e/fase-6.smoke.mjs .next/smoke && node e2e/fase-7.smoke.mjs .next/smoke && node e2e/fase-8.smoke.mjs .next/smoke && node e2e/fase-9.smoke.mjs .next/smoke && node e2e/fase-10.smoke.mjs .next/smoke && node e2e/fase-11.smoke.mjs .next/smoke",
     "db:sql": "tsx scripts/jalankan-sql.ts",
     "verifikasi": "npm run typecheck && npm run lint && npm run test",
     "verifikasi:data": "tsx scripts/verifikasi-data.ts",

@@ -118,6 +118,22 @@ const petaTitik = await ukur('petaTitik', () => pt.ambilTitikPeta({}))
 const sel = await ukur('anggotaSel(9)', () => pt.ambilAnggotaSel(9, {}))
 await ukur('opsiPeta', pt.ambilOpsiPeta)
 
+// ---- Fase 11: Kotak 9 per jabatan target (sumbu X = match_score.skor_total) ----
+// Diukur terpisah dari versi generik, bukan diwakili olehnya: versi ini menambah
+// satu JOIN ke `match_score` dan menghitung nomor kotaknya di SQL, jadi
+// `GROUP BY` bekerja atas kolom TERHITUNG. Itu bentuk yang sama dengan yang di
+// Fase 10 membuat antrian diklat 5.677 ms di skala volume — jadi kalau ada yang
+// akan melambat saat 1.872 pegawai, ini kandidatnya.
+const targetPertama = (await pt.ambilOpsiPeta()).jabatanTarget[0]
+if (targetPertama !== undefined) {
+  const ft = { jabatanTargetId: targetPertama.id }
+  await ukur('petaSebaran(per jabatan target)', () => pt.ambilPetaSebaran(ft))
+  await ukur('petaTitik(per jabatan target)', () => pt.ambilTitikPeta(ft))
+  await ukur('anggotaSel(9, per jabatan target)', () => pt.ambilAnggotaSel(9, ft))
+} else {
+  console.log('  (dilewati: tidak ada jabatan target AKTIF di DB ini)')
+}
+
 const pb = await import('../lib/kueri/perbandingan')
 const nip4 = direktori.baris.slice(0, 4).map((b) => b.nip)
 const kandidat = await ukur('kandidat(4 orang)', () => pb.ambilKandidat(nip4))

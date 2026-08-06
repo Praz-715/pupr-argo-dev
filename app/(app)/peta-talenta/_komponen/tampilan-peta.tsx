@@ -16,7 +16,20 @@ import { klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
  * ditampilkan tabel adalah data yang sama persis dengan yang digambar — bukan
  * kueri kedua — sehingga keduanya tidak mungkin berselisih.
  */
-export function TampilanPeta({ titik }: { titik: TitikBubble[] }) {
+/**
+ * `labelX` ada karena sumbu Potensial punya dua definisi (phase.md §2.10): Potkom
+ * apa adanya, atau match score jabatan target terpilih. Kolom yang tetap berbunyi
+ * "Potensial" pada kedua tampilan membuat dua angka berbeda tampil dengan nama
+ * yang sama — dan padanan tabel ini justru yang dipakai orang untuk menyalin
+ * angka ke tempat lain.
+ */
+export function TampilanPeta({
+  titik,
+  labelX = 'Potensial',
+}: {
+  titik: TitikBubble[]
+  labelX?: string
+}) {
   const [tabel, setTabel] = useState(false)
 
   return (
@@ -36,7 +49,7 @@ export function TampilanPeta({ titik }: { titik: TitikBubble[] }) {
         </div>
       </div>
 
-      {tabel ? <TabelTitik titik={titik} /> : <PetaTalenta titik={titik} />}
+      {tabel ? <TabelTitik titik={titik} labelX={labelX} /> : <PetaTalenta titik={titik} />}
     </div>
   )
 }
@@ -68,7 +81,7 @@ function Tombol({
   )
 }
 
-function TabelTitik({ titik }: { titik: TitikBubble[] }) {
+function TabelTitik({ titik, labelX }: { titik: TitikBubble[]; labelX: string }) {
   // Urut dari titik terpadat: yang paling banyak orangnya adalah yang paling
   // dulu ingin dilihat, sedangkan chart mengurutkan menurut koordinat.
   const urut = [...titik].sort((a, b) => b.jumlah - a.jumlah || b.x - a.x)
@@ -80,7 +93,7 @@ function TabelTitik({ titik }: { titik: TitikBubble[] }) {
           <tr className="border-b border-border text-left text-[10px] tracking-wide text-text-subtle uppercase">
             <th className="px-3 py-2 text-right font-medium">Kinerja</th>
             <th className="px-3 py-2 font-medium">Kategori Y</th>
-            <th className="px-3 py-2 text-right font-medium">Potensial</th>
+            <th className="px-3 py-2 text-right font-medium">{labelX}</th>
             <th className="px-3 py-2 font-medium">Kategori X</th>
             <th className="px-3 py-2 text-right font-medium">Kotak</th>
             <th className="px-3 py-2 text-right font-medium">Pegawai</th>

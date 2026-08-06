@@ -36,6 +36,7 @@ export function Kotak9Grid({
   kotakAktif,
   hrefSel = (kotak) => `/?kotak=${kotak}`,
   gulirKeSel = false,
+  labelX = 'Potensial',
 }: {
   perKotak: Map<Kotak9, number>
   total: number
@@ -55,6 +56,14 @@ export function Kotak9Grid({
    * tampil di panel yang sama, jadi bawaannya tidak menggulir.
    */
   gulirKeSel?: boolean
+  /**
+   * Nama sumbu X pada `aria-label` & `title` tiap sel. Sejak Fase 11 sumbu itu
+   * punya dua definisi (phase.md §2.10), dan label yang tetap berbunyi
+   * "Potensial" pada kedua tampilan menyesatkan justru **pengguna pembaca layar**
+   * — satu-satunya yang tidak bisa melihat judul panel di atas grid untuk
+   * mengoreksinya sendiri.
+   */
+  labelX?: string
 }) {
   const maksimum = Math.max(1, ...[...perKotak.values()])
 
@@ -85,8 +94,10 @@ export function Kotak9Grid({
                   key={kolom}
                   href={hrefSel(kotak)}
                   scroll={gulirKeSel}
-                  aria-label={`Kotak ${kotak}: ${jumlah} pegawai — ${baris} × potensial ${kolom}`}
-                  title={`Kotak ${kotak} · ${baris} × Potensial ${kolom}\n${DESKRIPSI_KOTAK_9[kotak]}`}
+                  data-kotak={kotak}
+                  data-jumlah={jumlah}
+                  aria-label={`Kotak ${kotak}: ${jumlah} pegawai — ${baris} × ${labelX} ${kolom}`}
+                  title={`Kotak ${kotak} · ${baris} × ${labelX} ${kolom}\n${DESKRIPSI_KOTAK_9[kotak]}`}
                   className={cn(
                     'relative flex aspect-4/3 flex-col justify-between overflow-hidden rounded-md border p-2 transition-colors',
                     aktif

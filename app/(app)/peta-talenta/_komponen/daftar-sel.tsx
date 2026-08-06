@@ -22,11 +22,14 @@ export function DaftarSel({
   total,
   halaman,
   ukuranHalaman,
+  labelX = 'Potensial',
 }: {
   daftar: AnggotaSel[]
   total: number
   halaman: number
   ukuranHalaman: number
+  /** Nama sumbu X yang sedang dipakai — lihat catatan di `TampilanPeta`. */
+  labelX?: string
 }) {
   const kolom: Array<KolomTabel<AnggotaSel>> = [
     {
@@ -99,7 +102,7 @@ export function DaftarSel({
     },
     {
       kunci: 'potensial',
-      judul: 'Potensial',
+      judul: labelX,
       subjudul: 'sumbu X · 0–100',
       rataKanan: true,
       bisaDiurutkan: false,

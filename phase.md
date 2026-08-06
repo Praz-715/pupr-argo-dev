@@ -92,11 +92,41 @@ Dua hal di rubrik sumber tidak mendefinisikan seluruh rentang. Keputusan di bawa
 Blueprint menandai "Status Asesmen Valid & Masa Berlaku" 🟡 — belum ada aturannya.
 > **Keputusan:** masa berlaku = **3 tahun** sejak `tahun_asesmen`, disimpan sebagai **parameter sistem** (bukan konstanta di kode) agar bisa diubah tanpa deploy. `isExpired` dihitung turunan; `status_asesmen` dari sumber jadi pembanding. Asesmen kedaluwarsa **tidak eligible** untuk talent pool dan ditandai jelas di UI.
 
+### 2.10 Sumbu X punya DUA definisi, dan keduanya sah
+
+`doc/doc_tambahan_2/sample(1).md` (lembar 1 & 2) mendefinisikan **Nilai Potensial (Sumbu X)** bukan sebagai satu angka, melainkan **tiga komponen berbobot**: Potensi & Kompetensi 65% + Kualifikasi Jabatan 20% + Integritas & Moralitas 15%. Itu **rumus yang sama dengan Formula B** (§2.4) — bukan rumus lain.
+
+Aritmatikanya terverifikasi ke lembar 7 (`Sample`), yang memuat **formula Excel apa adanya**, bukan hasilnya. Iwan:
+
+```
+65% × 93,47 (Potkom)              = 60,7555
+ 5% × 90    (Magister)            =  4,5
+ 5% × 100   (bidang ilmu sesuai)  =  5
+ 5% × 100   (diklat sesuai)       =  5
+ 5% × (100+100)/3 (pengalaman)    =  3,3333
+15% × 100   (tanpa hukdis)        = 15
+                            Total = 93,5888   ← tertulis di lembar 7
+Nilai Talenta = 50% × 80 + 50% × 93,5888      = 86,7944   ← tertulis di lembar 7
+```
+
+Cocok sampai desimal terakhir — **termasuk pembagi `3`** untuk sub-indikator Pengalaman Jabatan, yang sekaligus menjawab §9 no. 3 dengan bukti yang bisa dikutip, bukan asumsi.
+
+**Konsekuensinya:** karena Kualifikasi Jabatan memuat indikator *"sesuai dengan jabatan target"*, **Sumbu X di `sample(1).md` terikat jabatan.** Kotak 9 di sana bukan angka organisasi — ia jawaban atas "seberapa siap orang ini untuk jabatan **ini**".
+
+> **Keputusan: dua Sumbu X hidup berdampingan, dan tidak boleh dicampur.**
+>
+> | | Sumbu X | Melayani |
+> |---|---|---|
+> | **Generik** | `asesmen_talenta.nilai_potensial_x` = Potkom apa adanya dari e-Nominasi (terverifikasi: **sama dengan `potkom` di 46/46 baris**) | sebaran talenta organisasi, `GET /api/v1/kotak-9/summary`, pelaporan PermenPANRB |
+> | **Per jabatan target** | `match_score.skor_total` = komposit 65/20/15 | kesiapan seseorang terhadap satu jabatan |
+>
+> Yang **dilarang**: membuat generik versi 65/20/15 dengan "menetralkan" Kesesuaian Bidang Ilmu & Pengembangan Kompetensi. Kedua indikator itu **tidak punya nilai** tanpa jabatan rujukan; mengarang nilai netral menghasilkan angka yang tampak wajar dan diam-diam salah — pola yang sudah dua kali menjerat project ini (pencocokan kata kunci diklat yang hanya kena 36 dari 182 nama, dan `kotak_9` sumber yang tertimpa `007` sebelum ada kolom pembanding).
+
 ---
 
 ## 3. Konsekuensi Desain yang Lahir dari Rubrik Itu Sendiri
 
-Empat hal berikut **bukan** anomali data — ini sifat rumus di doc, jadi tetap berlaku betapa pun bersihnya data nanti. Semuanya berdampak langsung ke desain halaman.
+Tujuh hal berikut **bukan** anomali data — ini sifat rumus di doc, jadi tetap berlaku betapa pun bersihnya data nanti. Semuanya berdampak langsung ke desain halaman.
 
 ### K-1 · Sumbu Y hanya punya 5 nilai diskrit
 Predikat → 100/80/60/40/20. Tidak ada nilai di antaranya.
@@ -122,6 +152,24 @@ Formula B = 65% Potkom + 20% Kualifikasi + 15% Integritas — ketiganya komponen
 ### K-6 · NIP menyimpan data yang tidak ada di kolom mana pun
 `pegawai` tidak punya `tanggal_lahir` maupun `jenis_kelamin`, tapi NIP 18 digit ASN berformat `YYYYMMDD`(lahir) + `YYYYMM`(TMT CPNS) + `S`(1=L, 2=P) + `NNN`. Sudah diuji ke 16 baris dev: **terparse 100%**, hasil konsisten (usia 30–58, TMT CPNS 1993–2020).
 > **Peluang tanpa tambah kolom & tanpa menunggu data baru:** usia, **proyeksi BUP** (58/60/65 tergantung jenis jabatan), masa kerja ASN, piramida usia & komposisi gender per unit, serta **validasi format NIP** sebagai aturan kualitas data. Ini yang menutup Lampiran B langkah 2 ("jabatan kritis yang **berisiko** kekosongan") yang belum tercakup PRD — lihat U-6. Semua nilai bersifat **turunan** di `lib/nip.ts`, tidak didenormalisasi ke kolom baru.
+
+### K-7 · Kotak 9 seseorang berubah menurut jabatan yang dituju
+
+Turunan langsung dari §2.10: Sumbu X per jabatan target adalah komposit, sedangkan Sumbu Y tidak bergantung jabatan. Maka **orang yang sama bisa menempati kotak berbeda untuk jabatan berbeda.** Terukur di `pupr_dev` atas 117 pasangan (pegawai × jabatan target):
+
+| Jabatan target | Dinilai | **Pindah kolom** | Rata X generik | Rata X komposit |
+|---|---|---|---|---|
+| Ka Balai BP2JK / Kasubdit Pengadaan | 39 | **11** | 73,18 | 73,76 |
+| Direktur Pengadaan | 39 | **11** | 73,18 | 73,76 |
+| Ka Balai BJKW | 39 | **9** | 73,18 | 72,92 |
+| **Total** | 117 | **31 (26%)** | 73,18 | 73,48 |
+
+Bentuknya yang penting, bukan besarnya: **rata-rata X hampir tidak bergerak (+0,30) tapi 26% menyeberangi batas pita.** Pergeserannya memusat di sekitar ambang 60 & 80, jadi ini bukan pergeseran menyeluruh yang bisa dianggap kalibrasi.
+
+> **Dampak:**
+> **(a)** Kedua tampilan **wajib berlabel beda** — bukan "Kotak 9 dengan filter". Kalau namanya sama, orang akan membandingkan lalu menyimpulkan salah satunya rusak, dan yang paling mungkin dicurigai justru yang benar.
+> **(b)** Pegawai **tanpa** baris `match_score` untuk target itu harus tampil sebagai **"belum dinilai"**, bukan dihitung 0. Dengan 0 ia jatuh ke Kotak 1/4 dan terlihat sebagai talenta terburuk padahal cuma belum dihitung — dan itu terbaca oleh Pimpinan sebagai penilaian, bukan sebagai data kosong.
+> **(c)** Selisih generik vs per-target itu **informatif, bukan cacat**: Iwan 93,47 generik vs 87,26 untuk Direktur Pengadaan berarti "potensinya tinggi, kualifikasinya untuk jabatan itu belum". Halaman harus bisa menjelaskan selisih itu, bukan menyembunyikan salah satunya.
 
 ---
 
@@ -636,6 +684,49 @@ Delapan widget, masing-masing `<Suspense>` sendiri, seluruh agregasi di SQL (`li
 ### Fase 10 · Hardening
 Uji volume ±2.000 pegawai · review index (`nip`, `unit_organisasi_id`, `jabatan_target_id`, `(pegawai_id, tahun_asesmen)`) · Lighthouse · aksesibilitas (kontras kedua tema, fokus keyboard, `aria-label`, chart punya padanan tabel) · suite Playwright penuh · konsistensi Bahasa Indonesia · backup & staging.
 
+### Fase 11 · Kotak 9 per Jabatan Target & Satu Deklarasi Syarat
+
+Lahir dari `doc/doc_tambahan_2/sample(1).md`: Sumbu X di sana adalah komposit 65/20/15 yang **terikat jabatan** (§2.10), sedangkan yang terpasang memberi Potkom bobot 100%. Fase ini menyediakan tampilan per jabatan target **tanpa menyentuh yang generik**, lalu membereskan satu akibat sampingan yang sudah nyata: data lembar 6 tersebar di tiga tempat.
+
+**Tidak ada tabel baru dan tidak ada kolom baru.** Kompositnya sudah tersimpan (`match_score.skor_total`); kamus kategori diklat, kolom validasi riwayat pegawai, dan `jenis_penugasan` Plt/Plh sudah ada sejak `doc/sql/014`–`015`. Yang dikerjakan adalah **penyajian, peleburan halaman, dan penyatuan deklarasi**.
+
+1. ✅ **Peta Talenta: pemilih jabatan target.** Tanpa pilihan → tampilan **generik**, angkanya tidak berubah sedikit pun. Dengan pilihan → X dari `match_score.skor_total`, Y dari `asesmen_talenta.nilai_kinerja_y`. Grid 3×3, bubble, dan drill-down per sel tetap seperti Fase 3; yang berubah cuma sumber X. Kedua tampilan **berlabel beda** (K-7a).
+2. **Jabatan Kosong melebur ke Jabatan Target** (PRD §6.4 → §6.5). Daftar jabatan kosong & risiko kekosongan jadi bagian halaman Jabatan Target, dengan tombol **"Jadikan draft jabatan target"** per baris. Sekarang ada **6 jabatan KOSONG tapi hanya 2** yang jadi anggota sebuah target — keempat sisanya berubah dari *entri dropdown mati* jadi *pekerjaan yang terlihat*.
+3. **Satu deklarasi syarat jabatan.** Data lembar 6 kini di tiga tempat: `jabatan_target_persyaratan` (9 baris) · `jabatan_target_syarat_diklat` (8) · `jabatan_target.kata_kunci_relevansi` (3). Lembar 6 sendiri **satu baris per jabatan**, jadi memecahnya ke tiga tempat membuat penambahan di satu tempat diam-diam mengubah yang lain. Deklarasinya disatukan; **gerbang dan rubrik dua-duanya membaca dari sana.** Yang **tidak** dilebur: fungsinya — lihat catatan.
+4. **Syarat lembar 6 yang belum punya tempat**: **golongan minimal** (IV/b · III/d · III/b) dan **lama pengalaman dalam tahun** (≥2 · ≥3 · ≥4 tahun). `PENGALAMAN_MIN` sekarang menyimpan **eselon** (`III`/`IV`), bukan durasi — padahal lembar 6 memberi dua-duanya. Plus **syarat diklat BJKW** yang masih kosong (lembar 6 tidak memuat BJKW, jadi ini butuh masukan pemilik proses, bukan dikarang).
+5. **Antrian validasi riwayat dikerjakan** — 182 nama diklat, **status `USULAN` semuanya, nol tervalidasi**. Ini pekerjaan manusia, bukan kode, tapi ia **prasyarat** nomor 1: tanpa itu angka yang dipajang menyesatkan.
+
+**DoD:**
+- [x] Tampilan generik **tidak bergeser sama sekali** — sebaran Kotak 9 tanpa pemilih dibandingkan sel per sel dengan sebelum fase ini, harus identik. Bukan ditaksir. *Terbukti: `K1:3 K2:5 K3:2 K4:4 K5:4 K6:2 K7:6 K8:4 K9:10` sebelum & sesudah; dijaga sebagai konstanta `SEBARAN_GENERIK` di smoke `fase-11`*
+- [x] `GET /api/v1/kotak-9/summary` **tidak berubah bentuk maupun angkanya**, diuji dengan token dev — klien terikat MoU tidak boleh terdampak diam-diam. *Terbukti: `kotak 9 → 10`, `kotak 8 → 4`, tanpa parameter jabatan target*
+- [x] Memilih jabatan target: **nol perhitungan baru, nol tabel baru** — X dibaca dari `match_score.skor_total` yang sudah tersimpan
+- [x] Pegawai tanpa baris `match_score` untuk target itu tampil **"belum dinilai"** dan **tidak masuk sel mana pun**; jumlahnya disebut di halaman (K-7b). *Di `pupr_dev` selalu 0 (40 pegawai punya skor di ketiga target), jadi cabangnya dibuktikan dengan target tanpa skor: 0 di sel, 40 di "belum dinilai", drill-down 0 — bukan 40*
+- [x] Halaman menyebut **persentase Kualifikasi yang masih `perlu_review`** untuk target terpilih (sekarang 40 dari 40)
+- [ ] Empat jabatan kosong tanpa target **tetap tampil** dengan tombol "Jadikan draft", dan jumlahnya disebut — bukan disembunyikan karena tidak bisa dihitung
+- [ ] Tombol itu tidak menambah kolom apa pun: hasilnya `jabatan_target` DRAFT + satu `jabatan_target_anggota`
+- [ ] Setelah konsolidasi, `grep` menemukan **satu** tempat menulis syarat pendidikan/bidang/pelatihan/pengalaman
+- [x] **Kelayakan tidak bergeser**: `npm run verifikasi:skoring` 120/120, kandidat lolos syarat tetap **17 · 8 · 10**. Bergeser = regresi, bukan perbaikan
+- [ ] Kasus regresi bernama: **Yuliana Wijaya tetap skor 90,88 dengan `eligible = 0`** (*"Eselon tertinggi NON_ESELON di bawah syarat minimal III"*) — dipasang bersama nomor 3
+- [x] Berkas smoke `fase-11` (**14 pemeriksaan**); `ukur:kueri` memuat kueri Kotak 9 per target dan lolos ambangnya (**77 kueri · 327 ms**, tiga kueri baru 3 ms masing-masing)
+
+> **Satu pengaman yang tidak ada di rencana awal dan ternyata wajib.** Kotak 9 per jabatan target dihitung **di SQL** — sumbu X-nya `match_score.skor_total`, yang tidak tersimpan sebagai kotak di kolom mana pun. Jadi lahir jalur kedua yang harus selalu sepakat dengan `hitungKotak9()`. Menulis `CASE`-nya langsung di berkas kueri berarti matriks Lampiran A punya definisi kedua — larangan CLAUDE.md #2 — jadi SQL-nya **dihasilkan** dari matriks yang sama lewat `ekspresiSqlKotak9()` di `lib/scoring/kotak9.ts`. Turunan dari konstanta yang sama pun **belum menjamin urutan cabangnya benar**: `CASE` memakai cabang pertama yang cocok, dan satu baris tertukar hanya salah di sekitar ambang 60 & 80 — tempat yang paling jarang diperiksa dan paling sering menentukan kotak seseorang. Karena itu `verifikasi:skoring` sekarang menguji kesetaraannya **exhaustif atas kisi 0–100 langkah 5 (441 pasangan)**, bukan atas baris yang kebetulan ada di DB.
+
+> **Label sumbu X ikut berubah sampai ke `aria-label`.** Kolom padanan tabel, kolom drill-down, judul panel, dan `aria-label` tiap sel grid semuanya memakai `labelX` — "Potensial" atau "Match score". Yang paling mudah terlewat justru `aria-label`: pengguna pembaca layar adalah **satu-satunya** yang tidak bisa mengoreksi sendiri dari judul panel di atas grid.
+
+> **Tautan silang ke Direktori dicabut pada tampilan per jabatan target, dengan alasan ditulis di halaman.** Penyaring `?kotak=` di Direktori Pegawai membaca `asesmen_talenta.kotak_9` — Kotak 9 **generik**. Jadi pada tampilan per jabatan, tautan itu akan membuka daftar orang yang berbeda di bawah nomor kotak yang sama: dua halaman memajang "Kotak 7" dengan isi berbeda, dan yang membacanya menyimpulkan salah satunya rusak. Diganti tautan ke daftar kandidat jabatan itu. Smoke-nya memakai **kontrol positif** — tautan kandidat wajib ditemukan tepat satu — supaya "tautan Direktori tidak ada" berarti benar-benar tidak ada, bukan lokatornya yang salah (jebakan #4).
+
+> **`?target=` yang tidak dikenal ditolak, bukan dijatuhkan ke generik.** Kalau dijatuhkan, halaman memajang label "Organisasi" di atas angka yang diminta per jabatan — atau sebaliknya — dan tidak ada cara pengguna menyadarinya.
+
+> **Kenapa gerbang tidak boleh dilebur ke rubrik, walau deklarasinya disatukan.** `S2` sebagai **gerbang** berarti "tidak lolos syarat"; `S2` sebagai **rubrik** berarti "Magister → 90 poin". Input sama, keluaran beda. Buktinya sudah ada di data dev dan bukan hipotetis: **Yuliana Wijaya adalah skor TERTINGGI** di Direktur Pengadaan (90,88) tetapi `eligible = 0`, dan Rahmat 90,03 dengan pendidikan S1_D4 di bawah minimal S2. Kalau syarat jadi indikator rubrik, yang tampil cuma angka 90,88 — dan orang akan menominasikannya. Pemisahan ini juga yang dipertahankan kedua dokumen sumber: BLUEPRINT §5 menaruh "Seleksi Kelayakan" **sebelum** "Hitung Match Score", dan `sample(1).md` sendiri memisahkan lembar 6 dari lembar 2/3/4.
+
+> **Kamus diklat tetap di `pemetaan_diklat`, bukan di dalam `pegawai.riwayat_diklat`.** Yang dibutuhkan memang kamus ("diklat ini kategori apa") — yang menentukan adalah **di mana ia dikunci**. Terukur: 40 pegawai punya **264 entri diklat tapi hanya 182 nama unik**. Kalau kategorinya ditaruh di dalam JSON tiap pegawai, keputusan yang sama diambil 264 kali alih-alih 182, dan tidak ada satu tempat untuk menjawab *"nama ini sudah diputuskan belum?"* — dua validator bisa memberi kategori berbeda untuk "Diklat PIM IV" pada dua pegawai, dan tidak ada apa pun yang menangkapnya. Dengan `nama_normal` UNIQUE, satu keputusan berlaku untuk semua orang yang pernah ikut. `pegawai.riwayat_diklat` tetap array mentah dari eHRM supaya sinkronisasi ulang tidak menimpa keputusan manusia. Kamusnya juga harus bisa berkata "ini bukan kategori apa pun" (`DITOLAK`) — Rus & Irwan masing-masing punya **30 entri** yang banyak di antaranya webinar, bukan diklat kualifikasi.
+
+> **Plt/Plh BUKAN kategori diklat, dan menaruhnya di kamus diklat akan mematikan satu indikator.** Di `sample(1).md` lembar 2 keduanya indikator **berbeda**: Pengembangan Kompetensi (baris 20–21, sumber riwayat **diklat**) vs Substansi Riwayat **Jabatan** (baris 31–35). Bedanya bukan penempatan — Plt/Plh dinilai dengan **membandingkan eselon** (lebih tinggi 100 / setara 80 untuk Plt; 60 / 40 untuk Plh), dan nama diklat tidak punya eselon untuk dibandingkan. Tempatnya sudah benar: `riwayat_jabatan.jenis_penugasan`. Satu halaman validasi, **dua antrian** — itu yang sudah terpasang di `/data/validasi-riwayat`.
+
+> **Fase ini memajang antrian validasi di dashboard paling depan, dan itu disengaja.** `skor_kualifikasi_jabatan` sekarang **57,50** untuk hampir semua orang karena Substansi Riwayat Jabatan **0,00 di seluruh 120 baris** — antriannya belum dikerjakan. Iwan turun 6,2 poin dari generik ke komposit, dan itu **sebagian besar data yang belum divalidasi, bukan kualitas Iwan**. Jadi Kotak 9 per jabatan akan tampak lebih buruk dari kenyataan sampai antriannya dikerjakan. Diterima dengan dua syarat: halaman **menyatakan** persentasenya, dan angka itu **turun sendiri** seiring validasi — bukan ditahan sampai kelihatan bagus. Efek sampingnya justru diinginkan: halaman validasi riwayat berhenti jadi pekerjaan administratif dan jadi prasyarat angka yang dilihat Pimpinan.
+
+> **`EXCLUDE` vs `/3` naik kelas di fase ini, dan Fase 11 TIDAK memutuskannya.** Sebelumnya pilihan itu cuma menggeser satu angka di Laporan Gap Analysis; sekarang ia **memindahkan orang antar kotak** di Peta Talenta. Buktinya pun kini berlawanan arah: `sample(1).md` lembar 7 memperagakan `/3` **dengan nol ikut dihitung** (§2.10), sementara [`DISPOSISI.md`](doc/doc_tambahan/DISPOSISI.md) §2.2 mengusulkan `EXCLUDE`. Dan penyusun lembar 7 sendiri tidak memutuskannya — kolom P baris 30–35 berisi pertanyaannya: *"Bagaimana jika tidak ada riwat Plt/Plh"*. Jadi ini keputusan pemilik proses (§9 no. 13), bukan perbaikan teknis yang boleh diselipkan.
+
 ---
 
 ## 8. Usulan Perbaikan terhadap PRD §6 (Inventaris Halaman)
@@ -656,6 +747,9 @@ Hasil membaca ulang daftar halaman terhadap rubrik & alur di doc. **`PRD.md` dip
 | **U-10** | Ekspor besar jadi **job asinkron berprogres** | 1.872 pegawai × PDF tidak layak dalam satu request | 8 |
 | **U-11** | `jenis_syarat` **kinerja** pada `jabatan_target_persyaratan` *(perlu keputusan bisnis)* | match score mengabaikan kinerja sepenuhnya (K-4); belum ada cara memasang syarat minimal predikat/Kotak 9 | 5 |
 | **U-12** ✅ | Kolom **`jabatan_target.kata_kunci_relevansi`** (JSON) | Rubrik memakai frasa "sesuai dengan jabatan target" pada indikator Kesesuaian Bidang Ilmu & Pengembangan Kompetensi, tapi tidak ada tempat menyimpan APA yang dianggap sesuai — akibatnya kedua indikator itu tidak bisa dihitung otomatis dan selalu jatuh ke penilaian manual. Sudah diterapkan di `005`. **Sejak `014`–`015` kolom ini hanya melayani Bidang Ilmu**; syarat diklat pindah ke `jabatan_target_syarat_diklat` sebagai relasi ke kategori tervalidasi, sebab satu kolom untuk dua indikator memaksa `"semua"` diperlakukan berbeda di antara keduanya. | 0.5 |
+| **U-13** | **Pemilih jabatan target di Peta Talenta** → dua tampilan berlabel beda: sebaran organisasi (X = Potkom) dan kesiapan terhadap satu jabatan (X = komposit 65/20/15) | `sample(1).md` mendefinisikan Sumbu X sebagai komposit yang terikat jabatan (§2.10), sedangkan yang terpasang memberi Potkom bobot 100%. Tanpa pemilih jabatan, Kualifikasi 20% **tidak bisa dihitung sama sekali** — frasa "sesuai dengan jabatan target" tidak punya rujukan. Terukur memindahkan 26% orang antar kolom (K-7) | 11 |
+| **U-14** | **"Jabatan Kosong & Risiko Kekosongan" melebur ke halaman Jabatan Target**, dengan tombol *"Jadikan draft jabatan target"* per baris | Begitu Kotak 9 bisa disaring per jabatan target, jabatan kosong **tanpa** target jadi lubang yang terlihat: 6 kosong, hanya 2 punya rubrik. Meleburnya mengubah keempat sisanya dari entri mati jadi antrean kerja, dan tombolnya tidak butuh kolom baru — `jabatan_target_anggota` sudah menghubungkannya | 11 |
+| **U-15** | **Satu deklarasi syarat jabatan** — `jabatan_target_persyaratan` + `jabatan_target_syarat_diklat` + `kata_kunci_relevansi` dideklarasikan di satu tempat, gerbang & rubrik dua-duanya membaca dari sana | Lembar 6 `sample(1).md` adalah **satu baris per jabatan** (Pendidikan · Bidang · Pelatihan · Pengalaman · Golongan); memecahnya ke tiga tempat membuat penambahan di satu tempat diam-diam mengubah yang lain — U-12 sudah mengakui gejalanya. Yang **tidak** dilebur: gerbang (lolos/tidak) vs rubrik (poin), karena skor tertinggi yang tidak lolos syarat harus tetap terbaca | 11 |
 
 ---
 
@@ -667,7 +761,7 @@ Semua non-blocking — sudah ada keputusan default yang dipakai, tinggal dikonfi
 |---|---|---|---|
 | 1 | Rentang Lama Jabatan: benar maksudnya `≥2–<5` untuk nilai 80? | ya (§2.8a) | data produksi masuk |
 | 2 | Masa berlaku asesmen berapa tahun? | **3 tahun**. Sejak Fase 7 benar-benar jadi parameter sistem di tabel `pengaturan_sistem` — bisa diubah dari halaman Pengaturan tanpa deploy, dan halamannya memperingatkan bahwa skor tersimpan perlu Hitung Ulang | data produksi masuk |
-| 3 | Agregasi sub-indikator: rata-rata sederhana? | ya, bobot sama rata (§2.5) | data produksi masuk |
+| 3 | Agregasi sub-indikator: rata-rata sederhana? | **ya, bobot sama rata (§2.5) — dan sejak `sample(1).md` masuk, ini bukan lagi asumsi.** Lembar 7 memuat formula Excel apa adanya: `=5%*((100+100)/3)` — pembaginya **3**, dengan sub-indikator bernilai nol ikut dihitung. Terverifikasi cocok sampai desimal terakhir dengan keluaran mesin rubrik (§2.10) | — **terjawab oleh dokumen sumber**; tinggal dikonfirmasi apakah nol yang ikut dibagi memang disengaja (lihat no. 13) |
 | 4 | Hukuman disiplin `status_aktif=0` benar tidak menurunkan skor? Ada masa kedaluwarsa resmi? | tidak menurunkan (§2.7) | **jawaban mengubah skor Integritas 15% seluruh kandidat** — perlu dikonfirmasi sebelum talent pool ditetapkan (Fase 6) |
 | 5 | Perlu syarat minimal kinerja/Kotak 9 di eligibility? | belum dipasang (K-4, U-11). Sementara ini Kotak 9 & predikat kinerja **ditampilkan berdampingan** di halaman kandidat, jadi konteksnya ada walau tidak menyaring | penetapan suksesor (Fase 6) |
 | 6 | Siapa berwenang mengisi nilai manual untuk indikator yang datanya belum ada? | **terpasang di Fase 5**: Admin Talenta & Super Admin, catatan **wajib**, tercatat di `match_score_detail.diisi_oleh` | — sudah jalan; tinggal dikonfirmasi apakah peran lain juga berhak |
@@ -677,10 +771,13 @@ Semua non-blocking — sudah ada keputusan default yang dipakai, tinggal dikonfi
 | 10 | Siapa menjalankan "Verifikasi Kepegawaian"? | **terpasang di Fase 6**: peran Admin Talenta, tahap `Verifikasi Kepegawaian`, diikuti tahap `Persetujuan Pimpinan` (ERD §5.1) | — sudah jalan; tinggal dikonfirmasi apakah perlu tahap ketiga di Kementerian |
 | 11 | Daftar aktor: paket `doc_tambahan` memakai 6 aktor termasuk *Admin Data* & *Pejabat Reviewer* tapi **tanpa Pengelola Unit** — mana yang berlaku? | 5 peran seperti sekarang; keduanya dibaca sebagai penamaan lain (PRD §10.13) | **memblokir apa pun yang menyentuh peran** — Pengelola Unit dasar pembatasan unit |
 | 12 | Kandidat gagal syarat: masuk ranking atau tidak? `doc_tambahan` bertentangan dengan dirinya sendiri (Blueprint §3 vs diagram §7) | **masuk**, sesuai diagram §7 & PRD §6.5 (PRD §10.14) | dokumen sumbernya perlu didamaikan lebih dulu |
+| 13 | **Substansi Riwayat Jabatan yang kosong: nol ikut dibagi (`/3`) atau dikeluarkan dari rata-rata (`EXCLUDE`)?** Dua sumber berlawanan arah: `sample(1).md` lembar 7 memperagakan `/3` dengan nol ikut dihitung, [`DISPOSISI.md`](doc/doc_tambahan/DISPOSISI.md) §2.2 mengusulkan `EXCLUDE` karena "0 bukan buruk, melainkan tidak ada datanya". Penyusun lembar 7 **tidak memutuskannya** — kolom P baris 30–35: *"Bagaimana jika tidak ada riwat Plt/Plh"* | **`/3`, nol ikut dibagi** — mengikuti formula lembar 7 dan perilaku mesin sekarang. Terukur: Substansi **0,00 di 120/120 baris** dengan `perlu_review`, menarik Nilai Pengalaman Jabatan ke 54,50 | **Fase 11 sengaja tidak memutuskannya.** Sejak Sumbu X per jabatan target dipakai, pilihan ini **memindahkan orang antar kotak** di Peta Talenta, bukan cuma menggeser satu angka laporan |
+| 14 | **Syarat pelatihan untuk Ka Balai BJKW** — lembar 6 `sample(1).md` memuat 8 jabatan tetapi **tidak memuat BJKW** | `jabatan_target_syarat_diklat` untuk target itu **sengaja kosong** → indikator Pengembangan Kompetensi bernilai *tidak diketahui*, bukan gagal. Mengarang persyaratan jabatan bukan pilihan | Fase 11 nomor 4; butuh masukan pemilik proses, bukan penalaran |
+| 15 | **Golongan minimal & lama pengalaman dalam tahun** ada angkanya di lembar 6 (IV/b · III/d · III/b; ≥2 · ≥3 · ≥4 tahun) tapi belum punya tempat — `PENGALAMAN_MIN` menyimpan **eselon**, bukan durasi | belum dipasang; eligibility sekarang menyaring eselon & pendidikan saja | Fase 11 nomor 4 — **menambahnya menggeser daftar kandidat lolos syarat**, jadi harus diukur dengan `ukur:dampak-skoring` sebelum ditulis |
 
 **Paket dokumen tambahan (v1.0 Juli 2026) sudah didisposisi**, bukan dibiarkan menggantung: lihat [`doc/doc_tambahan/DISPOSISI.md`](doc/doc_tambahan/DISPOSISI.md). Ringkasnya — ia diperlakukan sebagai **peta jalan, bukan cetak biru pengganti**; 7 konsep sudah sama dengan yang terpasang, **3 diambil** (versioning rubrik · `missing_policy` REVIEW+EXCLUDE · penanda belum-terpetakan), **3 ditunda** sampai PRD §10.2 dijawab (raw intake, staging, source registry — membangun adapter untuk protokol yang belum diketahui itu merancang buta), dan **4 ditolak dengan alasan** (operator whitelist memindahkan logika ke baris tabel sehingga rumus tidak bisa diuji unit; batas modul per-domain menukar batas yang dijaga kompiler dengan batas yang dijaga niat; feature flag & materialized summary menjawab masalah yang belum terukur).
 
-**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5 → 6 → 7 → 8, dan sebagian besar Fase 4. Itu sudah mencakup seluruh permukaan aplikasi internal: dashboard, direktori, profil talenta, peta talenta, perbandingan kandidat, rule engine, workflow suksesi, dan autentikasi.
+**Yang bisa langsung dikerjakan tanpa menunggu jawaban apa pun:** Fase 0 → 0.5 → 1 → 2 → 3 → 5 → 6 → 7 → 8 → 9, sebagian besar Fase 4, dan **Fase 11 nomor 1–3** — ketiganya penyajian, peleburan halaman, dan penyatuan deklarasi, tanpa mengubah satu pun rumus. Yang menunggu jawaban di Fase 11 cuma nomor 4 (§9 no. 14 & 15) dan pilihan `EXCLUDE` vs `/3` (§9 no. 13), dan keduanya **sengaja dipisah** dari nomor 1–3 supaya tidak saling menyandera.
 
 ---
 

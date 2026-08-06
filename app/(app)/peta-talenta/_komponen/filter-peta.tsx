@@ -139,7 +139,19 @@ export function FilterPeta({
           <Button
             size="sm"
             variant="halus"
-            onClick={() => mulaiTransisi(() => router.push(pathname, { scroll: false }))}
+            onClick={() => {
+              // Reset membersihkan FILTER, bukan mengganti dasar sumbu. `?target=`
+              // sengaja dipertahankan: kalau ikut terhapus, pengguna terlempar
+              // kembali ke sebaran organisasi tanpa memintanya, dan angka di grid
+              // berubah karena alasan yang tidak ia lakukan.
+              const params = new URLSearchParams()
+              const target = searchParams.get('target')
+              if (target !== null && target !== '') params.set('target', target)
+              const qs = params.toString()
+              mulaiTransisi(() =>
+                router.push(qs === '' ? pathname : `${pathname}?${qs}`, { scroll: false }),
+              )
+            }}
             ikon={<RotateCcw className="size-3.5" />}
           >
             Reset

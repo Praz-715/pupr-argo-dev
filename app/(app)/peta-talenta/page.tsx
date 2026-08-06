@@ -16,12 +16,14 @@ import {
   ambilPetaSebaran,
   ambilTitikPeta,
   type FilterPeta as TipeFilterPeta,
+  type OpsiJabatanTarget,
 } from '@/lib/kueri/peta-talenta'
 import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { angkaPositif, dariDaftar, nomorHalaman } from '@/lib/param'
 import { DESKRIPSI_KOTAK_9, kategoriDariKotak9, type Kotak9 } from '@/lib/scoring'
 import { DaftarSel } from './_komponen/daftar-sel'
 import { FilterPeta } from './_komponen/filter-peta'
+import { PemilihTarget } from './_komponen/pemilih-target'
 import { TampilanPeta } from './_komponen/tampilan-peta'
 
 export const metadata = { title: 'Peta Talenta' }
@@ -84,14 +86,42 @@ async function IsiPeta({
     ambilTitikPeta(filter),
   ])
 
+  const terpilih =
+    filter.jabatanTargetId === undefined
+      ? null
+      : (opsi.jabatanTarget.find((t) => t.id === filter.jabatanTargetId) ?? null)
+
+  // `?target=` menunjuk jabatan target yang tidak ada atau tidak AKTIF. Ditolak
+  // terang-terangan, bukan dijatuhkan kembali ke sebaran organisasi: kalau
+  // dijatuhkan, halaman akan memajang label "Organisasi" di atas angka yang
+  // dimintanya per jabatan — atau sebaliknya — dan tidak ada cara pengguna
+  // menyadarinya.
+  if (filter.jabatanTargetId !== undefined && terpilih === null) {
+    return (
+      <div className="space-y-4">
+        <PemilihTarget daftar={opsi.jabatanTarget} terpilih={null} belumDinilai={0} />
+        <EmptyState
+          judul="Jabatan target tidak ditemukan"
+          deskripsi="Alamat ini menunjuk jabatan target yang tidak ada atau sudah tidak berstatus AKTIF. Pilih jabatan target lain, atau kembali ke sebaran organisasi."
+        />
+      </div>
+    )
+  }
+
+  // Nama sumbu X ikut berubah — dua angka berbeda tidak boleh tampil dengan nama
+  // yang sama (phase.md §3 K-7a).
+  const labelX = terpilih === null ? 'Potensial' : 'Match score'
+
   // Query string filter dipertahankan saat menautkan sel, supaya daftar yang
-  // terbuka cocok dengan angka pada sel yang baru diklik.
+  // terbuka cocok dengan angka pada sel yang baru diklik. `target` ikut, kalau
+  // tidak nomor kotak pada tautan akan dibaca dengan sumbu X yang lain.
   const qsFilter = new URLSearchParams()
   if (filter.unitId !== undefined) qsFilter.set('unit', String(filter.unitId))
   if (filter.eselon) qsFilter.set('eselon', filter.eselon)
   if (filter.jenjang) qsFilter.set('jenjang', filter.jenjang)
   if (filter.tahun !== undefined) qsFilter.set('tahun', String(filter.tahun))
   if (filter.hanyaBerlaku) qsFilter.set('berlaku', '1')
+  if (filter.jabatanTargetId !== undefined) qsFilter.set('target', String(filter.jabatanTargetId))
 
   // Hash `#isi-kotak` + gulirKeSel: hasil drill-down ada di bawah dua panel, jadi
   // tanpa menggulir ke sana mengklik sel terasa tidak melakukan apa pun.
@@ -101,20 +131,37 @@ async function IsiPeta({
     return `/peta-talenta?${p.toString()}#isi-kotak`
   }
 
+  const kepala = (
+    <>
+      <PemilihTarget
+        daftar={opsi.jabatanTarget}
+        terpilih={terpilih}
+        belumDinilai={sebaran.belumDinilaiTarget}
+      />
+      <FilterPeta
+        opsi={opsi}
+        totalDinilai={sebaran.totalDinilai}
+        tanpaAsesmen={sebaran.tanpaAsesmen}
+      />
+    </>
+  )
+
   if (sebaran.totalDinilai === 0) {
+    // Tiga sebab kosong yang berbeda, dan membedakannya penting: filter terlalu
+    // sempit, belum ada asesmen, atau jabatan targetnya belum dihitung. Kalau
+    // ketiganya diberi kalimat yang sama, yang ketiga akan disalahartikan sebagai
+    // "tidak ada kandidat" padahal Hitung Ulang belum pernah dijalankan.
     return (
       <div className="space-y-4">
-        <FilterPeta
-          opsi={opsi}
-          totalDinilai={sebaran.totalDinilai}
-          tanpaAsesmen={sebaran.tanpaAsesmen}
-        />
+        {kepala}
         <EmptyState
           judul="Tidak ada pegawai yang bisa dipetakan"
           deskripsi={
-            sebaran.tanpaAsesmen > 0
-              ? `${formatAngka(sebaran.tanpaAsesmen)} pegawai cocok dengan filter ini tapi belum punya asesmen, jadi belum bisa ditempatkan di Kotak 9 mana pun.`
-              : 'Peta terbentuk dari nilai kinerja & potensial pada asesmen terbaru tiap pegawai. Longgarkan filter untuk melihat data.'
+            terpilih !== null && sebaran.belumDinilaiTarget > 0
+              ? `${formatAngka(sebaran.belumDinilaiTarget)} pegawai cocok dengan filter ini tapi belum punya match score untuk jabatan target tersebut. Jalankan Hitung Ulang dari Editor Jabatan Target — angka nol di sini berarti belum dihitung, bukan tidak memenuhi syarat.`
+              : sebaran.tanpaAsesmen > 0
+                ? `${formatAngka(sebaran.tanpaAsesmen)} pegawai cocok dengan filter ini tapi belum punya asesmen, jadi belum bisa ditempatkan di Kotak 9 mana pun.`
+                : 'Peta terbentuk dari nilai kinerja & potensial pada asesmen terbaru tiap pegawai. Longgarkan filter untuk melihat data.'
           }
         />
       </div>
@@ -125,16 +172,16 @@ async function IsiPeta({
 
   return (
     <div className="space-y-4">
-      <FilterPeta
-        opsi={opsi}
-        totalDinilai={sebaran.totalDinilai}
-        tanpaAsesmen={sebaran.tanpaAsesmen}
-      />
+      {kepala}
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
         <Panel>
           <PanelHeader
-            judul="Grid 9 Kotak"
+            judul={
+              terpilih === null
+                ? 'Grid 9 Kotak — Sebaran Organisasi'
+                : 'Grid 9 Kotak — Kesiapan terhadap Jabatan Target'
+            }
             deskripsi={
               <>
                 {formatAngka(sebaran.totalDinilai)} pegawai berasesmen
@@ -154,6 +201,7 @@ async function IsiPeta({
               kotakAktif={kotak}
               hrefSel={hrefSel}
               gulirKeSel
+              labelX={labelX}
             />
           </div>
           <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
@@ -166,18 +214,18 @@ async function IsiPeta({
 
         <Panel>
           <PanelHeader
-            judul="Peta Kinerja × Potensial"
+            judul={`Peta Kinerja × ${labelX}`}
             deskripsi={
               <>
                 {formatAngka(peta.totalPegawai)} pegawai jadi {formatAngka(peta.titik.length)} titik
                 · ukuran gelembung = jumlah pegawai · titik terpadat{' '}
-                {formatAngka(terpadat.jumlah)} pegawai di Kinerja {terpadat.y} × Potensial{' '}
+                {formatAngka(terpadat.jumlah)} pegawai di Kinerja {terpadat.y} × {labelX}{' '}
                 {terpadat.x}
               </>
             }
           />
           <div className="mt-3">
-            <TampilanPeta titik={peta.titik} />
+            <TampilanPeta titik={peta.titik} labelX={labelX} />
           </div>
           <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
             Sumbu Kinerja hanya punya lima nilai yang mungkin (100/80/60/40/20) karena diturunkan
@@ -192,7 +240,14 @@ async function IsiPeta({
           key={`${kotak}-${halaman}-${qsFilter.toString()}`}
           fallback={<SelSkeleton />}
         >
-          <IsiSel kotak={kotak} filter={filter} halaman={halaman} qsFilter={qsFilter.toString()} />
+          <IsiSel
+            kotak={kotak}
+            filter={filter}
+            halaman={halaman}
+            qsFilter={qsFilter.toString()}
+            labelX={labelX}
+            target={terpilih}
+          />
         </Suspense>
       ) : (
         <Panel>
@@ -211,11 +266,15 @@ async function IsiSel({
   filter,
   halaman,
   qsFilter,
+  labelX,
+  target,
 }: {
   kotak: number
   filter: TipeFilterPeta
   halaman: number
   qsFilter: string
+  labelX: string
+  target: OpsiJabatanTarget | null
 }) {
   const hasil = await ambilAnggotaSel(kotak, filter, halaman)
   const kategori = kategoriDariKotak9(kotak)
@@ -229,14 +288,18 @@ async function IsiSel({
               Kotak {kotak}
               {kategori ? (
                 <Badge tone="aksen">
-                  {kategori.y} × Potensial {kategori.x}
+                  {kategori.y} × {labelX} {kategori.x}
                 </Badge>
               ) : null}
+              {target !== null ? <Badge>{target.nama}</Badge> : null}
             </span>
           }
           deskripsi={
             <>
               {formatAngka(hasil.total)} pegawai · diurutkan menurut Nilai Talenta (tertinggi dulu)
+              {target !== null
+                ? ' · Nilai Talenta dihitung dari match score jabatan ini, bukan dari Potkom'
+                : ''}
             </>
           }
         />
@@ -265,19 +328,46 @@ async function IsiSel({
             total={hasil.total}
             halaman={hasil.halaman}
             ukuranHalaman={hasil.ukuranHalaman}
+            labelX={labelX}
           />
         )}
       </div>
 
+      {/*
+        Tautan ke Direktori hanya dipasang pada tampilan organisasi. Penyaring
+        `?kotak=` di sana membaca kolom `asesmen_talenta.kotak_9` — Kotak 9
+        GENERIK — sehingga pada tampilan per jabatan target ia akan membuka daftar
+        orang yang berbeda dengan nomor kotak yang sama. Itu jenis kesalahan yang
+        tidak pernah terlihat sebagai galat: dua halaman memajang "Kotak 7" dengan
+        isi berbeda, dan yang membacanya menyimpulkan salah satunya rusak.
+      */}
       <p className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-[11px] text-text-subtle">
-        Butuh menyaring lebih jauh atau mengurutkan menurut kolom lain?
-        <Link
-          href={`/talenta?kotak=${kotak}`}
-          className="inline-flex items-center gap-1 text-accent hover:underline"
-        >
-          Buka di Direktori Pegawai
-          <ArrowRight className="size-3" />
-        </Link>
+        {target === null ? (
+          <>
+            Butuh menyaring lebih jauh atau mengurutkan menurut kolom lain?
+            <Link
+              href={`/talenta?kotak=${kotak}`}
+              className="inline-flex items-center gap-1 text-accent hover:underline"
+            >
+              Buka di Direktori Pegawai
+              <ArrowRight className="size-3" />
+            </Link>
+          </>
+        ) : (
+          <>
+            Direktori Pegawai menyaring menurut Kotak 9{' '}
+            <strong className="font-medium text-text-muted">organisasi</strong>, bukan kesiapan per
+            jabatan — jadi tautannya tidak dipasang di sini supaya nomor kotak yang sama tidak
+            membuka daftar yang berbeda.
+            <Link
+              href={`/jabatan-target/${target.id}/kandidat`}
+              className="inline-flex items-center gap-1 text-accent hover:underline"
+            >
+              Buka daftar kandidat jabatan ini
+              <ArrowRight className="size-3" />
+            </Link>
+          </>
+        )}
       </p>
     </Panel>
   )
@@ -347,6 +437,12 @@ function bacaFilterPeta(params: Record<string, string | undefined>): TipeFilterP
     // Rentang tahun dibatasi supaya `?tahun=99999999` tidak dikirim ke SQL.
     tahun: tahun !== undefined && tahun >= 1990 && tahun <= 2100 ? tahun : undefined,
     hanyaBerlaku: params.berlaku === '1',
+    // `?target=` yang tidak ada di daftar jabatan target AKTIF tetap lolos ke
+    // kueri, dan itu benar: hasilnya nol baris + seluruh pegawai masuk "belum
+    // dinilai", bukan galat. Yang tidak boleh adalah diam-diam jatuh kembali ke
+    // sebaran organisasi — pengguna akan membaca angka generik sebagai angka
+    // jabatan yang ia minta.
+    jabatanTargetId: angkaPositif(params.target),
   }
 }
 
