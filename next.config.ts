@@ -6,6 +6,23 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['mysql2'],
 
   /**
+   * Direktori keluaran, dapat dialihkan lewat `NEXT_BUILD_DIR`.
+   *
+   * Menutup jebakan yang sudah berulang kali menjerat di project ini: **build
+   * produksi menulis ke `.next` yang sedang dipakai dev server**, dan akibatnya
+   * bukan galat melainkan route bersarang yang mendadak 404 — gejala yang dua
+   * kali salah didiagnosis sebagai `.next` rusak sebelum sebabnya ketemu.
+   *
+   * Dengan ini, build dapat dijalankan **tanpa mematikan dev server siapa pun**:
+   *
+   *     NEXT_BUILD_DIR=.next-build npx next build
+   *
+   * Tanpa variabel itu perilakunya persis seperti sebelumnya (`.next`), jadi
+   * `npm run build`, `npm start`, dan pemasangan di produksi tidak berubah.
+   */
+  distDir: process.env.NEXT_BUILD_DIR ?? '.next',
+
+  /**
    * Rute yang pindah tempat.
    *
    * Ditaruh di sini, **bukan** sebagai halaman yang memanggil

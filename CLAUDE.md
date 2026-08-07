@@ -38,8 +38,8 @@ npm run verifikasi:skoring   → 120/120 baris match_score lahir ulang, 0 menyim
 npm run smoke                → 15/15 (F0) · 21/21 (F1) · 23/23 (F2) · 34/34 (F3) · 46/46 (F4)
                                · 44/44 (F5) · 39/39 (F6) · 46/46 (F7) · 30/30 (F8) · 39/39 (F9)
                                · 23/23 (F10) · 27/27 (F11) = 387 pemeriksaan
-npm run build                → BELUM dijalankan ulang sejak Fase 10 menambah 2 halaman
-                               (terakhir terverifikasi: 30 entri route pada akhir Fase 9)
+npm run build                → LOLOS · 42 entri route · 36/36 halaman statis dihasilkan
+                               (`/master/jabatan-kosong` benar-benar hilang, sesuai Fase 11)
 npm run ukur:kueri           → 77 kueri = ~327 ms · :volume di 2.000 pegawai = ~900 ms (BELUM diukur ulang
                                sejak Fase 11 menambah 3 kueri Kotak 9 per jabatan target)
                                ambang 150 ms/kueri; agregat laporan 500 ms (alasannya di skripnya)
@@ -127,6 +127,8 @@ Ditambah Fase 10: `/master/kategori-diklat` (Super Admin + Admin Talenta) · `/d
 - `GET /api/v1/{kotak-9/summary,pegawai,pegawai/[nip],talent-pool}` — API eksternal, **auth Bearer**, scope per klien.
 
 **`api/` sengaja DILEWATI middleware** — gerbang di sana memeriksa cookie sesi, dan kedua permukaan `api/` tidak memakainya (`api/v1` pakai Bearer; `api/internal` membalas berkas unduhan, dan pengalihan menghasilkan HTML bernama `.csv`). Keduanya menegakkan aksesnya sendiri di route handler. Alasan lengkapnya ada di `middleware.ts`.
+
+> **Build memperingatkan bahwa konvensi `middleware.ts` sudah usang** dan akan digantikan `proxy.ts`. Belum dipindahkan — dan kalau nanti dipindahkan, **yang paling mudah hilang justru matcher-nya**: pengecualian `api/` di atas adalah keputusan berdampak, bukan bawaan. Pernah terjadi sekali: matcher yang mencakup segalanya membuat delapan permintaan `/api/v1` menjawab 307 ke halaman masuk, dan ekspor CSV bersesi mati menghasilkan berkas HTML bernama `.csv`. Pindahkan matcher-nya utuh, lalu jalankan smoke Fase 8 & 9.
 
 **Di luar app shell** (grup `(auth)`, tanpa sidebar/navbar): `/masuk` · `/lupa-password` · `/ganti-sandi`
 
