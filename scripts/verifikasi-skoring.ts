@@ -38,9 +38,34 @@ async function main() {
   const { kueri } = await import('../lib/db')
   const { hitungSkorMassal } = await import('../lib/skor-massal')
 
-  const target = await kueri<{ id: number; nama_target: string }>(
-    `SELECT id, nama_target FROM jabatan_target ORDER BY id`,
+  const target = await kueri<{ id: number; nama_target: string; status: string }>(
+    `SELECT id, nama_target, status FROM jabatan_target ORDER BY id`,
   )
+
+  /**
+   * Pasangan (pegawai, jabatan target) yang punya indikator bernilai MANUAL.
+   *
+   * **Wajib dikecualikan, dan itu bukan pelemahan.** Skrip ini menangkap KODE
+   * yang menyimpang: ia menjalankan `lib/skor-massal` lalu membandingkannya
+   * dengan isi `match_score`. Nilai manual adalah penyimpangan yang DISENGAJA —
+   * manusia memilih kategori rubrik untuk indikator yang datanya belum ada, dan
+   * `lib/skoring-tulis.ts` memang mempertahankannya saat Hitung Ulang. Karena
+   * `skor-massal` tidak tahu apa-apa soal jejak manual, setiap pemakaian fitur
+   * "Isi manual" di profil akan membuat skrip ini merah selamanya — merah yang
+   * tidak menunjukkan cacat apa pun, dan justru melatih orang mengabaikannya.
+   */
+  const manual = new Set(
+    (
+      await kueri<{ pegawai_id: number; jabatan_target_id: number }>(
+        `SELECT DISTINCT ms.pegawai_id, ms.jabatan_target_id
+           FROM match_score_detail d
+           JOIN match_score ms ON ms.id = d.match_score_id
+          WHERE d.sumber_nilai = 'MANUAL'`,
+      )
+    ).map((r) => `${r.jabatan_target_id}:${r.pegawai_id}`),
+  )
+  let dilewatiManual = 0
+  let dilewatiDraft = 0
   const profil = await ambilProfilKandidat()
   console.log(`${profil.length} pegawai aktif · ${target.length} jabatan target\n`)
 
@@ -49,6 +74,20 @@ async function main() {
   const contoh: string[] = []
 
   for (const t of target) {
+    // Jabatan target DRAFT belum tentu pernah di-Hitung Ulang, dan itu keadaan
+    // yang SAH — Hitung Ulang adalah tindakan sadar, bukan otomatis saat target
+    // dibuat. Membandingkannya menghasilkan satu "tidak ada baris match_score"
+    // per pegawai (43 di dev), yang menenggelamkan penyimpangan sungguhan di
+    // antara puluhan baris derau.
+    if (String(t.status) === 'DRAFT') {
+      const adaSkor = (await ambilSkorTersimpan(Number(t.id))).length
+      if (adaSkor === 0) {
+        dilewatiDraft++
+        console.log(`target ${t.id} — ${t.nama_target}: DRAFT & belum dihitung · dilewati`)
+        continue
+      }
+    }
+
     const siap = await ambilRubrikUntukHitung(Number(t.id))
     if (siap === null) continue
 
@@ -63,6 +102,10 @@ async function main() {
 
     let bedaTarget = 0
     for (const h of hasil.hasil) {
+      if (manual.has(`${t.id}:${h.pegawaiId}`)) {
+        dilewatiManual++
+        continue
+      }
       const lama = tersimpan.get(h.pegawaiId)
       if (lama === undefined) {
         contoh.push(`  target ${t.id} pegawai ${h.pegawaiId}: tidak ada baris match_score`)
@@ -129,6 +172,14 @@ async function main() {
   )
 
   console.log(`\n${diperiksa} baris skor diperiksa · ${menyimpang} menyimpang`)
+  // Yang dilewati DILAPORKAN, tidak disembunyikan: "0 menyimpang" yang
+  // sebenarnya berarti "semuanya dilewati" adalah hijau yang menipu.
+  if (dilewatiManual > 0 || dilewatiDraft > 0) {
+    console.log(
+      `dilewati dengan sengaja: ${dilewatiManual} baris bernilai MANUAL · ` +
+        `${dilewatiDraft} jabatan target DRAFT yang belum dihitung`,
+    )
+  }
   if (contoh.length > 0) {
     console.log('\ncontoh selisih:')
     for (const c of contoh) console.log(c)

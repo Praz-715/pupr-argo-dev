@@ -23,7 +23,9 @@ export function Panel({
     <section
       id={id}
       className={cn(
-        'rounded-lg border border-border bg-surface',
+        // shadow-kartu sangat tipis (2%+4%) — tugasnya mengangkat panel dari
+        // kanvas setipis mungkin, bukan menggambar kotak kedua di sekitarnya.
+        'rounded-lg border border-border bg-surface shadow-kartu',
         padat ? '' : 'p-4',
         // scroll-mt supaya judul panel tidak tertutup navbar saat dituju anchor
         id ? 'scroll-mt-4' : '',
@@ -60,7 +62,25 @@ export function PanelHeader({
   )
 }
 
-/** Judul halaman + deskripsi + aksi kanan. Dipakai di puncak setiap halaman. */
+/**
+ * Judul halaman + deskripsi + aksi kanan, di atas pita bermerek DJBK.
+ * Diporting dari v1 `.page-head` — gradien navy→teal dengan teks putih.
+ *
+ * Kenapa pita dan bukan judul biasa di atas kanvas: setiap halaman aplikasi ini
+ * dibuka lewat sidebar, dan tanpa penanda visual di puncak konten, satu-satunya
+ * yang membedakan satu halaman dari halaman lain adalah baris teks kecil di
+ * pojok kiri atas. Pita ini memberi tiap halaman kepala yang jelas — sekaligus
+ * jadi satu-satunya elemen bermerek yang IKUT TERCETAK (lihat @media print di
+ * globals.css), supaya lembar cetaknya dikenali sebagai dokumen DJBK.
+ *
+ * `aksi` dibungkus wadah yang MENDEFINISIKAN ULANG token warna, bukan yang
+ * menimpa class anaknya. Alasannya: tombol `utama` berlatar --accent, dan pita
+ * ini juga berbasis --accent, jadi di tengah gradien tombolnya benar-benar
+ * lenyap. Karena `@theme inline` membuat setiap utility menunjuk langsung ke
+ * token (bg-accent → var(--accent)), mendefinisikan ulang tokennya di scope ini
+ * membuat SEMUA komponen di dalam pita ikut menyesuaikan diri — tanpa satu pun
+ * dari 33 halaman pemakainya perlu tahu bahwa latarnya berubah.
+ */
 export function PageHeader({
   judul,
   deskripsi,
@@ -71,14 +91,16 @@ export function PageHeader({
   aksi?: ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="pita-kepala flex flex-wrap items-center justify-between gap-4 rounded-lg px-5 py-4 shadow-kartu">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-text">{judul}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-kepala-teks">{judul}</h1>
         {deskripsi ? (
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-text-muted">{deskripsi}</p>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-kepala-teks-samar">
+            {deskripsi}
+          </p>
         ) : null}
       </div>
-      {aksi ? <div className="flex shrink-0 items-center gap-2">{aksi}</div> : null}
+      {aksi ? <div className="pita-kepala-aksi flex shrink-0 items-center gap-2">{aksi}</div> : null}
     </div>
   )
 }

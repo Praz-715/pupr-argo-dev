@@ -28,7 +28,12 @@ const kode = (t: { kode: KodeTemuan }[]) => t.map((x) => x.kode)
 
 describe('§6 · setiap aturan punya definisi & nomor yang tertelusur', () => {
   it('nomor aturan tidak ada yang bentrok atau bolong', () => {
-    const nomor = Object.values(DEFINISI_TEMUAN).map((d) => d.aturan)
+    // `aturan: null` = temuan dari sumber di luar §6 (mis. API eNominasi lewat
+    // `lib/enom`). Disaring, BUKAN dipaksa punya nomor: memberinya nomor palsu
+    // membuat uji kelengkapan ini mengonfirmasi dokumen yang tidak menyebutnya.
+    const nomor = Object.values(DEFINISI_TEMUAN)
+      .map((d) => d.aturan)
+      .filter((n): n is number => n !== null)
     expect(new Set(nomor).size).toBe(nomor.length)
     // §6 no. 8 (kolom arsip kosong) ditangani UI adaptif di Fase 2, bukan importer.
     expect(nomor.sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12])

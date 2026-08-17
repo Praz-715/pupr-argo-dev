@@ -527,18 +527,24 @@ try {
   })
 
   await langkah('audit tercatat untuk mutasi Fase 5', async () => {
-    // Audit log viewer baru ada di Fase 7; yang bisa diuji sekarang adalah
-    // widget aktivitas terakhir di dashboard.
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' })
+    // Diperiksa di **Audit Log viewer** (`/admin/audit-log`), bukan lewat widget
+    // "Aktivitas terakhir" di dashboard.
+    //
+    // Dua alasan, dan yang kedua yang membuatnya lebih baik daripada sebelumnya:
+    // (1) widget itu dilepas dari dashboard saat halamannya dipangkas jadi tiga
+    // panel (10 Agu 2026), jadi penandanya sudah tidak ada di sana; (2) audit log
+    // viewer memang permukaan audit yang sebenarnya — ia sudah ada sejak Fase 7,
+    // dan komentar versi lama uji ini ("viewer baru ada di Fase 7") sudah usang.
+    // Menguji jejak audit lewat widget ringkasan berarti uji itu ikut merah
+    // setiap kali tata letak dashboard berubah, padahal jejaknya sendiri utuh.
+    await page.goto(`${BASE}/admin/audit-log`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(1500)
-    const teks = await page.locator('body').innerText()
+    const teks = await page.locator('main').innerText()
     tegaskan(
-      teks.includes('jabatan_target') ||
-        teks.includes('rubrik_komponen') ||
-        teks.includes('match_score'),
-      'aktivitas Fase 5 tidak muncul di widget aktivitas terakhir',
+      /jabatan_target|rubrik_komponen|rubrik_indikator|match_score/.test(teks),
+      `mutasi Fase 5 tidak tercatat di audit log — isi: ${teks.slice(0, 120).replace(/\n/g, ' ')}`,
     )
-    return 'mutasi Fase 5 tampil di aktivitas terakhir'
+    return 'mutasi Fase 5 tercatat di /admin/audit-log'
   })
 
   await ctx.close()

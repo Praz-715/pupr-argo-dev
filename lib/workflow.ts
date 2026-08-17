@@ -381,6 +381,69 @@ export const LABEL_NOMINASI: Record<StatusNominasi, string> = {
   DITOLAK: 'Ditolak',
 }
 
+/**
+ * **Tahap nominasi** — satu keadaan yang menjawab "di mana berkas ini sekarang",
+ * dipakai BERSAMA oleh kolom Status di tabel dan penyaring halaman Nominasi.
+ *
+ * **Kenapa ini perlu ada, bukan memakai `LABEL_NOMINASI` saja.** `nominasi.status`
+ * tidak cukup menentukan apa yang dilihat pengguna: `DISETUJUI` berarti "sudah
+ * lolos verifikasi Admin Talenta" — tapi selama suksesornya belum ditetapkan, yang
+ * sebenarnya terjadi adalah **menunggu approval Pimpinan**, dan setelah ditetapkan
+ * status barisnya tetap `DISETUJUI`. Satu status, dua keadaan yang sangat berbeda.
+ * Label lamanya menulis "Lolos verifikasi" untuk keduanya, sehingga baris yang
+ * masih menunggu tampak sudah beres (dilaporkan user, 12 Agu 2026).
+ *
+ * Karena itu tahap diturunkan dari **status nominasi + status pool**, sumber yang
+ * sama dengan `giliranSiapa()`, dan tidak ditulis ulang di komponen. Kelimanya
+ * **saling meniadakan dan menutup semua kemungkinan** — tidak ada baris yang bisa
+ * jatuh ke dua tahap atau ke tidak satu pun.
+ */
+export type TahapNominasi = 'REVISI' | 'VERIFIKASI' | 'APPROVAL' | 'DITETAPKAN' | 'DITOLAK'
+
+/** Urutan alur, dipakai apa adanya sebagai urutan opsi penyaring. */
+export const TAHAP_NOMINASI: TahapNominasi[] = [
+  'REVISI',
+  'VERIFIKASI',
+  'APPROVAL',
+  'DITETAPKAN',
+  'DITOLAK',
+]
+
+export const LABEL_TAHAP: Record<TahapNominasi, string> = {
+  REVISI: 'Dikembalikan untuk revisi',
+  VERIFIKASI: 'Menunggu verifikasi kepegawaian',
+  APPROVAL: 'Menunggu approval Pimpinan',
+  DITETAPKAN: 'Ditetapkan sebagai suksesor',
+  DITOLAK: 'Ditolak',
+}
+
+/** Siapa yang harus bertindak pada tahap ini — untuk keterangan penyaring. */
+export const PELAKU_TAHAP: Record<TahapNominasi, string> = {
+  REVISI: 'unit pengaju',
+  VERIFIKASI: 'Admin Talenta',
+  APPROVAL: 'Pimpinan',
+  DITETAPKAN: 'selesai — tidak menunggu siapa pun',
+  DITOLAK: 'selesai — tidak menunggu siapa pun',
+}
+
+export function tahapNominasi(keadaan: {
+  statusNominasi: StatusNominasi
+  statusPool: StatusPool
+}): TahapNominasi {
+  // Keadaan AKHIR diperiksa lebih dulu: begitu suksesornya ditetapkan atau
+  // pengajuannya ditolak, tahapnya tidak lagi ditentukan status nominasinya.
+  if (keadaan.statusNominasi === 'DITOLAK' || keadaan.statusPool === 'DITOLAK') return 'DITOLAK'
+  if (keadaan.statusPool === 'DITETAPKAN') return 'DITETAPKAN'
+  switch (keadaan.statusNominasi) {
+    case 'DIAJUKAN':
+      return 'REVISI'
+    case 'MENUNGGU_VERIFIKASI':
+      return 'VERIFIKASI'
+    case 'DISETUJUI':
+      return 'APPROVAL'
+  }
+}
+
 export const labelPool = (s: StatusPool): string => LABEL_POOL[s]
 export const labelNominasi = (s: StatusNominasi): string => LABEL_NOMINASI[s]
 

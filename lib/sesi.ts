@@ -61,13 +61,39 @@ async function konteksPermintaan(): Promise<{ ip: string | null; userAgent: stri
 }
 
 /**
+ * Apakah cookie sesi dipasang `Secure`.
+ *
+ * Bawaannya `true` di produksi — dan itu **harus tetap begitu di produksi
+ * sungguhan**: tanpa `Secure`, token sesi melintas terbuka di HTTP.
+ *
+ * `SESI_COOKIE_SECURE=false` ada untuk satu kasus: **build pratinjau yang
+ * dilayani lewat HTTP polos di jaringan internal.** Tanpa jalan keluar ini,
+ * build produksi di `http://<ip>:5000` menghasilkan kegagalan yang sangat sulit
+ * didiagnosis — browser **menolak menyimpan** cookie `Secure` yang datang lewat
+ * HTTP (hanya `localhost` dikecualikan sebagai secure context, alamat IP TIDAK),
+ * jadi masuk berhasil di server, cookie-nya dibuang di klien, dan pengguna
+ * dikembalikan ke halaman masuk **tanpa satu pun pesan galat**. Persis gejala
+ * "sudah benar sandinya tapi tidak bisa masuk".
+ *
+ * Sengaja `=== 'false'` yang eksplisit, bukan sekadar nilai falsy: variabel env
+ * yang tidak disetel, salah tulis, atau kosong harus jatuh ke **aman**, bukan ke
+ * tidak aman. Dan sengaja env, bukan tebakan dari `X-Forwarded-Proto` — proxy
+ * bisa dikelabui, sementara berkas env adalah keputusan sadar operator.
+ *
+ * Lihat juga CLAUDE.md §"Sebelum produksi, EMPAT hal wajib diganti" nomor 3.
+ */
+const COOKIE_SECURE =
+  process.env.SESI_COOKIE_SECURE === 'false'
+    ? false
+    : process.env.NODE_ENV === 'production'
+
+/**
  * Buat sesi baru + pasang cookie. Hanya boleh dipanggil dari server action.
  *
  * Cookie-nya `httpOnly` (JavaScript halaman tidak boleh membacanya — itu yang
  * membedakan pencurian sesi lewat XSS jadi mungkin atau tidak), `sameSite=lax`
  * (menutup CSRF untuk navigasi lintas situs tanpa merusak tautan masuk yang
- * wajar), dan `secure` di produksi saja — memaksanya di dev berarti cookie-nya
- * tidak pernah terpasang di `http://localhost`.
+ * wajar), dan `secure` menurut `COOKIE_SECURE` di atas.
  */
 export async function buatSesi(userId: number): Promise<string> {
   const p = await ambilPengaturan()
@@ -84,7 +110,7 @@ export async function buatSesi(userId: number): Promise<string> {
   store.set(COOKIE_SESI, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: COOKIE_SECURE,
     path: '/',
     maxAge: p.sesiMaksimalJam * 3600,
   })

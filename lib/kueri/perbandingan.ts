@@ -5,7 +5,7 @@ import { angka, angkaWajib, kueri } from '../db'
 import { hitungUsia, parseNip, proyeksiPensiun, selisihTahun, type JenisJabatan } from '../nip'
 import { normalisasiGolongan } from '../normalisasi'
 import type { Kotak9 } from '../scoring'
-import { CTE_ASESMEN_TERBARU } from './dasar'
+import { CTE_ASESMEN_TERBARU, filterSumber } from './dasar'
 
 /**
  * Kueri Perbandingan Kandidat (Fase 3).
@@ -98,7 +98,7 @@ export async function ambilKandidat(daftarNip: string[]): Promise<KandidatBandin
      LEFT JOIN jabatan j ON j.id = p.jabatan_id
      LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      LEFT JOIN asesmen_terbaru a ON a.pegawai_id = p.id
-     WHERE p.nip IN (${isian})`,
+     WHERE p.nip IN (${isian}) ${filterSumber('p')}`,
     nips,
   )
 
@@ -319,7 +319,7 @@ export async function cariKandidat(q: string, batas = 8): Promise<HasilCari[]> {
      LEFT JOIN jabatan j ON j.id = p.jabatan_id
      LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      LEFT JOIN asesmen_terbaru a ON a.pegawai_id = p.id
-     WHERE p.nama_lengkap LIKE ? OR p.nip LIKE ?
+     WHERE (p.nama_lengkap LIKE ? OR p.nip LIKE ?) ${filterSumber('p')}
      ORDER BY p.nama_lengkap
      LIMIT ?`,
     [pola, pola.replace(/\s/g, ''), batas],

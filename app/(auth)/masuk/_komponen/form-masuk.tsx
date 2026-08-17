@@ -62,7 +62,6 @@ export function FormMasuk({ next, baruKeluar }: { next: string | null; baruKelua
             required
             disabled={pending}
             className={kelasInput(galat.identitas)}
-            placeholder="mis. martyanti.rbs"
           />
         </Bidang>
 

@@ -1,7 +1,6 @@
 import { RefreshCw, ScrollText } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import { LabelFase } from '@/components/layout/tautan-fase'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -90,9 +89,7 @@ export async function AktivitasTerakhir() {
       </ul>
 
       <p className="border-t border-border px-4 py-2.5 text-[11px] text-text-subtle">
-        Jejak audit lengkap tersedia di Audit Log Viewer
-        <LabelFase fase={7} /> · detail sinkronisasi di Konsolidasi Data
-        <LabelFase fase={4} />
+        Jejak audit lengkap tersedia di Audit Log Viewer · detail sinkronisasi di Konsolidasi Data
       </p>
     </Panel>
   )

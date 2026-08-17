@@ -142,7 +142,7 @@ export function CommandPalette({ navigasi }: { navigasi: GrupNav[] }) {
                       ) : null}
                       {!tersedia ? (
                         <span className="shrink-0 rounded bg-surface-3 px-1.5 py-px text-[10px] text-text-subtle">
-                          Fase {item.fase}
+                          Belum tersedia
                         </span>
                       ) : null}
                     </>

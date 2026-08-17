@@ -7,7 +7,7 @@ import { hitungUsia, parseNip, proyeksiPensiun, selisihTahun } from '../nip'
 import type { Eselon } from '../scoring/eligibility'
 import type { Kotak9 } from '../scoring'
 import { arahBawaanUrut } from '../urut'
-import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
 
 /**
  * Kueri Direktori Pegawai & Profil Talenta.
@@ -136,6 +136,12 @@ function bangunFilter(f: FilterDirektori): { where: string; params: unknown[] } 
     }
   }
 
+  // Batas populasi eksperimen (lihat filterSumber di ./dasar). Ditaruh DI SINI,
+  // di pembangun `where`, supaya daftar direktori dan penghitung halamannya tidak
+  // bisa memakai populasi berbeda — keduanya memakai `where` yang sama.
+  const batas = filterSumber('p')
+  if (batas) syarat.push(batas.replace(/^ AND /, ''))
+
   return { where: syarat.length > 0 ? `WHERE ${syarat.join(' AND ')}` : '', params }
 }
 
@@ -219,16 +225,43 @@ export async function ambilDirektori(f: FilterDirektori): Promise<{
   }
 }
 
-/** Opsi isi dropdown filter — diambil dari data yang benar-benar ada. */
+/**
+ * Opsi isi dropdown filter — diturunkan dari data yang benar-benar ada, **dan
+ * dari populasi yang benar-benar DITAMPILKAN.**
+ *
+ * Keduanya perlu. Menurunkannya dari data saja sudah menghindari daftar tetap
+ * yang memuat unit tanpa pegawai, tapi begitu tampilan disaring
+ * (`HANYA_PEGAWAI_SUMBER`), opsi yang lahir dari populasi penuh menghasilkan
+ * pilihan yang menjawab nol baris — terukur: 21 unit terdaftar sementara hanya
+ * 3 yang punya pegawai yang ditampilkan, dan memilih yang pertama memberi tabel
+ * kosong tanpa penjelasan. Itu klik mati yang dilarang phase.md §5.2, dan
+ * bentuknya paling menyesatkan: filternya seolah rusak, padahal datanya memang
+ * tidak ada.
+ */
 export interface OpsiFilter {
   unit: Array<{ id: number; nama: string; level: number }>
   eselon: string[]
   jenjang: string[]
   tingkatPendidikan: string[]
+  /**
+   * Nomor kotak yang BENAR-BENAR terisi, urut menurun.
+   *
+   * Sebelumnya daftar tetap 1–9 di komponen filternya. Pada data sekarang hanya
+   * Kotak 7 & 9 berisi, jadi tujuh opsi lain menjawab nol baris — terukur, dan
+   * satu-satunya opsi mati yang tersisa setelah opsi lain dibuat dinamis.
+   */
+  kotak9: number[]
+  /**
+   * Status asesmen yang benar-benar ada pada populasi yang ditampilkan.
+   * `TANPA_ASESMEN` ikut ditawarkan HANYA kalau memang ada yang belum diases —
+   * di bawah filter populasi jumlahnya nol, jadi menawarkannya berarti opsi yang
+   * pasti menjawab nol baris.
+   */
+  statusAsesmen: string[]
 }
 
 export async function ambilOpsiFilter(): Promise<OpsiFilter> {
-  const [unit, eselon, jenjang, pendidikan] = await Promise.all([
+  const [unit, eselon, jenjang, pendidikan, kotak, status] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT u.id, u.nama_unit,
               CASE WHEN u.parent_id IS NULL THEN 0
@@ -237,21 +270,42 @@ export async function ambilOpsiFilter(): Promise<OpsiFilter> {
        FROM unit_organisasi u
        WHERE EXISTS (
          SELECT 1 FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
-         WHERE j.unit_organisasi_id = u.id
+         WHERE j.unit_organisasi_id = u.id ${filterSumber('p')}
        )
        ORDER BY level, u.nama_unit`,
     ),
     kueri<{ eselon: string }>(
       `SELECT DISTINCT j.eselon FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
+       WHERE 1=1 ${filterSumber('p')}
        ORDER BY FIELD(j.eselon,'I','II','III','IV','NON_ESELON')`,
     ),
     kueri<{ jenjang: string }>(
       `SELECT DISTINCT j.jenjang FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
+       WHERE 1=1 ${filterSumber('p')}
        ORDER BY j.jenjang`,
     ),
     kueri<{ tingkat_pendidikan: string }>(
-      `SELECT DISTINCT tingkat_pendidikan FROM pegawai
-       ORDER BY FIELD(tingkat_pendidikan,'S3','S2','S1_D4','D3','SLTA')`,
+      `SELECT DISTINCT p.tingkat_pendidikan FROM pegawai p
+       WHERE 1=1 ${filterSumber('p')}
+       ORDER BY FIELD(p.tingkat_pendidikan,'S3','S2','S1_D4','D3','SLTA')`,
+    ),
+    kueri<{ kotak_9: number }>(
+      `${CTE_ASESMEN_TERBARU}
+       SELECT DISTINCT a.kotak_9 FROM asesmen_terbaru a
+         JOIN pegawai p ON p.id = a.pegawai_id
+        WHERE 1=1 ${filterSumber('p')}
+        ORDER BY a.kotak_9 DESC`,
+    ),
+    kueri<{ status: string }>(
+      `${CTE_ASESMEN_TERBARU}
+       SELECT DISTINCT a.status_asesmen AS status FROM asesmen_terbaru a
+         JOIN pegawai p ON p.id = a.pegawai_id
+        WHERE 1=1 ${filterSumber('p')}
+       UNION
+       SELECT 'TANPA_ASESMEN' FROM pegawai p
+        WHERE NOT EXISTS (SELECT 1 FROM asesmen_talenta a2 WHERE a2.pegawai_id = p.id)
+          ${filterSumber('p')}
+        LIMIT 5`,
     ),
   ])
 
@@ -264,6 +318,8 @@ export async function ambilOpsiFilter(): Promise<OpsiFilter> {
     eselon: eselon.map((e) => String(e.eselon)),
     jenjang: jenjang.map((j) => String(j.jenjang)),
     tingkatPendidikan: pendidikan.map((p) => String(p.tingkat_pendidikan)),
+    kotak9: kotak.map((k) => Number(k.kotak_9)),
+    statusAsesmen: status.map((r) => String(r.status)),
   }
 }
 
@@ -280,6 +336,15 @@ export interface ProfilPegawai {
   tmtGolongan: string | null
   tmtJabatan: string | null
   namaJabatan: string | null
+  /**
+   * Id jabatan master. Dibutuhkan **formulir ubah identitas** untuk memilih
+   * nilai yang sedang berlaku. Tanpa kolom ini pemilihnya terbuka dalam keadaan
+   * "tidak diisi", dan menyimpan tanpa menyentuhnya akan **mengosongkan
+   * `jabatan_id`** pegawai itu — kehilangan data yang tidak memunculkan galat
+   * apa pun, dan baru terlihat sebagai jabatan yang mendadak hilang dari
+   * direktori.
+   */
+  jabatanId: number | null
   jenisJabatan: 'STRUKTURAL' | 'FUNGSIONAL_TERTENTU' | 'FUNGSIONAL_UMUM' | null
   jenjang: string | null
   eselon: Eselon | null
@@ -319,6 +384,17 @@ export interface ProfilPegawai {
  * sama dengan NIP yang tidak ada. Itu disengaja: pesan "ada tapi Anda tidak
  * boleh" mengonfirmasi keberadaan orangnya kepada yang tidak berhak tahu.
  */
+/**
+ * Profil satu pegawai. Ikut filter populasi, dan pegawai di luarnya dijawab
+ * **`null`** — sama dengan pegawai yang tidak ada, bukan "akses ditolak".
+ *
+ * Alasannya: daftar pegawai sudah disaring, jadi tanpa ini satu-satunya cara
+ * masuk ke 33 profil yang lain tetap terbuka lewat mengetikkan NIP di URL —
+ * dan halaman itu memuat data ASN paling lengkap di aplikasi ini. Pola jawaban
+ * "tidak ada" mengikuti pembatasan unit di Fase 7: pesan yang membedakan "orang
+ * itu ada tapi Anda tidak boleh melihatnya" dari "orang itu tidak ada" membuat
+ * URL bisa dipakai menebak keberadaan orang.
+ */
 export async function ambilProfil(
   nip: string,
   unitWajib?: number | null,
@@ -334,7 +410,7 @@ export async function ambilProfil(
      LEFT JOIN jabatan j ON j.id = p.jabatan_id
      LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      LEFT JOIN unit_organisasi ui ON ui.id = u.parent_id
-     WHERE p.nip = ?${batasUnit}`,
+     WHERE p.nip = ?${batasUnit}${filterSumber('p')}`,
     batasUnit === '' ? [nip] : [nip, unitWajib],
   )
   if (!r) return null
@@ -367,6 +443,7 @@ export async function ambilProfil(
     tmtGolongan: r.tmt_golongan ? String(r.tmt_golongan) : null,
     tmtJabatan: r.tmt_jabatan ? String(r.tmt_jabatan) : null,
     namaJabatan: r.nama_jabatan === null ? null : String(r.nama_jabatan),
+    jabatanId: r.jabatan_id === null || r.jabatan_id === undefined ? null : Number(r.jabatan_id),
     jenisJabatan,
     jenjang,
     eselon: r.eselon === null ? null : (String(r.eselon) as Eselon),
@@ -398,9 +475,21 @@ export async function ambilProfil(
 }
 
 export interface RiwayatJabatanProfil {
+  /**
+   * Kunci baris — dipakai tombol "Ubah" di profil untuk menunjuk baris mana yang
+   * disunting. Tanpa ini formulirnya hanya bisa MENAMBAH.
+   */
+  id: number
   urutan: number
   namaMentah: string
   terpetakan: boolean
+  /** Nilai KOLOM `jabatan_id`/`jenis_penugasan`/`unit_kerja_mentah` apa adanya —
+   *  dibutuhkan formulir ubah supaya membuka dialog tidak mengosongkan ketiganya.
+   *  `nonDefinitif` di bawah BUKAN penggantinya: ia hasil pembacaan teks jabatan
+   *  ("Plt. Kepala …"), bukan isi kolomnya. */
+  jabatanId: number | null
+  jenisPenugasan: 'DEFINITIF' | 'PLT' | 'PLH' | null
+  unitKerjaMentah: string | null
   namaJabatan: string | null
   jenjang: string | null
   eselon: string | null
@@ -415,7 +504,8 @@ export interface RiwayatJabatanProfil {
 
 export async function ambilRiwayatJabatan(pegawaiId: number): Promise<RiwayatJabatanProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT r.urutan, r.jabatan_nama_mentah, r.jabatan_id, r.tanggal_mulai, r.tanggal_akhir,
+    `SELECT r.id, r.urutan, r.jabatan_nama_mentah, r.jabatan_id, r.jenis_penugasan,
+            r.unit_kerja_mentah, r.tanggal_mulai, r.tanggal_akhir,
             r.no_sk, j.nama_jabatan, j.jenjang, j.eselon, u.nama_unit
      FROM riwayat_jabatan r
      LEFT JOIN jabatan j ON j.id = r.jabatan_id
@@ -431,7 +521,14 @@ export async function ambilRiwayatJabatan(pegawaiId: number): Promise<RiwayatJab
     const mulai = r.tanggal_mulai ? new Date(String(r.tanggal_mulai)) : null
     const akhir = r.tanggal_akhir ? new Date(String(r.tanggal_akhir)) : null
     return {
+      id: Number(r.id),
       urutan: Number(r.urutan),
+      jabatanId: r.jabatan_id === null ? null : Number(r.jabatan_id),
+      jenisPenugasan:
+        r.jenis_penugasan === null
+          ? null
+          : (String(r.jenis_penugasan) as 'DEFINITIF' | 'PLT' | 'PLH'),
+      unitKerjaMentah: r.unit_kerja_mentah === null ? null : String(r.unit_kerja_mentah),
       namaMentah: teks,
       terpetakan: r.jabatan_id !== null,
       namaJabatan: r.nama_jabatan === null ? null : String(r.nama_jabatan),
@@ -452,6 +549,11 @@ export async function ambilRiwayatJabatan(pegawaiId: number): Promise<RiwayatJab
 }
 
 export interface RiwayatPendidikanProfil {
+  /**
+   * Kunci baris — dipakai tombol "Ubah" di profil untuk menunjuk baris mana yang
+   * disunting. Tanpa ini formulirnya hanya bisa MENAMBAH.
+   */
+  id: number
   urutan: number
   jenjang: string
   bidangStudi: string
@@ -466,7 +568,7 @@ export async function ambilRiwayatPendidikan(
   pegawaiId: number,
 ): Promise<RiwayatPendidikanProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT urutan, jenjang_pendidikan, bidang_studi, nama_sekolah, tahun_lulus,
+    `SELECT id, urutan, jenjang_pendidikan, bidang_studi, nama_sekolah, tahun_lulus,
             url_ijazah, url_transkrip, no_pertek_bkn
      FROM riwayat_pendidikan WHERE pegawai_id = ?
      ORDER BY FIELD(jenjang_pendidikan,'S3','S2','S1_D4','D3','SLTA'), urutan`,
@@ -474,6 +576,7 @@ export async function ambilRiwayatPendidikan(
   )
 
   return baris.map((r) => ({
+    id: Number(r.id),
     urutan: Number(r.urutan),
     jenjang: String(r.jenjang_pendidikan),
     bidangStudi: String(r.bidang_studi),
@@ -486,6 +589,11 @@ export async function ambilRiwayatPendidikan(
 }
 
 export interface AsesmenProfil {
+  /**
+   * Kunci baris — dipakai tombol "Ubah" di profil untuk menunjuk baris mana yang
+   * disunting. Tanpa ini formulirnya hanya bisa MENAMBAH.
+   */
+  id: number
   tahunAsesmen: number
   jenisAsesmen: string
   statusAsesmen: string
@@ -493,6 +601,8 @@ export interface AsesmenProfil {
   nilaiPotensialX: number
   potkom: number
   nilaiIntegritas: number | null
+  /** Tahun kinerja yang dirujuk asesmen ini — dibutuhkan formulir ubah. */
+  tahunKinerja: number | null
   nilaiTalenta: number
   kotak9: Kotak9
   predikatKinerja: string
@@ -500,14 +610,15 @@ export interface AsesmenProfil {
 
 export async function ambilRiwayatAsesmen(pegawaiId: number): Promise<AsesmenProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT tahun_asesmen, jenis_asesmen, status_asesmen, nilai_kinerja_y, nilai_potensial_x,
-            potkom, nilai_integritas, nilai_talenta, kotak_9, rating_kinerja
+    `SELECT id, tahun_asesmen, jenis_asesmen, status_asesmen, nilai_kinerja_y, nilai_potensial_x,
+            potkom, nilai_integritas, nilai_talenta, kotak_9, tahun_kinerja, rating_kinerja
      FROM asesmen_talenta WHERE pegawai_id = ?
      ORDER BY tahun_asesmen DESC`,
     [pegawaiId],
   )
 
   return baris.map((r) => ({
+    id: Number(r.id),
     tahunAsesmen: Number(r.tahun_asesmen),
     jenisAsesmen: String(r.jenis_asesmen),
     statusAsesmen: String(r.status_asesmen),
@@ -515,6 +626,7 @@ export async function ambilRiwayatAsesmen(pegawaiId: number): Promise<AsesmenPro
     nilaiPotensialX: angkaWajib(r.nilai_potensial_x as string),
     potkom: angkaWajib(r.potkom as string),
     nilaiIntegritas: angka(r.nilai_integritas as string),
+    tahunKinerja: angka(r.tahun_kinerja as number),
     nilaiTalenta: angkaWajib(r.nilai_talenta as string),
     kotak9: Number(r.kotak_9) as Kotak9,
     predikatKinerja: String(r.rating_kinerja),
@@ -522,6 +634,11 @@ export async function ambilRiwayatAsesmen(pegawaiId: number): Promise<AsesmenPro
 }
 
 export interface KinerjaProfil {
+  /**
+   * Kunci baris — dipakai tombol "Ubah" di profil untuk menunjuk baris mana yang
+   * disunting. Tanpa ini formulirnya hanya bisa MENAMBAH.
+   */
+  id: number
   tahun: number
   periode: string
   nilaiKinerja: number | null
@@ -531,12 +648,13 @@ export interface KinerjaProfil {
 
 export async function ambilKinerja(pegawaiId: number): Promise<KinerjaProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT tahun, periode_skp, nilai_kinerja, nilai_perilaku, predikat
+    `SELECT id, tahun, periode_skp, nilai_kinerja, nilai_perilaku, predikat
      FROM kinerja_periode WHERE pegawai_id = ?
      ORDER BY tahun DESC, FIELD(periode_skp,'TW1','TW2','TW3','TAHUNAN')`,
     [pegawaiId],
   )
   return baris.map((r) => ({
+    id: Number(r.id),
     tahun: Number(r.tahun),
     periode: String(r.periode_skp),
     nilaiKinerja: angka(r.nilai_kinerja as string),
@@ -569,7 +687,27 @@ export async function ambilHukumanDisiplin(pegawaiId: number): Promise<HukumanPr
   }))
 }
 
+/** Satu pilihan rubrik: nama kategori + nilainya (mis. "…lintas Unit Organisasi" → 100). */
+export interface KategoriRubrik {
+  nama: string
+  nilai: number | null
+  /** Terisi kalau kategorinya memakai AMBANG angka, bukan nama (mis. Potkom). */
+  ambangMin: number | null
+}
+
 export interface RincianIndikator {
+  /** Dibutuhkan untuk menyimpan nilai manual indikator ini. */
+  rubrikIndikatorId: number
+  modeSkor: 'KATEGORI_TETAP' | 'NILAI_LANGSUNG'
+  /**
+   * Kategori rubrik indikator ini, apa adanya dari `rubrik_kategori_skor`.
+   *
+   * Diambil dari DB, **bukan** ditulis ulang dari `doc/KERANGKA TALENT POOL.md`.
+   * Rubrik bisa disunting pengguna lewat editor rubrik; daftar yang di-hardcode
+   * akan menawarkan pilihan yang tidak lagi ada di rubriknya, dan `simpanNilaiManual`
+   * menolaknya karena nilai manual WAJIB sama dengan salah satu nama kategori.
+   */
+  kategori: KategoriRubrik[]
   namaIndikator: string
   indukNama: string | null
   bobot: number | null
@@ -601,7 +739,7 @@ export interface MatchScoreProfil {
  * antar jabatan target?" bisa dijawab dari UI.
  */
 export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProfil[]> {
-  const [skor, rincian] = await Promise.all([
+  const [skor, rincian, kategori] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT ms.id, ms.jabatan_target_id, jt.kode_target, jt.nama_target,
               ms.skor_potensi_kompetensi, ms.skor_kualifikasi_jabatan,
@@ -618,7 +756,8 @@ export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProf
     kueri<Record<string, unknown>>(
       `SELECT ms.jabatan_target_id, i.nama_indikator, ind.nama_indikator AS induk_nama,
               d.bobot_indikator, d.nilai_mentah, d.kategori_terpilih, d.skor,
-              d.perlu_review, d.sumber_nilai, d.id
+              d.perlu_review, d.sumber_nilai, d.id,
+              d.rubrik_indikator_id, i.mode_skor
        FROM match_score_detail d
        JOIN match_score ms ON ms.id = d.match_score_id
        JOIN rubrik_indikator i ON i.id = d.rubrik_indikator_id
@@ -627,13 +766,44 @@ export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProf
        ORDER BY d.id`,
       [pegawaiId],
     ),
+    // Kategori rubrik untuk SETIAP indikator yang muncul di rincian pegawai ini.
+    // Satu kueri untuk semuanya, bukan satu per indikator: sembilan indikator ×
+    // tiga jabatan target = 27 kueri kalau dilakukan per baris.
+    kueri<Record<string, unknown>>(
+      `SELECT s.rubrik_indikator_id, s.nama_kategori, s.nilai_skor, s.ambang_min
+         FROM rubrik_kategori_skor s
+        WHERE s.rubrik_indikator_id IN (
+          SELECT d.rubrik_indikator_id
+            FROM match_score_detail d
+            JOIN match_score ms ON ms.id = d.match_score_id
+           WHERE ms.pegawai_id = ?
+        )
+        ORDER BY s.rubrik_indikator_id, s.urutan, s.id`,
+      [pegawaiId],
+    ),
   ])
+
+  const kategoriPerIndikator = new Map<number, KategoriRubrik[]>()
+  for (const k of kategori) {
+    const id = Number(k.rubrik_indikator_id)
+    const daftar = kategoriPerIndikator.get(id) ?? []
+    daftar.push({
+      nama: String(k.nama_kategori),
+      nilai: angka(k.nilai_skor as string),
+      ambangMin: angka(k.ambang_min as string),
+    })
+    kategoriPerIndikator.set(id, daftar)
+  }
 
   const perTarget = new Map<number, RincianIndikator[]>()
   for (const r of rincian) {
     const id = Number(r.jabatan_target_id)
     const daftar = perTarget.get(id) ?? []
+    const idIndikator = Number(r.rubrik_indikator_id)
     daftar.push({
+      rubrikIndikatorId: idIndikator,
+      modeSkor: String(r.mode_skor) === 'NILAI_LANGSUNG' ? 'NILAI_LANGSUNG' : 'KATEGORI_TETAP',
+      kategori: kategoriPerIndikator.get(idIndikator) ?? [],
       namaIndikator: String(r.nama_indikator),
       indukNama: r.induk_nama === null ? null : String(r.induk_nama),
       bobot: angka(r.bobot_indikator as string),

@@ -2,7 +2,12 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import type { Kotak9 } from '../scoring'
-import { CTE_ASESMEN_TERBARU } from './dasar'
+import {
+  CTE_ASESMEN_TERBARU,
+  filterSumber,
+  filterSumberPegawaiId,
+  filterSumberTanpaAlias,
+} from './dasar'
 
 /**
  * Kueri dashboard — SEMUA agregasi dilakukan di SQL (phase.md §3 K-5).
@@ -31,15 +36,36 @@ export interface KartuRingkas {
 export async function ambilKartuRingkas(): Promise<KartuRingkas> {
   const baris = await kueriSatu<Record<string, unknown>>(`
     SELECT
-      (SELECT COUNT(*) FROM pegawai WHERE status_aktif = 'AKTIF')                        AS pegawai_aktif,
-      (SELECT COUNT(*) FROM pegawai)                                                     AS pegawai_total,
+      (SELECT COUNT(*) FROM pegawai WHERE status_aktif = 'AKTIF' ${filterSumberTanpaAlias()}) AS pegawai_aktif,
+      (SELECT COUNT(*) FROM pegawai WHERE 1=1 ${filterSumberTanpaAlias()})                AS pegawai_total,
       (SELECT COUNT(*) FROM jabatan
         WHERE status_jabatan = 'KOSONG' AND eselon IN ('I','II','III'))                   AS strategis_kosong,
       (SELECT COUNT(*) FROM jabatan WHERE eselon IN ('I','II','III'))                     AS strategis_total,
-      (SELECT COUNT(DISTINCT pegawai_id) FROM talent_pool)                                AS kandidat_pool,
+      (SELECT COUNT(DISTINCT tp.pegawai_id) FROM talent_pool tp
+        JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
+        WHERE 1=1 ${filterSumber('p_tp')})                                                AS kandidat_pool,
       (SELECT COUNT(*) FROM jabatan_target WHERE status = 'AKTIF')                        AS target_aktif,
-      (SELECT COUNT(*) FROM nominasi WHERE status IN ('DIAJUKAN','MENUNGGU_VERIFIKASI'))  AS nominasi_menunggu,
-      (SELECT COUNT(*) FROM nominasi)                                                     AS nominasi_total
+      -- JANGAN memakai backtick di komentar SQL di dalam berkas ini: string
+      -- kuerinya template literal JS, jadi satu backtick mengakhirinya dan
+      -- galatnya muncul sebagai TS1005 "',' expected" belasan baris jauhnya —
+      -- pesan yang tidak menyebut backtick sama sekali. Terjadi 12 Agu 2026.
+      --
+      -- Kedua penghitung nominasi WAJIB ikut filter populasi, dan sempat tidak.
+      -- Akibatnya terlihat langsung oleh user: kartu dashboard menulis 7 sementara
+      -- halaman /nominasi menampilkan 3, sebab ambilDaftarNominasi() disaring tapi
+      -- hitungan di sini tidak. Dua angka untuk hal yang sama di dua layar, tanpa
+      -- apa pun yang menjelaskan selisihnya — dan sejak pita populasi dilepas,
+      -- tidak ada lagi yang bisa menjelaskannya.
+      --
+      -- Pegawainya dijangkau lewat talent_pool, sebab tabel nominasi sendiri
+      -- tidak memuat pegawai_id.
+      (SELECT COUNT(*) FROM nominasi n_m
+         JOIN talent_pool tp_m ON tp_m.id = n_m.talent_pool_id
+        WHERE n_m.status IN ('DIAJUKAN','MENUNGGU_VERIFIKASI')
+          ${filterSumberPegawaiId('tp_m.pegawai_id')})                                    AS nominasi_menunggu,
+      (SELECT COUNT(*) FROM nominasi n_t
+         JOIN talent_pool tp_t ON tp_t.id = n_t.talent_pool_id
+        WHERE 1=1 ${filterSumberPegawaiId('tp_t.pegawai_id')})                             AS nominasi_total
   `)
 
   return {
@@ -80,7 +106,8 @@ export async function ambilSebaranKotak9(): Promise<SebaranKotak9> {
       SELECT
         (SELECT COUNT(*) FROM asesmen_terbaru)                                       AS total,
         (SELECT COUNT(*) FROM pegawai p WHERE p.status_aktif = 'AKTIF'
-           AND NOT EXISTS (SELECT 1 FROM asesmen_talenta a WHERE a.pegawai_id = p.id)) AS tanpa_asesmen,
+           AND NOT EXISTS (SELECT 1 FROM asesmen_talenta a WHERE a.pegawai_id = p.id)
+           ${filterSumber('p')}) AS tanpa_asesmen,
         (SELECT COUNT(*) FROM asesmen_terbaru WHERE status_asesmen = 'Expired')      AS kedaluwarsa,
         (SELECT MIN(tahun_asesmen) FROM asesmen_terbaru)                             AS tahun_min,
         (SELECT MAX(tahun_asesmen) FROM asesmen_terbaru)                             AS tahun_maks

@@ -35,12 +35,12 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
 
   const dikecualikan: string[] = []
   if (d.tanpaAsesmen > 0) dikecualikan.push(`${formatAngka(d.tanpaAsesmen)} belum diases`)
-  if (d.asesmenKedaluwarsa > 0) {
-    dikecualikan.push(`${formatAngka(d.asesmenKedaluwarsa)} asesmen kedaluwarsa`)
-  }
+  // Asesmen kedaluwarsa SENGAJA tidak disebut di sini: ia sudah punya badge
+  // sendiri di kanan judul. Menyebutnya dua kali membuat pembaca mencari
+  // perbedaan antara "2 kedaluwarsa" dan "2 asesmen kedaluwarsa" yang tidak ada.
 
   return (
-    <Panel className="flex flex-col">
+    <Panel className="flex min-h-0 flex-col">
       <PanelHeader
         judul="Sebaran Kotak 9"
         deskripsi={
@@ -71,15 +71,26 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
         }
       />
 
-      <div className="mt-4">
-        <Kotak9Grid perKotak={d.perKotak} total={d.totalDinilai} kotakAktif={kotakAktif} />
+      {/* flex-1 min-h-0: grid menyerap sisa tinggi panel, dan `min-h-0` yang
+          membuatnya boleh MENYUSUT — tanpa itu flex item menolak lebih pendek
+          dari isinya dan panelnya tetap memanjang. */}
+      <div className="mt-4 flex-1 min-h-0">
+        <Kotak9Grid
+          perKotak={d.perKotak}
+          total={d.totalDinilai}
+          kotakAktif={kotakAktif}
+          isiTinggi
+        />
       </div>
 
       <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
-        Intensitas warna <strong className="font-medium text-text-muted">relatif</strong>{' '}
-        terhadap sel terpadat, bukan skala absolut. Predikat &ldquo;Baik&rdquo; sudah bernilai 80
-        dan ambang Di Atas Ekspektasi adalah ≥80, jadi baris teratas memang cenderung berat. Klik
-        sel untuk melihat pegawainya.
+        <strong className="font-medium text-text-muted">Warna</strong> menyatakan band kualitas
+        kotak — merah di kiri-bawah (perlu perhatian) sampai hijau tua di kanan-atas (siap peran
+        strategis). <strong className="font-medium text-text-muted">Pekatnya</strong> menyatakan
+        jumlah pegawai, <strong className="font-medium text-text-muted">relatif</strong> terhadap
+        sel terpadat — bukan skala absolut. Predikat &ldquo;Baik&rdquo; sudah bernilai 80 dan
+        ambang Di Atas Ekspektasi adalah ≥80, jadi baris teratas memang cenderung berat. Klik sel
+        untuk melihat pegawainya.
       </p>
     </Panel>
   )

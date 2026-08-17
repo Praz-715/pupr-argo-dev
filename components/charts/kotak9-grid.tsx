@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { cn } from '@/lib/cn'
+import { TINT_KOTAK_9, warnaKotak9 } from '@/lib/warna-seri'
 import { formatAngka, formatPersenNilai } from '@/lib/format'
 import {
   BARIS_KOTAK_9,
@@ -19,10 +20,17 @@ import {
  * terpisah di sebelahnya — kalau dipisah, tinggi label tidak akan pernah
  * sejajar dengan tinggi sel karena keduanya dihitung terhadap wadah berbeda.
  *
- * Intensitas warna **relatif terhadap sel terpadat**, bukan skala absolut:
- * baris atas grid selalu berat karena predikat "Baik" sudah bernilai 80 dan
- * ambang "Di Atas Ekspektasi" adalah >=80 inklusif (phase.md §3 K-2). Dengan
- * skala absolut, delapan sel lain akan tampak kosong seragam.
+ * **Warna sel membawa DUA informasi sekaligus, dan keduanya harus tetap terbaca:**
+ * HUE = band kualitas kotak (merah kiri-bawah → hijau tua kanan-atas, konvensi
+ * 9-box yang diporting dari v1), PEKATNYA = jumlah pegawai **relatif terhadap
+ * sel terpadat**, bukan skala absolut. Baris atas grid selalu berat karena
+ * predikat "Baik" sudah bernilai 80 dan ambang "Di Atas Ekspektasi" adalah >=80
+ * inklusif (phase.md §3 K-2); dengan skala absolut, delapan sel lain akan tampak
+ * kosong seragam.
+ *
+ * Karena warna memuat dua hal, kedua panel pemakainya WAJIB menjelaskan
+ * keduanya — kalau tidak, hue-nya jadi informasi tanpa keterangan. Warna band
+ * & plafon tint-nya ada di `lib/warna-seri.ts` + token `--k9-*`.
  */
 
 // Urutan baris & kolom diambil dari lib/scoring — bukan didaftar ulang di sini,
@@ -37,6 +45,7 @@ export function Kotak9Grid({
   hrefSel = (kotak) => `/?kotak=${kotak}`,
   gulirKeSel = false,
   labelX = 'Potensial',
+  isiTinggi = false,
 }: {
   perKotak: Map<Kotak9, number>
   total: number
@@ -64,11 +73,22 @@ export function Kotak9Grid({
    * mengoreksinya sendiri.
    */
   labelX?: string
+  /**
+   * `true` = grid MENGISI tinggi wadahnya, `false` = tiap sel memakai rasio 4:3
+   * dan tingginya yang menentukan tinggi panel.
+   *
+   * Dua mode ini bukan preferensi. Di dashboard, grid ini berdampingan dengan
+   * panel lain di satu baris, dan sel ber-rasio-tetap membuat panelnya jauh
+   * lebih tinggi daripada pasangannya — barisnya jadi timpang. Di halaman Peta
+   * Talenta ia berdiri sendiri tanpa tinggi yang mengikat, dan di sana rasio
+   * tetaplah yang benar: tanpa itu, sel ikut memanjang mengikuti isi halaman.
+   */
+  isiTinggi?: boolean
 }) {
   const maksimum = Math.max(1, ...[...perKotak.values()])
 
   return (
-    <div className="flex gap-2">
+    <div className={cn('flex gap-2', isiTinggi && 'h-full min-h-0')}>
       {/* Label sumbu Y, di luar grid supaya tidak ikut menyempitkan sel */}
       <div
         aria-hidden
@@ -80,9 +100,20 @@ export function Kotak9Grid({
         </span>
       </div>
 
-      <div className="grid min-w-0 flex-1 grid-cols-[repeat(3,minmax(0,1fr))_5.5rem] gap-1.5">
+      <div
+        className={cn(
+          'grid min-w-0 flex-1 grid-cols-[repeat(3,minmax(0,1fr))_5.5rem] gap-1.5',
+          // Tiga baris sel berbagi sisa tinggi; dua baris terakhir (label kolom
+          // & judul sumbu) seukuran isinya. `minmax(0,1fr)` bukan `1fr`: tanpa
+          // batas bawah nol, isi sel menolak menyusut dan gridnya meluber.
+          isiTinggi && 'h-full min-h-0 grid-rows-[repeat(3,minmax(0,1fr))_auto_auto]',
+        )}
+      >
         {BARIS.map((baris) => (
-          <div key={baris} className="col-span-4 grid grid-cols-subgrid gap-1.5">
+          <div
+            key={baris}
+            className={cn('col-span-4 grid grid-cols-subgrid gap-1.5', isiTinggi && 'min-h-0')}
+          >
             {KOLOM.map((kolom) => {
               const kotak = MATRIKS_KOTAK_9[baris][kolom]
               const jumlah = perKotak.get(kotak) ?? 0
@@ -98,33 +129,52 @@ export function Kotak9Grid({
                   data-jumlah={jumlah}
                   aria-label={`Kotak ${kotak}: ${jumlah} pegawai — ${baris} × ${labelX} ${kolom}`}
                   title={`Kotak ${kotak} · ${baris} × ${labelX} ${kolom}\n${DESKRIPSI_KOTAK_9[kotak]}`}
+                  // Garis sel memakai warna band (bukan --border) supaya sel
+                  // KOSONG pun tetap menyatakan band-nya — tanpa itu, grid yang
+                  // sebagian besar nol kembali jadi kotak abu-abu seragam.
+                  style={{ borderColor: aktif ? undefined : warnaKotak9(kotak) }}
                   className={cn(
-                    'relative flex aspect-4/3 flex-col justify-between overflow-hidden rounded-md border p-2 transition-colors',
+                    'relative flex flex-col justify-between overflow-hidden rounded-md border p-2 transition-[transform,box-shadow]',
+                    isiTinggi ? 'h-full min-h-0' : 'aspect-4/3',
                     aktif
                       ? 'border-accent ring-1 ring-accent'
-                      : 'border-border hover:border-border-strong',
-                    jumlah === 0 && 'pointer-events-none opacity-60',
+                      : 'hover:-translate-y-0.5 hover:shadow-kartu-naik',
+                    jumlah === 0 && 'pointer-events-none opacity-70',
                   )}
                 >
-                  {/* Lapisan intensitas: opacity relatif terhadap sel terpadat */}
+                  {/* Latar = warna BAND (kualitas), opacity = KEPADATAN.
+                      Dua informasi di satu lapisan, dan keduanya masih terbaca:
+                      hue menjawab "kotak ini artinya apa", pekatnya menjawab
+                      "berapa orang di sini".
+
+                      Plafon 45% bukan angka selera — di atas 51% `--text` di sel
+                      terpadat turun di bawah 4,5:1 (tema gelap yang mengikat,
+                      karena di sana tint MENERANGKAN latar). Kalau mau dinaikkan,
+                      jalankan `npm run audit:kontras` dulu. */}
                   <span
                     aria-hidden
-                    className="absolute inset-0 bg-accent"
-                    style={{ opacity: jumlah === 0 ? 0.02 : 0.06 + rasio * 0.34 }}
+                    className="absolute inset-0"
+                    style={{
+                      backgroundColor: warnaKotak9(kotak),
+                      opacity:
+                        jumlah === 0
+                          ? TINT_KOTAK_9.kosong
+                          : TINT_KOTAK_9.dasar + rasio * TINT_KOTAK_9.rentang,
+                    }}
                   />
                   <span className="relative flex items-center justify-between gap-1">
-                    <span className="text-[10px] font-semibold text-text-subtle">
-                      Kotak {kotak}
-                    </span>
+                    {/* `text-text`, bukan `text-text-subtle`: di atas tint band
+                        terpekat, muted hanya mencapai 2,7–3,2:1. Terukur. */}
+                    <span className="text-[10px] font-semibold text-text">Kotak {kotak}</span>
                     {jumlah > 0 ? (
-                      <span className="tabular text-[10px] text-text-subtle">
+                      <span className="tabular text-[10px] text-text">
                         {formatPersenNilai((jumlah / Math.max(1, total)) * 100)}
                       </span>
                     ) : null}
                   </span>
                   <span className="tabular relative text-2xl leading-none font-semibold text-text">
                     {formatAngka(jumlah)}
-                    <span className="ml-1 text-[10px] font-normal text-text-subtle">pegawai</span>
+                    <span className="ml-1 text-[10px] font-normal text-text">pegawai</span>
                   </span>
                 </Link>
               )

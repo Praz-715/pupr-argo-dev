@@ -5,7 +5,11 @@ import nextTypescript from 'eslint-config-next/typescript'
 const eslintConfig = [
   {
     ignores: [
-      '.next/**',
+      // `.next*`, bukan `.next` saja: build pratinjau memakai distDir terpisah
+      // (`.next-pratinjau`, lihat next.config.ts) dan tanpa pola ini eslint
+      // melint 37 MB keluaran build — 1.701 "error" yang seluruhnya berasal dari
+      // kode hasil generate, cukup untuk menyembunyikan temuan yang sebenarnya.
+      '.next*/**',
       'node_modules/**',
       // hasil introspect drizzle, bukan kode tulisan tangan
       'lib/db/schema.ts',

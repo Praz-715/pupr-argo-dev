@@ -174,7 +174,7 @@ async function IsiPeta({
     <div className="space-y-4">
       {kepala}
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Panel>
           <PanelHeader
             judul={
@@ -205,8 +205,11 @@ async function IsiPeta({
             />
           </div>
           <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
-            Intensitas warna <strong className="font-medium text-text-muted">relatif</strong>{' '}
-            terhadap sel terpadat, bukan skala absolut. Baris atas hampir selalu berat karena
+            <strong className="font-medium text-text-muted">Warna</strong> menyatakan band
+            kualitas kotak — merah di kiri-bawah (perlu perhatian) sampai hijau tua di kanan-atas
+            (siap peran strategis). <strong className="font-medium text-text-muted">Pekatnya</strong>{' '}
+            menyatakan jumlah pegawai, <strong className="font-medium text-text-muted">relatif</strong>{' '}
+            terhadap sel terpadat — bukan skala absolut. Baris atas hampir selalu berat karena
             predikat &quot;Baik&quot; sudah bernilai 80 dan ambang &quot;Di Atas Ekspektasi&quot;
             adalah ≥80 inklusif — itu sifat rubrik, bukan keunggulan organisasi.
           </p>
@@ -391,7 +394,7 @@ function PetaSkeleton() {
         ))}
       </div>
       <Skeleton className="h-3 w-full max-w-2xl" />
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Panel>
           <Skeleton className="h-4 w-28" />
           <Skeleton className="mt-2 h-3 w-full max-w-sm" />

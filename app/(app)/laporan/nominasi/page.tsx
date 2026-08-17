@@ -132,7 +132,7 @@ export default async function LaporanNominasiPage({
         <IsiPeriode filter={filter} params={p} />
       </Suspense>
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Suspense key={`u|${kunci}`} fallback={<TabelSkeleton baris={6} kolom={6} />}>
           <IsiUnit filter={filter} params={p} />
         </Suspense>

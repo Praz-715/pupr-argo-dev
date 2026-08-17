@@ -37,7 +37,14 @@ function tegaskan(kondisi, pesan) {
 
 /** Kolom wajib menurut mockup #1 doc/KERANGKA TALENT POOL.md. */
 const KOLOM_MOCKUP = [
-  'nip & nama lengkap',
+  // Mockup #1 di `doc/KERANGKA TALENT POOL.md` menyebut "NIP dan Nama Lengkap"
+  // sebagai SATU kolom; user meminta keduanya dipisah (12 Agu 2026). Yang
+  // diperiksa langkah ini adalah **kelengkapan informasinya**, bukan jumlah
+  // kolomnya — dan dua kolom terpisah tetap memenuhi itu. Kalau nanti daftar ini
+  // diubah lagi, ubah karena kolomnya benar-benar hilang, bukan karena
+  // penyajiannya bergeser.
+  'nama lengkap',
+  'nip',
   'jabatan',
   'eselon',
   'unit organisasi',

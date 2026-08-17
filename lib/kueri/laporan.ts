@@ -2,7 +2,7 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri } from '../db'
 import { tanggalIso } from '../param'
-import { SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { SUBKUERI_UNIT_TURUNAN, filterSumber, filterSumberPegawaiId } from './dasar'
 
 /**
  * Kueri Laporan (Fase 8): Gap Analysis + Rekap Nominasi & Approval.
@@ -84,6 +84,13 @@ function syaratPopulasi(f: FilterLaporan): { sql: string; params: unknown[] } {
     syarat.push('jb.jenjang = ?')
     params.push(f.jenjang)
   }
+  // Opsi penyaring laporan ini SUDAH disaring ke populasi yang ditampilkan
+  // (`ambilOpsiLaporan`), jadi barisnya harus ikut — kalau tidak, penyaringnya
+  // menawarkan 11 pilihan dari 10 pegawai sementara angka yang dilaporkan
+  // dihitung dari 43. Dua skala dalam satu halaman, dan yang salah justru yang
+  // dipakai mengambil keputusan pengembangan.
+  const batasPopulasi = filterSumber('p')
+  if (batasPopulasi) syarat.push(batasPopulasi.replace(/^ AND /, ''))
 
   return { sql: syarat.join(' AND '), params }
 }
@@ -328,6 +335,9 @@ function syaratNominasi(f: FilterLaporan): { sql: string; params: unknown[] } {
     params.push(f.unitWajib)
   }
 
+  const batasPopulasi = filterSumberPegawaiId('tp.pegawai_id')
+  if (batasPopulasi) syarat.push(batasPopulasi.replace(/^ AND /, ''))
+
   return { sql: syarat.join(' AND '), params }
 }
 
@@ -519,21 +529,41 @@ export interface OpsiLaporan {
 export async function ambilOpsiLaporan(): Promise<OpsiLaporan> {
   const [target, unit, jenjang, rentang] = await Promise.all([
     kueri<Record<string, unknown>>(
-      `SELECT id, nama_target FROM jabatan_target ORDER BY nama_target ASC`,
+      // Hanya jabatan target yang BENAR-BENAR punya rincian skor pada populasi
+      // yang ditampilkan. Daftar seluruh jabatan_target memuat yang DRAFT/belum
+      // dihitung, dan memilihnya menghasilkan laporan kosong — penyaring yang
+      // menawarkan pilihan yang pasti nol terbaca seperti laporannya rusak.
+      `SELECT DISTINCT t.id, t.nama_target
+         FROM jabatan_target t
+         JOIN match_score m ON m.jabatan_target_id = t.id
+         JOIN match_score_detail d ON d.match_score_id = m.id
+         JOIN pegawai p ON p.id = m.pegawai_id
+        WHERE 1=1 ${filterSumber('p')}
+        ORDER BY t.nama_target ASC`,
     ),
     kueri<Record<string, unknown>>(
-      `SELECT u.id, u.nama_unit
+      // Diturunkan dari PEGAWAI yang ada, bukan dari tabel jabatan. Versi
+      // sebelumnya memuat setiap unit yang punya kursi — termasuk yang tidak
+      // berpegawai — sehingga penyaringnya menawarkan unit yang pasti menjawab
+      // nol baris laporan.
+      `SELECT DISTINCT u.id, u.nama_unit
          FROM unit_organisasi u
-        WHERE EXISTS (SELECT 1 FROM jabatan j WHERE j.unit_organisasi_id = u.id)
+         JOIN jabatan j ON j.unit_organisasi_id = u.id
+         JOIN pegawai p ON p.jabatan_id = j.id
+        WHERE 1=1 ${filterSumber('p')}
         ORDER BY u.nama_unit ASC`,
     ),
     kueri<Record<string, unknown>>(
-      `SELECT DISTINCT jenjang FROM jabatan WHERE jenjang IS NOT NULL AND jenjang <> ''
-        ORDER BY jenjang ASC`,
+      `SELECT DISTINCT j.jenjang FROM jabatan j
+         JOIN pegawai p ON p.jabatan_id = j.id
+        WHERE j.jenjang IS NOT NULL AND j.jenjang <> '' ${filterSumber('p')}
+        ORDER BY j.jenjang ASC`,
     ),
     kueri<Record<string, unknown>>(
-      `SELECT MIN(tanggal_diajukan) AS paling_lama, MAX(tanggal_diajukan) AS paling_baru
-         FROM nominasi`,
+      `SELECT MIN(n.tanggal_diajukan) AS paling_lama, MAX(n.tanggal_diajukan) AS paling_baru
+         FROM nominasi n
+         JOIN talent_pool tp ON tp.id = n.talent_pool_id
+        WHERE 1 = 1 ${filterSumberPegawaiId('tp.pegawai_id')}`,
     ),
   ])
 

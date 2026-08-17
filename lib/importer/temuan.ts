@@ -35,6 +35,12 @@ export type KodeTemuan =
   | 'NIP_TIDAK_VALID'
   /** §6.12 — `status_asesmen` tidak sesuai umur asesmennya. */
   | 'STATUS_ASESMEN_TIDAK_KONSISTEN'
+  /**
+   * Predikat kinerja dari sumber tidak ada di rubrik. Tidak bernomor di
+   * phase.md §6: aturannya lahir dari integrasi eNom (`lib/enom`), bukan dari
+   * berkas CSV yang jadi dasar §6.
+   */
+  | 'PREDIKAT_TIDAK_DIKENALI'
 
 /** Seberapa jauh sistem boleh melanjutkan tanpa campur tangan manusia. */
 export type TingkatTemuan =
@@ -45,8 +51,14 @@ export type TingkatTemuan =
 
 export interface DefinisiTemuan {
   kode: KodeTemuan
-  /** Nomor aturan di phase.md §6. */
-  aturan: number
+  /**
+   * Nomor aturan di phase.md §6, atau `null` kalau temuan ini TIDAK berasal
+   * dari sana. `null`, bukan 0: nol adalah nomor yang menyamar jadi nomor, dan
+   * ia akan lolos ke uji kelengkapan §6 seolah-olah aturannya ada di dokumen.
+   * Sumber di luar CSV (mis. API eNominasi lewat `lib/enom`) memang tidak punya
+   * nomor di §6 — dan itu harus terbaca, bukan disembunyikan.
+   */
+  aturan: number | null
   label: string
   tingkat: TingkatTemuan
   /** Kenapa ini penting — dipakai UI Antrian Pembersihan, bukan sekadar komentar. */
@@ -54,6 +66,15 @@ export interface DefinisiTemuan {
 }
 
 export const DEFINISI_TEMUAN: Record<KodeTemuan, DefinisiTemuan> = {
+  PREDIKAT_TIDAK_DIKENALI: {
+    kode: 'PREDIKAT_TIDAK_DIKENALI',
+    // Tidak ada di penomoran phase.md §6 — lahir dari integrasi eNom.
+    aturan: null,
+    label: 'Predikat kinerja tidak dikenali',
+    tingkat: 'PERLU_MANUSIA',
+    dampak:
+      'Barisnya DILEWATI, bukan ditebak. Predikat adalah satu-satunya sumber sumbu Y — menurunkannya dari nilai lain akan menghasilkan Kotak 9 yang tampak wajar dan salah, dan angka yang salah tapi wajar jauh lebih sulit ketahuan daripada baris yang hilang.',
+  },
   SKOR_DI_LUAR_RENTANG: {
     kode: 'SKOR_DI_LUAR_RENTANG',
     aturan: 1,

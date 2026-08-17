@@ -41,3 +41,6 @@ yarn-error.log*
 /.agents/
 doc/doc_tambahan_2/riwayat_jabatan.json
 doc/doc_tambahan_2/riwayat_pendidikan.json
+
+# Keluaran build pratinjau (distDir terpisah supaya tidak menimpa .next dev)
+.next-pratinjau/

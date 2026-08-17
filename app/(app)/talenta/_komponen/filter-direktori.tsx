@@ -20,7 +20,6 @@ import type { OpsiFilter } from '@/lib/kueri/pegawai'
  * (ditangani DataTable) — bukan kembali ke skeleton.
  */
 
-const KOTAK_9 = [9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 const LABEL_ESELON: Record<string, string> = {
   I: 'Eselon I',
@@ -29,6 +28,23 @@ const LABEL_ESELON: Record<string, string> = {
   IV: 'Eselon IV',
   NON_ESELON: 'Non-eselon (fungsional)',
 }
+
+/**
+ * Kelas yang membuat dropdown penyaring **menyusut & berbagi lebar sisa** di
+ * layar lebar, supaya keenamnya + kotak pencarian + tombol Reset muat dalam
+ * SATU baris (permintaan user, 12 Agu 2026 — sebelumnya "Semua status" turun ke
+ * baris kedua).
+ *
+ * Kenapa perlu `xl:shrink`: `Pilih` memasang `shrink-0` pada dirinya, jadi lebar
+ * tetapnya tidak bisa ditawar. Totalnya 60rem untuk enam dropdown, dan itu
+ * melewati ruang yang tersisa setelah sidebar 240px — jadi barisnya membungkus
+ * bukan karena salah tata letak, melainkan karena tidak ada yang boleh mengecil.
+ * Varian `xl:` menang karena media query-nya lahir belakangan di CSS.
+ *
+ * Di bawah `xl` sengaja dibiarkan MEMBUNGKUS: memaksa satu baris di layar sempit
+ * membuat keenam dropdown menyusut sampai labelnya tidak terbaca.
+ */
+const LEBAR_RINGKAS = 'xl:w-auto xl:min-w-0 xl:flex-1 xl:shrink'
 
 export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: number }) {
   const router = useRouter()
@@ -75,9 +91,9 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
         {/* Pencarian */}
-        <div className="relative min-w-56 flex-1">
+        <div className="relative min-w-56 flex-1 xl:min-w-44">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
           <input
             value={cari}
@@ -106,7 +122,7 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
               label: `${'  '.repeat(u.level)}${u.nama}`,
             })),
           ]}
-          lebar="w-52"
+          lebar={`w-52 ${LEBAR_RINGKAS}`}
         />
 
         <Pilih
@@ -117,6 +133,7 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
             { nilai: '', label: 'Semua eselon' },
             ...opsi.eselon.map((e) => ({ nilai: e, label: LABEL_ESELON[e] ?? e })),
           ]}
+          lebar={`w-36 ${LEBAR_RINGKAS}`}
         />
 
         <Pilih
@@ -127,7 +144,7 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
             { nilai: '', label: 'Semua jenjang' },
             ...opsi.jenjang.map((j) => ({ nilai: j, label: j })),
           ]}
-          lebar="w-40"
+          lebar={`w-40 ${LEBAR_RINGKAS}`}
         />
 
         <Pilih
@@ -141,6 +158,7 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
               label: formatTingkatPendidikan(p),
             })),
           ]}
+          lebar={`w-36 ${LEBAR_RINGKAS}`}
         />
 
         <Pilih
@@ -149,22 +167,31 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
           onUbah={(v) => terapkan({ kotak: v })}
           opsi={[
             { nilai: '', label: 'Semua kotak' },
-            ...KOTAK_9.map((k) => ({ nilai: String(k), label: `Kotak ${k}` })),
+            ...opsi.kotak9.map((k) => ({ nilai: String(k), label: `Kotak ${k}` })),
           ]}
+          lebar={`w-36 ${LEBAR_RINGKAS}`}
         />
 
         <Pilih
           label="Status asesmen"
           nilai={searchParams.get('statusAsesmen') ?? ''}
           onUbah={(v) => terapkan({ statusAsesmen: v })}
+          // Diturunkan dari data, bukan daftar tetap keempat status: di bawah
+          // filter populasi tidak ada yang Draft maupun belum diases, jadi dua
+          // opsi itu pasti menjawab nol baris.
           opsi={[
             { nilai: '', label: 'Semua status' },
-            { nilai: 'Berlaku', label: 'Berlaku' },
-            { nilai: 'Expired', label: 'Kedaluwarsa' },
-            { nilai: 'Draft', label: 'Draft' },
-            { nilai: 'TANPA_ASESMEN', label: 'Belum diases' },
+            ...opsi.statusAsesmen.map((s) => ({
+              nilai: s,
+              label:
+                s === 'Expired'
+                  ? 'Kedaluwarsa'
+                  : s === 'TANPA_ASESMEN'
+                    ? 'Belum diases'
+                    : s,
+            })),
           ]}
-          lebar="w-40"
+          lebar={`w-40 ${LEBAR_RINGKAS}`}
         />
 
         {filterAktif.length > 0 ? (

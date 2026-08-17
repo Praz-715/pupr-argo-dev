@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 
 import { TrenKinerja } from '@/components/charts/tren-kinerja'
-import { LabelFase } from '@/components/layout/tautan-fase'
 import { Badge, StatusDot } from '@/components/ui/badge'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { ChartSkeleton, ListSkeleton, Skeleton } from '@/components/ui/skeleton'
@@ -21,6 +20,7 @@ import {
   inisial,
 } from '@/lib/format'
 import { getCurrentUser } from '@/lib/auth'
+import { punyaPeran } from '@/lib/peran'
 import { LABEL_TINGKAT, tingkatKelengkapan } from '@/lib/kelengkapan'
 import {
   ambilHukumanDisiplin,
@@ -36,7 +36,9 @@ import {
 import { lingkupData, unitWajib } from '@/lib/lingkup'
 import { DESKRIPSI_KOTAK_9, klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
 import { DaftarDiklat } from './_komponen/daftar-diklat'
+import { ambilPilihanJabatan } from '@/lib/kueri/master'
 import { RincianSkor } from './_komponen/rincian-skor'
+import { TombolEditor } from './_komponen/tombol-editor'
 
 /** Batas unit pengguna yang sedang masuk — dipakai judul halaman & isinya. */
 async function batasUnitSaya(): Promise<number | null> {
@@ -81,11 +83,25 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
         <BagianKelengkapan profil={profil} />
       </Suspense>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        <Suspense fallback={<PanelMemuat judul="Posisi Kotak 9 & riwayat asesmen" baris={4} />}>
+      {/* Tinggi baris DIPATOK, isi panel bergulir di dalamnya.
+          `items-start` yang dulu dipakai membuat tiap panel mengambil tinggi
+          alaminya, jadi panel yang isinya sedikit meninggalkan lubang kosong
+          sebesar selisihnya — persis keluhan user (11 Agu 2026). Dua hal yang
+          wajib ada dan mudah terlewat: `grid-rows-[minmax(0,1fr)]` (tanpa itu
+          `h-` cuma menetapkan tinggi container sementara barisnya tetap `auto`
+          dan boleh melebihinya) dan `min-h-0` di panelnya (flex item menolak
+          lebih pendek dari isinya, sehingga `overflow-y-auto` tak pernah aktif).
+          Hanya di `xl`: di layar sempit panel-panel ini bertumpuk satu kolom,
+          dan memaksa tinggi di sana menghasilkan gulir bersarang. */}
+      <div className="grid gap-5 xl:h-[27rem] xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:grid-rows-[minmax(0,1fr)]">
+        <Suspense
+          fallback={
+            <PanelMemuat judul="Posisi Kotak 9 & riwayat asesmen" baris={4} className="xl:h-full" />
+          }
+        >
           <BagianAsesmen profil={profil} />
         </Suspense>
-        <Suspense fallback={<PanelChartMemuat judul="Tren kinerja" />}>
+        <Suspense fallback={<PanelChartMemuat judul="Tren kinerja" className="xl:h-full" />}>
           <BagianKinerja profil={profil} />
         </Suspense>
       </div>
@@ -94,15 +110,27 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
         <BagianMatchScore profil={profil} />
       </Suspense>
 
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        <Suspense fallback={<PanelMemuat judul="Riwayat jabatan" baris={5} />}>
+      <div className="grid gap-5 xl:h-[36rem] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
+        <Suspense fallback={<PanelMemuat judul="Riwayat jabatan" baris={5} className="xl:h-full" />}>
           <BagianRiwayatJabatan profil={profil} />
         </Suspense>
-        <div className="space-y-5">
-          <Suspense fallback={<PanelMemuat judul="Riwayat pendidikan" baris={3} />}>
+        {/* Kolom kanan memuat DUA panel, jadi ia membagi tinggi barisnya sendiri:
+            `flex-col` + tiap panel `flex-1 min-h-0`. Dengan `space-y-5` biasa,
+            keduanya kembali mengambil tinggi alaminya dan lubangnya pindah ke
+            bawah panel yang lebih pendek. */}
+        <div className="flex min-h-0 flex-col gap-5">
+          <Suspense
+            fallback={
+              <PanelMemuat judul="Riwayat pendidikan" baris={3} className="xl:min-h-0 xl:flex-1" />
+            }
+          >
             <BagianPendidikan profil={profil} />
           </Suspense>
-          <Suspense fallback={<PanelMemuat judul="Riwayat diklat" baris={5} />}>
+          <Suspense
+            fallback={
+              <PanelMemuat judul="Riwayat diklat" baris={5} className="xl:min-h-0 xl:flex-1" />
+            }
+          >
             <BagianDiklat profil={profil} />
           </Suspense>
         </div>
@@ -117,7 +145,12 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
 
 // ---------------------------------------------------------------------------
 
-function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
+async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
+  // Daftar jabatan diambil di sini, bukan diteruskan dari halaman: kepala profil
+  // adalah satu-satunya pemakainya di luar riwayat jabatan, dan meneruskannya
+  // lewat props berarti halaman ikut membayar kuerinya walau dialognya tidak
+  // pernah dibuka.
+  const pilihanJabatan = await ambilPilihanJabatan()
   const bio: Array<{ label: string; nilai: string; catatan?: string }> = [
     { label: 'Pangkat / Golongan', nilai: `${profil.pangkat} · ${profil.golongan ?? '—'}`, catatan: profil.tmtGolongan ? `TMT ${formatTanggal(profil.tmtGolongan)}` : undefined },
     { label: 'Jenjang', nilai: profil.jenjang ?? '—', catatan: profil.eselon === 'NON_ESELON' ? 'Non-eselon' : profil.eselon ? `Eselon ${profil.eselon}` : undefined },
@@ -174,6 +207,29 @@ function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
           <Badge tone="netral" title={`Data terakhir disinkronkan dari ${profil.sumberSinkron}`}>
             Sumber: {profil.sumberSinkron}
           </Badge>
+          {/* Ditaruh berdampingan dengan lencana "Sumber", bukan di dekat nama:
+              menyimpan lewat dialog ini mengubah `sumber_sinkron` menjadi
+              `manual`, dan itu yang paling perlu terlihat sebelum orang
+              menyuntingnya — nilai yang diisi tangan tidak akan tertimpa
+              sinkronisasi berikutnya tanpa disadari. */}
+          <TombolEditor
+            jenis="identitas"
+            pegawaiId={profil.pegawaiId}
+            pilihanJabatan={pilihanJabatan}
+            label="Ubah data"
+            baris={{
+              namaLengkap: profil.nama,
+              golongan: profil.golongan,
+              pangkat: profil.pangkat,
+              tmtGolongan: profil.tmtGolongan,
+              tmtJabatan: profil.tmtJabatan,
+              jabatanId: profil.jabatanId,
+              tingkatPendidikan: profil.tingkatPendidikan,
+              sekolahTerakhir: profil.sekolahTerakhir,
+              bidangStudiTerakhir: profil.bidangStudiTerakhir,
+              statusAktif: profil.statusAktif,
+            }}
+          />
         </div>
       </div>
 
@@ -266,8 +322,8 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
   const terbaru = asesmen[0]
 
   return (
-    <Panel padat>
-      <div className="border-b border-border p-4">
+    <Panel padat className="flex flex-col xl:h-full xl:min-h-0">
+      <div className="shrink-0 border-b border-border p-4">
         <PanelHeader
           judul="Posisi Kotak 9 & riwayat asesmen"
           deskripsi={
@@ -275,9 +331,11 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
               ? undefined
               : `${formatAngka(asesmen.length)} asesmen tercatat · posisi terbaru dari tahun ${terbaru!.tahunAsesmen}`
           }
+          aksi={<TombolEditor jenis="asesmen" pegawaiId={profil.pegawaiId} />}
         />
       </div>
 
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
       {!terbaru ? (
         <p className="p-6 text-center text-[13px] text-text-muted">
           Belum ada asesmen talenta. Tanpa asesmen, pegawai ini tidak punya posisi di Kotak 9 dan
@@ -319,11 +377,14 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
                   <th className="px-4 py-1.5 text-right font-medium">Potensial</th>
                   <th className="px-4 py-1.5 text-right font-medium">Kotak</th>
                   <th className="px-4 py-1.5 font-medium">Status</th>
+                  <th className="px-4 py-1.5 text-right font-medium">
+                    <span className="sr-only">Aksi</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {asesmen.map((a) => (
-                  <tr key={a.tahunAsesmen} className="border-b border-border last:border-b-0">
+                  <tr key={a.id} className="border-b border-border last:border-b-0">
                     <td className="tabular px-4 py-1.5 font-medium text-text">{a.tahunAsesmen}</td>
                     <td className="px-4 py-1.5 text-text-muted">{a.jenisAsesmen}</td>
                     <td className="tabular px-4 py-1.5 text-right">
@@ -350,6 +411,26 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
                         <Badge tone="peringatan">{a.statusAsesmen}</Badge>
                       )}
                     </td>
+                    <td className="px-4 py-1.5 text-right">
+                      {/* `predikatKinerja` → `ratingKinerja`: nama kolom DB-nya
+                          `rating_kinerja`, dan antarmuka profil menamainya lain.
+                          Salah satu dari keduanya harus diterjemahkan di sini. */}
+                      <TombolEditor
+                        jenis="asesmen"
+                        pegawaiId={profil.pegawaiId}
+                        baris={{
+                          id: a.id,
+                          tahunAsesmen: a.tahunAsesmen,
+                          jenisAsesmen: a.jenisAsesmen,
+                          statusAsesmen: a.statusAsesmen,
+                          nilaiKinerjaY: a.nilaiKinerjaY,
+                          potkom: a.potkom,
+                          nilaiIntegritas: a.nilaiIntegritas,
+                          tahunKinerja: a.tahunKinerja,
+                          ratingKinerja: a.predikatKinerja,
+                        }}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -357,6 +438,7 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
           </div>
         </>
       )}
+      </div>
     </Panel>
   )
 }
@@ -366,8 +448,11 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
 
   if (kinerja.length === 0) {
     return (
-      <Panel>
-        <PanelHeader judul="Tren kinerja" />
+      <Panel className="flex flex-col xl:h-full xl:min-h-0">
+        <PanelHeader
+          judul="Tren kinerja"
+          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
+        />
         <p className="mt-3 text-[13px] text-text-muted">
           Belum ada rekap kinerja periodik dari e-Kinerja.
         </p>
@@ -390,11 +475,16 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
     )
 
   return (
-    <Panel>
+    <Panel className="flex flex-col xl:h-full xl:min-h-0">
+      <div className="shrink-0">
       <PanelHeader
         judul={`Tren kinerja ${tahunTerbaru}`}
         deskripsi={`${formatAngka(tahunIni.length)} periode SKP tercatat · nilai granular dari e-Kinerja, bukan skor sumbu Kotak 9`}
+        aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
       />
+      </div>
+
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
       {tahunIni.length < 2 ? (
         <p className="mt-3 text-[13px] text-text-muted">
           Hanya {formatAngka(tahunIni.length)} periode tercatat pada {tahunTerbaru} — belum cukup
@@ -406,22 +496,67 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
           <TrenKinerja titik={tahunIni} />
         </div>
       )}
+
+      {/* Daftar periode: SELURUH tahun, bukan cuma yang digambar chart.
+          Tanpa ini, periode tahun lama tidak punya satu pun jalan untuk
+          disunting — dan penolakan "periode ini sudah terisi, ubah baris itu"
+          dari `simpanKinerja` jadi jalan buntu. */}
+      <ul className="mt-3 divide-y divide-border border-t border-border">
+        {kinerja.map((k) => (
+          <li key={k.id} className="flex items-center justify-between gap-3 py-1.5">
+            <span className="tabular min-w-0 text-[12px] text-text-muted">
+              <span className="font-medium text-text">
+                {k.periode} {k.tahun}
+              </span>
+              {' · '}
+              {k.nilaiKinerja === null ? 'nilai belum diisi' : formatSkor(k.nilaiKinerja)}
+              {' · '}
+              {k.predikat}
+            </span>
+            <TombolEditor
+              jenis="kinerja"
+              pegawaiId={profil.pegawaiId}
+              baris={{
+                id: k.id,
+                tahun: k.tahun,
+                periodeSkp: k.periode,
+                nilaiKinerja: k.nilaiKinerja,
+                nilaiPerilaku: k.nilaiPerilaku,
+                predikat: k.predikat,
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+      </div>
     </Panel>
   )
 }
 
 async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
-  const daftar = await ambilMatchScore(profil.pegawaiId)
+  const [daftar, pengguna] = await Promise.all([
+    ambilMatchScore(profil.pegawaiId),
+    getCurrentUser(),
+  ])
+  // Sama dengan `PERAN_HITUNG` di `lib/aksi/skoring.ts` — aksinya tetap penegak
+  // terakhirnya; ini hanya menyembunyikan tombol yang pasti akan ditolak.
+  const bolehIsiManual = punyaPeran(pengguna, ['Super Admin', 'Admin Talenta'])
 
   return (
-    <Panel padat>
-      <div className="border-b border-border p-4">
+    <Panel padat className="flex flex-col xl:h-[32rem] xl:min-h-0">
+      <div className="shrink-0 border-b border-border p-4">
         <PanelHeader
           judul="Kecocokan dengan jabatan target"
           deskripsi="Formula B: 65% Potensi & Kompetensi + 20% Kualifikasi Jabatan + 15% Integritas & Moralitas. Ketiganya komponen sumbu Potensial — skor ini TIDAK memuat unsur kinerja, jadi baca berdampingan dengan Kotak 9 di atas."
         />
       </div>
 
+      {/* Panel ini paling panjang di halaman (terukur 794px dengan 3 jabatan
+          target, dan tumbuh tiap target baru) — satu-satunya panel selebar
+          halaman yang benar-benar perlu dipatok. Kelengkapan Data & Integritas
+          dibiarkan setinggi isinya: keduanya di bawah 200px, jadi mematoknya
+          justru MENAMBAH ruang kosong, kebalikan dari yang diminta. */}
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
       {daftar.length === 0 ? (
         <p className="p-6 text-center text-[13px] text-text-muted">
           Belum ada perhitungan kecocokan. Skor terbentuk setelah pegawai dinilai terhadap suatu
@@ -472,11 +607,17 @@ async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
                 />
               </div>
 
-              <RincianSkor rincian={s.rincian} />
+              <RincianSkor
+                rincian={s.rincian}
+                pegawaiId={profil.pegawaiId}
+                jabatanTargetId={s.jabatanTargetId}
+                bolehIsiManual={bolehIsiManual}
+              />
             </li>
           ))}
         </ul>
       )}
+      </div>
     </Panel>
   )
 }
@@ -497,11 +638,15 @@ function Komponen({ label, bobot, skor }: { label: string; bobot: number; skor: 
 }
 
 async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
-  const riwayat = await ambilRiwayatJabatan(profil.pegawaiId)
+  const [riwayat, pilihanJabatan] = await Promise.all([
+    ambilRiwayatJabatan(profil.pegawaiId),
+    ambilPilihanJabatan(),
+  ])
   const belumTerpetakan = riwayat.filter((r) => !r.terpetakan).length
 
   return (
-    <Panel>
+    <Panel className="flex flex-col xl:h-full xl:min-h-0">
+      <div className="shrink-0">
       <PanelHeader
         judul="Riwayat jabatan"
         deskripsi={
@@ -510,14 +655,24 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
             : `${formatAngka(riwayat.length)} riwayat${belumTerpetakan > 0 ? ` · ${formatAngka(belumTerpetakan)} belum terpetakan ke master jabatan DJBK` : ''}`
         }
         aksi={
-          riwayat.some((r) => r.nonDefinitif) ? (
-            <Badge tone="aksen" title="Penugasan Plt/Plh menjadi input sub-indikator Substansi Riwayat Jabatan">
-              Ada penugasan Plt/Plh
-            </Badge>
-          ) : null
+          <>
+            {riwayat.some((r) => r.nonDefinitif) ? (
+              <Badge tone="aksen" title="Penugasan Plt/Plh menjadi input sub-indikator Substansi Riwayat Jabatan">
+                Ada penugasan Plt/Plh
+              </Badge>
+            ) : null}
+            <TombolEditor
+              jenis="riwayatJabatan"
+              pegawaiId={profil.pegawaiId}
+              pilihanJabatan={pilihanJabatan}
+            />
+          </>
         }
       />
 
+      </div>
+
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
       {riwayat.length === 0 ? (
         <p className="mt-3 text-[13px] text-text-muted">Belum ada riwayat jabatan tercatat.</p>
       ) : (
@@ -537,6 +692,23 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
                 }
               />
               <div className="min-w-0 flex-1">
+                <span className="float-right ml-2">
+                  <TombolEditor
+                    jenis="riwayatJabatan"
+                    pegawaiId={profil.pegawaiId}
+                    pilihanJabatan={pilihanJabatan}
+                    baris={{
+                      id: r.id,
+                      jabatanNamaMentah: r.namaMentah,
+                      jabatanId: r.jabatanId,
+                      jenisPenugasan: r.jenisPenugasan,
+                      unitKerjaMentah: r.unitKerjaMentah,
+                      tanggalMulai: r.tanggalMulai,
+                      tanggalAkhir: r.tanggalAkhir,
+                      noSk: r.noSk,
+                    }}
+                  />
+                </span>
                 <p className="text-[13px] leading-snug font-medium text-text">
                   {r.namaJabatan ?? r.namaMentah}
                   {r.nonDefinitif ? (
@@ -564,6 +736,7 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
           ))}
         </ol>
       )}
+      </div>
     </Panel>
   )
 }
@@ -583,14 +756,19 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
   ].filter(Boolean) as string[]
 
   return (
-    <Panel>
+    <Panel className="flex flex-col xl:min-h-0 xl:flex-1">
+      <div className="shrink-0">
       <PanelHeader
         judul="Riwayat pendidikan"
         deskripsi={
           riwayat.length === 0 ? undefined : `${formatAngka(riwayat.length)} jenjang tercatat`
         }
+        aksi={<TombolEditor jenis="pendidikan" pegawaiId={profil.pegawaiId} />}
       />
 
+      </div>
+
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
       {riwayat.length === 0 ? (
         <p className="mt-3 text-[13px] text-text-muted">
           Belum ada riwayat pendidikan. Indikator Tingkat Pendidikan Formal & Kesesuaian Bidang Ilmu
@@ -612,6 +790,23 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-1">
+                    {/* Pemetaan kunci antarmuka → kunci formulir ditulis EKSPLISIT.
+                        Meneruskan `r` apa adanya akan diam-diam gagal: antarmukanya
+                        memakai `jenjang` sementara formulirnya `jenjangPendidikan`,
+                        jadi pemilihnya terbuka pada pilihan pertama dan menyimpan
+                        akan MENGUBAH jenjang yang tidak disentuh siapa pun. */}
+                    <TombolEditor
+                      jenis="pendidikan"
+                      pegawaiId={profil.pegawaiId}
+                      baris={{
+                        id: r.id,
+                        jenjangPendidikan: r.jenjang,
+                        bidangStudi: r.bidangStudi,
+                        namaSekolah: r.namaSekolah,
+                        tahunLulus: r.tahunLulus,
+                        noPertekBkn: r.noPertekBkn,
+                      }}
+                    />
                     {adaIjazah ? (
                       r.urlIjazah ? (
                         <Badge tone="sukses">Ijazah</Badge>
@@ -634,18 +829,19 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
             <p className="mt-3 border-t border-border pt-3 text-[11px] text-text-subtle">
               Kolom {kolomDisembunyikan.join(', ')} disembunyikan karena belum ada satu pun data
               arsipnya. Unggah arsip dilakukan dari halaman Master Data
-              <LabelFase fase={4} />
             </p>
           ) : null}
         </>
       )}
+      </div>
     </Panel>
   )
 }
 
 async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
   return (
-    <Panel>
+    <Panel className="flex flex-col xl:min-h-0 xl:flex-1">
+      <div className="shrink-0">
       <PanelHeader
         judul="Riwayat diklat & sertifikasi"
         deskripsi={
@@ -658,8 +854,12 @@ async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
               // dikategorikan — dan itu justru keadaan yang paling sering terjadi.
               `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · indikator Pengembangan Kompetensi memakai kategori hasil validasi, bukan daftar ini`
         }
+        aksi={<TombolEditor jenis="diklat" pegawaiId={profil.pegawaiId} />}
       />
-      <DaftarDiklat diklat={profil.riwayatDiklat} />
+      </div>
+      <div className="min-h-0 flex-1 xl:overflow-y-auto">
+        <DaftarDiklat diklat={profil.riwayatDiklat} pegawaiId={profil.pegawaiId} />
+      </div>
     </Panel>
   )
 }
@@ -694,7 +894,6 @@ async function BagianIntegritas({ profil }: { profil: ProfilPegawai }) {
             disiplin&rdquo; (skor 100) — itu <strong className="font-medium">asumsi</strong>, bukan
             fakta yang sudah diverifikasi. Verifikasi manual dilakukan di halaman Data Hukuman
             Disiplin
-            <LabelFase fase={4} />
           </p>
         </div>
       ) : (
@@ -730,9 +929,17 @@ async function BagianIntegritas({ profil }: { profil: ProfilPegawai }) {
 
 // ---------------------------------------------------------------------------
 
-function PanelMemuat({ judul, baris }: { judul: string; baris: number }) {
+function PanelMemuat({
+  judul,
+  baris,
+  className,
+}: {
+  judul: string
+  baris: number
+  className?: string
+}) {
   return (
-    <Panel>
+    <Panel className={className}>
       <Skeleton className="h-4 w-48" />
       <Skeleton className="mt-2 h-3 w-full max-w-lg" />
       <div className="mt-4">
@@ -743,9 +950,9 @@ function PanelMemuat({ judul, baris }: { judul: string; baris: number }) {
   )
 }
 
-function PanelChartMemuat({ judul }: { judul: string }) {
+function PanelChartMemuat({ judul, className }: { judul: string; className?: string }) {
   return (
-    <Panel>
+    <Panel className={className}>
       <Skeleton className="h-4 w-40" />
       <Skeleton className="mt-2 h-3 w-full max-w-md" />
       <div className="mt-3">

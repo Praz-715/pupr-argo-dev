@@ -352,13 +352,24 @@ const PEMERIKSAAN: Periksa[] = [
   },
 ]
 
-/** Selisih kotak_9 terhadap nilai dari sistem sumber — informasi, bukan kegagalan. */
+/**
+ * Selisih kotak_9 terhadap nilai dari sistem sumber — informasi, bukan kegagalan.
+ *
+ * Syaratnya **menyebut kondisinya, bukan nama orangnya**. Versi lama menyaring
+ * `nama_lengkap IN ('Tasya','Tina')` — dua nama benih yang kebetulan jadi kasusnya
+ * saat itu. Begitu nama diselaraskan dengan eNom (keduanya kini "Annisa Tasya
+ * Azhari, S.Kom., M.M." & "Diana Valentina, S.Sos."), kueri itu menjawab nol
+ * baris dan catatannya berhenti melaporkan apa pun — tanpa gagal, jadi tidak ada
+ * yang memberi tahu. Bentuk sekarang menemukan SETIAP asesmen yang kotak
+ * sumbernya berbeda dari hasil hitung, jadi ia juga menangkap kasus yang belum
+ * ada saat baris ini ditulis.
+ */
 const SQL_SELISIH_SUMBER = `
-  SELECT p.nama_lengkap, a.tahun_asesmen, a.kotak_9, a.nilai_kinerja_y, a.nilai_potensial_x
+  SELECT p.nama_lengkap, a.tahun_asesmen, a.kotak_9, a.kotak_9_sumber,
+         a.nilai_kinerja_y, a.nilai_potensial_x
   FROM asesmen_talenta a JOIN pegawai p ON p.id = a.pegawai_id
-  WHERE a.sumber_sync = 'recalculated' AND a.pegawai_id IN (
-    SELECT pegawai_id FROM asesmen_talenta
-  ) AND p.nama_lengkap IN ('Tasya','Tina')
+  WHERE a.kotak_9_sumber IS NOT NULL AND a.kotak_9_sumber <> a.kotak_9
+  ORDER BY p.nama_lengkap
 `
 
 async function main() {
@@ -400,7 +411,7 @@ async function main() {
   console.log(
     `\nCatatan: ${daftarSelisih.length} baris asesmen dari data contoh e-Nominasi punya kotak_9 sumber`,
   )
-  console.log('yang tidak bisa direproduksi dengan ambang 60/80 (kasus Tasya & Tina) — sengaja')
+  console.log('yang tidak bisa direproduksi dengan ambang 60/80 — sengaja')
   console.log('dibiarkan sebagai isi Antrian Pembersihan Data, bukan kegagalan uji.')
 
   console.log(`\nRingkasan: ${PEMERIKSAAN.length - gagal}/${PEMERIKSAAN.length} pemeriksaan lulus`)

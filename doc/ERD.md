@@ -1,7 +1,7 @@
 # ERD — Sistem Informasi Manajemen Talenta DJBK
 
 **Target DBMS:** MySQL 8.x
-**Status:** skema sudah **diimplementasikan** di `pupr_dev`. DDL & data: [`sql/001_schema.sql`](sql/001_schema.sql) → [`012_auth.sql`](sql/012_auth.sql), dijalankan berurutan. Kolom yang ditambahkan setelah `001`:
+**Status:** skema sudah **diimplementasikan** di `pupr_dev_v2` (nilai `DATABASE_NAME` di `.env.local`; `pupr_dev` masih ada sebagai DB lama). DDL & data: [`sql/001_schema.sql`](sql/001_schema.sql) → [`015_syarat_diklat_target.sql`](sql/015_syarat_diklat_target.sql), dijalankan berurutan. Tabel & kolom yang ditambahkan setelah `001`:
 
 | Berkas | Tambahan | Alasan |
 |---|---|---|
@@ -10,10 +10,15 @@
 | `010_kunci_indikator.sql` | `rubrik_indikator.kunci_sistem`, `match_score` UNIQUE (pegawai_id, jabatan_target_id) | begitu rubrik bisa diedit (Fase 5), nama indikator jadi milik pengguna — jembatan data→indikator tidak boleh lagi bergantung pada pencocokan nama. Kunci unik menegakkan relasi "paling banyak satu skor per pasangan" yang selama ini hanya dijaga oleh cara pengisiannya |
 | `011_notifikasi.sql` | tabel `notifikasi` (U-7) + pembetulan keadaan workflow di data dev | Alur approval tanpa inbox menggantung: unit mengajukan lalu tidak tahu apa-apa sampai seseorang kebetulan membuka halaman. Pembetulan datanya perlu karena `007_recompute` menyisipkan nominasi tanpa memperbarui `talent_pool.status` yang berpasangan dengannya |
 | `012_auth.sql` | tabel `sesi`, `pengaturan_sistem`, `permintaan_reset_password`; kolom `users.harus_ganti_sandi`/`password_diubah_pada`/`gagal_masuk_beruntun`/`terkunci_sampai`; indeks waktu di `audit_log` | Fase 7 mengganti identitas dev dengan sesi asli. Sesi disimpan di DB (bukan JWT) karena dua tuntutan Fase 7 justru menuntut keadaan server: **pencabutan harus seketika** saat akun dinonaktifkan, dan **timeout idle** butuh penanda "terakhir aktif". `pengaturan_sistem` memindahkan masa berlaku asesmen dari konstanta kode ke parameter — PRD §10.11 memang menyebutnya begitu |
+| `013_token_api_dev.sql` | *(tidak menambah kolom — data saja)* | Membetulkan `api_token.token_hash` yang di `002` ternyata placeholder, bukan SHA-256 dari apa pun, sehingga tidak ada satu pun token dev yang bisa memanggil `/api/v1`. Dihasilkan program (`npm run db:gen-token-api`) |
+| `014_kategori_riwayat.sql` | tabel `master_kategori_riwayat_diklat` & `pemetaan_diklat`; kolom `riwayat_jabatan.jenis_penugasan`/`relevan_substansi`/`divalidasi_oleh`/`divalidasi_pada`; `pegawai.riwayat_divalidasi_oleh`/`_pada`/`riwayat_catatan_validasi` | Dua indikator rubrik sebelumnya disimpulkan dari **teks bebas** (pencocokan kata kunci diklat, regex Plt/Plh). Keduanya menghasilkan angka wajar untuk data rapi dan diam-diam salah untuk data yang tidak — lihat §1 poin 8. Kategorinya kini datang dari kamus + validasi manusia |
+| `015_syarat_diklat_target.sql` | tabel `jabatan_target_syarat_diklat` | `jabatan_target.kata_kunci_relevansi` dipakai bersama oleh **dua** indikator berbeda (Kesesuaian Bidang Ilmu & Pengembangan Kompetensi), sehingga menambah kata kunci untuk salah satunya diam-diam mengubah yang lain. Syarat diklat pindah jadi relasi ke kategori; kolom lama tinggal melayani bidang ilmu |
 
 **Sumber rancangan:** [`Data DTM.json`](Data%20DTM.json) & CSV turunannya (data contoh 9 pegawai), [`KERANGKA TALENT POOL.md`](KERANGKA%20TALENT%20POOL.md) (rubrik penilaian), [`BLUEPRINT READINESS - MODUL MANAJEMEN TALENTA.md`](BLUEPRINT%20READINESS%20-%20MODUL%20MANAJEMEN%20TALENTA.md) (gap data & modul yang akan dibangun), [`manajemen talenta 27 juli utk tim SIM.md`](manajemen%20talenta%2027%20juli%20utk%20tim%20SIM.md) (roadmap & stakeholder).
 
-> Skema di dokumen ini **sudah diimplementasikan** dan berjalan di `pupr_dev` (**31 tabel**). Sumber kebenarannya adalah berkas SQL bernomor di [`sql/`](sql/), dijalankan berurutan `001` → `012`; tipe TypeScript **diturunkan dari database** lewat `drizzle-kit pull`, bukan ditulis ulang manual. Kalau struktur di dokumen ini berubah, ubah juga berkas SQL-nya — jangan biarkan keduanya lepas.
+> Skema di dokumen ini **sudah diimplementasikan** dan berjalan di `pupr_dev_v2` (**34 tabel**). Sumber kebenarannya adalah berkas SQL bernomor di [`sql/`](sql/), dijalankan berurutan `001` → `015`; tipe TypeScript **diturunkan dari database** lewat `drizzle-kit pull`, bukan ditulis ulang manual. Kalau struktur di dokumen ini berubah, ubah juga berkas SQL-nya — jangan biarkan keduanya lepas.
+>
+> **Nilai enum di diagram ditulis PERSIS seperti di database.** Beberapa di antaranya berisi spasi dan Title Case (`'Sangat Baik'`, `'Berlaku'`, `'Tidak Pernah'`), bukan `SCREAMING_SNAKE` seperti enum lain di skema yang sama. Ketidakseragaman itu nyata dan berasal dari data sumber; menuliskannya "dirapikan" di dokumen ini akan membuat siapa pun yang menyalinnya ke kueri mendapat **nol baris tanpa galat** — MySQL tidak mengeluh untuk perbandingan enum yang tidak pernah cocok.
 
 ---
 
@@ -30,9 +35,21 @@
 5. Semua tabel riwayat (`riwayat_jabatan`, `riwayat_pendidikan`) tetap simpan **teks mentah** dari sumber (karena Blueprint menandai "Riwayat Jabatan Terstruktur" masih 🟡 sebagian), plus kolom FK opsional ke master setelah data dibersihkan/dipetakan.
 6. **Riwayat Diklat/Sertifikasi tidak dibuat tabel terpisah** — datanya cuma daftar nama diklat per pegawai tanpa kolom yang benar-benar unik/bisa direlasikan (lokasi, TMT, arsip mayoritas kosong di data contoh), jadi disimpan sebagai kolom `JSON` langsung di `pegawai.riwayat_diklat` (lihat §2.1). Kalau nanti kebutuhan berkembang (perlu query "siapa saja yang ikut diklat X", atau field lokasi/TMT/arsip mulai konsisten terisi), baru layak dipecah jadi tabel relasional lagi.
 
-   > **Kebutuhan itu sudah datang (`doc/sql/014`), tapi jalan keluarnya BUKAN memecah JSON-nya.** Yang dibutuhkan adalah menjawab "diklat ini termasuk kategori apa", dan itu properti **nama diklat**, bukan properti pasangan (pegawai × diklat). Jadi yang dibuat `pemetaan_diklat` — **kamus** yang dikunci pada nama diklat ternormalisasi — sementara `pegawai.riwayat_diklat` tetap JSON apa adanya dari sumber. Bedanya besar dalam praktik: di `pupr_dev` 40 pegawai punya **264 entri** diklat tetapi hanya **182 nama** yang benar-benar berbeda; memecahnya per baris berarti orang yang sama memutuskan "Diklat PIM IV itu Manajerial" berulang kali. Memecah jadi tabel per-baris tetap layak nanti, tapi alasannya harus yang lain (lokasi/TMT/arsip mulai terisi) — bukan kategorisasi.
+   > **Kebutuhan itu sudah datang (`doc/sql/014`), tapi jalan keluarnya BUKAN memecah JSON-nya.** Yang dibutuhkan adalah menjawab "diklat ini termasuk kategori apa", dan itu properti **nama diklat**, bukan properti pasangan (pegawai × diklat). Jadi yang dibuat `pemetaan_diklat` — **kamus** yang dikunci pada nama diklat ternormalisasi — sementara `pegawai.riwayat_diklat` tetap JSON apa adanya dari sumber. Bedanya besar dalam praktik: di `pupr_dev_v2` **37 pegawai** (dari 43) punya **264 entri** diklat tetapi hanya **182 nama** yang benar-benar berbeda; memecahnya per baris berarti orang yang sama memutuskan "Diklat PIM IV itu Manajerial" berulang kali. Memecah jadi tabel per-baris tetap layak nanti, tapi alasannya harus yang lain (lokasi/TMT/arsip mulai terisi) — bukan kategorisasi.
 
-7. **Kategori riwayat diambil dari kamus + validasi manusia, bukan dari pencocokan kata kunci** (`doc/sql/014`). Sebelumnya dua indikator rubrik disimpulkan dari teks bebas: Pengembangan Kompetensi mencocokkan `pegawai.riwayat_diklat` dengan `jabatan_target.kata_kunci_relevansi`, dan Substansi Riwayat Jabatan menguji `riwayat_jabatan.jabatan_nama_mentah` dengan regex Plt/Plh. Keduanya menghasilkan angka wajar untuk data rapi dan **diam-diam salah** untuk data yang tidak — terukur: dari 182 nama diklat nyata hanya **36 (20%)** cocok dengan pola kategori mana pun. Pencocokannya tetap ada, tapi statusnya turun jadi **usulan** yang wajib dikonfirmasi (`pemetaan_diklat.status`, `riwayat_jabatan.jenis_penugasan`), dan jejak siapa/kapan tersimpan. **Gagal tertutup:** yang belum divalidasi tidak dianggap relevan dan tidak dianggap Plt/Plh — arah sebaliknya menaikkan skor orang yang datanya paling berantakan.
+7. **Rantai `ON DELETE CASCADE` hanya boleh diandalkan SATU tingkat.** Pola FK di skema ini konsisten — `CASCADE` untuk kepemilikan (anak tak bermakna tanpa induk), `SET NULL` untuk jejak orang (`users`, supaya menghapus akun tidak menghapus riwayatnya), `NO ACTION` untuk master yang harus menahan penghapusan (`jabatan.unit_organisasi_id`, `users.role_id`, `nominasi.diajukan_oleh_unit_id`) — **tapi cascade yang lebih dalam dari satu tingkat tidak berjalan penuh di DB ini.** Terukur dengan replika rantai `jabatan_target → 3 rubrik_komponen → 9 rubrik_indikator → 45 rubrik_kategori_skor`: satu `DELETE FROM jabatan_target` hanya mengikuti cabang **pertama** dan menyisakan **8 indikator + 40 kategori** sebagai baris yatim; menghapus `rubrik_komponen` satu per satu lebih dulu bersih total.
+
+   Jejaknya ada di data dev, dan **kaidahnya eksak**: tiap `HAPUS jabatan_target` meninggalkan **8 `rubrik_indikator` + 25 `rubrik_kategori_skor`** yatim. Jadi angkanya bergerak mengikuti pemakaian — pada 11 Agustus 2026 tercatat 28 penghapusan di `audit_log` dan tepat 224 + 700 baris yatim (**88% isi kedua tabel itu**), dan bertambah 8 + 25 lagi setiap kali sebuah jabatan target dihapus. Cara memeriksanya kapan pun:
+
+   ```sql
+   SELECT COUNT(*) FROM rubrik_indikator i
+     LEFT JOIN rubrik_komponen k ON k.id = i.rubrik_komponen_id
+   WHERE k.id IS NULL;
+   ```
+
+   Akibatnya untuk penulis kode: **jalur hapus wajib menghapus tingkat perantara secara eksplisit**, jangan mengandalkan cascade dari puncak. Yang terdampak bukan cuma rubrik — `jabatan_target → match_score → match_score_detail` dan `jabatan_target → talent_pool → nominasi → approval_log` berbentuk sama. Yatimnya tidak membuat angka di UI salah (semua kueri join lewat induknya), jadi ia tidak akan pernah muncul sebagai bug; ia hanya menumpuk.
+
+8. **Kategori riwayat diambil dari kamus + validasi manusia, bukan dari pencocokan kata kunci** (`doc/sql/014`). Sebelumnya dua indikator rubrik disimpulkan dari teks bebas: Pengembangan Kompetensi mencocokkan `pegawai.riwayat_diklat` dengan `jabatan_target.kata_kunci_relevansi`, dan Substansi Riwayat Jabatan menguji `riwayat_jabatan.jabatan_nama_mentah` dengan regex Plt/Plh. Keduanya menghasilkan angka wajar untuk data rapi dan **diam-diam salah** untuk data yang tidak — terukur: dari 182 nama diklat nyata hanya **36 (20%)** cocok dengan pola kategori mana pun. Pencocokannya tetap ada, tapi statusnya turun jadi **usulan** yang wajib dikonfirmasi (`pemetaan_diklat.status`, `riwayat_jabatan.jenis_penugasan`), dan jejak siapa/kapan tersimpan. **Gagal tertutup:** yang belum divalidasi tidak dianggap relevan dan tidak dianggap Plt/Plh — arah sebaliknya menaikkan skor orang yang datanya paling berantakan.
 
 ---
 
@@ -50,6 +67,8 @@ erDiagram
     pegawai ||--o{ kinerja_periode : punya
     pegawai ||--o{ hukuman_disiplin : punya
     riwayat_jabatan }o--o| jabatan : "dipetakan ke (nullable)"
+    master_kategori_riwayat_diklat ||--o{ master_kategori_riwayat_diklat : "sub-kategori dari"
+    master_kategori_riwayat_diklat ||--o{ pemetaan_diklat : mengkategorikan
 
     unit_organisasi {
         bigint id PK
@@ -83,9 +102,12 @@ erDiagram
         varchar bidang_studi_terakhir
         enum tingkat_pendidikan "SLTA,D3,S1_D4,S2,S3"
         enum status_aktif "AKTIF,PENSIUN,MUTASI_KELUAR,NONAKTIF"
-        varchar sumber_sinkron "eHRM,eNominasi,manual"
+        enum sumber_sinkron "eHRM,eNominasi,manual"
         datetime last_synced_at
         json riwayat_diklat "list nama diklat dari eHRM, tidak dinormalisasi"
+        bigint riwayat_divalidasi_oleh FK "nullable, pernyataan sudah diperiksa"
+        datetime riwayat_divalidasi_pada
+        varchar riwayat_catatan_validasi
     }
     riwayat_jabatan {
         bigint id PK
@@ -93,11 +115,37 @@ erDiagram
         smallint urutan
         varchar jabatan_nama_mentah "teks asli dari eHRM"
         bigint jabatan_id FK "nullable, hasil pemetaan"
+        enum jenis_penugasan "DEFINITIF,PLT,PLH - NULL = belum divalidasi"
+        boolean relevan_substansi "nullable, keputusan manusia"
         varchar unit_kerja_mentah
         date tanggal_mulai
         date tanggal_akhir
         varchar no_sk
         varchar url_arsip_digital
+        bigint divalidasi_oleh FK
+        datetime divalidasi_pada
+    }
+    master_kategori_riwayat_diklat {
+        bigint id PK
+        varchar kode UK "pengenal stabil, nama boleh diubah pengguna"
+        varchar nama
+        enum jenis "MANAJERIAL,TEKNIS,FUNGSIONAL,SOSIAL_KULTURAL"
+        bigint parent_id FK "nullable, hierarki kategori"
+        enum setara_jenjang "II,III,IV - utk syarat pelatihan per eselon"
+        json pola_cocok "kata kunci pengUSUL, bukan penentu"
+        varchar keterangan
+        smallint urutan
+        boolean aktif
+    }
+    pemetaan_diklat {
+        bigint id PK
+        varchar nama_normal UK "hasil normalisasiNamaDiklat(), kunci pencocokan"
+        varchar nama_mentah "satu contoh ejaan asli utk pemeriksa"
+        bigint kategori_id FK "nullable, NULL = diperiksa dan TIDAK berkategori"
+        enum status "USULAN,TERVALIDASI,DITOLAK"
+        bigint divalidasi_oleh FK
+        datetime divalidasi_pada
+        varchar catatan
     }
     riwayat_pendidikan {
         bigint id PK
@@ -119,14 +167,14 @@ erDiagram
         enum periode_skp "TW1,TW2,TW3,TAHUNAN"
         decimal nilai_kinerja
         decimal nilai_perilaku
-        enum predikat "Sangat_Baik,Baik,Butuh_Perbaikan,Kurang,Sangat_Kurang"
+        enum predikat "Sangat Baik,Baik,Butuh Perbaikan,Kurang,Sangat Kurang"
         varchar sumber_sync "eKinerja"
         datetime synced_at
     }
     hukuman_disiplin {
         bigint id PK
         bigint pegawai_id FK
-        enum tingkat_hukuman "TIDAK_PERNAH,RINGAN,SEDANG,BERAT,SEDANG_MENJALANI"
+        enum tingkat_hukuman "Tidak Pernah,Ringan,Sedang,Berat,Sedang Menjalani"
         date tanggal_sk
         varchar no_sk
         text keterangan
@@ -143,6 +191,8 @@ erDiagram
     jabatan_target ||--o{ jabatan_target_anggota : mencakup
     jabatan ||--o{ jabatan_target_anggota : "termasuk dalam"
     jabatan_target ||--o{ jabatan_target_persyaratan : punya
+    jabatan_target ||--o{ jabatan_target_syarat_diklat : menuntut
+    master_kategori_riwayat_diklat ||--o{ jabatan_target_syarat_diklat : "dirujuk oleh"
     jabatan_target ||--o{ rubrik_komponen : punya
     rubrik_komponen ||--o{ rubrik_indikator : punya
     rubrik_indikator ||--o{ rubrik_indikator : "sub-indikator dari"
@@ -168,6 +218,13 @@ erDiagram
         enum jenis_syarat "PENDIDIKAN_MIN,BIDANG_ILMU,PENGALAMAN_MIN,LAINNYA"
         text deskripsi
         varchar nilai_minimal
+    }
+    jabatan_target_syarat_diklat {
+        bigint id PK
+        bigint jabatan_target_id FK
+        bigint kategori_id FK "ke master_kategori_riwayat_diklat"
+        boolean wajib "BELUM dipakai perhitungan, lihat §3.2"
+        varchar keterangan
     }
     rubrik_komponen {
         bigint id PK
@@ -218,13 +275,14 @@ erDiagram
     unit_organisasi ||--o{ nominasi : mengajukan
     nominasi ||--o{ approval_log : dicatat
     talent_pool ||--o{ rencana_pengembangan : punya
+    users ||--o{ notifikasi : menerima
 
     asesmen_talenta {
         bigint id PK
         bigint pegawai_id FK
         year tahun_asesmen
         varchar jenis_asesmen "Administrator,Pengawas,JPT Pertama,JFT Muda,dst"
-        enum status_asesmen "BERLAKU,EXPIRED,DRAFT"
+        enum status_asesmen "Berlaku,Expired,Draft"
         decimal nilai_kinerja_y
         decimal nilai_potensial_x
         decimal potkom
@@ -233,8 +291,8 @@ erDiagram
         tinyint kotak_9 "1-9, SELALU hasil hitung"
         tinyint kotak_9_sumber "nilai apa adanya dari sumber, pembanding kualitas data"
         year tahun_kinerja
-        enum rating_kinerja "Sangat_Baik,Baik,Butuh_Perbaikan,Kurang,Sangat_Kurang"
-        varchar sumber_sync "eNominasi,manual,recalculated"
+        enum rating_kinerja "Sangat Baik,Baik,Butuh Perbaikan,Kurang,Sangat Kurang"
+        enum sumber_sync "eNominasi,manual,recalculated"
         datetime updated_at
     }
     match_score {
@@ -303,7 +361,23 @@ erDiagram
         enum status "DIRENCANAKAN,BERJALAN,SELESAI"
         bigint dibuat_oleh FK
     }
+    notifikasi {
+        bigint id PK
+        bigint user_id FK "penerima; disebar per pengguna, bukan per peran"
+        varchar peran_tujuan "keterangan saja, BUKAN alamat pengiriman"
+        enum jenis "NOMINASI_MASUK,NOMINASI_REVISI,NOMINASI_DISETUJUI,NOMINASI_DITOLAK,MENUNGGU_PENETAPAN,SUKSESOR_DITETAPKAN,PENETAPAN_DIBATALKAN"
+        varchar judul
+        text pesan
+        varchar tautan "path internal, mis. /nominasi/12"
+        varchar entitas "nama tabel seperti di ERD - rujukan longgar, bukan FK"
+        bigint entitas_id
+        datetime dibaca_pada
+        bigint dibuat_oleh FK "pengguna yang tindakannya memicu"
+        datetime created_at
+    }
 ```
+
+> `notifikasi` **tidak punya FK ke `nominasi`/`talent_pool`** — satu-satunya FK-nya ke `users` (penerima, `CASCADE`) dan `users` (pemicu, `SET NULL`). Rujukan ke entitas yang memicunya longgar lewat pasangan `entitas` + `entitas_id` berindeks, pola yang sama dengan `audit_log`. Konsekuensinya patut dipertahankan: satu baris notifikasi tetap terbaca setelah nominasinya dihapus, sedangkan FK `CASCADE` akan melenyapkan kabar "nominasi Anda ditolak" justru ketika penerimanya belum membacanya. Harganya, rujukan itu **tidak dijaga database** — `entitas_id` bisa menunjuk baris yang sudah tidak ada, jadi pembacanya wajib menyiapkan tautan yang menjawab 404.
 
 ### 2.4 Sistem, Keamanan & Integrasi API
 
@@ -322,7 +396,7 @@ erDiagram
 
     roles {
         bigint id PK
-        varchar nama_role UK "Super Admin,Admin Talenta DJBK,Verifikator Kepegawaian,Pimpinan Unit,Pimpinan DJBK,Viewer"
+        varchar nama_role UK "5 baris di DB: Super Admin,Admin Talenta,Pengelola Unit,Pimpinan,Viewer"
         text deskripsi
     }
     users {
@@ -474,7 +548,7 @@ erDiagram
 
 | Tabel | Fungsi | Catatan |
 |---|---|---|
-| `roles`, `users` | Pengguna internal & peran | Peran mengikuti Tim Kerja di `manajemen talenta...md` §07 (Champion, Core Team, dst) — dipetakan ke role sistem, lihat PRD. Kolom penghambat tebak-sandi (`gagal_masuk_beruntun`, `terkunci_sampai`) sengaja **di baris pengguna**, bukan di memori proses: Next.js bisa berjalan lebih dari satu instans, dan penghitung per proses berarti batasnya terkalikan jumlah instans tanpa ada yang menyadarinya. |
+| `roles`, `users` | Pengguna internal & peran | **Isi `roles` di DB ada 5**: Super Admin · Admin Talenta · Pengelola Unit · Pimpinan · Viewer. Diagram §2.4 sempat menuliskan enam nama lain (*Admin Talenta DJBK*, *Verifikator Kepegawaian*, *Pimpinan Unit*, *Pimpinan DJBK*) — itu penamaan rancangan awal yang tidak pernah masuk DB, dan menyalinnya ke kode gerbang peran akan menghasilkan pemeriksaan yang tidak pernah cocok. Peran mengikuti Tim Kerja di `manajemen talenta...md` §07 (Champion, Core Team, dst) — dipetakan ke role sistem, lihat PRD. Kolom penghambat tebak-sandi (`gagal_masuk_beruntun`, `terkunci_sampai`) sengaja **di baris pengguna**, bukan di memori proses: Next.js bisa berjalan lebih dari satu instans, dan penghitung per proses berarti batasnya terkalikan jumlah instans tanpa ada yang menyadarinya. |
 | `sesi` | Sesi login pengguna internal (Fase 7) | Sesi disimpan di DB, **bukan JWT**. Alasannya dua hal yang justru jadi inti Fase 7: (a) menonaktifkan pengguna harus memutus aksesnya **seketika** — dengan JWT satu-satunya cara adalah daftar-cabut di server, yang artinya sudah punya keadaan server; (b) timeout idle butuh penanda "terakhir aktif" yang tidak bisa dibawa token yang tidak diperbarui. Token disimpan sebagai **hash SHA-256** (bukan bcrypt: isinya 256 bit acak, tidak ada yang bisa ditebak, jadi fungsi lambat hanya menambah biaya tiap permintaan). **Dua tenggat**, karena satu tenggat selalu bisa dilangkahi: `terakhir_aktif_pada` menutup sesi yang ditinggal, `kedaluwarsa_pada` menutup sesi yang dibiarkan hidup terus oleh tab yang memuat ulang sendiri. |
 | `pengaturan_sistem` | Parameter yang boleh diubah tanpa deploy | Halaman Pengaturan Sistem (PRD §6.10). Berisi masa berlaku asesmen yang PRD §10.11 sebut sebagai parameter tapi sampai Fase 6 hidup sebagai konstanta di `lib/scoring/konstanta.ts` — selama di sana, jawaban atas pertanyaan terbuka tidak bisa dijalankan tanpa menyentuh kode. Bentuknya kunci–nilai bertipe supaya menambah parameter tidak berarti `ALTER TABLE`. **Perubahannya tidak retroaktif**: `match_score` yang tersimpan tetap hasil hitungan dengan nilai lama sampai Hitung Ulang dijalankan. |
 | `permintaan_reset_password` | Permintaan Lupa Password (PRD §6.1) | Belum ada transport surel yang diputuskan, jadi **tidak ada tautan reset yang dikirim** — permintaannya dicatat lalu ditangani Super Admin secara manual, dan halamannya mengatakan itu apa adanya. Halaman yang menjanjikan "cek email Anda" padahal tidak ada surel yang dikirim adalah cacat termahal: penggunanya menunggu sesuatu yang tidak akan datang dan tidak melapor karena mengira itu salahnya sendiri. Permintaan dari email **tidak terdaftar** tetap disimpan (`user_id` NULL) — pola email asing yang berulang adalah percobaan mencacah akun. |
@@ -516,4 +590,8 @@ Poin bertanda ⚙️ **sudah punya default yang berjalan di kode** (dipilih supa
 
 ---
 
-*DDL MySQL sudah disusun 1:1 dari struktur di atas dan berjalan di `pupr_dev` — lihat [`sql/`](sql/). Perubahan skema berikutnya dilakukan sebagai berkas SQL bernomor baru (`008`, `009`, …), bukan dengan menyunting berkas yang sudah tereksekusi, supaya riwayatnya bisa dijalankan ulang dari nol.*
+*DDL MySQL sudah disusun 1:1 dari struktur di atas dan berjalan di `pupr_dev_v2` — lihat [`sql/`](sql/). Perubahan skema berikutnya dilakukan sebagai berkas SQL bernomor baru (`016`, `017`, …), bukan dengan menyunting berkas yang sudah tereksekusi, supaya riwayatnya bisa dijalankan ulang dari nol.*
+
+*Dokumen ini terakhir dicocokkan dengan isi `pupr_dev_v2` pada **11 Agustus 2026**: 34 tabel, **56 foreign key** (28 `CASCADE` · 25 `SET NULL` · 3 `NO ACTION`), dan seluruh nilai enum dibaca langsung dari `information_schema` — bukan disalin dari berkas DDL, supaya kolom yang pernah diubah `ALTER` ikut tertangkap. Pencocokannya dua arah: setiap tabel punya blok diagram, dan setiap kolom yang disebut diagram benar-benar ada.*
+
+*Satu hal yang **belum** selaras dan sengaja tidak disentuh dari sini karena ia kode, bukan skema: `lib/db/schema.ts` masih memuat **33** tabel — `jabatan_target_syarat_diklat` belum ikut karena `npm run db:pull` belum dijalankan setelah `015`.*

@@ -2,8 +2,8 @@ import { ArrowDown, ArrowRight, Briefcase, FileCheck2, Target, Users } from 'luc
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { LabelFase } from '@/components/layout/tautan-fase'
 import { CardSkeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/cn'
 import { ambilKartuRingkas } from '@/lib/kueri/dashboard'
 import { formatAngka, formatPersenNilai } from '@/lib/format'
 
@@ -26,108 +26,183 @@ export async function KartuRingkas() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Kartu
-        ikon={<Users className="size-4" />}
+        ikon={<Users className="size-5" />}
         label="Pegawai aktif"
         nilai={d.pegawaiAktif}
+        nada="biru"
         konteks={
+          // "Seluruh pegawai terdata" adalah klaim tentang SELURUH organisasi, dan
+          // itu tidak lagi benar begitu tampilan disaring (10 dari 43). Kalimatnya
+          // dibatasi ke apa yang benar-benar dihitung kartu ini.
           d.pegawaiAktif === d.pegawaiTotal
-            ? 'Seluruh pegawai terdata berstatus aktif'
+            ? 'Semua yang dihitung di sini berstatus aktif'
             : `dari ${formatAngka(d.pegawaiTotal)} pegawai terdata`
         }
         tautan={{ href: '/talenta', label: 'Buka Direktori Pegawai' }}
       />
 
       <Kartu
-        ikon={<Briefcase className="size-4" />}
+        ikon={<Briefcase className="size-5" />}
         label="Jabatan strategis kosong"
         nilai={d.jabatanStrategisKosong}
-        nada={d.jabatanStrategisKosong > 0 ? 'peringatan' : 'sukses'}
+        nada={d.jabatanStrategisKosong > 0 ? 'amber' : 'hijau'}
         konteks={
           d.jabatanStrategisKosong === 0
             ? 'Semua jabatan eselon I–III terisi'
             : `${formatPersenNilai(persenKosong)} dari ${formatAngka(d.jabatanStrategisTotal)} jabatan eselon I–III`
         }
-        tautan={{ href: '#jabatan-kosong', label: 'Lihat daftar' }}
+        // `/jabatan-target#jabatan-kosong`, BUKAN `#jabatan-kosong`: panelnya
+        // sudah tidak ada di dashboard sejak digantikan Peta Kinerja × Potensial.
+        tautan={{ href: '/jabatan-target#jabatan-kosong', label: 'Lihat daftar' }}
       />
 
       <Kartu
-        ikon={<Target className="size-4" />}
+        ikon={<Target className="size-5" />}
         label="Kandidat dalam talent pool"
         nilai={d.kandidatPool}
+        nada="teal"
         konteks={
           d.jabatanTargetAktif === 0
             ? 'Belum ada jabatan target aktif'
             : `tersebar di ${formatAngka(d.jabatanTargetAktif)} jabatan target aktif`
         }
-        faseTujuan={6}
+        // Kartu ini sempat jadi satu-satunya dari empat yang TIDAK bisa diklik —
+        // sisa dari pemangkasan dashboard, yang melepas widget Antrian Nominasi
+        // dan bersamanya anchor yang dulu ditunjuk kartu-kartu ini. Kartu yang
+        // terangkat saat hover tapi tidak menuju ke mana pun terbaca sebagai
+        // tautan rusak, bukan sebagai kartu yang memang bukan tautan.
+        tautan={{ href: '/talent-pool', label: 'Buka Talent Pool' }}
       />
 
       <Kartu
-        ikon={<FileCheck2 className="size-4" />}
-        label="Nominasi menunggu tindakan"
-        nilai={d.nominasiMenunggu}
-        nada={d.nominasiMenunggu > 0 ? 'peringatan' : 'netral'}
+        ikon={<FileCheck2 className="size-5" />}
+        // Dinamai "Daftar nominasi" (permintaan user, 12 Agu 2026), jadi ANGKANYA
+        // ikut berubah: yang dipajang sekarang seluruh nominasi tercatat, bukan
+        // subset yang menunggu tindakan. Kartu yang menaut ke daftar penuh sambil
+        // memajang angka sebagian membuat pembaca menghitung selisih yang tidak
+        // pernah dijelaskan. Yang menunggu tindakan turun ke baris konteks supaya
+        // informasinya tidak hilang.
+        label="Daftar nominasi"
+        nilai={d.nominasiTotal}
+        nada={d.nominasiMenunggu > 0 ? 'violet' : 'slate'}
         konteks={
           d.nominasiMenunggu === 0
-            ? 'Tidak ada nominasi yang menunggu — antrian bersih'
-            : `dari ${formatAngka(d.nominasiTotal)} nominasi tercatat`
+            ? 'Tidak ada yang menunggu tindakan — antrian bersih'
+            : `${formatAngka(d.nominasiMenunggu)} menunggu tindakan`
         }
-        tautan={{ href: '#antrian-nominasi', label: 'Lihat antrian' }}
+        // `/nominasi`, BUKAN `#antrian-nominasi`. Widget Antrian Nominasi
+        // dilepas dari dashboard, jadi anchornya sudah tidak ada di halaman ini
+        // dan tautannya akan jadi klik mati yang tidak menggerakkan apa pun
+        // (phase.md §5.2) — gejala yang terbaca sebagai "tautannya rusak".
+        tautan={{ href: '/nominasi', label: 'Buka Nominasi & Approval' }}
       />
     </div>
   )
 }
 
+/**
+ * Nada warna kartu — palet KATEGORIKAL, bukan status. "amber" di sini tidak
+ * berarti waspada dan "hijau" tidak berarti aman; nada dipilih supaya empat
+ * angka yang berdampingan bisa dibedakan sekilas. Karena itu makna angkanya
+ * tetap dijelaskan lewat teks konteks, tidak lewat warnanya.
+ *
+ * Nilainya didefinisikan di `globals.css` (`.nada-*`) supaya tiap nada punya
+ * pasangan tema gelap — versi v1 memakai `style` inline dan karena itu tidak
+ * bisa punya pasangan gelap sama sekali.
+ */
+const KELAS_NADA = {
+  biru: 'nada-biru',
+  hijau: 'nada-hijau',
+  amber: 'nada-amber',
+  merah: 'nada-merah',
+  violet: 'nada-violet',
+  teal: 'nada-teal',
+  slate: 'nada-slate',
+} as const
+
+type Nada = keyof typeof KELAS_NADA
+
+/**
+ * Bentuk kartunya diporting dari v1 `StatCard`: bar warna di tepi kiri, angka
+ * besar + chip ikon sebaris, label, lalu baris hint di bawah garis putus-putus.
+ *
+ * Tinggi kartu SERAGAM (`h-40` + label diklem 2 baris) karena keempatnya berdiri
+ * berdampingan: label yang panjangnya berbeda membuat baris konteks tiap kartu
+ * berhenti di ketinggian berbeda, dan mata membacanya sebagai empat kartu yang
+ * tidak sejajar. Hint tetap menyisakan tingginya walau kosong — alasan yang
+ * sama dengan `min-height: 1.4em` di v1.
+ */
 function Kartu({
   ikon,
   label,
   nilai,
   konteks,
-  nada = 'netral',
+  nada = 'biru',
   tautan,
-  faseTujuan,
 }: {
   ikon: ReactNode
   label: string
   nilai: number
   konteks: string
-  nada?: 'netral' | 'peringatan' | 'sukses'
+  nada?: Nada
   tautan?: { href: string; label: string }
-  faseTujuan?: number
 }) {
-  const warnaNilai =
-    nada === 'peringatan' ? 'text-warning' : nada === 'sukses' ? 'text-success' : 'text-text'
+  const isi = (
+    <div
+      className={cn(
+        KELAS_NADA[nada],
+        'relative flex h-40 flex-col overflow-hidden rounded-lg border border-border bg-surface py-4 pr-4 pl-5 shadow-kartu',
+        // Angkat hanya kalau kartunya benar-benar bisa diklik.
+        tautan ? 'kartu-naik' : '',
+      )}
+    >
+      <span aria-hidden className="sc-bar absolute inset-y-0 left-0 w-1.5" />
 
-  return (
-    <div className="flex flex-col rounded-lg border border-border bg-surface p-4">
-      <div className="flex items-center gap-2 text-text-subtle">
-        {ikon}
-        <span className="min-w-0 truncate text-[11px] font-medium tracking-wide uppercase">
-          {label}
+      <div className="flex items-start justify-between gap-3">
+        <p className="sc-fg tabular text-[2.125rem] leading-none font-bold">
+          {formatAngka(nilai)}
+        </p>
+        <span
+          aria-hidden
+          className="sc-chip flex size-11 shrink-0 items-center justify-center rounded-xl border"
+        >
+          {ikon}
         </span>
-        {faseTujuan ? <LabelFase fase={faseTujuan} /> : null}
       </div>
 
-      <p className={`tabular mt-3 text-3xl leading-none font-semibold ${warnaNilai}`}>
-        {formatAngka(nilai)}
-      </p>
+      {/* line-clamp-2 + flex-1: label memakai maksimal dua baris lalu mendorong
+          hint ke dasar kartu, jadi baris hint keempat kartu selalu sejajar. */}
+      <div className="mt-2.5 flex flex-1 items-start gap-1.5">
+        <span className="line-clamp-2 text-[13px] leading-snug font-semibold text-text">
+          {label}
+        </span>
+      </div>
 
-      <p className="mt-2 flex-1 text-[11px] leading-relaxed text-text-subtle">{konteks}</p>
-
-      {tautan ? (
-        <Link
-          href={tautan.href}
-          className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline"
-        >
-          {tautan.label}
-          {tautan.href.startsWith("#") ? (
-            <ArrowDown className="size-3" />
-          ) : (
-            <ArrowRight className="size-3" />
-          )}
-        </Link>
-      ) : null}
+      <div className="mt-2 min-h-[2.4em] border-t border-dashed border-border pt-2">
+        <p className="text-[11px] leading-relaxed text-text-subtle">{konteks}</p>
+        {tautan ? (
+          <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-accent group-hover:underline">
+            {tautan.label}
+            {tautan.href.startsWith('#') ? (
+              <ArrowDown className="size-3" />
+            ) : (
+              <ArrowRight className="size-3" />
+            )}
+          </span>
+        ) : null}
+      </div>
     </div>
+  )
+
+  // Seluruh kartu jadi target klik, bukan cuma tautan kecil di dasarnya —
+  // kartu yang terangkat saat hover tapi hanya bisa diklik di satu baris teks
+  // adalah cara tercepat membuat orang mengira tautannya rusak.
+  return tautan ? (
+    <Link href={tautan.href} className="group block focus-visible:outline-offset-4">
+      {isi}
+    </Link>
+  ) : (
+    isi
   )
 }
 
@@ -135,7 +210,9 @@ export function KartuRingkasSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <CardSkeleton key={i} />
+        // h-40 menyamai tinggi kartu jadinya — tanpa itu keempat kartu melompat
+        // tingginya begitu data masuk (phase.md §5.3: skeleton meniru bentuk akhir).
+        <CardSkeleton key={i} className="h-40" />
       ))}
     </div>
   )

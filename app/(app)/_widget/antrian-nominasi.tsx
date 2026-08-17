@@ -1,4 +1,3 @@
-import { LabelFase } from '@/components/layout/tautan-fase'
 import { Badge } from '@/components/ui/badge'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
@@ -110,7 +109,6 @@ export async function AntrianNominasi() {
 
       <p className="border-t border-border px-4 py-2.5 text-[11px] text-text-subtle">
         Verifikasi & keputusan dilakukan di halaman Nominasi
-        <LabelFase fase={6} />
       </p>
     </Panel>
   )

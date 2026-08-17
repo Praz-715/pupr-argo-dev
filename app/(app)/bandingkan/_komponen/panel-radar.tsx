@@ -35,7 +35,7 @@ export function PanelRadar({
         }
       />
 
-      <div className="mt-3 grid items-start gap-5 lg:grid-cols-2">
+      <div className="mt-3 grid gap-5 lg:grid-cols-2">
         <div>
           <RadarKandidat sumbu={sumbu} seri={seri} />
           <div className="mt-2">

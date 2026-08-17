@@ -109,6 +109,20 @@ Memetakan "Garis Besar Proses" di `BLUEPRINT READINESS...md` §5 ke aktor, halam
 
 ### 6.2 Dashboard
 
+> **Diubah 10 Agu 2026 atas permintaan pemilik produk — dashboard DIPANGKAS menjadi tiga panel:**
+> (1) empat KPI ringkas, (2) Sebaran Kotak 9 **beserta drill-down daftar pegawainya**, dan
+> (3) Jabatan Strategis Kosong. Widget lain yang dulu ada di halaman ini — Peta Kinerja ×
+> Potensial, Kesehatan Data, Tren Kinerja, Antrian Nominasi, dan Aktivitas Terakhir — **dilepas
+> dari dashboard**, bukan dihapus dari produk: komponennya utuh di
+> `app/(app)/_widget/` dan tinggal dipasang kembali kalau keputusannya berubah.
+>
+> Fungsinya tetap terjangkau lewat halamannya masing-masing (Peta Talenta · Kelengkapan Data ·
+> Nominasi & Approval · Audit Log), dan kartu KPI Nominasi kini menaut ke `/nominasi` — sebelumnya
+> ke anchor widget yang sudah tidak ada di halaman ini.
+>
+> Baris tabel di bawah **dipertahankan sebagai rancangan awal** supaya jejak keputusannya terbaca;
+> yang berlaku sekarang adalah catatan ini.
+
 | Halaman | Isi / Konten | Aksi Kunci | Role |
 |---|---|---|---|
 | **Dashboard Utama** | Widget: sebaran Kotak 9 (ringkas), jumlah talenta per jenjang/unit, daftar jabatan strategis kosong butuh suksesor, status kesehatan data (traffic light — reuse tabel "Status Readiness Data" jadi widget live: hijau/kuning/merah per kategori data), notifikasi nominasi menunggu persetujuan (untuk Pimpinan/Admin) | Klik-through ke modul terkait | Semua (konten menyesuaikan role: Pimpinan lihat ringkasan strategis, Admin lihat status data/antrian kerja) |

@@ -34,24 +34,36 @@ function tegaskan(kondisi, pesan) {
   return pesan
 }
 
-/** Judul kedelapan widget — dipakai sebagai penanda kehadiran. */
+/**
+ * Penanda kehadiran isi dashboard.
+ *
+ * Dashboard dipangkas atas permintaan user (10 Agu 2026) menjadi tiga panel:
+ * empat KPI, Sebaran Kotak 9 + drill-down, dan Jabatan Strategis Kosong.
+ * Lima widget PRD §6.2 lain (Peta Kinerja × Potensial, Kesehatan Data, Tren
+ * Kinerja, Antrian Nominasi, Aktivitas Terakhir) dilepas dari halaman ini —
+ * komponennya masih utuh di `_widget/`, jadi kalau dipasang kembali, tambahkan
+ * lagi namanya di sini.
+ */
 const WIDGET = [
   'Pegawai aktif',
   'Jabatan strategis kosong',
   'Kandidat dalam talent pool',
-  'Nominasi menunggu tindakan',
+  'Daftar nominasi',
   'Sebaran Kotak 9',
   'Peta Kinerja × Potensial',
-  'Kesehatan Data',
-  'Tren kinerja',
-  'Antrian nominasi',
-  'Aktivitas terakhir',
 ]
 
-/** Tunggu sampai widget terakhir (paling bawah) selesai streaming. */
+/**
+ * Tunggu sampai panel terakhir selesai streaming.
+ *
+ * Penandanya **Jabatan strategis kosong**, panel paling bawah sekarang. Dulu
+ * "Aktivitas terakhir" — dan penanda yang menunggu widget yang sudah tidak ada
+ * akan timeout 30 detik pada SETIAP langkah, lalu gagal dengan pesan yang
+ * seolah-olah soal widget lain.
+ */
 async function tungguDashboard(page) {
   await page.waitForFunction(
-    () => document.body.innerText.includes('Aktivitas terakhir'),
+    () => document.body.innerText.toLowerCase().includes('peta kinerja'),
     undefined,
     { timeout: 30000 },
   )
@@ -75,7 +87,7 @@ try {
     await page.goto(BASE, { waitUntil: 'networkidle' })
     await tungguDashboard(page)
 
-    await langkah(`tema ${tema}: kedelapan widget hadir & berisi`, async () => {
+    await langkah(`tema ${tema}: ketiga panel dashboard hadir & berisi`, async () => {
       // Dibandingkan case-insensitive: sebagian label memakai CSS `uppercase`,
       // sehingga innerText mengembalikannya dalam huruf kapital.
       const teks = (await page.locator('main').innerText()).toLowerCase()
@@ -101,20 +113,34 @@ try {
       return `9 sel, contoh: "${label}"`
     })
 
-    await langkah(`tema ${tema}: chart SVG benar-benar tergambar`, async () => {
-      const bubble = await page.locator('svg .recharts-scatter-symbol').count()
-      const garis = await page.locator('svg .recharts-line').count()
-      tegaskan(bubble > 0, 'peta talenta tidak menggambar gelembung')
-      tegaskan(garis >= 2, `tren kinerja hanya menggambar ${garis} garis, seharusnya 2`)
-      return `${bubble} gelembung, ${garis} garis tren`
+    /**
+     * Kotak 9 wajib CSS Grid, bukan chart — dan pemeriksaannya **dilingkupi ke
+     * panelnya**, bukan ke seluruh dashboard.
+     *
+     * Versi sebelumnya menuntut NOL `recharts-surface` di `main`, yang benar
+     * hanya selama dashboard tidak memuat satu pun widget chart. Begitu user
+     * meminta Peta Kinerja × Potensial dipasang di sini (12 Agu 2026) — dan itu
+     * memang scatter Recharts — asersi itu jadi merah tanpa ada yang rusak.
+     * Yang sebenarnya dijaga langkah ini: grid Kotak 9 digambar sebagai sel yang
+     * bisa diklik, BUKAN sebagai SVG. Jadi yang diperiksa isi panelnya sendiri.
+     */
+    await langkah(`tema ${tema}: grid Kotak 9 tergambar sebagai sel, bukan chart`, async () => {
+      const sel = await page.locator('a[aria-label^="Kotak "]').count()
+      tegaskan(sel === 9, `grid punya ${sel} sel, seharusnya 9`)
+      const panelKotak9 = page.locator('main section').filter({ hasText: 'Sebaran Kotak 9' }).last()
+      const chart = await panelKotak9.locator('svg.recharts-surface').count()
+      tegaskan(chart === 0, `panel Kotak 9 memuat ${chart} chart Recharts, seharusnya CSS Grid`)
+      return '9 sel CSS Grid · panel Kotak 9 bebas Recharts'
     })
 
-    await langkah(`tema ${tema}: setiap chart menyebut basis datanya`, async () => {
+    await langkah(`tema ${tema}: grid Kotak 9 menyebut basis datanya`, async () => {
       const teks = await page.locator('main').innerText()
       tegaskan(/\d+ pegawai · asesmen terbaru per orang/.test(teks), 'basis grid Kotak 9 tidak ada')
-      tegaskan(/dikelompokkan jadi \d+ titik/.test(teks), 'basis peta talenta tidak ada')
-      tegaskan(/punya data periodik/.test(teks), 'basis tren kinerja tidak ada')
-      return 'ketiga chart menyebut cakupan datanya'
+      // Warna sel sekarang membawa DUA informasi (band kualitas + kepadatan),
+      // jadi keterangannya wajib menjelaskan keduanya — kalau tidak, hue-nya
+      // jadi informasi tanpa penjelasan.
+      tegaskan(/band kualitas/i.test(teks), 'keterangan tidak menjelaskan arti warna band')
+      return 'basis data & arti warna keduanya disebut'
     })
 
     await langkah(`tema ${tema}: tanpa scroll horizontal`, async () => {
@@ -184,13 +210,19 @@ try {
       await langkah('kartu ringkas: tautan anchor menuju widget di halaman', async () => {
         await page.goto(BASE, { waitUntil: 'networkidle' })
         await tungguDashboard(page)
-        const anchor = page.locator('a[href="#jabatan-kosong"]').first()
-        tegaskan((await anchor.count()) > 0, 'tautan #jabatan-kosong tidak ada')
+        // Panel Jabatan Kosong tidak lagi di dashboard, jadi kartunya menaut
+        // KELUAR halaman. Yang diuji sekarang: tautannya menuju halaman+anchor
+        // yang benar, dan panel tujuannya benar-benar ada di sana — bukan cuma
+        // hrefnya terisi. Anchor di dalam halaman yang tinggal satu (Kotak 9)
+        // diuji lewat langkah drill-down.
+        const anchor = page.locator('a[href="/jabatan-target#jabatan-kosong"]').first()
+        tegaskan((await anchor.count()) > 0, 'tautan ke /jabatan-target#jabatan-kosong tidak ada')
         await anchor.click()
-        await page.waitForTimeout(500)
-        const terlihat = await page.locator('#jabatan-kosong').isVisible()
-        tegaskan(terlihat, 'panel tujuan anchor tidak terlihat')
-        return 'anchor kartu → panel Jabatan strategis kosong'
+        await page.waitForURL(/\/jabatan-target/, { timeout: 30000 })
+        await page.waitForTimeout(1500)
+        const terlihat = await page.locator('#jabatan-kosong').first().isVisible()
+        tegaskan(terlihat, 'panel Jabatan Kosong tidak ditemukan di halaman tujuan')
+        return 'kartu → /jabatan-target#jabatan-kosong, panelnya ada'
       })
 
       await langkah('tidak ada tautan mati di dashboard', async () => {

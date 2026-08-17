@@ -16,7 +16,7 @@ import {
   ambilTalentPool,
 } from '@/lib/kueri/suksesi'
 import { angkaPositif } from '@/lib/param'
-import { aksiTersedia, LABEL_POOL, type StatusPool } from '@/lib/workflow'
+import { aksiTersedia, type StatusPool } from '@/lib/workflow'
 import { PemilihTarget } from './_komponen/pemilih-target'
 import { TabelPool } from './_komponen/tabel-pool'
 import { TambahKandidat } from './_komponen/tambah-kandidat'
@@ -165,9 +165,9 @@ async function IsiPool({
           <p className="tabular mt-1.5 text-2xl leading-none font-semibold text-text">
             {formatAngka(ringkas.total)}
           </p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
-            {ringkas.perStatus.map((s) => `${LABEL_POOL[s.status]} ${s.jumlah}`).join(' · ')}
-          </p>
+          {/* Keempat sub-keterangan kartu DIHAPUS atas permintaan user
+              (12 Agu 2026). Rinciannya tetap terbaca di kolom Status & Giliran
+              tabel di bawah — yang hilang cuma pengulangannya di kartu. */}
         </Panel>
         <Panel>
           <p className="text-[11px] font-medium tracking-wide text-text-subtle uppercase">
@@ -175,11 +175,6 @@ async function IsiPool({
           </p>
           <p className="tabular mt-1.5 text-2xl leading-none font-semibold text-text">
             {formatAngka(ringkas.menungguTindakan)}
-          </p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
-            {ringkas.menungguTindakan === 0
-              ? 'Tidak ada yang tertahan di alur persetujuan.'
-              : 'Ada di antrian salah satu pihak — lihat kolom Giliran.'}
           </p>
         </Panel>
         <Panel>
@@ -191,11 +186,6 @@ async function IsiPool({
               ringkas.perStatus.find((s) => s.status === 'DITETAPKAN')?.jumlah ?? 0,
             )}
           </p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
-            <Link href="/rencana-pengembangan" className="text-accent hover:underline">
-              Susun rencana pengembangannya
-            </Link>
-          </p>
         </Panel>
         <Panel>
           <p className="text-[11px] font-medium tracking-wide text-text-subtle uppercase">
@@ -203,11 +193,6 @@ async function IsiPool({
           </p>
           <p className="tabular mt-1.5 text-2xl leading-none font-semibold text-text">
             {formatAngka(kandidatLuar.length)}
-          </p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
-            {kandidatLuar.length === 0
-              ? 'Semua kandidat yang lolos syarat sudah masuk daftar.'
-              : 'Bisa ditambahkan ke daftar suksesi.'}
           </p>
         </Panel>
       </div>

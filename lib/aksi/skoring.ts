@@ -268,10 +268,58 @@ export async function simpanNilaiManual(
     },
   })
 
+  /**
+   * Langsung hitung ulang, supaya skornya keluar seketika.
+   *
+   * Sebelumnya aksi ini berhenti setelah menyimpan nilai mentah dan menyuruh
+   * pengguna menjalankan Hitung Ulang sendiri. Yang terjadi di layar: nilai
+   * mentahnya muncul, `kategori_terpilih` tetap kosong, dan **skornya tetap
+   * 0,00** — terbaca sebagai simpan yang gagal separuh, bukan sebagai dua langkah
+   * yang memang terpisah.
+   *
+   * **Yang dihitung ulang adalah SELURUH jabatan target, bukan satu pegawai, dan
+   * itu bukan kemalasan.** Peringkat di talent pool ditentukan dengan
+   * membandingkan skor seluruh kandidat; memperbarui satu baris saja akan
+   * meninggalkan `talent_pool.ranking` yang basi tanpa satu pun galat — dan
+   * peringkat yang salah justru lebih berbahaya daripada skor yang belum
+   * diperbarui, karena ia terlihat wajar. Biayanya terukur: ~195 ms di dev,
+   * 2,5–4,4 detik pada 1.960 pegawai (`ukur:hitung-ulang`).
+   *
+   * Kalau perhitungannya gagal, nilai mentahnya TETAP tersimpan — dan pesannya
+   * mengatakan apa adanya alih-alih membiarkan orang menyangka simpanannya batal.
+   */
+  const ulang = await hitungUlangSkor(idTarget.data)
+
+  const sesudah = await kueriSatu<{ skor: string; kategori: string | null }>(
+    `SELECT d.skor, d.kategori_terpilih AS kategori
+       FROM match_score_detail d
+      WHERE d.match_score_id = ? AND d.rubrik_indikator_id = ?`,
+    [konteks.match_score_id, idIndikator.data],
+  )
+
   revalidatePath(`/jabatan-target/${idTarget.data}/kandidat`)
+  // Profil pegawai menampilkan rincian indikator yang baru berubah. Tanpa ini,
+  // tabelnya tetap memperlihatkan skor lama sampai halamannya dimuat ulang —
+  // gejala yang persis sama dengan "skornya tidak keluar".
+  const pegawai = await kueriSatu<{ nip: string }>(`SELECT nip FROM pegawai WHERE id = ?`, [
+    idPegawai.data,
+  ])
+  if (pegawai) revalidatePath(`/talenta/${pegawai.nip}`)
+
+  if (!ulang.ok) {
+    return berhasil(
+      undefined,
+      `Nilai manual untuk "${konteks.nama_indikator}" tersimpan, tapi perhitungan ulangnya gagal: ${ulang.pesan} Jalankan Hitung Ulang dari halaman jabatan target.`,
+    )
+  }
+
+  const skorBaru = sesudah === null ? null : Number(sesudah.skor)
   return berhasil(
     undefined,
-    `Nilai manual untuk "${konteks.nama_indikator}" disimpan. Skornya berubah setelah Hitung Ulang dijalankan.`,
+    skorBaru === null
+      ? `Nilai manual untuk "${konteks.nama_indikator}" disimpan & dihitung ulang.`
+      : `"${konteks.nama_indikator}" → skor ${skorBaru.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` +
+          `${sesudah?.kategori ? ` (${sesudah.kategori})` : ''}. Skor total & peringkat pool ikut diperbarui.`,
   )
 }
 

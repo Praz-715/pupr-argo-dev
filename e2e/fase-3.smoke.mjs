@@ -241,7 +241,21 @@ try {
       })
 
       await langkah('pencarian: menambahkan kandidat lewat hasil pencarian', async () => {
-        await page.fill('input[aria-label="Cari kandidat"]', 'bu')
+        // Kata kuncinya diambil dari DIREKTORI, bukan ditulis tetap. Versi lama
+        // mengetik 'bu' — cocok selama "Budi Santoso" & "Bambang Wijaya" ada di
+        // populasi, lalu memberi nol hasil begitu tampilan disaring ke pegawai
+        // yang ada di API eNominasi, dan gagal sebagai timeout 15 detik yang
+        // terbaca seperti pencariannya rusak. Uji yang mematok nama tertentu
+        // akan patah setiap kali populasinya berubah; mengambil dua huruf
+        // pertama dari baris pertama direktori menguji hal yang sama tanpa itu.
+        await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        const namaPertama = (
+          await page.locator('main table tbody tr td').first().innerText()
+        ).split('\n')[0]
+        const kunci = namaPertama.trim().slice(0, 2).toLowerCase()
+        tegaskan(kunci.length === 2, `direktori tidak memberi nama untuk kata kunci: "${namaPertama}"`)
+        await page.goto(`${BASE}/bandingkan`, { waitUntil: 'networkidle' })
+        await page.fill('input[aria-label="Cari kandidat"]', kunci)
         await page.waitForFunction(() => window.location.search.includes('cari='), undefined, {
           timeout: 15000,
         })
@@ -252,7 +266,7 @@ try {
         await page.waitForFunction(() => window.location.search.includes('nip='), undefined, {
           timeout: 15000,
         })
-        return `${jml} hasil, satu ditambahkan`
+        return `"${kunci}" → ${jml} hasil, satu ditambahkan`
       })
 
       await langkah('batas minimum: 1 kandidat belum menampilkan perbandingan', async () => {

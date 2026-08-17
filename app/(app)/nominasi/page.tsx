@@ -10,7 +10,14 @@ import { getCurrentUser } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 import { formatAngka, formatNip, formatSkor, formatTanggal } from '@/lib/format'
 import { ambilDaftarNominasi } from '@/lib/kueri/suksesi'
-import { LABEL_GILIRAN, LABEL_NOMINASI, type Giliran } from '@/lib/workflow'
+import {
+  LABEL_GILIRAN,
+  LABEL_TAHAP,
+  TAHAP_NOMINASI,
+  tahapNominasi,
+  type Giliran,
+  type TahapNominasi,
+} from '@/lib/workflow'
 import { FilterNominasi } from './_komponen/filter-nominasi'
 
 export const metadata = { title: 'Nominasi' }
@@ -18,6 +25,22 @@ export const metadata = { title: 'Nominasi' }
 type Cari = Promise<Record<string, string | undefined>>
 
 const GILIRAN_SAH: Giliran[] = ['UNIT', 'ADMIN_TALENTA', 'PIMPINAN', 'SELESAI']
+
+/**
+ * Nada lencana per tahap — kelimanya BERBEDA, tidak ada dua tahap sewarna.
+ *
+ * Sebelumnya nada dipetakan dari `nominasi.status`, yang hanya punya empat nilai
+ * dan menyatukan "menunggu approval" dengan "sudah ditetapkan" ke satu hijau.
+ * Warna tetap bukan satu-satunya pembeda: labelnya sendiri sudah menyebut
+ * tahapnya, dan kolom Giliran di sebelahnya menyebut pelakunya.
+ */
+const NADA_TAHAP: Record<TahapNominasi, 'netral' | 'aksen' | 'sukses' | 'peringatan' | 'bahaya'> = {
+  REVISI: 'peringatan',
+  VERIFIKASI: 'aksen',
+  APPROVAL: 'netral',
+  DITETAPKAN: 'sukses',
+  DITOLAK: 'bahaya',
+}
 
 /**
  * Antrian Nominasi (PRD §6.6 "Verifikasi Nominasi" + "Riwayat/Log Approval").
@@ -34,6 +57,9 @@ const GILIRAN_SAH: Giliran[] = ['UNIT', 'ADMIN_TALENTA', 'PIMPINAN', 'SELESAI']
 export default async function NominasiPage({ searchParams }: { searchParams: Cari }) {
   const p = await searchParams
   const pengguna = await getCurrentUser()
+  // Penyaring pindah dari `?giliran=` ke `?tahap=` — satu kosakata dengan kolom
+  // Status. `?giliran=` masih diterima supaya tautan/bookmark lama tidak mati.
+  const tahap = TAHAP_NOMINASI.find((t) => t === p.tahap)
   const giliran = GILIRAN_SAH.find((g) => g === p.giliran)
 
   return (
@@ -43,10 +69,15 @@ export default async function NominasiPage({ searchParams }: { searchParams: Car
         deskripsi="Pengajuan kandidat dari unit beserta tahap persetujuannya. Kolom Giliran menunjukkan siapa yang harus bertindak, dan lama menunggu dihitung sejak keputusan terakhir."
       />
 
-      <FilterNominasi giliran={giliran ?? null} peran={pengguna?.peran ?? null} />
+      <FilterNominasi
+        tahap={tahap ?? null}
+        giliran={giliran ?? null}
+        peran={pengguna?.peran ?? null}
+      />
 
-      <Suspense key={giliran ?? 'semua'} fallback={<NominasiSkeleton />}>
+      <Suspense key={tahap ?? giliran ?? 'semua'} fallback={<NominasiSkeleton />}>
         <IsiNominasi
+          tahap={tahap}
           giliran={giliran}
           unitPenggunaId={
             pengguna?.peran === 'Pengelola Unit' ? (pengguna.unitOrganisasiId ?? null) : null
@@ -58,16 +89,29 @@ export default async function NominasiPage({ searchParams }: { searchParams: Car
 }
 
 async function IsiNominasi({
+  tahap,
   giliran,
   unitPenggunaId,
 }: {
+  tahap: TahapNominasi | undefined
   giliran: Giliran | undefined
   unitPenggunaId: number | null
 }) {
   const semua = await ambilDaftarNominasi(
     unitPenggunaId === null ? {} : { unitPengajuId: unitPenggunaId },
   )
-  const baris = giliran === undefined ? semua : semua.filter((n) => n.giliran === giliran)
+  // Disaring menurut TAHAP bila ada; `giliran` hanya jalur lama. Tahap dihitung
+  // dengan fungsi yang sama yang dipakai kolom Status, jadi jumlah baris selalu
+  // cocok dengan yang tertulis di lencananya — tidak mungkin lagi opsi penyaring
+  // dan label baris berselisih.
+  const baris =
+    tahap !== undefined
+      ? semua.filter(
+          (n) => tahapNominasi({ statusNominasi: n.status, statusPool: n.statusPool }) === tahap,
+        )
+      : giliran === undefined
+        ? semua
+        : semua.filter((n) => n.giliran === giliran)
 
   const perGiliran = GILIRAN_SAH.map((g) => ({
     giliran: g,
@@ -207,19 +251,15 @@ async function IsiNominasi({
                       {n.skorTotal === null ? '—' : formatSkor(n.skorTotal)}
                     </td>
                     <td className="px-3 py-2.5">
-                      <Badge
-                        tone={
-                          n.status === 'DISETUJUI'
-                            ? 'sukses'
-                            : n.status === 'DITOLAK'
-                              ? 'bahaya'
-                              : n.status === 'DIAJUKAN'
-                                ? 'peringatan'
-                                : 'aksen'
-                        }
-                      >
-                        {LABEL_NOMINASI[n.status]}
-                      </Badge>
+                      {(() => {
+                        // "Lolos verifikasi" dulu tampil untuk baris yang masih
+                        // menunggu Pimpinan — terbaca sudah beres padahal belum.
+                        const t = tahapNominasi({
+                          statusNominasi: n.status,
+                          statusPool: n.statusPool,
+                        })
+                        return <Badge tone={NADA_TAHAP[t]}>{LABEL_TAHAP[t]}</Badge>
+                      })()}
                       <span className="mt-0.5 block text-[10px] text-text-subtle">
                         diajukan {formatTanggal(n.tanggalDiajukan)}
                       </span>

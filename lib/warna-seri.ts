@@ -30,3 +30,47 @@ export function warnaSeri(indeks: number): string {
 export function polaGarisSeri(indeks: number): string {
   return POLA_GARIS_SERI[indeks % POLA_GARIS_SERI.length]!
 }
+
+/**
+ * Band kualitas Kotak 9 — 5 tingkat dari kiri-bawah ke kanan-atas grid.
+ *
+ * Diporting dari konvensi v1 (`web/lib/talenta.ts`): merah = perlu perhatian,
+ * hijau tua = siap peran strategis. Pengelompokannya mengikuti **pita diagonal**
+ * grid, bukan nomor kotaknya: kotak 4 (kinerja tinggi, potensi terbatas) dan
+ * kotak 6 (potensi tinggi, kinerja rendah) berada di pita yang sama karena
+ * keduanya "menengah" — dan itu memang bentuk gridnya.
+ *
+ * Warnanya dipakai untuk LATAR & GARIS sel, tidak untuk teksnya; alasannya ada
+ * di komentar `--k9-*` di `app/globals.css`.
+ */
+const BAND_KOTAK_9: Record<number, 1 | 2 | 3 | 4 | 5> = {
+  1: 1,
+  2: 2,
+  3: 2,
+  4: 3,
+  5: 3,
+  6: 3,
+  7: 4,
+  8: 4,
+  9: 5,
+}
+
+/** Warna band untuk satu nomor kotak, sebagai `var(--k9-N)`. */
+export function warnaKotak9(kotak: number): string {
+  return `var(--k9-${BAND_KOTAK_9[kotak] ?? 3})`
+}
+
+/**
+ * Plafon tint latar sel. **Jangan dinaikkan tanpa menjalankan
+ * `npm run audit:kontras`**: batas amannya 51% (diikat tema gelap), dan di atas
+ * itu `--text` di sel terpadat turun di bawah 4,5:1.
+ */
+export const TINT_KOTAK_9 = {
+  /** Sel berisi minimal 1 orang. Sengaja jelas di atas `kosong` — kalau sama,
+      sel berisi satu orang tidak bisa dibedakan dari sel kosong. */
+  dasar: 0.14,
+  rentang: 0.31,
+  /** Sel kosong tetap menampilkan band-nya, hanya samar. Nol bukan berarti
+      tidak bermakna: "tidak ada seorang pun di Kotak 1" adalah informasi. */
+  kosong: 0.08,
+} as const

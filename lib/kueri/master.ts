@@ -2,7 +2,7 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import { hitungUsia, parseNip, proyeksiPensiun, selisihTahun, type JenisJabatan } from '../nip'
-import { SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
 
 /**
  * Kueri Master Data (Fase 4): pohon unit organisasi, daftar jabatan, dan
@@ -274,6 +274,32 @@ export async function ambilOpsiJabatan(): Promise<{
   }
 }
 
+/**
+ * Daftar jabatan untuk **pemilih di formulir** — id + label saja.
+ *
+ * Terpisah dari `ambilOpsiJabatan()`, yang mengembalikan nilai DISTINCT untuk
+ * penyaring (eselon · jenis · jenjang) dan tidak memuat id sama sekali. Dua
+ * kebutuhan yang kebetulan bernama mirip; menggabungkannya berarti pemilih
+ * jabatan mengirim seluruh baris jabatan ke klien padahal yang dipakai cuma dua
+ * kolom.
+ *
+ * Sengaja TIDAK ikut filter populasi: jabatan ada terlepas dari siapa yang
+ * menempatinya, dan formulir riwayat jabatan justru sering perlu menunjuk
+ * jabatan yang sedang kosong.
+ */
+export async function ambilPilihanJabatan(): Promise<Array<{ id: number; label: string }>> {
+  const baris = await kueri<Record<string, unknown>>(
+    `SELECT j.id, j.nama_jabatan, u.nama_unit
+       FROM jabatan j
+       LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
+      ORDER BY j.nama_jabatan`,
+  )
+  return baris.map((r) => ({
+    id: Number(r.id),
+    label: r.nama_unit === null ? String(r.nama_jabatan) : `${String(r.nama_jabatan)} — ${String(r.nama_unit)}`,
+  }))
+}
+
 // ---------------------------------------------------------------------------
 // U-6 · Jabatan Kosong & Risiko Kekosongan
 // ---------------------------------------------------------------------------
@@ -383,6 +409,7 @@ export async function ambilPejabatBerisiko(ambangTahun = 3): Promise<{
     JOIN jabatan j ON j.id = p.jabatan_id
     JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
     WHERE p.status_aktif = 'AKTIF' AND j.status_jabatan = 'TERISI'
+      ${filterSumber('p')}
   `)
 
   const sekarang = new Date()

@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { filterSumber } from './dasar'
+
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import type { Peran } from '../peran'
 import {
@@ -117,6 +119,17 @@ const PILIH_POOL = `
   LEFT JOIN approval_terakhir al ON al.nominasi_id = n.id
 `
 
+/**
+ * Batas populasi untuk DAFTAR anggota pool.
+ *
+ * Wajib berpasangan dengan filter pada penghitungnya: tanpa ini header panel
+ * menulis "2 anggota" (sudah disaring) sementara tabelnya memajang orang yang
+ * tidak ada di Direktori maupun di mana pun lagi di aplikasi. Terukur pada data
+ * sekarang — "Agus Purnomo" muncul di tabel padahal bukan bagian dari populasi
+ * yang ditampilkan.
+ */
+const BATAS_POPULASI_POOL = filterSumber('p')
+
 /** CTE asesmen terbaru + nominasi/approval terakhir, siap ditempel di depan SELECT. */
 const CTE_SUKSESI = `
   WITH asesmen_terbaru AS (
@@ -200,6 +213,7 @@ export async function ambilTalentPool(filter: FilterPool = {}): Promise<BarisPoo
     syarat.push('(p.nama_lengkap LIKE ? OR p.nip LIKE ?)')
     params.push(`%${cari}%`, `%${cari}%`)
   }
+  if (BATAS_POPULASI_POOL) syarat.push(BATAS_POPULASI_POOL.replace(/^ AND /, ''))
 
   const baris = await kueri<Record<string, unknown>>(
     `${CTE_SUKSESI} ${PILIH_POOL}
@@ -213,7 +227,7 @@ export async function ambilTalentPool(filter: FilterPool = {}): Promise<BarisPoo
 
 export async function ambilEntriPool(talentPoolId: number): Promise<BarisPool | null> {
   const baris = await kueriSatu<Record<string, unknown>>(
-    `${CTE_SUKSESI} ${PILIH_POOL} WHERE tp.id = ?`,
+    `${CTE_SUKSESI} ${PILIH_POOL} WHERE tp.id = ? ${BATAS_POPULASI_POOL}`,
     [talentPoolId],
   )
   return baris === null ? null : petakanPool(baris)
@@ -233,7 +247,8 @@ export async function ambilRingkasPool(jabatanTargetId?: number): Promise<Ringka
   if (jabatanTargetId !== undefined) params.push(jabatanTargetId)
 
   const perStatus = await kueri<{ status: string; jumlah: number }>(
-    `SELECT tp.status, COUNT(*) AS jumlah FROM talent_pool tp ${where}
+    `SELECT tp.status, COUNT(*) AS jumlah FROM talent_pool tp
+       JOIN pegawai p_st ON p_st.id = tp.pegawai_id ${where ? where + ` AND 1=1` : 'WHERE 1=1'} ${filterSumber('p_st')}
      GROUP BY tp.status
      ORDER BY FIELD(tp.status, 'DITETAPKAN', 'DIVERIFIKASI', 'DINOMINASIKAN', 'KANDIDAT', 'DITOLAK')`,
     params,
@@ -273,7 +288,9 @@ export async function ambilOpsiTargetPool(): Promise<OpsiTargetPool[]> {
   const [baris, semuaPool] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT jt.id, jt.nama_target, jt.status,
-              (SELECT COUNT(*) FROM talent_pool tp WHERE tp.jabatan_target_id = jt.id) AS jumlah_pool
+              (SELECT COUNT(*) FROM talent_pool tp
+                 JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
+                WHERE tp.jabatan_target_id = jt.id ${filterSumber('p_tp')}) AS jumlah_pool
        FROM jabatan_target jt
        ORDER BY FIELD(jt.status, 'AKTIF', 'DRAFT', 'NONAKTIF'), jt.nama_target`,
     ),
@@ -329,6 +346,7 @@ export async function ambilKandidatLuarPool(
      LEFT JOIN asesmen_terbaru a ON a.pegawai_id = ms.pegawai_id
      WHERE ms.jabatan_target_id = ? AND ms.eligible = 1
        AND p.status_aktif = 'AKTIF'
+       ${BATAS_POPULASI_POOL}
        AND NOT EXISTS (
          SELECT 1 FROM talent_pool tp
          WHERE tp.jabatan_target_id = ms.jabatan_target_id AND tp.pegawai_id = ms.pegawai_id
@@ -399,6 +417,12 @@ export async function ambilDaftarNominasi(filter: FilterNominasi = {}): Promise<
     syarat.push('tp.jabatan_target_id = ?')
     params.push(filter.jabatanTargetId)
   }
+  // Menutup TIGA halaman sekaligus: /nominasi, /inbox (`ambilTugas` menyaring
+  // hasil fungsi ini), dan /nominasi/[id] (`ambilNominasi` mencarinya di sini).
+  // Menyaringnya di masing-masing halaman berarti tiga definisi yang harus
+  // sepakat — dan yang paling mungkin tertinggal justru inbox, karena ia tidak
+  // terlihat seperti daftar pegawai.
+  if (BATAS_POPULASI_POOL) syarat.push(BATAS_POPULASI_POOL.replace(/^ AND /, ''))
 
   const baris = await kueri<Record<string, unknown>>(
     `WITH asesmen_terbaru AS (
@@ -563,6 +587,7 @@ export async function ambilRencanaPengembangan(opsi: {
     syarat.push('rp.status = ?')
     params.push(opsi.status)
   }
+  if (BATAS_POPULASI_POOL) syarat.push(BATAS_POPULASI_POOL.replace(/^ AND /, ''))
 
   const baris = await kueri<Record<string, unknown>>(
     `SELECT rp.id, rp.talent_pool_id, p.nama_lengkap, p.nip, jt.nama_target,

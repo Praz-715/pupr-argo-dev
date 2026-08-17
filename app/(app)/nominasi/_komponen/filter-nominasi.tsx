@@ -3,21 +3,51 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useTransition } from 'react'
 
+import { Pilih } from '@/components/ui/pilih'
 import { cn } from '@/lib/cn'
 import type { Peran } from '@/lib/peran'
-import { LABEL_GILIRAN, type Giliran } from '@/lib/workflow'
+import {
+  LABEL_TAHAP,
+  PELAKU_TAHAP,
+  TAHAP_NOMINASI,
+  type Giliran,
+  type TahapNominasi,
+} from '@/lib/workflow'
 
 /**
- * Penyaring antrian menurut giliran.
+ * Penyaring antrian nominasi — **satu dropdown**, bukan deretan chip.
  *
- * Pilihan "milik saya" muncul lebih dulu dan ditandai, karena itu yang dibuka
- * paling sering: pengguna datang ke halaman ini untuk mengerjakan bagiannya, bukan
- * untuk menelusuri seluruh antrian.
+ * Dua hal berubah pada 12 Agu 2026 atas permintaan user, dan keduanya soal yang
+ * sama: kejelasan.
+ *
+ * 1. **Dari lima chip jadi satu dropdown.** Lima tombol berdampingan membuat
+ *    penyaring terlihat seperti navigasi tab, padahal ia satu pilihan tunggal —
+ *    dan barisnya ikut memakan ruang di halaman yang isinya tabel lebar.
+ * 2. **Kosakatanya SAMA dengan kolom Status di tabel.** Sebelumnya penyaring
+ *    berbicara "giliran" ("Menunggu Admin Talenta") sementara tabel berbicara
+ *    "status" ("Lolos verifikasi") — dua taksonomi untuk satu kenyataan, jadi
+ *    pengguna tidak bisa tahu opsi mana yang memunculkan baris mana. Sekarang
+ *    keduanya memakai `TahapNominasi` dari `lib/workflow.ts`, dan tiap opsi
+ *    menyebut siapa yang harus bertindak.
+ *
+ * Opsi "Menunggu saya" tetap didahulukan: pengguna datang ke halaman ini untuk
+ * mengerjakan bagiannya, bukan untuk menelusuri seluruh antrian.
  */
+
+/** Tahap yang menunggu tindakan peran tertentu. */
+const TAHAP_PERAN: Partial<Record<Peran, TahapNominasi>> = {
+  'Admin Talenta': 'VERIFIKASI',
+  Pimpinan: 'APPROVAL',
+  'Pengelola Unit': 'REVISI',
+}
+
 export function FilterNominasi({
+  tahap,
   giliran,
   peran,
 }: {
+  tahap: TahapNominasi | null
+  /** Jalur lama `?giliran=` — masih dihormati supaya bookmark tidak mati. */
   giliran: Giliran | null
   peran: Peran | null
 }) {
@@ -26,58 +56,46 @@ export function FilterNominasi({
   const searchParams = useSearchParams()
   const [pending, mulaiTransisi] = useTransition()
 
-  const giliranSaya: Giliran | null =
-    peran === 'Admin Talenta'
-      ? 'ADMIN_TALENTA'
-      : peran === 'Pimpinan'
-        ? 'PIMPINAN'
-        : peran === 'Pengelola Unit'
-          ? 'UNIT'
-          : null
+  const tahapSaya = peran === null ? undefined : TAHAP_PERAN[peran]
 
-  function pilih(nilai: Giliran | null) {
+  function pilih(nilai: string) {
     const params = new URLSearchParams(searchParams.toString())
-    if (nilai === null) params.delete('giliran')
-    else params.set('giliran', nilai)
-    mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
+    // `giliran` selalu dibuang saat memilih: membiarkannya berarti dua penyaring
+    // hidup bersamaan di URL, dan yang satu diam-diam menang.
+    params.delete('giliran')
+    if (nilai === '') params.delete('tahap')
+    else params.set('tahap', nilai)
+    const q = params.toString()
+    mulaiTransisi(() => router.push(q === '' ? pathname : `${pathname}?${q}`, { scroll: false }))
   }
 
-  const opsi: Array<{ nilai: Giliran | null; label: string; utama?: boolean }> = [
-    ...(giliranSaya !== null
-      ? [{ nilai: giliranSaya, label: `Menunggu saya (${LABEL_GILIRAN[giliranSaya]})`, utama: true }]
+  const opsi = [
+    { nilai: '', label: 'Semua tahap' },
+    ...(tahapSaya !== undefined
+      ? [{ nilai: tahapSaya, label: `Menunggu saya — ${LABEL_TAHAP[tahapSaya]}` }]
       : []),
-    { nilai: null, label: 'Semua' },
-    { nilai: 'ADMIN_TALENTA' as Giliran, label: 'Menunggu Admin Talenta' },
-    { nilai: 'PIMPINAN' as Giliran, label: 'Menunggu Pimpinan' },
-    { nilai: 'UNIT' as Giliran, label: 'Dikembalikan ke unit' },
-    { nilai: 'SELESAI' as Giliran, label: 'Selesai' },
-  ].filter(
-    // Jangan tampilkan pilihan yang sama dua kali (mis. "Menunggu saya" = Admin Talenta).
-    (o, i, semua) => semua.findIndex((x) => x.nilai === o.nilai) === i,
-  )
+    ...TAHAP_NOMINASI.filter((t) => t !== tahapSaya).map((t) => ({
+      nilai: t,
+      label: `${LABEL_TAHAP[t]} · ${PELAKU_TAHAP[t]}`,
+    })),
+  ]
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-1.5', pending && 'opacity-60')}>
-      {opsi.map((o) => {
-        const aktif = o.nilai === giliran
-        return (
-          <button
-            key={o.label}
-            type="button"
-            onClick={() => pilih(o.nilai)}
-            disabled={pending}
-            className={cn(
-              'h-8 rounded-md border px-2.5 text-[12px] transition-colors',
-              aktif
-                ? 'border-accent-border bg-accent-subtle font-medium text-text'
-                : 'border-border bg-surface text-text-muted hover:text-text',
-              o.utama === true && !aktif ? 'border-accent-border/60' : '',
-            )}
-          >
-            {o.label}
-          </button>
-        )
-      })}
+    <div className={cn('flex flex-wrap items-center gap-2', pending && 'opacity-60')}>
+      <span className="text-[11px] font-medium text-text-subtle">Tahap</span>
+      <Pilih
+        label="Tahap nominasi"
+        nilai={tahap ?? ''}
+        onUbah={pilih}
+        opsi={opsi}
+        lebar="w-[22rem] max-w-full"
+      />
+      {giliran !== null && tahap === null ? (
+        <span className="text-[11px] text-text-subtle">
+          Menyaring dengan tautan lama (<code className="text-text-muted">giliran</code>) — pilih
+          tahap di atas untuk beralih.
+        </span>
+      ) : null}
     </div>
   )
 }

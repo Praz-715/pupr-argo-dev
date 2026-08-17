@@ -42,11 +42,17 @@ export default async function KelengkapanPage() {
         <IsiRingkas />
       </Suspense>
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
-        <Suspense fallback={<TabelSkeleton judul="w-40" baris={8} />}>
+      {/* Tinggi baris DIPATOK. Dengan `items-start`, "Butir yang paling
+          mendesak" tumbuh sampai 935px sementara rollup per unit berhenti di
+          517px — 418px ruang kosong di bawah kolom kanan, celah terbesar yang
+          ditemukan saat menyapu 31 rute (12 Agu 2026). `grid-rows-[minmax(0,1fr)]`
+          wajib menyertainya: `h-` sendirian hanya menetapkan tinggi container
+          sementara barisnya tetap `auto` dan boleh melebihinya. */}
+      <div className="grid gap-4 xl:h-[32rem] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
+        <Suspense fallback={<TabelSkeleton judul="w-40" baris={8} className="xl:h-full" />}>
           <IsiButir />
         </Suspense>
-        <Suspense fallback={<TabelSkeleton judul="w-52" baris={8} />}>
+        <Suspense fallback={<TabelSkeleton judul="w-52" baris={8} className="xl:h-full" />}>
           <IsiPerUnit />
         </Suspense>
       </div>
@@ -119,14 +125,14 @@ async function IsiButir() {
   const butir = await ambilButirKelengkapan()
 
   return (
-    <Panel padat>
-      <div className="border-b border-border px-3.5 py-3">
+    <Panel padat className="flex flex-col xl:h-full xl:min-h-0">
+      <div className="shrink-0 border-b border-border px-3.5 py-3">
         <PanelHeader
           judul="Butir yang paling mendesak"
           deskripsi="Diurutkan menurut bobot × jumlah pegawai yang belum memenuhinya — bukan menurut persentase, supaya butir berbobot besar tidak tertutup butir remeh yang kebetulan lebih banyak bolongnya."
         />
       </div>
-      <div className="overflow-x-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead className="bg-surface-2">
             <tr className="border-b border-border text-left text-[11px] font-medium tracking-wide text-text-subtle uppercase">
@@ -177,14 +183,18 @@ async function IsiPerUnit() {
   const unit = await ambilKelengkapanPerUnit()
 
   return (
-    <Panel padat>
-      <div className="border-b border-border px-3.5 py-3">
+    <Panel padat className="flex flex-col xl:h-full xl:min-h-0">
+      <div className="shrink-0 border-b border-border px-3.5 py-3">
         <PanelHeader
           judul="Rollup per unit organisasi"
           deskripsi={`${formatAngka(unit.length)} unit yang punya pegawai aktif, unit dengan rerata terendah di atas. Agregasi dikerjakan SQL.`}
         />
       </div>
-      <div className="max-h-[28rem] overflow-auto">
+      {/* `max-h` dipertahankan untuk layar sempit — di sana barisnya tidak
+          dipatok grid, jadi tabel 21 unit akan memanjangkan halaman. Di `xl`
+          patokannya dari baris grid, jadi `max-h` dilepas supaya tidak ada dua
+          batas yang bersaing. */}
+      <div className="min-h-0 max-h-[28rem] flex-1 overflow-auto xl:max-h-none">
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-10 bg-surface-2">
             <tr className="border-b border-border text-left text-[11px] font-medium tracking-wide text-text-subtle uppercase">
@@ -321,9 +331,17 @@ function RingkasSkeleton() {
   )
 }
 
-function TabelSkeleton({ judul, baris }: { judul: string; baris: number }) {
+function TabelSkeleton({
+  judul,
+  baris,
+  className,
+}: {
+  judul: string
+  baris: number
+  className?: string
+}) {
   return (
-    <Panel padat>
+    <Panel padat className={className}>
       <div className="border-b border-border px-3.5 py-3">
         <Skeleton className={`h-4 ${judul}`} />
         <Skeleton className="mt-2 h-3 w-full max-w-md" />

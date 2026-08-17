@@ -2,7 +2,7 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import { BOBOT_FORMULA_A, ekspresiSqlKotak9, type Kotak9 } from '../scoring'
-import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
 
 /**
  * Kueri Peta Talenta (Fase 3, U-1) — grid 3×3, bubble Kinerja × Potensial, dan
@@ -122,6 +122,13 @@ function syaratFilter(f: FilterPeta): { syarat: string[]; params: unknown[] } {
   if (f.hanyaBerlaku) {
     syarat.push("a.status_asesmen <> 'Expired'")
   }
+
+  // Sudah terikat lewat `JOIN pegawai` dari `asesmen_terbaru`, jadi di sini
+  // filternya redundan SELAMA seluruh asesmen berasal dari eNom. Ditambahkan
+  // tetap, supaya definisi populasinya satu dan tidak bergantung pada keadaan
+  // data yang kebetulan seragam hari ini.
+  const batas = filterSumber('p')
+  if (batas) syarat.push(batas.replace(/^ AND /, ''))
 
   return { syarat, params }
 }
@@ -443,21 +450,25 @@ export async function ambilOpsiPeta(): Promise<OpsiPeta> {
        FROM unit_organisasi u
        WHERE EXISTS (
          SELECT 1 FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
-         WHERE j.unit_organisasi_id = u.id
+         WHERE j.unit_organisasi_id = u.id ${filterSumber('p')}
        )
        ORDER BY level, u.nama_unit`,
     ),
     kueri<{ eselon: string }>(
       `SELECT DISTINCT j.eselon FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
-       WHERE j.eselon IS NOT NULL
+       WHERE j.eselon IS NOT NULL ${filterSumber('p')}
        ORDER BY FIELD(j.eselon,'I','II','III','IV','NON_ESELON')`,
     ),
     kueri<{ jenjang: string }>(
       `SELECT DISTINCT j.jenjang FROM jabatan j JOIN pegawai p ON p.jabatan_id = j.id
-       WHERE j.jenjang IS NOT NULL ORDER BY j.jenjang`,
+       WHERE j.jenjang IS NOT NULL ${filterSumber('p')} ORDER BY j.jenjang`,
     ),
     kueri<{ tahun: number }>(
-      `SELECT DISTINCT tahun_asesmen AS tahun FROM asesmen_talenta ORDER BY tahun DESC`,
+      // Ikut disaring lewat pegawai, bukan dibaca dari asesmen_talenta apa adanya:
+      // tahun yang hanya dimiliki pegawai tersembunyi akan menghasilkan peta kosong.
+      `SELECT DISTINCT a.tahun_asesmen AS tahun FROM asesmen_talenta a
+         JOIN pegawai p ON p.id = a.pegawai_id
+        WHERE 1=1 ${filterSumber('p')} ORDER BY tahun DESC`,
     ),
     // Hanya jabatan target AKTIF. Yang DRAFT belum tentu rubriknya lolos
     // pemeriksaan, jadi menawarkannya di sini berarti memajang peta yang

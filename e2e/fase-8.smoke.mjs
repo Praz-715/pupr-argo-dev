@@ -96,6 +96,21 @@ function bacaEnv() {
   }
 }
 
+/**
+ * Apakah tampilan sedang dibatasi ke pegawai yang ada di API sumber.
+ *
+ * Dibaca dari `.env.local` dengan cara yang sama seperti kredensial DB — BUKAN
+ * dari `process.env`, yang di berkas smoke ini selalu kosong karena tidak ada
+ * dotenv yang dijalankan. Versi pertama memeriksa `process.env` dan karena itu
+ * selalu menyimpulkan filternya mati: pembandingnya dihitung dari populasi
+ * penuh sementara ekspornya tersaring, dan ujinya melaporkan "penyaringnya
+ * diabaikan" untuk penyaring yang justru bekerja.
+ */
+function hanyaSumber() {
+  const isi = readFileSync('.env.local', 'utf8')
+  return /^HANYA_PEGAWAI_SUMBER\s*=\s*"?true"?/m.test(isi)
+}
+
 async function denganDb(fn) {
   const mysql = await import('mysql2/promise')
   const c = await mysql.default.createConnection(bacaEnv())
@@ -522,10 +537,22 @@ try {
       const mustahil = await jumlahBaris('?dari=2099-01-01&sampai=2099-12-31')
       tegaskan(mustahil === 0, `rentang mustahil tetap memberi ${mustahil} baris`)
 
+      // Hitungan pembandingnya WAJIB memakai populasi yang sama dengan yang
+      // diekspor. Versi lama menanyakannya ke DB tanpa batas apa pun, jadi
+      // begitu `HANYA_PEGAWAI_SUMBER=true` menyaring ekspornya, ujinya
+      // membandingkan 0 baris tersaring dengan 1 baris populasi penuh dan
+      // melaporkan "penyaringnya diabaikan" — padahal yang berbeda justru
+      // ekspektasinya. Pembanding yang diambil dari sumber berbeda dengan yang
+      // diuji akan selalu jadi kegagalan palsu suatu hari.
+      const batasPopulasi = hanyaSumber()
+          ? `AND EXISTS (SELECT 1 FROM asesmen_talenta a
+                          WHERE a.pegawai_id = tp.pegawai_id AND a.sumber_sync = 'eNominasi')`
+          : ''
       const target = await denganDb(async (c) => {
         const [r] = await c.query(
           `SELECT tp.jabatan_target_id AS id, COUNT(*) AS n
              FROM nominasi n JOIN talent_pool tp ON tp.id = n.talent_pool_id
+            WHERE 1 = 1 ${batasPopulasi}
             GROUP BY tp.jabatan_target_id ORDER BY n ASC LIMIT 1`,
         )
         return r[0] ?? null

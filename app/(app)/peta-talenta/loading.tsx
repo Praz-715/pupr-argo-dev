@@ -27,7 +27,7 @@ export default function Loading() {
       </div>
       <Skeleton className="h-3 w-full max-w-2xl" />
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Panel>
           <Skeleton className="h-4 w-28" />
           <Skeleton className="mt-2 h-3 w-full max-w-sm" />

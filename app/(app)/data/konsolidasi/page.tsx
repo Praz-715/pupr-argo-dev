@@ -58,7 +58,21 @@ async function IsiSumber() {
 
   return (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      {sumber.map((s) => (
+      {sumber.map((s) => {
+        /**
+         * Sumber tanpa jalur sinkronisasi di kode TIDAK boleh memajang status
+         * sukses. Sebelumnya eKinerja tampil bercentang hijau "SUKSES" — angka itu
+         * benar sebagai isi `sync_log`, tapi barisnya benih dev, dan tidak ada satu
+         * pun klien eKinerja yang bisa menuliskannya. Yang terbaca pengguna:
+         * integrasinya jalan. Dilaporkan user 12 Agu 2026.
+         *
+         * Karena itu untuk sumber BELUM_ADA_JALUR: ikon status dinetralkan, lencana
+         * statusnya diganti keterangan bahwa riwayatnya data contoh, dan angka
+         * sukses/gagalnya tetap ditampilkan — tapi di bawah label yang menyatakan
+         * asalnya.
+         */
+        const belum = s.keadaan === 'BELUM_ADA_JALUR'
+        return (
         <Panel key={s.sumber}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -67,14 +81,26 @@ async function IsiSumber() {
                 {s.jenisData.join(' · ') || 'Tanpa keterangan jenis data'}
               </p>
             </div>
-            <IkonStatus status={s.terakhirStatus} />
+            {belum ? (
+              <Badge tone="netral" title="Belum ada klien untuk sumber ini di kode aplikasi">
+                Belum tersambung
+              </Badge>
+            ) : (
+              <IkonStatus status={s.terakhirStatus} />
+            )}
           </div>
 
           <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-[11px]">
             <div className="flex justify-between gap-2">
+              <dt className="text-text-subtle">Jalur sinkronisasi</dt>
+              <dd className="max-w-[60%] text-right text-text-muted">{s.jalur}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
               <dt className="text-text-subtle">Status terakhir</dt>
               <dd>
-                {s.terakhirStatus === null ? (
+                {belum ? (
+                  <span className="text-warning">belum pernah disinkronkan</span>
+                ) : s.terakhirStatus === null ? (
                   <span className="text-text-subtle">—</span>
                 ) : (
                   <Badge tone={toneStatus(s.terakhirStatus)}>{s.terakhirStatus}</Badge>
@@ -82,17 +108,28 @@ async function IsiSumber() {
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-text-subtle">Terakhir dijalankan</dt>
+              {/* Untuk sumber yang belum tersambung, "Terakhir dijalankan"
+                  menegaskan ada proses yang pernah berjalan — bertentangan dengan
+                  baris di atasnya yang menyatakan belum pernah disinkronkan.
+                  Labelnya diubah, tanggalnya tetap ditampilkan karena ia jejak
+                  benih yang berguna saat menelusuri asal angkanya. */}
+              <dt className="text-text-subtle">
+                {belum ? 'Baris contoh terakhir' : 'Terakhir dijalankan'}
+              </dt>
               <dd className="tabular text-right text-text-muted">
                 {s.terakhirMulai === null ? '—' : formatTanggalWaktu(s.terakhirMulai)}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-text-subtle">Total baris masuk</dt>
+              <dt className="text-text-subtle">
+                {belum ? 'Baris contoh' : 'Total baris masuk'}
+              </dt>
               <dd className="tabular text-text-muted">{formatAngka(s.totalBaris)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-text-subtle">Sukses / sebagian / gagal</dt>
+              <dt className="text-text-subtle">
+                {belum ? 'Riwayat contoh (S/S/G)' : 'Sukses / sebagian / gagal'}
+              </dt>
               <dd className="tabular text-text-muted">
                 {s.jumlahSukses} / {s.jumlahSebagian} /{' '}
                 <span className={s.jumlahGagal > 0 ? 'font-medium text-danger' : ''}>
@@ -100,9 +137,17 @@ async function IsiSumber() {
                 </span>
               </dd>
             </div>
+            {belum ? (
+              <p className="border-t border-border pt-1.5 text-[10px] leading-relaxed text-text-subtle">
+                Riwayat di atas adalah <strong className="font-medium">data contoh</strong> dari
+                benih dev — dipakai menguji tampilan halaman ini. Belum ada sinkronisasi nyata dari{' '}
+                {s.sumber}.
+              </p>
+            ) : null}
           </dl>
         </Panel>
-      ))}
+        )
+      })}
     </div>
   )
 }

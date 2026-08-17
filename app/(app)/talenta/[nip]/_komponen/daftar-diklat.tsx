@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { formatAngka } from '@/lib/format'
+import { TombolEditor } from './tombol-editor'
 
 const BATAS_AWAL = 8
 
@@ -16,15 +17,34 @@ const BATAS_AWAL = 8
  * Data berasal dari kolom JSON `pegawai.riwayat_diklat` (tidak dinormalisasi,
  * lihat ERD.md §1 poin 6), jadi tidak ada tanggal/lokasi untuk ditampilkan.
  */
-export function DaftarDiklat({ diklat }: { diklat: string[] }) {
+export function DaftarDiklat({
+  diklat,
+  pegawaiId,
+}: {
+  diklat: string[]
+  /** Dibutuhkan tombol ubah per entri. */
+  pegawaiId: number
+}) {
   const [cari, setCari] = useState('')
   const [semua, setSemua] = useState(false)
 
+  /**
+   * Setiap entri membawa **indeks aslinya** di `pegawai.riwayat_diklat`.
+   *
+   * `simpanDiklat()` menunjuk entri yang diubah lewat indeks larik itu, dan
+   * indeks dari `tampil.map((d, i) => …)` adalah posisi di larik yang sudah
+   * DIFILTER dan DIPOTONG. Dengan pencarian aktif keduanya berbeda, jadi memakai
+   * `i` akan mengubah nama entri yang lain — hasil yang tampak benar (dialognya
+   * menampilkan nama yang diklik) sampai halaman dimuat ulang. Mencari ulang
+   * dengan `indexOf` juga tidak bisa: nama diklat boleh sama.
+   */
+  const berindeks = useMemo(() => diklat.map((nama, indeks) => ({ nama, indeks })), [diklat])
+
   const cocok = useMemo(() => {
     const q = cari.trim().toLowerCase()
-    if (q === '') return diklat
-    return diklat.filter((d) => d.toLowerCase().includes(q))
-  }, [cari, diklat])
+    if (q === '') return berindeks
+    return berindeks.filter((d) => d.nama.toLowerCase().includes(q))
+  }, [cari, berindeks])
 
   const tampil = semua || cari.trim() !== '' ? cocok : cocok.slice(0, BATAS_AWAL)
   const tersisa = cocok.length - tampil.length
@@ -59,12 +79,22 @@ export function DaftarDiklat({ diklat }: { diklat: string[] }) {
         </p>
       ) : (
         <ul className="space-y-1.5">
-          {tampil.map((d, i) => (
-            <li key={`${d}-${i}`} className="flex gap-2 text-[13px] leading-relaxed">
+          {tampil.map((d) => (
+            <li
+              key={`${d.nama}-${d.indeks}`}
+              className="flex items-start gap-2 text-[13px] leading-relaxed"
+            >
               <span aria-hidden className="tabular mt-px shrink-0 text-[11px] text-text-subtle">
-                {String(i + 1).padStart(2, '0')}
+                {String(d.indeks + 1).padStart(2, '0')}
               </span>
-              <span className="min-w-0 text-text-muted">{d}</span>
+              <span className="min-w-0 flex-1 text-text-muted">{d.nama}</span>
+              <span className="shrink-0">
+                <TombolEditor
+                  jenis="diklat"
+                  pegawaiId={pegawaiId}
+                  baris={{ indeks: d.indeks, nama: d.nama }}
+                />
+              </span>
             </li>
           ))}
         </ul>

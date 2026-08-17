@@ -1,4 +1,5 @@
 import { chromium } from '@playwright/test'
+import { hostname, networkInterfaces } from 'node:os'
 import { AKUN, konteksMasuk } from './_masuk.mjs'
 
 /**
@@ -230,6 +231,167 @@ try {
   })
   await pageTablet.screenshot({ path: `${OUT}/shell-tablet.png`, fullPage: true })
   await ctxTablet.close()
+
+  const ctxGrup = await konteksMasuk(browser, {
+    base: BASE,
+    viewport: { width: 1440, height: 1000 },
+  })
+  await langkah('sidebar: grup bisa diciutkan & grup halaman aktif tetap terlihat', async () => {
+    const pageGrup = await ctxGrup.newPage()
+    await pageGrup.goto(BASE, { waitUntil: 'networkidle' })
+    await pageGrup.waitForTimeout(800)
+
+    const tinggiAwal = await pageGrup
+      .locator('aside nav')
+      .evaluate((e) => e.scrollHeight)
+
+    // Ciutkan semua grup yang boleh diciutkan.
+    const tombol = await pageGrup.locator('aside nav button:not([disabled])').all()
+    tegaskan(tombol.length >= 3, `hanya ${tombol.length} grup bisa diciutkan`)
+    for (const t of tombol) await t.click()
+    await pageGrup.waitForTimeout(400)
+
+    const tinggiCiut = await pageGrup.locator('aside nav').evaluate((e) => e.scrollHeight)
+    tegaskan(tinggiCiut < tinggiAwal, `daftar tidak memendek (${tinggiAwal} → ${tinggiCiut})`)
+
+    // Bertahan setelah reload.
+    await pageGrup.reload({ waitUntil: 'networkidle' })
+    await pageGrup.waitForTimeout(800)
+    const tinggiSetelahReload = await pageGrup
+      .locator('aside nav')
+      .evaluate((e) => e.scrollHeight)
+    tegaskan(
+      tinggiSetelahReload === tinggiCiut,
+      `pilihan tidak bertahan (${tinggiCiut} → ${tinggiSetelahReload})`,
+    )
+
+    // **Invarian yang paling penting.** Masuk ke halaman di dalam grup yang baru
+    // saja diciutkan: item aktifnya WAJIB terlihat. Kalau tidak, sidebar tidak
+    // menunjukkan di mana pengguna berada, dan gejalanya terbaca sebagai "menu
+    // saya hilang" — bukan sebagai "grupnya tertutup".
+    await pageGrup.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+    await pageGrup.waitForTimeout(800)
+    const aktif = pageGrup.locator('aside nav a[aria-current="page"]')
+    tegaskan((await aktif.count()) === 1, 'tidak ada satu pun item nav bertanda halaman aktif')
+    tegaskan(await aktif.isVisible(), 'item nav halaman aktif tersembunyi di grup yang diciutkan')
+
+    const hasil = `daftar ${tinggiAwal}px → ${tinggiCiut}px · bertahan reload · item aktif "${(await aktif.innerText()).trim()}" terlihat`
+    await pageGrup.close()
+    return hasil
+  })
+  await ctxGrup.close()
+
+  // ── aset dev lintas-origin ───────────────────────────────────────────────
+  // `next dev` menolak permintaan `/_next/*` dari origin yang tidak terdaftar
+  // di `allowedDevOrigins` dengan **403**, sementara render servernya tetap
+  // jalan. Akibatnya aplikasi yang dibuka lewat alamat selain `localhost`
+  // (IP LAN, Tailscale, nama host, port forwarding VS Code — yaitu cara paling
+  // wajar bekerja lewat Remote SSH) mengirim HTML yang lengkap tanpa satu pun
+  // chunk React. Halamannya tampak sempurna dan SETIAP kontrol mati.
+  //
+  // Diuji lewat header `Origin`, bukan dengan benar-benar membuka alamat lain:
+  // gerbangnya memutuskan berdasarkan `Origin`, jadi itulah yang perlu dijaga.
+  //
+  // Yang ditegaskan: **setiap alamat yang bisa dipakai menghubungi mesin ini**
+  // harus lolos — bukan "semua origin lolos". Meloloskan origin sembarang justru
+  // menghapus gunanya `allowedDevOrigins`, yang memang ada untuk mencegah situs
+  // lain membaca aset dev. Alamatnya dibaca dari antarmuka jaringan supaya uji
+  // ini ikut menemukan alamat baru (Tailscale, subnet lain) tanpa disunting.
+  await langkah('aset dev bisa dimuat dari semua alamat mesin ini', async () => {
+    const halaman = await fetch(`${BASE}/masuk`).then((r) => r.text())
+    const chunk = halaman.match(/src="(\/_next\/static\/chunks\/[^"]+\.js)"/)?.[1]
+    tegaskan(Boolean(chunk), 'tidak menemukan satu pun chunk JS di halaman masuk')
+
+    const port = new URL(BASE).port || '3000'
+    const alamat = ['localhost', hostname()]
+    for (const daftar of Object.values(networkInterfaces())) {
+      for (const n of daftar ?? []) {
+        // IPv6 dilewati: Next mencocokkan Origin sebagai string, dan bentuk
+        // berkurung `[::1]` tidak pernah muncul di daftar ini.
+        if (n.family === 'IPv4') alamat.push(n.address)
+      }
+    }
+
+    const ditolak = []
+    for (const a of [...new Set(alamat)]) {
+      const r = await fetch(`${BASE}${chunk}`, { headers: { Origin: `http://${a}:${port}` } })
+      if (r.status !== 200) ditolak.push(`${a} (HTTP ${r.status})`)
+    }
+
+    tegaskan(
+      ditolak.length === 0,
+      `chunk ditolak untuk ${ditolak.join(', ')} — tambahkan ke allowedDevOrigins ` +
+        'di next.config.ts, kalau tidak aplikasi MATI TOTAL saat dibuka lewat alamat itu ' +
+        '(HTML lengkap, nol chunk React, nol pesan galat)',
+    )
+    return `${new Set(alamat).size} alamat lolos: ${[...new Set(alamat)].join(' · ')}`
+  })
+
+  // ── localStorage diblokir ────────────────────────────────────────────────
+  // Bukan kasus pinggiran: `window.localStorage` MELEMPAR (bukan
+  // mengembalikan null) ketika site data diblokir, di sebagian mode privat,
+  // di bawah kebijakan enterprise, dan di dalam iframe/webview yang partisi
+  // penyimpanannya dimatikan — termasuk Simple Browser milik VS Code, yang
+  // dipakai untuk membuka port yang diteruskan.
+  //
+  // Lemparannya terjadi di dalam `getSnapshot` milik `useSyncExternalStore`,
+  // artinya SAAT RENDER, sehingga yang gagal adalah hidrasi — bukan satu
+  // tombol. Halamannya tetap tampak sempurna (HTML-nya dari server) sementara
+  // SELURUH kontrol mati tanpa pesan galat apa pun. Ditambah class tema yang
+  // dipasang inline script next-themes sebelum React, gejalanya terbaca
+  // sebagai "tema mentok di gelap" — dan mengirim diagnosis ke arah CSS,
+  // yang tidak ada hubungannya.
+  //
+  // Karena itu ujinya di sini dan bukan di uji unit: yang perlu dijaga bukan
+  // "hook mengembalikan nilai bawaan", tapi "aplikasinya masih bisa diklik".
+  const ctxTanpaSimpanan = await konteksMasuk(browser, {
+    base: BASE,
+    viewport: { width: 1440, height: 900 },
+  })
+  await ctxTanpaSimpanan.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access is denied for this document.', 'SecurityError')
+      },
+    })
+  })
+  const pageTS = await ctxTanpaSimpanan.newPage()
+  const galatTS = []
+  pageTS.on('pageerror', (e) => galatTS.push(e.message))
+  await pageTS.goto(BASE, { waitUntil: 'networkidle' })
+  await pageTS.waitForTimeout(1200)
+
+  await langkah('localStorage diblokir: aplikasi tetap terhidrasi & bisa diklik', async () => {
+    tegaskan(galatTS.length === 0, `error halaman: ${galatTS[0]}`)
+
+    // Pengalih tema harus benar-benar mengubah class di <html>.
+    const temaAwal = await pageTS.getAttribute('html', 'class')
+    const tujuan = temaAwal?.includes('dark') ? 'Tema Terang' : 'Tema Gelap'
+    await pageTS.click(`header [role="radiogroup"] button[title="${tujuan}"]`)
+    await pageTS.waitForTimeout(400)
+    const temaBaru = await pageTS.getAttribute('html', 'class')
+    tegaskan(temaBaru !== temaAwal, `tema mentok di "${temaAwal}" — hidrasi mati`)
+
+    // Command palette & menu pengguna: keduanya state React murni.
+    await pageTS.keyboard.press('Control+k')
+    await pageTS.waitForSelector('dialog[open], [role="dialog"]', { timeout: 4000 })
+    await pageTS.keyboard.press('Escape')
+
+    await pageTS.locator('header button[aria-haspopup="menu"]').last().click()
+    await pageTS.waitForSelector('[role="menu"]', { timeout: 4000 })
+    await pageTS.keyboard.press('Escape')
+
+    // Ciutkan sidebar: satu-satunya kontrol yang memang MEMBACA localStorage.
+    const lebarAwal = await pageTS.locator('aside').evaluate((e) => e.getBoundingClientRect().width)
+    await pageTS.locator('aside button[title]').first().click()
+    await pageTS.waitForTimeout(400)
+    const lebarCiut = await pageTS.locator('aside').evaluate((e) => e.getBoundingClientRect().width)
+    tegaskan(lebarCiut < lebarAwal, `sidebar tidak menciut (${lebarAwal}px → ${lebarCiut}px)`)
+
+    return `tema ${temaAwal} → ${temaBaru} · palette & menu terbuka · sidebar ${Math.round(lebarAwal)}px → ${Math.round(lebarCiut)}px`
+  })
+  await ctxTanpaSimpanan.close()
 } finally {
   await browser.close()
 }

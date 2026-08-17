@@ -38,16 +38,25 @@ export function TabelDirektori({
 
   const kolom: Array<KolomTabel<BarisDirektori>> = [
     {
+      // Nama & NIP DIPISAH jadi dua kolom (permintaan user, 12 Agu 2026).
+      // Sebelumnya keduanya menumpuk di satu sel, sehingga tiap baris memakan
+      // dua baris teks — dan NIP tidak bisa diurutkan sendiri walau
+      // `KOLOM_URUT` sudah memuatnya. Hanya kolom nama yang `sticky`: dua kolom
+      // menempel sekaligus memakan hampir separuh lebar layar saat tabel
+      // digulir ke samping.
       kunci: 'nama',
-      judul: 'NIP & Nama Lengkap',
+      judul: 'Nama Lengkap',
       sticky: true,
       wajib: true,
-      lebarMin: '15rem',
+      lebarMin: '14rem',
+      render: (p) => <span className="block font-medium text-text">{p.nama}</span>,
+    },
+    {
+      kunci: 'nip',
+      judul: 'NIP',
+      lebarMin: '11rem',
       render: (p) => (
-        <>
-          <span className="block font-medium text-text">{p.nama}</span>
-          <span className="tabular block text-[11px] text-text-subtle">{formatNip(p.nip)}</span>
-        </>
+        <span className="tabular block whitespace-nowrap text-text-muted">{formatNip(p.nip)}</span>
       ),
     },
     {
@@ -199,6 +208,7 @@ export function TabelDirektori({
     <DataTable
       id="direktori-pegawai"
       kolom={kolom}
+      tanpaPemilihKolom
       baris={baris}
       kunciBaris={(p) => p.pegawaiId}
       tautanBaris={(p) => `/talenta/${p.nip}`}

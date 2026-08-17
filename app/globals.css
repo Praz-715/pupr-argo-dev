@@ -10,28 +10,81 @@
    ========================================================================== */
 
 :root {
-  /* Permukaan */
+  /* Permukaan — skala slate DINGIN, diambil dari palet v1 (`web/app/globals.css`).
+     Sebelumnya skala ini abu-abu hangat; hangat + sidebar navy menghasilkan dua
+     suhu warna yang bertengkar di satu layar. Semua permukaan sekarang satu
+     keluarga dengan warna institusi. */
   --surface: #ffffff;
-  --surface-2: #fbfbfa;
-  --surface-3: #f1f1ef;
-  --surface-inset: #f7f7f5;
+  --surface-2: #f8fafc;
+  --surface-3: #eef2f7;
+  --surface-inset: #f8fafc;
+
+  /* Kanvas — latar area konten, SATU tingkat di bawah permukaan kartu.
+     Tanpa ini kartu putih di atas latar putih hanya terbaca dari border 1px,
+     dan halaman padat kartu jadi rata tanpa hierarki (v1 memakai #eef2f7). */
+  --kanvas: #eef2f7;
 
   /* Garis */
-  --border: #e6e6e4;
-  --border-strong: #d3d3d1;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
 
-  /* Teks */
-  --text: #1f1f1f;
-  --text-muted: #6f6f6c;
-  --text-subtle: #9a9a97;
+  /* Teks — tiga tingkat, dan ketiganya HARUS lolos kontras di permukaan
+     paling terang MAUPUN di kanvas. Versi pertama port ini memakai slate-500
+     & slate-400 apa adanya (#64748b / #94a3b8); audit kontras mencatat
+     subtle jatuh ke 2,56:1 di atas putih — jadi ramp-nya digeser satu langkah
+     lebih gelap. Hierarki tiga tingkat di atas latar terang tidak bisa
+     mengandalkan lightness saja; ukuran & tebal huruf yang menanggung sisanya. */
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-subtle: #616f84;
   --text-inverted: #ffffff;
 
-  /* Aksen (satu warna aksen saja) */
-  --accent: #2f6feb;
-  --accent-hover: #2560d0;
-  --accent-subtle: #eef3fe;
-  --accent-border: #c5d8fb;
+  /* Aksen (satu warna aksen saja) — biru institusi v1, bukan biru generik */
+  --accent: #1e40af;
+  --accent-hover: #172554;
+  --accent-subtle: #eff6ff;
+  --accent-border: #bfdbfe;
   --accent-text: #ffffff;
+
+  /* ---- Identitas institusi -------------------------------------------
+     Diporting dari v1. Navy = warna korporat Kementerian PU, emas #FCB717 =
+     kuning PU. Keduanya BUKAN warna status dan BUKAN warna seri chart: emas
+     hanya dipakai sebagai penanda identitas (garis tepi sidebar, strip navbar,
+     indikator menu aktif) — kalau ia mulai dipakai untuk "peringatan", ia
+     bertabrakan dengan --warning yang maknanya sudah tetap.
+
+     `--emas-teks` ada karena emas di atas permukaan terang hanya berkontras
+     1,7:1 — tidak bisa dipakai sebagai warna teks. Versi gelapnya yang bisa. */
+  --merek-900: #172554;
+  --merek-800: #1e3a8a;
+  --merek-700: #1e40af;
+  --merek-teal: #0c6377;
+  --emas: #fcb717;
+  --emas-teks: #8a5a00;
+
+  /* Sidebar — permukaan bermerek, punya skala warnanya SENDIRI.
+     Token terpisah (bukan --surface-*) supaya isi sidebar tidak perlu tahu
+     tema apa yang aktif: di tema terang ia navy dengan teks biru muda, di tema
+     gelap ia navy lebih dalam — dan komponennya tetap satu versi. */
+  --sidebar-gradien: linear-gradient(170deg, #172554 0%, #1e3a8a 55%, #1e40af 100%);
+  --sidebar-teks: #dbeafe;
+  --sidebar-teks-kuat: #ffffff;
+  --sidebar-teks-samar: #93c5fd;
+  --sidebar-hover: rgb(255 255 255 / 0.12);
+  --sidebar-garis: rgb(255 255 255 / 0.14);
+  --sidebar-aktif-bg: #ffffff;
+  --sidebar-aktif-teks: #172554;
+  --sidebar-lencana-bg: rgb(255 255 255 / 0.14);
+
+  /* Kepala halaman — pita bermerek di puncak tiap halaman (v1 `.page-head`).
+     Ujung teal-nya #0c6377, bukan #0e7490 seperti v1: pada nilai v1, teks
+     deskripsi (--kepala-teks-samar) hanya berkontras 3,59:1 di ujung kanan
+     pita — dan justru di sisi itulah tombol aksi berada. v1 tidak pernah
+     memeriksanya karena teksnya di sana pendek; di v2 halaman seperti Gap
+     Analysis menaruh deskripsi panjang yang sampai ke ujung itu. */
+  --kepala-gradien: linear-gradient(100deg, #1e3a8a, #1e40af 60%, #0c6377);
+  --kepala-teks: #ffffff;
+  --kepala-teks-samar: #c7d2fe;
 
   /* ---- Warna seri chart ----------------------------------------------
      TERPISAH dari warna status di bawah. Warna status (success/warning/
@@ -55,12 +108,47 @@
   --chart-3: #b06010;
   --chart-4: #c3549f;
 
-  /* Status — makna tetap, jangan dipakai sebagai warna seri */
-  --success: #2f7d55;
+  /* ---- Band kualitas Kotak 9 ------------------------------------------
+     Lima band pada diagonal grid, dari kiri-bawah (perlu perhatian) ke
+     kanan-atas (siap peran strategis) — konvensi 9-box talent grid, dan
+     diporting dari v1 (`web/lib/talenta.ts` KOTAK9_COLOR).
+
+     **Kenapa ini BUKAN pelanggaran aturan "warna seri jangan memakai warna
+     status".** Aturan itu ada karena warna status punya makna tetap
+     baik/waspada/buruk, sehingga memakainya untuk seri ke-2 membuat pembaca
+     menyangka seri itu bermakna "bagus". Di Kotak 9 warnanya JUSTRU bermakna
+     kualitas — itu inti gridnya. Yang tetap dijaga: tokennya terpisah dari
+     `--success/--warning/--danger`, supaya menyetel band grid tidak diam-diam
+     menggeser warna badge status di seluruh aplikasi.
+
+     **Nilai v1 tidak dipakai apa adanya, dan itu disengaja.** v1 memasang
+     `color:#fff` pada semua sel sementara kotak 4/5/7/8 berlatar kuning &
+     hijau muda — kontras teks putih di sana terukur **1,74–2,28:1**, empat
+     dari sembilan sel praktis tidak terbaca. Di sini warna band dipakai untuk
+     LATAR & GARIS saja; teksnya tetap `--text`, dan tint-nya diplafon 45%
+     (batas amannya 51%, diikat tema gelap) supaya `--text` tetap >=4,5:1
+     bahkan di sel terpadat. Dijaga `scripts/audit-kontras.mjs`.
+
+     Pembeda kedua untuk CVD sudah melekat pada gridnya sendiri: setiap sel
+     mencantumkan NOMOR kotaknya, posisinya di grid, serta label baris & kolom.
+     Jadi ramp merah→hijau di sini tidak pernah jadi satu-satunya pembawa
+     informasi — tidak seperti pada garis chart. */
+  --k9-1: #b91c1c;
+  --k9-2: #c2410c;
+  --k9-3: #8f5706;
+  --k9-4: #136c34;
+  --k9-5: #065f46;
+
+  /* Status — makna tetap, jangan dipakai sebagai warna seri.
+     Ketiganya digelapkan satu langkah dari nilai sebelumnya: `scripts/audit-kontras.mjs`
+     mencatat --warning hanya 4,28:1 di atas surface dan 3,98:1 di dalam badge-nya
+     sendiri, dan --success 4,46:1 di atas surface-3. Keduanya cacat yang sudah
+     ada sebelum port ini — baru ketahuan karena auditnya belum pernah ada. */
+  --success: #2c7550;
   --success-subtle: #eaf6ef;
   --success-border: #bfe3cd;
 
-  --warning: #a4700f;
+  --warning: #95650c;
   --warning-subtle: #fdf6e7;
   --warning-border: #ecd9a8;
 
@@ -68,33 +156,72 @@
   --danger-subtle: #fdecec;
   --danger-border: #f2c2c2;
 
-  --neutral: #6f6f6c;
-  --neutral-subtle: #f1f1ef;
-  --neutral-border: #dcdcda;
+  /* Netral ikut pindah ke slate dingin — badge "netral" bersuhu hangat di
+     sebelah badge berstatus bersuhu dingin terbaca seperti nada tersendiri,
+     padahal maksudnya justru tanpa nada. */
+  --neutral: #5f6c80;
+  --neutral-subtle: #f1f5f9;
+  --neutral-border: #e2e8f0;
 
-  /* Bayangan dipakai sangat terbatas — prefer border tipis */
+  /* Bayangan dipakai sangat terbatas — prefer border tipis.
+     `--shadow-kartu` sengaja hampir tak terlihat (2% + 4%): tugasnya cuma
+     mengangkat kartu setipis mungkin dari kanvas, bukan menggambar kotak.
+     Versi -naik dipakai HANYA saat hover pada kartu yang bisa diklik. */
   --shadow-overlay: 0 8px 28px -8px rgb(0 0 0 / 0.18), 0 2px 8px -2px rgb(0 0 0 / 0.08);
+  --bayang-kartu: 0 1px 3px rgb(15 23 42 / 0.06), 0 1px 2px rgb(15 23 42 / 0.04);
+  --bayang-kartu-naik: 0 10px 24px -8px rgb(15 23 42 / 0.16), 0 4px 8px -4px rgb(15 23 42 / 0.08);
 }
 
 .dark {
-  --surface: #1a1a1a;
-  --surface-2: #202020;
-  --surface-3: #2a2a2a;
-  --surface-inset: #161616;
+  /* Skala slate dingin, bukan hasil membalik nilai tema terang. v1 tidak punya
+     tema gelap sama sekali, jadi seluruh blok ini disusun dari nol dengan hue
+     yang sama (slate ~220°) supaya kedua tema terasa satu produk. */
+  --surface: #101725;
+  --surface-2: #151d2e;
+  --surface-3: #1e2840;
+  --surface-inset: #0c111c;
 
-  --border: #2e2e2e;
-  --border-strong: #414141;
+  --kanvas: #070a11;
 
-  --text: #ececec;
-  --text-muted: #a1a1a1;
-  --text-subtle: #757575;
-  --text-inverted: #14181f;
+  --border: #253048;
+  --border-strong: #374460;
 
-  --accent: #4b83f0;
-  --accent-hover: #6094f5;
-  --accent-subtle: #1a2440;
-  --accent-border: #2c3f66;
+  --text: #e8ecf4;
+  --text-muted: #97a3b8;
+  --text-subtle: #8290a8;
+  --text-inverted: #0f172a;
+
+  --accent: #5a90f4;
+  --accent-hover: #7aa6f7;
+  --accent-subtle: #16233d;
+  --accent-border: #2b3f66;
   --accent-text: #ffffff;
+
+  /* Identitas institusi — emas dinaikkan lightness-nya sedikit supaya tetap
+     terbaca sebagai emas di atas navy gelap, dan `--emas-teks` di sini justru
+     versi TERANG (di tema gelap, teks emaslah yang berkontras). */
+  --merek-900: #0d1526;
+  --merek-800: #16233d;
+  --merek-700: #1d2c4d;
+  --merek-teal: #12586b;
+  --emas: #f5b833;
+  --emas-teks: #f0c25c;
+
+  --sidebar-gradien: linear-gradient(170deg, #0c1424 0%, #121d33 55%, #172541 100%);
+  --sidebar-teks: #c5d2e8;
+  --sidebar-teks-kuat: #ffffff;
+  --sidebar-teks-samar: #7f92b4;
+  --sidebar-hover: rgb(255 255 255 / 0.07);
+  --sidebar-garis: rgb(255 255 255 / 0.09);
+  /* Pil putih tema terang akan menyilaukan di sini; navy terang + teks putih
+     memberi peran "aktif" yang sama tanpa jadi titik paling cerah di layar. */
+  --sidebar-aktif-bg: #2b4272;
+  --sidebar-aktif-teks: #ffffff;
+  --sidebar-lencana-bg: rgb(255 255 255 / 0.09);
+
+  --kepala-gradien: linear-gradient(100deg, #16233d, #1d2c4d 60%, #11414f);
+  --kepala-teks: #eef2fb;
+  --kepala-teks-samar: #a3b4d6;
 
   /* Seri chart tema gelap — dipilih ulang terhadap surface gelap, bukan
      hasil membalik nilai tema terang secara otomatis. Pita lightness tema
@@ -104,6 +231,16 @@
   --chart-2: #2aa876;
   --chart-3: #c07a24;
   --chart-4: #cc63a6;
+
+  /* Band Kotak 9 tema gelap — dipilih ulang terhadap surface gelap, bukan
+     hasil membalik nilai tema terang. Di tema gelap tint MENERANGKAN latar,
+     jadi arah kegagalan kontrasnya berlawanan: band di sini lebih terang,
+     dan tema gelaplah yang mengikat plafon tint di 51%. */
+  --k9-1: #f08a8a;
+  --k9-2: #f0a06a;
+  --k9-3: #dfb45c;
+  --k9-4: #5fc98a;
+  --k9-5: #4fc0a8;
 
   --success: #56b183;
   --success-subtle: #16281f;
@@ -117,11 +254,15 @@
   --danger-subtle: #2c1a1a;
   --danger-border: #472929;
 
-  --neutral: #a1a1a1;
-  --neutral-subtle: #262626;
-  --neutral-border: #363636;
+  --neutral: #97a3b8;
+  --neutral-subtle: #1a2337;
+  --neutral-border: #2b3548;
 
   --shadow-overlay: 0 8px 28px -8px rgb(0 0 0 / 0.6), 0 2px 8px -2px rgb(0 0 0 / 0.4);
+  /* Di tema gelap bayangan hampir tidak terlihat — yang memisahkan kartu dari
+     kanvas adalah selisih --surface vs --kanvas, bukan shadow-nya. */
+  --bayang-kartu: 0 1px 3px rgb(0 0 0 / 0.4);
+  --bayang-kartu-naik: 0 10px 24px -8px rgb(0 0 0 / 0.55), 0 4px 8px -4px rgb(0 0 0 / 0.35);
 }
 
 @theme inline {
@@ -129,6 +270,29 @@
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
   --color-surface-inset: var(--surface-inset);
+  --color-kanvas: var(--kanvas);
+
+  --color-merek-900: var(--merek-900);
+  --color-merek-800: var(--merek-800);
+  --color-merek-700: var(--merek-700);
+  --color-merek-teal: var(--merek-teal);
+  --color-emas: var(--emas);
+  --color-emas-teks: var(--emas-teks);
+
+  --color-sidebar-teks: var(--sidebar-teks);
+  --color-sidebar-teks-kuat: var(--sidebar-teks-kuat);
+  --color-sidebar-teks-samar: var(--sidebar-teks-samar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-garis: var(--sidebar-garis);
+  --color-sidebar-aktif-bg: var(--sidebar-aktif-bg);
+  --color-sidebar-aktif-teks: var(--sidebar-aktif-teks);
+  --color-sidebar-lencana-bg: var(--sidebar-lencana-bg);
+
+  --color-kepala-teks: var(--kepala-teks);
+  --color-kepala-teks-samar: var(--kepala-teks-samar);
+
+  --shadow-kartu: var(--bayang-kartu);
+  --shadow-kartu-naik: var(--bayang-kartu-naik);
 
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
@@ -159,6 +323,12 @@
   --color-neutral: var(--neutral);
   --color-neutral-subtle: var(--neutral-subtle);
   --color-neutral-border: var(--neutral-border);
+
+  --color-k9-1: var(--k9-1);
+  --color-k9-2: var(--k9-2);
+  --color-k9-3: var(--k9-3);
+  --color-k9-4: var(--k9-4);
+  --color-k9-5: var(--k9-5);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -201,6 +371,24 @@
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  /* Sidebar & pita kepala halaman punya latar bermerek gelap, dan --accent
+     adalah biru institusi — di atas navy ia praktis tidak terlihat, sehingga
+     navigasi keyboard kehilangan penanda fokusnya justru di menu utama.
+     Emas PU yang berkontras di sana. */
+  .permukaan-sidebar :focus-visible,
+  .pita-kepala :focus-visible {
+    outline-color: var(--emas);
+  }
+
+  /* Scrollbar di dalam sidebar ikut latarnya, bukan skala terang global. */
+  .permukaan-sidebar * {
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+
+  .permukaan-sidebar ::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.22);
   }
 
   ::selection {
@@ -266,5 +454,271 @@
     100% {
       transform: translateX(400%);
     }
+  }
+
+  /* ==========================================================================
+     Permukaan bermerek — diporting dari v1.
+     Gradiennya ditulis sebagai utility, bukan `bg-[image:var(--x)]` di TSX:
+     twMerge tidak bisa mengenali konflik antar arbitrary background, jadi
+     versi arbitrary akan menumpuk diam-diam saat komponen menerima className.
+     ========================================================================== */
+  .permukaan-sidebar {
+    background-image: var(--sidebar-gradien);
+  }
+
+  .pita-kepala {
+    background-image: var(--kepala-gradien);
+  }
+
+  /* Wadah aksi di dalam pita kepala. Ia tidak menimpa satu pun class anaknya —
+     ia mendefinisikan ulang TOKEN-nya, dan karena `@theme inline` membuat tiap
+     utility menunjuk langsung ke token (bg-accent → var(--accent)), seluruh
+     tombol/badge/input di dalamnya ikut menyesuaikan diri sendiri.
+
+     Nilainya sengaja putih transparan, bukan warna baru: apa pun gradien di
+     belakangnya, latar semi-transparan putih selalu lebih terang daripada
+     pita — jadi kontrasnya tidak bergantung pada di titik mana gradien itu
+     sedang berada. Aksi utama jadi emas PU dengan teks navy, satu-satunya
+     tempat emas dipakai sebagai latar tombol. */
+  .pita-kepala-aksi {
+    --accent: var(--emas);
+    --accent-hover: #ffc93f;
+    --accent-text: var(--merek-900);
+    --accent-subtle: rgb(255 255 255 / 0.16);
+    --accent-border: rgb(255 255 255 / 0.32);
+
+    --surface: rgb(255 255 255 / 0.12);
+    --surface-2: rgb(255 255 255 / 0.12);
+    --surface-3: rgb(255 255 255 / 0.22);
+    --border: rgb(255 255 255 / 0.3);
+    --border-strong: rgb(255 255 255 / 0.45);
+
+    /* Ketiga tingkat teks jadi PUTIH di sini, bukan versi samarnya. Audit
+       kontras: --kepala-teks-samar di atas putih-14% hanya 4,13:1 di tengah
+       gradien dan 2,76:1 di ujung teal — dan yang memakainya adalah badge,
+       yaitu teks 12px di dalam chip sempit. Hierarki tiga tingkat tidak punya
+       ruang di dalam chip setinggi 20px; yang dibutuhkan di sana keterbacaan. */
+    --text: var(--kepala-teks);
+    --text-muted: var(--kepala-teks);
+    --text-subtle: var(--kepala-teks);
+
+    --neutral: var(--kepala-teks);
+    --neutral-subtle: rgb(255 255 255 / 0.14);
+    --neutral-border: rgb(255 255 255 / 0.3);
+  }
+
+  /* ==========================================================================
+     Nada warna kartu KPI — port `TONES` di v1 `app/(app)/StatCard.tsx`.
+
+     Tiap nada memasok empat nilai: `--sc-bar` (bar tepi kiri), `--sc-fg`
+     (warna angka), `--sc-soft` (latar chip ikon), `--sc-ring` (garis chip).
+
+     Ditulis sebagai class alih-alih `style={{'--sc-bg': ...}}` seperti v1
+     justru KARENA tema gelap: nilai inline tidak bisa punya pasangan gelap,
+     sehingga kartu v1 akan memakai latar #eff6ff (hampir putih) di tema gelap
+     dan angkanya lenyap. Ini satu-satunya tempat warna di luar blok token,
+     dan sengaja: nada kartu adalah palet kategorikal, bukan warna status —
+     "biru" tidak berarti baik dan "amber" tidak berarti waspada.
+     ========================================================================== */
+  .nada-biru {
+    --sc-bar: #1e40af;
+    --sc-fg: #1e3a8a;
+    --sc-soft: #eff6ff;
+    --sc-ring: #bfdbfe;
+  }
+  .nada-hijau {
+    --sc-bar: #15803d;
+    --sc-fg: #166534;
+    --sc-soft: #f0fdf4;
+    --sc-ring: #bbf7d0;
+  }
+  .nada-amber {
+    --sc-bar: #b45309;
+    --sc-fg: #92400e;
+    --sc-soft: #fffbeb;
+    --sc-ring: #fde68a;
+  }
+  .nada-merah {
+    --sc-bar: #b91c1c;
+    --sc-fg: #991b1b;
+    --sc-soft: #fef2f2;
+    --sc-ring: #fecaca;
+  }
+  .nada-violet {
+    --sc-bar: #6d28d9;
+    --sc-fg: #5b21b6;
+    --sc-soft: #f5f3ff;
+    --sc-ring: #ddd6fe;
+  }
+  .nada-teal {
+    --sc-bar: #0e7490;
+    --sc-fg: #155e75;
+    --sc-soft: #ecfeff;
+    --sc-ring: #a5f3fc;
+  }
+  .nada-slate {
+    --sc-bar: #475569;
+    --sc-fg: #334155;
+    --sc-soft: #f8fafc;
+    --sc-ring: #e2e8f0;
+  }
+
+  /* Pasangan gelap: `--sc-fg` naik lightness (angka besar harus terbaca di
+     atas surface gelap) dan `--sc-soft` turun jadi tint gelap, bukan tint
+     terang. Bar tepi tetap yang paling saturated di tiap nada. */
+  .dark .nada-biru {
+    --sc-bar: #4b83f0;
+    --sc-fg: #93b4f8;
+    --sc-soft: #16233d;
+    --sc-ring: #2b3f66;
+  }
+  .dark .nada-hijau {
+    --sc-bar: #3fae7c;
+    --sc-fg: #7fd3a8;
+    --sc-soft: #10241c;
+    --sc-ring: #1f4535;
+  }
+  .dark .nada-amber {
+    --sc-bar: #d69436;
+    --sc-fg: #e8b96a;
+    --sc-soft: #2a2015;
+    --sc-ring: #4a3a1e;
+  }
+  .dark .nada-merah {
+    --sc-bar: #e06666;
+    --sc-fg: #f0a3a3;
+    --sc-soft: #2b1618;
+    --sc-ring: #4d2828;
+  }
+  .dark .nada-violet {
+    --sc-bar: #9066e8;
+    --sc-fg: #bda6f5;
+    --sc-soft: #221a3a;
+    --sc-ring: #3c2d63;
+  }
+  .dark .nada-teal {
+    --sc-bar: #2c94ad;
+    --sc-fg: #74c9dc;
+    --sc-soft: #10262e;
+    --sc-ring: #1e4552;
+  }
+  .dark .nada-slate {
+    --sc-bar: #64748b;
+    --sc-fg: #a4b0c4;
+    --sc-soft: #161d2b;
+    --sc-ring: #2b3548;
+  }
+
+  .sc-bar {
+    background-color: var(--sc-bar);
+  }
+  .sc-fg {
+    color: var(--sc-fg);
+  }
+  .sc-chip {
+    background-color: var(--sc-soft);
+    border-color: var(--sc-ring);
+    color: var(--sc-fg);
+  }
+
+  /* Angkat kartu saat hover — HANYA untuk kartu yang benar-benar bisa diklik.
+     Kartu statis yang ikut bergerak saat disenggol kursor membuat orang
+     mengira ada yang bisa dibuka. */
+  .kartu-naik {
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+  .kartu-naik:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bayang-kartu-naik);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kartu-naik {
+      transition: none;
+    }
+    .kartu-naik:hover {
+      transform: none;
+    }
+  }
+}
+
+/* ==========================================================================
+   Cetak / ekspor PDF — diporting dari v1 (`@media print`).
+   v2 belum punya ini sama sekali, padahal sudah ada halaman Laporan & Pusat
+   Ekspor: mencetaknya sekarang menghasilkan sidebar navy setinggi halaman,
+   navbar, dan kolom konten sempit di sepertiga kertas.
+
+   `print-color-adjust: exact` dipasang pada elemen bermerek saja — bukan
+   global. Global berarti seluruh tint tabel ikut tercetak dan menghabiskan
+   toner untuk sesuatu yang tidak menambah informasi.
+   ========================================================================== */
+@media print {
+  /* Kerangka aplikasi tidak ikut tercetak.
+     WAJIB lewat `.tanpa-cetak`, JANGAN lewat pemilih elemen `header`/`aside`:
+     `PanelHeader` juga merender `<header>`, jadi versi pertama aturan ini
+     menyembunyikan **judul setiap panel & chart** dari lembar cetak — delapan
+     `<header>` di dashboard, hanya satu di antaranya navbar. Cacatnya tidak
+     terlihat di layar sama sekali. */
+  .tanpa-cetak {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
+
+  /* Shell aplikasi memakai h-dvh + overflow-hidden supaya hanya area konten
+     yang menggulir. Saat dicetak, tinggi tetap itu memotong konten di layar
+     pertama — jadi seluruh pembatas tinggi dilepas. */
+  body *,
+  body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  main > div {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Kartu & panel: garis tipis, dan JANGAN terpotong di tengah oleh pindah
+     halaman — tabel yang kepalanya tertinggal di halaman sebelumnya tidak
+     bisa dibaca. */
+  section,
+  table {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img,
+  svg {
+    break-inside: avoid;
+  }
+
+  /* Kepala halaman tetap bermerek — itu yang membuat lembar cetak dikenali
+     sebagai dokumen resmi DJBK, bukan tangkapan layar. */
+  .pita-kepala {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Tautan di atas kertas tidak bisa diklik; biru-nya hanya jadi bising. */
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  @page {
+    margin: 1.5cm;
   }
 }

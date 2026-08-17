@@ -3,7 +3,13 @@ import 'server-only'
 import { BUTIR_KELENGKAPAN, tingkatKelengkapan, type TingkatKelengkapan } from '../kelengkapan'
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import { DEFINISI_TEMUAN, type KodeTemuan } from '../importer'
-import { SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { profilSumber, type KeadaanIntegrasi } from '../sumber-data'
+import {
+  SUBKUERI_UNIT_TURUNAN,
+  filterSumber,
+  filterSumberPegawaiId,
+  filterSumberTanpaAlias,
+} from './dasar'
 import { SQL_SKOR_KELENGKAPAN, TOTAL_BOBOT_KELENGKAPAN, sqlFaktaButir } from './kelengkapan-sql'
 
 /**
@@ -196,6 +202,8 @@ function filterUnit(unitId?: number): { where: string; params: unknown[] } {
     syarat.push(`j.unit_organisasi_id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(unitId)
   }
+  const batas = filterSumber('p')
+  if (batas) syarat.push(batas.replace(/^ AND /, ''))
   return { where: `WHERE ${syarat.join(' AND ')}`, params }
 }
 
@@ -205,7 +213,8 @@ function filterUnit(unitId?: number): { where: string; params: unknown[] } {
 
 export interface KelompokTemuan {
   kode: KodeTemuan
-  aturan: number
+  /** `null` untuk temuan yang tidak berasal dari phase.md §6 (mis. sumber eNom). */
+  aturan: number | null
   label: string
   tingkat: string
   dampak: string
@@ -233,19 +242,24 @@ export interface BarisTemuanData {
 export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
   const r = await kueriSatu<Record<string, unknown>>(`
     SELECT
-      (SELECT COUNT(*) FROM pegawai WHERE nip NOT REGEXP '^[0-9]{18}$')            AS nip_tidak_valid,
-      (SELECT COUNT(*) FROM riwayat_jabatan
-         WHERE jabatan_id IS NULL OR tanggal_mulai IS NULL OR no_sk IS NULL
-            OR TRIM(COALESCE(no_sk,'')) = '')                                      AS riwayat_belum,
-      (SELECT COUNT(*) FROM riwayat_pendidikan
-         WHERE jenjang_pendidikan IS NULL OR bidang_studi IS NULL
-            OR TRIM(bidang_studi) = '')                                            AS pendidikan_belum,
       (SELECT COUNT(*) FROM pegawai
-         WHERE tmt_golongan IS NULL OR tmt_jabatan IS NULL)                        AS tanggal_kosong,
+         WHERE nip NOT REGEXP '^[0-9]{18}$' ${filterSumberTanpaAlias()})            AS nip_tidak_valid,
+      (SELECT COUNT(*) FROM riwayat_jabatan
+         WHERE (jabatan_id IS NULL OR tanggal_mulai IS NULL OR no_sk IS NULL
+            OR TRIM(COALESCE(no_sk,'')) = '')
+           ${filterSumberPegawaiId('pegawai_id')})                                 AS riwayat_belum,
+      (SELECT COUNT(*) FROM riwayat_pendidikan
+         WHERE (jenjang_pendidikan IS NULL OR bidang_studi IS NULL
+            OR TRIM(bidang_studi) = '')
+           ${filterSumberPegawaiId('pegawai_id')})                                 AS pendidikan_belum,
+      (SELECT COUNT(*) FROM pegawai
+         WHERE (tmt_golongan IS NULL OR tmt_jabatan IS NULL)
+           ${filterSumberTanpaAlias()})                                            AS tanggal_kosong,
       (SELECT COUNT(*) FROM asesmen_talenta a
-         WHERE a.kotak_9_sumber IS NOT NULL AND a.kotak_9_sumber <> a.kotak_9)     AS kotak9_beda,
+         WHERE a.kotak_9_sumber IS NOT NULL AND a.kotak_9_sumber <> a.kotak_9
+           ${filterSumberPegawaiId('a.pegawai_id')})                               AS kotak9_beda,
       (SELECT COUNT(*) FROM pegawai p
-         WHERE p.jabatan_id IS NULL)                                               AS tanpa_jabatan
+         WHERE p.jabatan_id IS NULL ${filterSumber('p')})                          AS tanpa_jabatan
   `)
 
   const jumlah: Partial<Record<KodeTemuan, number>> = {
@@ -265,7 +279,14 @@ export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
       dampak: d.dampak,
       jumlah: jumlah[d.kode] ?? 0,
     }))
-    .sort((a, b) => b.jumlah - a.jumlah || a.aturan - b.aturan)
+    .sort(
+      (a, b) =>
+        // Temuan tanpa nomor §6 (mis. dari API eNom) diurutkan paling belakang
+        // di antara yang jumlahnya sama — bukan dianggap "nomor 0" yang akan
+        // melompat ke depan aturan §6 no. 1.
+        b.jumlah - a.jumlah ||
+        (a.aturan ?? Number.MAX_SAFE_INTEGER) - (b.aturan ?? Number.MAX_SAFE_INTEGER),
+    )
 }
 
 /** Baris temuan untuk satu kode — daftar kerja, jadi dibatasi. */
@@ -277,7 +298,8 @@ export async function ambilTemuanRinci(
     case 'NIP_TIDAK_VALID': {
       const baris = await kueri<Record<string, unknown>>(
         `SELECT id, nip, nama_lengkap FROM pegawai
-         WHERE nip NOT REGEXP '^[0-9]{18}$' ORDER BY nama_lengkap LIMIT ?`,
+         WHERE nip NOT REGEXP '^[0-9]{18}$' ${filterSumberTanpaAlias()}
+         ORDER BY nama_lengkap LIMIT ?`,
         [batas],
       )
       return baris.map((r) => ({
@@ -296,8 +318,9 @@ export async function ambilTemuanRinci(
                 rj.tanggal_mulai, rj.no_sk, p.nama_lengkap, p.nip
          FROM riwayat_jabatan rj
          JOIN pegawai p ON p.id = rj.pegawai_id
-         WHERE rj.jabatan_id IS NULL OR rj.tanggal_mulai IS NULL
-            OR rj.no_sk IS NULL OR TRIM(COALESCE(rj.no_sk,'')) = ''
+         WHERE (rj.jabatan_id IS NULL OR rj.tanggal_mulai IS NULL
+            OR rj.no_sk IS NULL OR TRIM(COALESCE(rj.no_sk,'')) = '')
+           ${filterSumber('p')}
          ORDER BY p.nama_lengkap, rj.urutan LIMIT ?`,
         [batas],
       )
@@ -323,8 +346,9 @@ export async function ambilTemuanRinci(
         `SELECT rp.id, rp.jenjang_pendidikan, rp.bidang_studi, p.nama_lengkap, p.nip
          FROM riwayat_pendidikan rp
          JOIN pegawai p ON p.id = rp.pegawai_id
-         WHERE rp.jenjang_pendidikan IS NULL OR rp.bidang_studi IS NULL
-            OR TRIM(rp.bidang_studi) = ''
+         WHERE (rp.jenjang_pendidikan IS NULL OR rp.bidang_studi IS NULL
+            OR TRIM(rp.bidang_studi) = '')
+           ${filterSumber('p')}
          ORDER BY p.nama_lengkap LIMIT ?`,
         [batas],
       )
@@ -344,7 +368,8 @@ export async function ambilTemuanRinci(
     case 'TANGGAL_TIDAK_TERURAI': {
       const baris = await kueri<Record<string, unknown>>(
         `SELECT id, nip, nama_lengkap, tmt_golongan, tmt_jabatan FROM pegawai
-         WHERE tmt_golongan IS NULL OR tmt_jabatan IS NULL
+         WHERE (tmt_golongan IS NULL OR tmt_jabatan IS NULL)
+           ${filterSumberTanpaAlias()}
          ORDER BY nama_lengkap LIMIT ?`,
         [batas],
       )
@@ -370,6 +395,7 @@ export async function ambilTemuanRinci(
          FROM asesmen_talenta a
          JOIN pegawai p ON p.id = a.pegawai_id
          WHERE a.kotak_9_sumber IS NOT NULL AND a.kotak_9_sumber <> a.kotak_9
+           ${filterSumber('p')}
          ORDER BY p.nama_lengkap LIMIT ?`,
         [batas],
       )
@@ -394,6 +420,15 @@ export async function ambilTemuanRinci(
 
 export interface StatusSumber {
   sumber: string
+  /**
+   * Apakah sumber ini punya jalur sinkronisasi di kode. Datang dari
+   * `lib/sumber-data.ts`, BUKAN disimpulkan dari isi `sync_log` — baris benih dev
+   * bentuknya identik dengan baris sungguhan, jadi tabelnya tidak bisa menjawab
+   * pertanyaan ini.
+   */
+  keadaan: KeadaanIntegrasi
+  /** Di mana jalurnya hidup, atau apa yang belum ada. */
+  jalur: string
   jenisData: string[]
   terakhirMulai: Date | null
   terakhirSelesai: Date | null
@@ -436,11 +471,14 @@ export async function ambilStatusSumber(): Promise<StatusSumber[]> {
     ]),
   )
 
-  return baris.map((r) => {
+  const hasil = baris.map((r) => {
     const sumber = String(r.sumber_sistem)
     const t = petaTerakhir.get(sumber)
+    const profil = profilSumber(sumber)
     return {
       sumber,
+      keadaan: profil.keadaan,
+      jalur: profil.jalur,
       jenisData: String(r.jenis ?? '')
         .split('||')
         .filter((s) => s !== ''),
@@ -452,6 +490,19 @@ export async function ambilStatusSumber(): Promise<StatusSumber[]> {
       jumlahGagal: Number(r.gagal ?? 0),
       jumlahSebagian: Number(r.sebagian ?? 0),
     }
+  })
+
+  /**
+   * Yang TERINTEGRASI didahulukan, lalu menurut waktu sinkronisasi terakhir.
+   *
+   * Pengurutan SQL-nya murni menurut waktu, dan itu membuat sumber yang belum
+   * tersambung bisa muncul di antara yang sudah — sehingga pertanyaan "mana yang
+   * sudah jalan" tidak bisa dijawab dengan sekali lihat. Urutan ini yang
+   * menjawabnya, bukan warna lencana.
+   */
+  return hasil.sort((a, b) => {
+    if (a.keadaan !== b.keadaan) return a.keadaan === 'TERINTEGRASI' ? -1 : 1
+    return (b.terakhirMulai?.getTime() ?? 0) - (a.terakhirMulai?.getTime() ?? 0)
   })
 }
 

@@ -53,6 +53,8 @@ export interface DataTableProps<T> {
   /** Id unik untuk menyimpan preferensi kolom per tabel. */
   id: string
   kolom: Array<KolomTabel<T>>
+  /** Sembunyikan pemilih kolom — alasannya di tempat pemakaiannya di bawah. */
+  tanpaPemilihKolom?: boolean
   baris: T[]
   kunciBaris: (baris: T) => string | number
   /** Tautan detail per baris — dipakai untuk prefetch saat hover. */
@@ -70,6 +72,7 @@ export interface DataTableProps<T> {
 export function DataTable<T>({
   id,
   kolom,
+  tanpaPemilihKolom,
   baris,
   kunciBaris,
   tautanBaris,
@@ -135,12 +138,21 @@ export function DataTable<T>({
           Menampilkan {formatAngka(dariBaris)}–{formatAngka(sampaiBaris)} dari{' '}
           {formatAngka(total)} baris
         </p>
-        <PemilihKolom
-          id={id}
-          kolom={kolom}
-          tersembunyi={kolomTersembunyi}
-          setTersembunyi={setKolomTersembunyi}
-        />
+        {/* Bisa dimatikan per tabel. Di Direktori Pegawai ia dilepas atas
+            permintaan user (12 Agu 2026): pemilih kolom duduk berdampingan
+            dengan teks "Menampilkan 1–10 dari 10 baris", dan keduanya memajang
+            pasangan angka berbentuk sama ("10/11" vs "1–10 dari 10") yang
+            sebenarnya menghitung hal berbeda — kolom vs baris. Tabel lain
+            (Kandidat, Master Jabatan, drill-down Peta Talenta) tetap
+            memakainya. */}
+        {tanpaPemilihKolom ? null : (
+          <PemilihKolom
+            id={id}
+            kolom={kolom}
+            tersembunyi={kolomTersembunyi}
+            setTersembunyi={setKolomTersembunyi}
+          />
+        )}
       </div>
 
       {/* Progress tipis saat memuat urutan/halaman baru — data lama tetap tampil */}

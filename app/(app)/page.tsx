@@ -1,32 +1,42 @@
 import { Suspense } from 'react'
 
-import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/ui/panel'
-import { AktivitasTerakhir, AktivitasTerakhirSkeleton } from './_widget/aktivitas-terakhir'
-import { AntrianNominasi, AntrianNominasiSkeleton } from './_widget/antrian-nominasi'
-import { JabatanKosong, JabatanKosongSkeleton } from './_widget/jabatan-kosong'
-import { KartuRingkas, KartuRingkasSkeleton } from './_widget/kartu-ringkas'
-import { KesehatanData, KesehatanDataSkeleton } from './_widget/kesehatan-data'
 import { PetaSebaran, PetaSebaranSkeleton } from './_widget/peta-sebaran'
+import { KartuRingkas, KartuRingkasSkeleton } from './_widget/kartu-ringkas'
 import {
   AnggotaKotak,
   AnggotaKotakSkeleton,
   SebaranKotak9,
   SebaranKotak9Skeleton,
 } from './_widget/sebaran-kotak9'
-import { TrenKinerja, TrenKinerjaSkeleton } from './_widget/tren-kinerja'
 
 export const metadata = { title: 'Dashboard' }
 
 /**
- * Dashboard Utama (Fase 1).
+ * Dashboard Utama.
  *
- * Setiap widget dibungkus <Suspense> SENDIRI, bukan satu Suspense untuk seluruh
- * halaman: shell (sidebar, navbar, judul) langsung terkirim, lalu tiap kartu
- * mengalir masuk begitu kuerinya selesai. Satu widget yang lambat tidak menahan
- * tujuh lainnya (phase.md §5.3).
+ * **Dipangkas atas permintaan user (10 Agu 2026) menjadi tiga hal saja:** empat
+ * KPI, Sebaran Kotak 9 beserta drill-down pegawainya, dan Jabatan Strategis
+ * Kosong. **Ini menyimpang dari PRD §6.2 yang mendaftarkan delapan widget
+ * (W1–W8)** — penyimpangan yang disengaja, bukan pekerjaan yang belum selesai.
  *
- * Semua agregasi dikerjakan di SQL — lihat lib/kueri/dashboard.ts.
+ * Yang dilepas dari halaman ini (W3 Peta Kinerja × Potensial, W4 Kesehatan Data,
+ * W6 Antrian Nominasi, W7 Tren Kinerja, W8 Aktivitas Terakhir) **tidak dihapus
+ * dari kode**: komponennya utuh di `_widget/` dan tinggal dipasang kembali kalau
+ * keputusannya berubah. Menghapusnya berarti membuang pekerjaan yang sudah lolos
+ * uji hanya untuk merapikan satu berkas.
+ *
+ * Konsekuensi yang harus diikuti kalau daftar ini diubah lagi:
+ *   - `loading.tsx` menyusun skeleton dengan tata letak yang SAMA — ubah dua-duanya,
+ *     kalau tidak ada layout shift saat konten masuk (phase.md §5.3).
+ *   - Kartu KPI menaut ke anchor **di halaman ini**. Widget yang dilepas berarti
+ *     anchornya lenyap dan tautannya jadi klik mati (phase.md §5.2) — kartu
+ *     Nominasi karena itu sekarang menaut ke `/nominasi`, bukan ke `#antrian-nominasi`.
+ *   - `e2e/fase-1.smoke.mjs` menguji kehadiran widget per nama.
+ *
+ * Setiap widget tetap dibungkus <Suspense> SENDIRI: shell (sidebar, navbar,
+ * judul) langsung terkirim, lalu tiap panel mengalir masuk begitu kuerinya
+ * selesai. Semua agregasi dikerjakan di SQL — lihat lib/kueri/dashboard.ts.
  */
 export default async function DashboardPage({
   searchParams,
@@ -40,8 +50,7 @@ export default async function DashboardPage({
     <div className="space-y-5">
       <PageHeader
         judul="Dashboard Talenta"
-        deskripsi="Ringkasan kondisi talenta ASN Direktorat Jenderal Bina Konstruksi — sebaran Kotak 9, kesiapan data, jabatan strategis yang kosong, dan antrian nominasi."
-        aksi={<Badge tone="aksen">Fase 1</Badge>}
+        deskripsi="Ringkasan kondisi talenta ASN Direktorat Jenderal Bina Konstruksi — sebaran Kotak 9 dan jabatan strategis yang kosong."
       />
 
       {/* W1 */}
@@ -49,9 +58,37 @@ export default async function DashboardPage({
         <KartuRingkas />
       </Suspense>
 
-      {/* W2 + W3 — grid menjawab "berapa di tiap kotak", peta menjawab
-          "bagaimana sebarannya di dalam kotak" */}
-      <div id="peta-talenta" className="grid scroll-mt-4 gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      {/* W2 + W3 — Sebaran Kotak 9 menjawab "berapa orang di tiap kotak",
+          Peta Kinerja × Potensial menyebar orangnya pada dua sumbu yang membentuk
+          kotak itu. Panel Jabatan Strategis Kosong DILEPAS dari sini (permintaan
+          user, 12 Agu 2026) dan digantikan Peta — komponennya utuh di
+          `_widget/jabatan-kosong.tsx`, dan isinya tetap terjangkau di
+          `/jabatan-target#jabatan-kosong`.
+
+          Karena anchornya lenyap dari halaman ini, kartu KPI "Jabatan strategis
+          kosong" DIALIHKAN ke `/jabatan-target#jabatan-kosong`. Tanpa itu ia jadi
+          klik mati — kegagalan yang sama pernah terjadi saat widget Antrian
+          Nominasi dilepas.
+
+          Tinggi baris DITETAPKAN di xl, dan kedua panel meregang mengisinya —
+          bukan `items-start` yang membiarkan tiap panel setinggi isinya sendiri.
+          Sebelumnya grid Kotak 9 memakai sel ber-rasio 4:3 sehingga panelnya
+          jauh lebih tinggi daripada Jabatan Kosong, dan barisnya timpang.
+          Di bawah xl keduanya menumpuk, jadi tingginya dibiarkan otomatis —
+          tinggi tetap pada layar sempit akan memaksa gulir di dalam gulir.
+
+          39rem diambil dari tinggi ALAMI panel Jabatan Kosong pada isi sekarang
+          (6 jabatan), supaya keenamnya terlihat tanpa digulir sementara Kotak 9
+          menyusut menyamainya. Pada 32rem keduanya juga sejajar, tapi daftar yang
+          sudah ada pun ikut tergulir — memendekkan lebih jauh berarti
+          menyembunyikan data yang tadinya terlihat.
+
+          `grid-rows-[minmax(0,1fr)]` WAJIB, bukan hiasan: `h-[39rem]` sendirian
+          hanya menetapkan tinggi CONTAINER, sementara barisnya tetap `auto` dan
+          boleh melebihinya. Versi pertama perbaikan ini memakai `h-` saja —
+          terukur, panel tumbuh 613px → 2.062px begitu daftarnya diisi 24 baris,
+          dan `overflow-y-auto` di dalamnya tidak pernah aktif. */}
+      <div className="grid gap-5 xl:h-[39rem] xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] xl:grid-rows-[minmax(0,1fr)]">
         <Suspense fallback={<SebaranKotak9Skeleton />}>
           <SebaranKotak9 kotakAktif={kotakDipilih} />
         </Suspense>
@@ -60,43 +97,14 @@ export default async function DashboardPage({
         </Suspense>
       </div>
 
-      {/* W2b — drill-down, hanya saat ?kotak=N ada di URL */}
+      {/* W2b — drill-down, hanya saat ?kotak=N ada di URL. Lebar penuh: isinya
+          tabel pegawai, dan memaksanya ke separuh kolom membuat kolom NIP &
+          jabatan terpotong padahal ruangnya ada. */}
       {kotakDipilih !== null ? (
         <Suspense key={kotakDipilih} fallback={<AnggotaKotakSkeleton />}>
           <AnggotaKotak kotak={kotakDipilih} />
         </Suspense>
       ) : null}
-
-      {/* W4 + W5 */}
-      {/* items-start: panel mengikuti tinggi isinya sendiri. Tanpa ini, panel
-          yang lebih pendek (mis. chart dengan rasio aspek tetap) ikut
-          diregangkan setinggi pasangannya dan menyisakan ruang kosong besar. */}
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">
-        <Suspense fallback={<KesehatanDataSkeleton />}>
-          <KesehatanData />
-        </Suspense>
-        <Suspense fallback={<JabatanKosongSkeleton />}>
-          <JabatanKosong />
-        </Suspense>
-      </div>
-
-      {/* W7 + W6 */}
-      {/* items-start: panel mengikuti tinggi isinya sendiri. Tanpa ini, panel
-          yang lebih pendek (mis. chart dengan rasio aspek tetap) ikut
-          diregangkan setinggi pasangannya dan menyisakan ruang kosong besar. */}
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">
-        <Suspense fallback={<TrenKinerjaSkeleton />}>
-          <TrenKinerja />
-        </Suspense>
-        <Suspense fallback={<AntrianNominasiSkeleton />}>
-          <AntrianNominasi />
-        </Suspense>
-      </div>
-
-      {/* W8 */}
-      <Suspense fallback={<AktivitasTerakhirSkeleton />}>
-        <AktivitasTerakhir />
-      </Suspense>
     </div>
   )
 }

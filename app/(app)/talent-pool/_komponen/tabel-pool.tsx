@@ -37,26 +37,22 @@ export function TabelPool({
       <table className="w-full min-w-[62rem] border-collapse text-[13px]">
         <thead className="bg-surface-2">
           <tr className="border-b border-border text-left text-[11px] tracking-wide text-text-subtle uppercase">
-            <th className="px-3.5 py-2 text-right font-medium">#</th>
+            {/* Kolom "#" (peringkat pool) DIHAPUS — headernya terbaca sebagai
+                nomor baris sementara isinya peringkat tersimpan, sehingga
+                urutannya tampak acak (2 · 7 · 1) dan pembacanya mencari pola
+                yang tidak ada. Peringkat sendiri tetap tersimpan di DB dan
+                dipakai pengurutan; yang dilepas hanya pemajangannya. */}
+            {/* Sub-keterangan di bawah judul kolom ("kinerja × potensial",
+                "tidak masuk match score", "65/20/15 · 0–100") DIHAPUS atas
+                permintaan user (12 Agu 2026). Rumus & maknanya tetap dijelaskan
+                di panel "Kecocokan dengan jabatan target" di halaman profil,
+                jadi yang hilang cuma pengulangannya di kepala tabel. */}
             <th className="px-3 py-2 font-medium">Kandidat</th>
-            <th className="px-3 py-2 text-right font-medium">
-              Kotak 9
-              <span className="mt-0.5 block text-[9px] font-normal normal-case">
-                kinerja × potensial
-              </span>
-            </th>
-            <th className="px-3 py-2 font-medium">
-              Predikat kinerja
-              <span className="mt-0.5 block text-[9px] font-normal normal-case">
-                tidak masuk match score
-              </span>
-            </th>
-            <th className="px-3 py-2 text-right font-medium">
-              Match score
-              <span className="mt-0.5 block text-[9px] font-normal normal-case">
-                65/20/15 · 0–100
-              </span>
-            </th>
+            <th className="px-3 py-2 font-medium">NIP</th>
+            <th className="px-3 py-2 font-medium">Jabatan</th>
+            <th className="px-3 py-2 text-right font-medium">Kotak 9</th>
+            <th className="px-3 py-2 font-medium">Predikat kinerja</th>
+            <th className="px-3 py-2 text-right font-medium">Match score</th>
             <th className="px-3 py-2 font-medium">Status</th>
             <th className="px-3 py-2 font-medium">Giliran</th>
             <th className="px-3.5 py-2 font-medium">Aksi</th>
@@ -65,29 +61,31 @@ export function TabelPool({
         <tbody>
           {baris.map(({ baris: b, opsiAksi }) => (
             <tr key={b.talentPoolId} className="border-b border-border last:border-b-0 hover:bg-surface-2">
-              <td className="tabular px-3.5 py-2.5 text-right font-medium text-text-subtle">
-                {b.ranking ?? '—'}
-              </td>
-
-              <td className="px-3 py-2.5">
+              {/* Nama · NIP · Jabatan jadi TIGA kolom (permintaan user).
+                  Peringatan konsistensi tetap menempel di kolom nama: ia soal
+                  barisnya secara keseluruhan (status pool vs nominasi yang
+                  bertentangan), bukan soal NIP maupun jabatannya. */}
+              <td className="px-3 py-2.5 pl-3.5">
                 <Link
                   href={`/talenta/${b.nip}`}
                   className="block font-medium text-text hover:text-accent"
                 >
                   {b.nama}
                 </Link>
-                <span className="tabular block text-[11px] text-text-subtle">
-                  {formatNip(b.nip)}
-                </span>
-                {b.namaJabatan !== null ? (
-                  <span className="block text-[11px] text-text-subtle">{b.namaJabatan}</span>
-                ) : null}
                 {b.peringatanKonsistensi !== null ? (
                   <span className="mt-1 flex items-start gap-1 text-[10px] leading-relaxed text-danger">
                     <TriangleAlert className="mt-0.5 size-3 shrink-0" />
                     {b.peringatanKonsistensi}
                   </span>
                 ) : null}
+              </td>
+
+              <td className="tabular px-3 py-2.5 whitespace-nowrap text-text-muted">
+                {formatNip(b.nip)}
+              </td>
+
+              <td className="px-3 py-2.5 text-text-muted">
+                {b.namaJabatan ?? <span className="text-text-subtle">—</span>}
               </td>
 
               <td className="tabular px-3 py-2.5 text-right">

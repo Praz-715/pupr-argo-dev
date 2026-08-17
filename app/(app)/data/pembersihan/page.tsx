@@ -102,7 +102,10 @@ async function IsiRingkas({ kodeAktif }: { kodeAktif: KodeTemuan | null }) {
                   <span className="min-w-0">
                     <span className="block text-[13px] font-medium text-text">{k.label}</span>
                     <span className="block text-[10px] text-text-subtle">
-                      aturan §6 no. {k.aturan}
+                      {/* Tanpa nomor = temuan dari sumber di luar phase.md §6
+                          (mis. API eNominasi). Menuliskan "§6 no. null" lebih
+                          buruk daripada menyebut sumbernya apa adanya. */}
+                      {k.aturan === null ? 'sumber eksternal' : `aturan §6 no. ${k.aturan}`}
                     </span>
                   </span>
                   <span className="tabular shrink-0 text-xl leading-none font-semibold text-text">
@@ -134,7 +137,9 @@ async function IsiRingkas({ kodeAktif }: { kodeAktif: KodeTemuan | null }) {
               <li key={k.kode} className="flex items-center gap-1.5 text-[11px] text-text-subtle">
                 <CircleCheck className="size-3 shrink-0 text-success" />
                 {k.label}
-                <span className="text-text-subtle">(§6 no. {k.aturan})</span>
+                <span className="text-text-subtle">
+                  {k.aturan === null ? '(sumber eksternal)' : `(§6 no. ${k.aturan})`}
+                </span>
               </li>
             ))}
           </ul>
@@ -156,7 +161,7 @@ async function IsiRinci({ kode }: { kode: KodeTemuan }) {
             <span className="flex flex-wrap items-center gap-2">
               {def.label}
               <Badge tone={def.tingkat === 'PERLU_MANUSIA' ? 'peringatan' : 'aksen'}>
-                aturan §6 no. {def.aturan}
+                {def.aturan === null ? 'sumber eksternal' : `aturan §6 no. ${def.aturan}`}
               </Badge>
             </span>
           }

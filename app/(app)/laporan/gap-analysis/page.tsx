@@ -118,7 +118,7 @@ export default async function GapAnalysisPage({ searchParams }: { searchParams: 
         <IsiIndikator filter={filter} lingkupTeks={ringkasLingkup(lingkup)} />
       </Suspense>
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Suspense key={`u|${kunci}`} fallback={<TabelSkeleton baris={8} />}>
           <IsiKelompok filter={filter} jenis="unit" />
         </Suspense>

@@ -46,3 +46,67 @@ export const SUBKUERI_UNIT_TURUNAN = `
     SELECT id FROM pohon
   ) AS turunan
 `
+
+/**
+ * Batasi populasi ke pegawai yang **ada di sistem sumber (eNominasi)**.
+ *
+ * Dinyalakan lewat `HANYA_PEGAWAI_SUMBER=true` di env. Bawaannya MATI, dan itu
+ * disengaja: ini saklar untuk melihat aplikasi berjalan atas data sumber saja,
+ * bukan perilaku produksi. Mematikannya cukup menghapus satu baris env — tidak
+ * perlu menyentuh kode, dan tidak ada baris DB yang pernah dihapus.
+ *
+ * **"Ada di sumber" = punya baris `asesmen_talenta` ber-`sumber_sync='eNominasi'`.**
+ * Bukan `sumber_sinkron` di tabel `pegawai`: kolom itu menyatakan dari mana
+ * BIODATA-nya datang, sedangkan yang ditanyakan di sini adalah "apakah orang ini
+ * dijawab oleh API asesmen" — dan eNom hanya memuat pegawai yang sudah punya
+ * rekaman asesmen di sana.
+ *
+ * Kenapa satu konstanta dan bukan klausa yang ditulis ulang per berkas: definisi
+ * populasi yang tersebar membuat dashboard, direktori, dan peta talenta
+ * menghitung angka berbeda tanpa ada yang menyadarinya — larangan yang sama
+ * dengan `CTE_ASESMEN_TERBARU` di atas.
+ *
+ * Pemakaian: sisipkan setelah klausa WHERE yang sudah ada, dengan alias tabel
+ * `pegawai` sebagai argumen.
+ *
+ *     `SELECT ... FROM pegawai p WHERE p.status_aktif='AKTIF' ${filterSumber('p')}`
+ */
+export const HANYA_SUMBER = process.env.HANYA_PEGAWAI_SUMBER === 'true'
+
+export function filterSumber(aliasPegawai: string): string {
+  return filterSumberPegawaiId(`${aliasPegawai}.id`)
+}
+
+/**
+ * Varian untuk kueri yang memegang **kolom `pegawai_id`** tapi tidak punya
+ * tabel `pegawai` di scope-nya — mis. agregat `FROM hukuman_disiplin` atau
+ * `FROM riwayat_jabatan`. Tanpa ini, menyaringnya menuntut JOIN `pegawai` yang
+ * ditambahkan hanya demi filternya; JOIN begitu mengubah rencana kueri dan bisa
+ * melipatgandakan baris kalau relasinya bukan 1:1 — dua efek samping yang tidak
+ * ada hubungannya dengan yang sedang dibatasi.
+ *
+ * Ketiga varian di berkas ini adalah **satu definisi populasi** yang sama; yang
+ * berbeda cuma cara menyebut pegawainya. Jangan menulis `EXISTS`-nya langsung
+ * di kueri — begitu ia ada di dua tempat, "siapa yang ditampilkan" punya dua
+ * jawaban dan halaman mulai berselisih tanpa ada yang gagal.
+ */
+export function filterSumberPegawaiId(kolomPegawaiId: string): string {
+  if (!HANYA_SUMBER) return ''
+  return ` AND EXISTS (
+    SELECT 1 FROM asesmen_talenta _fs
+    WHERE _fs.pegawai_id = ${kolomPegawaiId} AND _fs.sumber_sync = 'eNominasi'
+  )`
+}
+
+/**
+ * Varian untuk sub-kueri yang memakai `FROM pegawai` TANPA alias.
+ * Dipisah supaya pemanggil tidak menebak-nebak alias yang tidak ada.
+ */
+export function filterSumberTanpaAlias(): string {
+  return HANYA_SUMBER
+    ? ` AND EXISTS (
+    SELECT 1 FROM asesmen_talenta _fs
+    WHERE _fs.pegawai_id = pegawai.id AND _fs.sumber_sync = 'eNominasi'
+  )`
+    : ''
+}

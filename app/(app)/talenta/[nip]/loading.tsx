@@ -38,14 +38,16 @@ export default function Loading() {
         </div>
       </Panel>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        <Panel>
+      {/* Tinggi baris sama dengan halaman jadinya (27rem di page.tsx) — kerangka
+          yang lebih pendek membuat halaman melompat tepat saat data masuk. */}
+      <div className="grid gap-5 xl:h-[27rem] xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:grid-rows-[minmax(0,1fr)]">
+        <Panel className="xl:h-full">
           <Skeleton className="h-4 w-56" />
           <div className="mt-4">
             <ListSkeleton rows={4} />
           </div>
         </Panel>
-        <Panel>
+        <Panel className="xl:h-full">
           <Skeleton className="h-4 w-40" />
           <div className="mt-3">
             <ChartSkeleton ratio="16 / 9" />

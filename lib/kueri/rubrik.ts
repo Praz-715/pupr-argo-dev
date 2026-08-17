@@ -16,7 +16,7 @@ import type {
 } from '../scoring'
 import type { Eselon, JenisSyarat } from '../scoring/eligibility'
 import type { TingkatPendidikan } from '../normalisasi'
-import { CTE_ASESMEN_TERBARU } from './dasar'
+import { CTE_ASESMEN_TERBARU, filterSumber } from './dasar'
 
 /**
  * Kueri Rule Engine — Jabatan Target & rubrik (Fase 5).
@@ -68,9 +68,12 @@ export async function ambilDaftarJabatanTarget(): Promise<BarisJabatanTarget[]> 
               JOIN rubrik_komponen k ON k.id = i.rubrik_komponen_id
               WHERE k.jabatan_target_id = t.id)                                              AS jumlah_indikator,
            (SELECT COUNT(*) FROM jabatan_target_persyaratan p WHERE p.jabatan_target_id = t.id) AS jumlah_persyaratan,
-           (SELECT COUNT(*) FROM match_score m WHERE m.jabatan_target_id = t.id)             AS jumlah_dinilai,
-           (SELECT COUNT(*) FROM match_score m WHERE m.jabatan_target_id = t.id AND m.eligible = 1) AS jumlah_eligible,
-           (SELECT COUNT(*) FROM talent_pool tp WHERE tp.jabatan_target_id = t.id)           AS jumlah_pool,
+           (SELECT COUNT(*) FROM match_score m JOIN pegawai p_ms ON p_ms.id = m.pegawai_id
+              WHERE m.jabatan_target_id = t.id ${filterSumber('p_ms')})                          AS jumlah_dinilai,
+           (SELECT COUNT(*) FROM match_score m JOIN pegawai p_me ON p_me.id = m.pegawai_id
+              WHERE m.jabatan_target_id = t.id AND m.eligible = 1 ${filterSumber('p_me')})       AS jumlah_eligible,
+           (SELECT COUNT(*) FROM talent_pool tp JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
+              WHERE tp.jabatan_target_id = t.id ${filterSumber('p_tp')})                         AS jumlah_pool,
            (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada
     FROM jabatan_target t
     LEFT JOIN users u ON u.id = t.dibuat_oleh
@@ -90,9 +93,12 @@ export async function ambilJabatanTarget(id: number): Promise<BarisJabatanTarget
                JOIN rubrik_komponen k ON k.id = i.rubrik_komponen_id
                WHERE k.jabatan_target_id = t.id)                                              AS jumlah_indikator,
             (SELECT COUNT(*) FROM jabatan_target_persyaratan p WHERE p.jabatan_target_id = t.id) AS jumlah_persyaratan,
-            (SELECT COUNT(*) FROM match_score m WHERE m.jabatan_target_id = t.id)             AS jumlah_dinilai,
-            (SELECT COUNT(*) FROM match_score m WHERE m.jabatan_target_id = t.id AND m.eligible = 1) AS jumlah_eligible,
-            (SELECT COUNT(*) FROM talent_pool tp WHERE tp.jabatan_target_id = t.id)           AS jumlah_pool,
+            (SELECT COUNT(*) FROM match_score m JOIN pegawai p_ms ON p_ms.id = m.pegawai_id
+              WHERE m.jabatan_target_id = t.id ${filterSumber('p_ms')})                          AS jumlah_dinilai,
+            (SELECT COUNT(*) FROM match_score m JOIN pegawai p_me ON p_me.id = m.pegawai_id
+              WHERE m.jabatan_target_id = t.id AND m.eligible = 1 ${filterSumber('p_me')})       AS jumlah_eligible,
+            (SELECT COUNT(*) FROM talent_pool tp JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
+              WHERE tp.jabatan_target_id = t.id ${filterSumber('p_tp')})                         AS jumlah_pool,
             (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada
      FROM jabatan_target t
      LEFT JOIN users u ON u.id = t.dibuat_oleh
@@ -531,6 +537,8 @@ export async function ambilKandidat(
   const params: unknown[] = [jabatanTargetId]
   if (cari !== '') params.push(pola, pola)
 
+  const batasSumber = filterSumber('p')
+  if (batasSumber) syarat.push(batasSumber.replace(/^ AND /, ''))
   const where = syarat.join(' AND ')
 
   const [baris, total] = await Promise.all([

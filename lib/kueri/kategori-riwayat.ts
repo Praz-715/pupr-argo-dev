@@ -7,7 +7,7 @@ import {
   type KategoriDiklat,
   type StatusPemetaan,
 } from '../kategori-riwayat'
-import { SUBKUERI_UNIT_TURUNAN } from './dasar'
+import { SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
 
 /**
  * Kueri kamus kategori diklat & antrian validasi riwayat (`doc/sql/014`).
@@ -223,6 +223,7 @@ export async function ambilAntrianDiklat(f: FilterAntrianDiklat = {}): Promise<{
         WHERE p.riwayat_diklat IS NOT NULL
           AND jt.nama IS NOT NULL
           ${filterUnit}
+          ${filterSumber('p')}
         GROUP BY nama_normal
      )
      SELECT pd.id, pd.nama_normal, pd.nama_mentah, pd.kategori_id, pd.status,
@@ -284,6 +285,8 @@ export async function ambilAntrianJabatan(
   const params: unknown[] = []
 
   if (f.hanyaBelumValid !== false) syarat.push('rj.jenis_penugasan IS NULL')
+  const batasPopulasi = filterSumber('p')
+  if (batasPopulasi) syarat.push(batasPopulasi.replace(/^ AND /, ''))
   if (f.unitWajib !== null && f.unitWajib !== undefined) {
     syarat.push(`j.unit_organisasi_id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(f.unitWajib)
@@ -357,7 +360,7 @@ export async function ambilRingkasValidasiRiwayat(
        FROM riwayat_jabatan rj
        JOIN pegawai p ON p.id = rj.pegawai_id
        LEFT JOIN jabatan j ON j.id = p.jabatan_id
-      WHERE 1 = 1 ${batasUnit}`,
+      WHERE 1 = 1 ${batasUnit} ${filterSumber('p')}`,
     p,
   )
 
@@ -365,7 +368,7 @@ export async function ambilRingkasValidasiRiwayat(
     `SELECT COUNT(*) AS total, SUM(p.riwayat_divalidasi_pada IS NOT NULL) AS diperiksa
        FROM pegawai p
        LEFT JOIN jabatan j ON j.id = p.jabatan_id
-      WHERE p.status_aktif = 'AKTIF' ${batasUnit}`,
+      WHERE p.status_aktif = 'AKTIF' ${batasUnit} ${filterSumber('p')}`,
     p,
   )
 

@@ -256,10 +256,19 @@ try {
     })
 
     await langkah('K-4: Kotak 9 & predikat kinerja SEBELUM match score', async () => {
+      // Penjaga "tabel sudah termuat" menyebut KOLOM yang diperiksa, bukan
+      // jumlahnya. Versi lama menunggu `th.length >= 8`; begitu kolom peringkat
+      // "#" dilepas (jumlahnya jadi 7) penantian itu tidak pernah terpenuhi dan
+      // gagal sebagai timeout 20 detik — seolah tabelnya tidak pernah muncul,
+      // padahal cuma satu kolom lebih sedikit. Angka ajaib begitu akan patah
+      // lagi setiap kali kolom ditambah atau dikurangi.
       const pegangan = await page.waitForFunction(
         () => {
           const th = [...document.querySelectorAll('thead th')].map((e) => e.textContent ?? '')
-          return th.length >= 8 ? th : false
+          const ada = (n) => th.some((h) => h.includes(n))
+          return ada('Kotak 9') && ada('Predikat') && ada('Match score') && ada('Giliran')
+            ? th
+            : false
         },
         undefined,
         { timeout: 20000 },
@@ -403,7 +412,10 @@ try {
 
   await langkah('Pengelola Unit TIDAK bisa memverifikasi nominasinya sendiri', async () => {
     const { ctx, page } = await konteksSebagai(USER.pengelolaUnit)
-    await page.goto(`${BASE}/nominasi?giliran=ADMIN_TALENTA`, { waitUntil: 'networkidle' })
+    // `?tahap=`, bukan `?giliran=`: penyaringnya pindah ke kosakata tahap
+    // (12 Agu 2026). Param lama masih dihormati halaman supaya bookmark tidak
+    // mati, tapi uji harus menembak permukaan yang sekarang.
+    await page.goto(`${BASE}/nominasi?tahap=VERIFIKASI`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(1200)
     const teks = await page.locator('body').innerText()
     tegaskan(
