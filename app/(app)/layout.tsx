@@ -55,7 +55,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             laporan) jadi rata tanpa hierarki. Kanvas satu tingkat lebih gelap
             mengembalikan pemisahan itu tanpa menambah shadow (v1 memakai cara
             yang sama: --bg #eef2f7 di bawah kartu putih). */}
-        <main className="min-h-0 flex-1 overflow-y-auto bg-kanvas">
+        {/* `motion-safe:scroll-smooth` ada DI SINI, bukan di `html`/`body`, dan itu
+            bukan pilihan gaya: yang menggulir di aplikasi ini adalah `<main>`
+            (app shell `h-dvh` + `overflow-hidden`), sehingga `window.scrollY`
+            SELALU 0 dan `scroll-behavior` pada `html` tidak berpengaruh apa pun.
+            `scroll-behavior` hanya berlaku pada kotak yang benar-benar
+            menggulir.
+
+            Dampaknya ke seluruh aplikasi, bukan cuma satu tautan: setiap anchor
+            dalam halaman ikut beranimasi — `#anggota-kotak` di dashboard,
+            `#jabatan-kosong` & `#risiko-kekosongan` di Jabatan Target. Sebelum
+            ini semuanya melompat seketika, dan lompatan tanpa transisi membuat
+            pembaca kehilangan jejak di mana ia tadi berada.
+
+            `motion-safe:` wajib — gulir beranimasi adalah pemicu vestibular yang
+            paling sering disebut, jadi ia dimatikan untuk yang meminta gerak
+            dikurangi. */}
+        <main className="min-h-0 flex-1 overflow-y-auto bg-kanvas motion-safe:scroll-smooth">
           <div className="mx-auto max-w-[1600px] px-4 py-5 lg:px-6">{children}</div>
         </main>
       </div>

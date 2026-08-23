@@ -1,11 +1,6 @@
-import {
-  AMBANG_SUMBU,
-  BOBOT_FORMULA_A,
-  MATRIKS_KOTAK_9,
-  SKOR_PREDIKAT,
-} from './konstanta'
+import { BOBOT_FORMULA_A, MATRIKS_KOTAK_9, SKOR_PREDIKAT } from './konstanta'
 import { bulatkan2, clampSkor } from './rubrik'
-import type { KategoriSumbuX, KategoriSumbuY, Kotak9, Predikat } from './types'
+import type { AmbangSumbu, KategoriSumbuX, KategoriSumbuY, Kotak9, Predikat } from './types'
 
 /**
  * Formula A — Nilai Talenta & pemetaan 9 Kotak Manajemen Talenta ASN.
@@ -23,19 +18,38 @@ export function skorPredikat(predikat: Predikat | string | null | undefined): nu
 }
 
 /**
- * Klasifikasi sumbu Y. Batas bawah INKLUSIF — jadi predikat "Baik" (tepat 80)
- * masuk "Di Atas Ekspektasi". Itu sifat rubrik sumber, bukan kekeliruan
- * pembulatan (phase.md §3 K-2).
+ * ## `ambang` WAJIB dikirim — tidak ada nilai bawaan, dan itu disengaja
+ *
+ * Ambang 80/60 bisa diubah Super Admin lewat `pengaturan_sistem` (butir 7,
+ * 18 Agu 2026), jadi fungsi-fungsi di bawah tidak boleh lagi membaca konstanta
+ * modul sendiri. Yang menggoda: memberi parameternya nilai bawaan
+ * `= AMBANG_SUMBU` supaya pemanggil lama tetap jalan. Itu justru cara paling
+ * rapi untuk membuat setengah aplikasi memakai angka DB dan setengahnya memakai
+ * angka kode — persis bug yang baru ditemukan di `ukur-hitung-ulang.ts`, yang
+ * lupa mengirim `masaBerlakuTahun` sehingga skornya identik sampai dua desimal
+ * tapi kelayakannya berbeda, dan tidak ada yang menyadarinya berbulan-bulan.
+ *
+ * Karena parameternya wajib, jalur yang lupa mengambil pengaturan **gagal
+ * kompilasi**, bukan diam-diam berbeda. `AMBANG_SUMBU` tetap ada sebagai nilai
+ * BAWAAN yang dipakai `PENGATURAN_BAWAAN` dan uji — satu tempat, bukan dua.
+ *
+ * `lib/scoring` tetap bebas DB: ia menerima angkanya, tidak mengambilnya.
  */
-export function klasifikasiSumbuY(nilai: number): KategoriSumbuY {
-  if (nilai >= AMBANG_SUMBU.atas) return 'Di Atas Ekspektasi'
-  if (nilai >= AMBANG_SUMBU.tengah) return 'Sesuai Ekspektasi'
+
+/**
+ * Klasifikasi sumbu Y. Batas bawah INKLUSIF — jadi predikat "Baik" (tepat 80)
+ * masuk "Di Atas Ekspektasi" pada ambang bawaan. Itu sifat rubrik sumber, bukan
+ * kekeliruan pembulatan (phase.md §3 K-2).
+ */
+export function klasifikasiSumbuY(nilai: number, ambang: AmbangSumbu): KategoriSumbuY {
+  if (nilai >= ambang.atas) return 'Di Atas Ekspektasi'
+  if (nilai >= ambang.tengah) return 'Sesuai Ekspektasi'
   return 'Di Bawah Ekspektasi'
 }
 
-export function klasifikasiSumbuX(nilai: number): KategoriSumbuX {
-  if (nilai >= AMBANG_SUMBU.atas) return 'Tinggi'
-  if (nilai >= AMBANG_SUMBU.tengah) return 'Menengah'
+export function klasifikasiSumbuX(nilai: number, ambang: AmbangSumbu): KategoriSumbuX {
+  if (nilai >= ambang.atas) return 'Tinggi'
+  if (nilai >= ambang.tengah) return 'Menengah'
   return 'Rendah'
 }
 
@@ -60,11 +74,33 @@ export interface HasilKotak9 {
  * (phase.md §2.3). Nilai `kotak_9` yang datang dari sistem sumber dipakai
  * sebagai pembanding lewat `bandingkanKotak9()`, bukan sebagai kebenaran.
  */
-export function hitungKotak9(nilaiKinerjaY: number, nilaiPotensialX: number): HasilKotak9 {
+export function hitungKotak9(
+  nilaiKinerjaY: number,
+  nilaiPotensialX: number,
+  ambang: AmbangSumbu,
+): HasilKotak9 {
   const y = clampSkor(nilaiKinerjaY).skor
-  const x = clampSkor(nilaiPotensialX).skor
-  const kategoriY = klasifikasiSumbuY(y)
-  const kategoriX = klasifikasiSumbuX(x)
+  /**
+   * **Sumbu X TIDAK diplafon** — keputusan pemilik proses, 18 Agu 2026.
+   *
+   * X diturunkan dari potkom, dan dua sumber independen (eNominasi & Excel Talent
+   * Pool ES 2/3) sama-sama mengirim potkom >100 pada sekitar 40% rekaman.
+   * Memotongnya membuat mereka semua menumpuk di X=100 tepat dan kehilangan daya
+   * bedanya, sehingga sebaran Kotak 9 menyempit bukan karena orangnya serupa.
+   *
+   * **Klasifikasinya tidak berubah sama sekali**: ambang teratas `≥80`, dan nilai
+   * >100 tetap memenuhinya — jadi `kotak` yang dihasilkan identik dengan versi
+   * berplafon, termasuk terhadap `ekspresiSqlKotak9()` yang dijaga
+   * `verifikasi:skoring`. Yang berbeda hanya angka X yang DILAPORKAN.
+   *
+   * `nilaiKinerjaY` tetap diplafon: ia turunan predikat kinerja yang memang
+   * berskala 0–100. Dan `nilaiTalenta` di bawah tetap diplafon oleh
+   * `hitungNilaiTalenta()` — komposit tanpa plafon berhenti bisa dibandingkan
+   * antar pegawai.
+   */
+  const x = bulatkan2(nilaiPotensialX)
+  const kategoriY = klasifikasiSumbuY(y, ambang)
+  const kategoriX = klasifikasiSumbuX(x, ambang)
 
   return {
     kotak: MATRIKS_KOTAK_9[kategoriY][kategoriX],
@@ -97,15 +133,31 @@ export function hitungKotak9(nilaiKinerjaY: number, nilaiPotensialX: number): Ha
  * dari pengguna. Nilai di DB sudah dijamin 0–100 sejak impor (§2.1), sehingga
  * `clampSkor()` yang ada di `hitungKotak9()` tidak perlu ditirukan di sini.
  */
-export function ekspresiSqlKotak9(kolomY: string, kolomX: string): string {
+export function ekspresiSqlKotak9(
+  kolomY: string,
+  kolomX: string,
+  ambang: AmbangSumbu,
+): string {
+  // Angka ambang disisipkan ke SQL, jadi ia WAJIB berupa bilangan — nilainya
+  // berasal dari `pengaturan_sistem` yang bisa diubah Super Admin, dan kolom
+  // `nilai` di tabel itu bertipe VARCHAR. Tanpa penjagaan ini, satu baris
+  // pengaturan yang berisi teks menjadi injeksi SQL lewat pintu belakang
+  // administrasi.
+  const angka = (n: number, nama: string): number => {
+    if (!Number.isFinite(n)) throw new Error(`Ambang ${nama} bukan bilangan: ${String(n)}`)
+    return n
+  }
+  const atas = angka(ambang.atas, 'atas')
+  const tengah = angka(ambang.tengah, 'tengah')
+
   const barisY: Array<[KategoriSumbuY, string | null]> = [
-    ['Di Atas Ekspektasi', `${kolomY} >= ${AMBANG_SUMBU.atas}`],
-    ['Sesuai Ekspektasi', `${kolomY} >= ${AMBANG_SUMBU.tengah}`],
+    ['Di Atas Ekspektasi', `${kolomY} >= ${atas}`],
+    ['Sesuai Ekspektasi', `${kolomY} >= ${tengah}`],
     ['Di Bawah Ekspektasi', null],
   ]
   const kolomX9: Array<[KategoriSumbuX, string | null]> = [
-    ['Tinggi', `${kolomX} >= ${AMBANG_SUMBU.atas}`],
-    ['Menengah', `${kolomX} >= ${AMBANG_SUMBU.tengah}`],
+    ['Tinggi', `${kolomX} >= ${atas}`],
+    ['Menengah', `${kolomX} >= ${tengah}`],
     ['Rendah', null],
   ]
 

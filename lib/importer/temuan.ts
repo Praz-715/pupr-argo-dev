@@ -15,6 +15,8 @@
 export type KodeTemuan =
   /** §6.1 — nilai skor di luar 0–100, dipotong ke rentang. */
   | 'SKOR_DI_LUAR_RENTANG'
+  /** Potkom di atas 100 — DISIMPAN APA ADANYA, tidak dipotong (keputusan user). */
+  | 'POTKOM_DI_ATAS_100'
   /** §6.2 — `kotak_9` sumber berbeda dengan hitungan ambang Lampiran A. */
   | 'KOTAK9_BEDA_DENGAN_HITUNGAN'
   /** §6.3 — nilai integritas datang pada skala kecil (1–4), dinaikkan ke 0–100. */
@@ -82,6 +84,16 @@ export const DEFINISI_TEMUAN: Record<KodeTemuan, DefinisiTemuan> = {
     tingkat: 'DIKOREKSI',
     dampak:
       'Nilai dipotong ke 0–100. Nilai mentahnya disimpan di jejak sinkronisasi supaya bisa ditelusuri kalau sumbernya membetulkan diri.',
+  },
+  POTKOM_DI_ATAS_100: {
+    kode: 'POTKOM_DI_ATAS_100',
+    // Bukan aturan bernomor di phase.md §6 — ia keputusan pemilik proses
+    // (18 Agu 2026) yang MEMBATALKAN pemotongan untuk potkom saja.
+    aturan: null,
+    label: 'Potkom di atas 100 (disimpan apa adanya)',
+    tingkat: 'PERLU_MANUSIA',
+    dampak:
+      'Nilai TIDAK dipotong — disimpan sesuai sumbernya, dan sumbu X ikut melebihi 100. Diputuskan user setelah dua sumber independen (eNominasi & Excel Talent Pool ES 2/3) sama-sama mengirim potkom >100 pada sekitar 40% rekaman: memotongnya membuat separuh populasi menumpuk di X=100 dan kehilangan seluruh daya bedanya. Klasifikasi Kotak 9 tidak terpengaruh (ambang teratas ≥80, dan >100 tetap ≥80), tapi `nilai_talenta` TETAP diplafon 100 karena ia komposit berskala 0–100.',
   },
   KOTAK9_BEDA_DENGAN_HITUNGAN: {
     kode: 'KOTAK9_BEDA_DENGAN_HITUNGAN',

@@ -87,7 +87,24 @@ export default async function DashboardPage({
           hanya menetapkan tinggi CONTAINER, sementara barisnya tetap `auto` dan
           boleh melebihinya. Versi pertama perbaikan ini memakai `h-` saja —
           terukur, panel tumbuh 613px → 2.062px begitu daftarnya diisi 24 baris,
-          dan `overflow-y-auto` di dalamnya tidak pernah aktif. */}
+          dan `overflow-y-auto` di dalamnya tidak pernah aktif.
+
+          `6fr : 5fr` — Sebaran Kotak 9 SENGAJA lebih lebar daripada Peta
+          Kinerja × Potensial (keputusan user, 18 Agu 2026). Rasio ini sempat
+          diseimbangkan ke `1fr : 1fr` pada hari yang sama lalu dikembalikan:
+          Kotak 9 adalah isi utama halaman ini — sembilan sel yang bisa diklik,
+          masing-masing memuat nomor, jumlah, dan persentase — sementara Peta
+          menyebar populasi yang sama pada dua sumbu sebagai pendamping. Yang
+          utama mendapat ruang lebih.
+
+          Angkanya, terukur: pada `1fr : 1fr` keduanya 566px di 1440 dan 646px di
+          1600; pada `6fr : 5fr` Kotak 9 mendapat 617px vs 515px, dan 705px vs
+          587px. Sel Kotak 9 tetap KOTAK di kedua rasio — bentuknya ditentukan
+          `aspect-square` di `kotak9-grid.tsx`, bukan oleh lebar panelnya.
+
+          `minmax(0,6fr)` bukan `6fr` — batas bawah nol itu yang membuat panel
+          boleh MENYUSUT; tanpanya isi panel menolak lebih sempit dari lebar
+          alaminya lalu gridnya meluber. */}
       <div className="grid gap-5 xl:h-[39rem] xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] xl:grid-rows-[minmax(0,1fr)]">
         <Suspense fallback={<SebaranKotak9Skeleton />}>
           <SebaranKotak9 kotakAktif={kotakDipilih} />

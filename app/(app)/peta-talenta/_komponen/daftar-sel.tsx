@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { Badge } from '@/components/ui/badge'
 import { DataTable, type KolomTabel } from '@/components/ui/data-table'
 import { formatNip, formatSkor, formatSkorRingkas } from '@/lib/format'
@@ -39,11 +41,22 @@ export function DaftarSel({
       wajib: true,
       bisaDiurutkan: false,
       lebarMin: '14rem',
+      /**
+       * Nama menaut ke profil pegawai — permintaan user butir 1 ("ketika diklik
+       * di peta 9, pilih nama, maka bisa muncul profil pegawai").
+       *
+       * Widget Kotak 9 di dashboard sudah menaut sejak awal; daftar drill-down
+       * di halaman ini belum, sehingga perilakunya berbeda di dua tempat yang
+       * terlihat sama — pengguna yang sudah belajar bahwa nama bisa diklik akan
+       * mengklik di sini dan tidak terjadi apa-apa. Bentuk tautannya disamakan
+       * dengan widget itu (`/talenta/<nip>`, NIP ikut di dalam tautan) supaya
+       * seluruh baris nama+NIP jadi satu sasaran klik, bukan hanya barisnya.
+       */
       render: (a) => (
-        <>
+        <Link href={`/talenta/${a.nip}`} className="block hover:text-accent">
           <span className="block font-medium text-text">{a.nama}</span>
           <span className="tabular block text-[11px] text-text-subtle">{formatNip(a.nip)}</span>
-        </>
+        </Link>
       ),
     },
     {
@@ -103,7 +116,10 @@ export function DaftarSel({
     {
       kunci: 'potensial',
       judul: labelX,
-      subjudul: 'sumbu X · 0–100',
+      // Sumbu X bisa >100 (potkom tidak diplafon); sumbu Y tidak, karena ia
+      // turunan predikat yang berskala tetap — jadi hanya X yang kehilangan
+      // batasnya di subjudul.
+      subjudul: 'sumbu X',
       rataKanan: true,
       bisaDiurutkan: false,
       render: (a) => (

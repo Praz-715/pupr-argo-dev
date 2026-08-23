@@ -56,8 +56,20 @@ export default async function InboxPage() {
         deskripsi={
           <>
             Yang menunggu tindakan Anda sebagai{' '}
-            <strong className="font-medium text-text">{pengguna.peran}</strong>, beserta kabar
-            terbaru dari alur nominasi & suksesi.
+            {/* `text-kepala-teks`, BUKAN `text-text`. Deskripsi ini hidup di dalam
+                `.pita-kepala` yang berlatar gradien navy→teal, sementara
+                `--text` (#0f172a) adalah warna teks untuk permukaan TERANG.
+                Terukur di ketiga stop gradiennya: 1,72 · 2,05 · 2,61 — jauh di
+                bawah 4,5, dan lebih buruk daripada teks di sekelilingnya yang
+                mencapai 6,94 · 5,85 · 4,59. Jadi kata yang ditekankan justru
+                paling sulit dibaca; kebalikan dari maksudnya.
+
+                Pita ini hanya punya DUA token teks — `--kepala-teks` (kuat) dan
+                `--kepala-teks-samar` (redup) — dan penekanan di dalamnya memang
+                token yang kuat itu. Token permukaan terang apa pun akan salah di
+                sini. */}
+            <strong className="font-medium text-kepala-teks">{pengguna.peran}</strong>, beserta
+            kabar terbaru dari alur nominasi & suksesi.
           </>
         }
       />

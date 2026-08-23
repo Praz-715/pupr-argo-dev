@@ -1,3 +1,4 @@
+import { AMBANG_SUMBU } from './konstanta'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -98,20 +99,20 @@ describe('§2.2 skor predikat kinerja', () => {
 
 describe('§2.3 klasifikasi sumbu — batas bawah inklusif', () => {
   it('sumbu Y', () => {
-    expect(klasifikasiSumbuY(100)).toBe('Di Atas Ekspektasi')
-    expect(klasifikasiSumbuY(80)).toBe('Di Atas Ekspektasi') // tepat 80 masuk atas (K-2)
-    expect(klasifikasiSumbuY(79.99)).toBe('Sesuai Ekspektasi')
-    expect(klasifikasiSumbuY(60)).toBe('Sesuai Ekspektasi') // tepat 60 masuk tengah
-    expect(klasifikasiSumbuY(59.99)).toBe('Di Bawah Ekspektasi')
-    expect(klasifikasiSumbuY(0)).toBe('Di Bawah Ekspektasi')
+    expect(klasifikasiSumbuY(100, AMBANG_SUMBU)).toBe('Di Atas Ekspektasi')
+    expect(klasifikasiSumbuY(80, AMBANG_SUMBU)).toBe('Di Atas Ekspektasi') // tepat 80 masuk atas (K-2)
+    expect(klasifikasiSumbuY(79.99, AMBANG_SUMBU)).toBe('Sesuai Ekspektasi')
+    expect(klasifikasiSumbuY(60, AMBANG_SUMBU)).toBe('Sesuai Ekspektasi') // tepat 60 masuk tengah
+    expect(klasifikasiSumbuY(59.99, AMBANG_SUMBU)).toBe('Di Bawah Ekspektasi')
+    expect(klasifikasiSumbuY(0, AMBANG_SUMBU)).toBe('Di Bawah Ekspektasi')
   })
 
   it('sumbu X', () => {
-    expect(klasifikasiSumbuX(100)).toBe('Tinggi')
-    expect(klasifikasiSumbuX(80)).toBe('Tinggi')
-    expect(klasifikasiSumbuX(79.99)).toBe('Menengah')
-    expect(klasifikasiSumbuX(60)).toBe('Menengah')
-    expect(klasifikasiSumbuX(59.99)).toBe('Rendah')
+    expect(klasifikasiSumbuX(100, AMBANG_SUMBU)).toBe('Tinggi')
+    expect(klasifikasiSumbuX(80, AMBANG_SUMBU)).toBe('Tinggi')
+    expect(klasifikasiSumbuX(79.99, AMBANG_SUMBU)).toBe('Menengah')
+    expect(klasifikasiSumbuX(60, AMBANG_SUMBU)).toBe('Menengah')
+    expect(klasifikasiSumbuX(59.99, AMBANG_SUMBU)).toBe('Rendah')
   })
 })
 
@@ -128,11 +129,11 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
     [40, 70, 3],
     [40, 40, 1],
   ] as Array<[number, number, Kotak9]>)('Y=%i X=%i → kotak %i', (y, x, kotak) => {
-    expect(hitungKotak9(y, x).kotak).toBe(kotak)
+    expect(hitungKotak9(y, x, AMBANG_SUMBU).kotak).toBe(kotak)
   })
 
   it('predikat "Baik" (80) + potkom tinggi → kotak 9 (bukti K-2)', () => {
-    const hasil = hitungKotak9(skorPredikat('Baik')!, 93.47)
+    const hasil = hitungKotak9(skorPredikat('Baik')!, 93.47, AMBANG_SUMBU)
     expect(hasil.kategoriY).toBe('Di Atas Ekspektasi')
     expect(hasil.kotak).toBe(9)
   })
@@ -147,7 +148,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
   })
 
   it('menghitung nilai talenta sekaligus', () => {
-    expect(hitungKotak9(80, 70).nilaiTalenta).toBe(75)
+    expect(hitungKotak9(80, 70, AMBANG_SUMBU).nilaiTalenta).toBe(75)
   })
 
   // Dipakai judul drill-down Peta Talenta & baris Kotak 9 di Perbandingan
@@ -160,7 +161,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
       // Ambil satu nilai wakil dari tiap band lalu hitung ulang kotaknya.
       const y = kat!.y === 'Di Atas Ekspektasi' ? 100 : kat!.y === 'Sesuai Ekspektasi' ? 70 : 40
       const x = kat!.x === 'Tinggi' ? 90 : kat!.x === 'Menengah' ? 70 : 40
-      expect(hitungKotak9(y, x).kotak).toBe(kotak)
+      expect(hitungKotak9(y, x, AMBANG_SUMBU).kotak).toBe(kotak)
     }
   })
 
@@ -182,7 +183,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
 describe('§2.3 pembanding Kotak 9 terhadap nilai sumber', () => {
   it('menandai selisih, bukan menyembunyikannya', () => {
     // Kasus nyata di data contoh: Y=100, X=69.58 → hitung 7, sumber bilang 4
-    const hasil = hitungKotak9(100, 69.58)
+    const hasil = hitungKotak9(100, 69.58, AMBANG_SUMBU)
     expect(hasil.kotak).toBe(7)
 
     const banding = bandingkanKotak9(hasil, 4)
@@ -192,13 +193,13 @@ describe('§2.3 pembanding Kotak 9 terhadap nilai sumber', () => {
   })
 
   it('tidak mengeluh kalau nilai sumber cocok', () => {
-    const banding = bandingkanKotak9(hitungKotak9(100, 76.04), 7)
+    const banding = bandingkanKotak9(hitungKotak9(100, 76.04, AMBANG_SUMBU), 7)
     expect(banding.cocok).toBe(true)
     expect(banding.perluReview).toBe(false)
   })
 
   it('tidak mengeluh kalau sumber tidak mengirim kotak_9', () => {
-    expect(bandingkanKotak9(hitungKotak9(80, 80), null).perluReview).toBe(false)
+    expect(bandingkanKotak9(hitungKotak9(80, 80, AMBANG_SUMBU), null).perluReview).toBe(false)
   })
 })
 

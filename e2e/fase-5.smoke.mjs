@@ -243,27 +243,149 @@ try {
   await langkah('tambah jabatan anggota lewat pencarian', async () => {
     await page.goto(`${BASE}/jabatan-target/${idBaru}?tab=anggota`, { waitUntil: 'networkidle' })
     await page.getByLabel('Cari jabatan untuk ditambahkan').fill('Kepala')
-    await page.waitForTimeout(1200)
+
+    /*
+      Pencarian dibiarkan MENGENDAP dulu, dan kliknya boleh diulang SEKALI.
+
+      Panel "Tambah jabatan" sudah memuat 20 hasil teratas sebelum ada pencarian,
+      dan pencariannya berjalan di `useTransition` sendiri yang MENGGANTI seluruh
+      daftar; tombolnya juga `disabled` selama transisi. Versi lama menunggu
+      `waitForTimeout(1200)` lalu mengklik — klik itu bisa mendarat tepat saat
+      barisnya sedang digantikan React, sehingga tidak memicu apa pun: panel tetap
+      "Jabatan anggota (0)" DAN halaman tidak menampilkan galat sama sekali, sebab
+      aksinya tidak pernah dipanggil. Terukur merah 1–3 dari 3 kali di mesin sibuk.
+
+      Kelas `opacity-60` dipasang selama transisi, jadi menunggu ia lepas berarti
+      menunggu daftarnya berhenti berganti — bukan menunggu sekian milidetik.
+      Coba-ulang sekali menutup sisa balapannya. Ini akomodasi uji terhadap sifat
+      UI yang nyata, dan sifat itu dicatat sebagai nit di CLAUDE.md: pengguna yang
+      mengklik Tambah tepat saat daftar menyegar juga tidak mendapat umpan balik.
+    */
+    const tungguMengendap = async () => {
+      await page
+        .waitForFunction(
+          () =>
+            [...document.querySelectorAll('ul')].some(
+              (u) => /Kepala/.test(u.textContent ?? '') && !u.className.includes('opacity-60'),
+            ),
+          undefined,
+          { timeout: 15000 },
+        )
+        .catch(() => {})
+    }
+    const jumlahAnggota = async () => {
+      const t = await page.locator('body').innerText()
+      return Number(t.match(/Jabatan anggota \((\d+)\)/)?.[1] ?? -1)
+    }
+
+    await tungguMengendap()
     const tombol = page.getByRole('button', { name: 'Tambah' }).first()
     tegaskan(await tombol.isVisible(), 'tidak ada jabatan yang bisa ditambahkan')
     await tombol.click()
-    await page.waitForTimeout(1500)
+    await page
+      .waitForFunction(() => /Jabatan anggota \(1\)/.test(document.body.innerText), undefined, {
+        timeout: 10000,
+      })
+      .catch(() => {})
+
+    let jml = await jumlahAnggota()
+    if (jml === 0) {
+      await tungguMengendap()
+      await page.getByRole('button', { name: 'Tambah' }).first().click()
+      await page
+        .waitForFunction(() => /Jabatan anggota \(1\)/.test(document.body.innerText), undefined, {
+          timeout: 10000,
+        })
+        .catch(() => {})
+      jml = await jumlahAnggota()
+    }
+
     const teks = await page.locator('body').innerText()
-    tegaskan(/Jabatan anggota \(1\)/.test(teks), 'jumlah jabatan anggota bukan 1')
+    // Pesan gagal menyertakan APA YANG DIKATAKAN HALAMAN: "jumlah bukan 1"
+    // sendirian tidak membedakan aksi yang ditolak server dari klik yang tidak
+    // pernah memicu apa pun, dan keduanya butuh perbaikan yang berbeda.
+    const pesanLayar = teks
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => /Gagal menambahkan|tidak bisa dijadikan|tidak ada|berwenang/i.test(l))
+      .slice(0, 2)
+      .join(' | ')
+    tegaskan(
+      jml === 1,
+      `jumlah jabatan anggota bukan 1 (terbaca ${jml === -1 ? '—' : jml})${pesanLayar ? ` · halaman berkata: ${pesanLayar}` : ' · halaman tidak berkata apa pun, jadi aksinya kemungkinan tidak terpanggil'}`,
+    )
     return 'jabatan anggota menjadi 1'
   })
 
   await langkah('duplikasi rubrik dari jabatan target lain', async () => {
     await page.goto(`${BASE}/jabatan-target/${idBaru}?tab=rubrik`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: 'Salin rubrik' }).click()
-    await page.waitForTimeout(2500)
+    /*
+      Menunggu KEADAAN, bukan 2.500 ms.
+
+      Menyalin rubrik itu satu aksi server yang menulis komponen + indikator lalu
+      me-revalidate; di mesin sibuk hasilnya mendarat setelah ambang tetap itu
+      lewat, dan langkahnya merah dengan "komponen hasil salinan tidak muncul"
+      padahal salinannya berhasil. Ditunggu salah satu dari dua keadaan akhir —
+      komponen tergambar, atau panel validasi menyatakan hasilnya — supaya
+      halaman yang menolak menyalin tidak berubah jadi timeout yang menyembunyikan
+      sebabnya. Asersi di bawah tetap yang memutuskan.
+    */
+    /*
+      Yang ditunggu WAJIB sesuatu yang belum benar sebelum aksinya.
+
+      Versi sebelumnya menyertakan `galat menghalangi aktivasi` sebagai keadaan
+      akhir — dan kalimat itu SUDAH ada di layar sejak awal, sebab rubrik target
+      baru memang kosong. Penantiannya lolos di milidetik pertama, asersi membaca
+      halaman yang belum berubah, lalu langkah SETELAHNYA lulus karena
+      `getByRole('Aktifkan').click()` ikut menunggu sendiri. Gejalanya: "komponen
+      hasil salinan tidak muncul" diikuti "aktivasi berhasil" — dua baris yang
+      saling membantah. Ini jebakan #1 CLAUDE.md, dan saya terjatuh ke dalamnya
+      di berkas yang mendokumentasikannya.
+
+      Dua keadaan di bawah keduanya MUSTAHIL sebelum salinannya mendarat.
+      Durasinya diukur dan dilaporkan, supaya kalau suatu hari ia melambat, yang
+      terlihat adalah angkanya — bukan uji merah tanpa sebab.
+    */
+    const mulaiSalin = Date.now()
+    let msSalin = -1
+    await page
+      .waitForFunction(
+        () =>
+          /Potensi & Kompetensi/.test(document.body.innerText) ||
+          /Gagal menyalin/i.test(document.body.innerText),
+        undefined,
+        { timeout: 60000 },
+      )
+      .then(() => {
+        msSalin = Date.now() - mulaiSalin
+      })
+      .catch(() => {
+        msSalin = -1
+      })
     const teks = await page.locator('body').innerText()
-    tegaskan(teks.includes('Potensi & Kompetensi'), 'komponen hasil salinan tidak muncul')
+    // Pesan gagal menyertakan ucapan halaman + sumber yang dipakai: "komponen
+    // tidak muncul" sendirian tidak membedakan aksi yang ditolak server dari
+    // salinan yang berhasil tapi belum terender.
+    const sumberDipakai = await page
+      .locator('select[aria-label="Jabatan target sumber"]')
+      .inputValue()
+      .catch(() => '(dropdown tidak ada)')
+    const ucapan = teks
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => /disalin|Gagal menyalin|tidak bisa|berwenang|kosong|galat/i.test(l))
+      .slice(0, 3)
+      .join(' | ')
+    tegaskan(
+      teks.includes('Potensi & Kompetensi'),
+      `komponen hasil salinan tidak muncul (sumber=${sumberDipakai})${ucapan ? ` · halaman berkata: ${ucapan}` : ' · halaman tidak berkata apa pun'}`,
+    )
     tegaskan(
       teks.includes('Rubrik lolos seluruh pemeriksaan'),
       'rubrik hasil salinan tidak lolos pemeriksaan',
     )
-    return 'rubrik tersalin & langsung lolos pemeriksaan'
+    return `rubrik tersalin & lolos pemeriksaan · render ${msSalin < 0 ? '>60 s' : `${(msSalin / 1000).toFixed(1)} s`}`
   })
 
   await langkah('aktivasi berhasil setelah anggota & rubrik lengkap', async () => {

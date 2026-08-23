@@ -88,10 +88,25 @@ export default async function KandidatPage({
         deskripsi={
           <>
             Skor menurut perhitungan terakhir{' '}
+            {/* Keduanya `text-kepala-teks` — deskripsi ini di atas pita bergradien
+                navy, dan token permukaan terang tidak terbaca di sana (`--text`
+                terukur 1,72–2,61:1). Lihat catatan panjangnya di
+                `app/(app)/inbox/page.tsx`.
+
+                Cabang "belum pernah dijalankan" kehilangan `text-warning`, dan itu
+                disengaja: `--warning` (#95650c) sama tidak terbacanya di atas navy.
+                Emas PU bukan penggantinya — ia penanda identitas, dan memakainya
+                sebagai warna peringatan membuatnya bertabrakan dengan `--warning`
+                yang maknanya sudah tetap (CLAUDE.md §Desain UI/UX). Sinyal
+                peringatannya tetap ada dua: kalimatnya menyebutkan keadaannya apa
+                adanya, dan Badge status jabatan target ada di sisi kanan pita yang
+                sama. */}
             {target.dihitungPada === null ? (
-              <strong className="font-medium text-warning">yang belum pernah dijalankan</strong>
+              <strong className="font-medium text-kepala-teks">
+                yang belum pernah dijalankan
+              </strong>
             ) : (
-              <strong className="font-medium text-text">
+              <strong className="font-medium text-kepala-teks">
                 {formatTanggalWaktu(target.dihitungPada)}
               </strong>
             )}

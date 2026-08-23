@@ -55,6 +55,21 @@ export type SebabGalatEnom =
   | 'jaringan'
   /** X-Secret ditolak. */
   | 'auth'
+  /**
+   * Host menjawab, tapi ROUTE-nya tidak ada (HTTP 404 berisi halaman HTML).
+   *
+   * Dipisahkan dari `'balasan'` karena perbaikannya berbeda total: `'balasan'`
+   * berarti "kita salah membaca jawabannya", sedangkan ini berarti "alamat yang
+   * kita panggil sudah tidak dilayani" — tidak ada yang bisa diperbaiki di sisi
+   * kita, dan yang dibutuhkan adalah alamat baru dari pengelola eNom.
+   *
+   * Tanpa pemisahan ini, `sinkron-enom.ts` menyimpulkan "populasi dev sebagian
+   * besar NIP hasil generator, minta daftar NIP yang ada di eNom" — menyalahkan
+   * DATA padahal endpoint-nya yang lenyap. Terukur 22 Agu 2026: keempat varian
+   * path & metode membalas 404 dengan body identik 1.190 bita, termasuk untuk
+   * NIP contoh yang sebelumnya berhasil.
+   */
+  | 'endpoint'
   /** Terjangkau & terautentikasi, tapi menjawab gagal atau bentuknya asing. */
   | 'balasan'
 
@@ -132,6 +147,29 @@ async function panggil(nip: readonly string[], cfg: Konfigurasi): Promise<Rekama
     throw new GalatEnom('auth', `X-Secret ditolak eNom (HTTP ${res.status}): ${teks.slice(0, 200)}`)
   }
 
+  /*
+    404/410 berisi HTML = ROUTE-nya tidak ada, bukan balasan yang salah bentuk.
+
+    Dipisahkan supaya pesannya menyebut hal yang benar. Sebelumnya keadaan ini
+    jatuh ke cabang "bukan JSON" di bawah, dan pemanggilnya lalu menyimpulkan
+    masalah DATA ("NIP-nya tidak ada di eNom") — kesimpulan yang menyesatkan dan
+    menghabiskan waktu, sebab tidak ada NIP apa pun yang akan pernah ketemu di
+    alamat yang sudah tidak dilayani.
+
+    Diperiksa juga `content-type`: 404 ber-JSON adalah jawaban sah dari API yang
+    hidup ("NIP tidak ditemukan"), dan itu BUKAN kasus ini.
+  */
+  const berupaHtml = (res.headers.get('content-type') ?? '').includes('text/html')
+  if ((res.status === 404 || res.status === 410) && berupaHtml) {
+    throw new GalatEnom(
+      'endpoint',
+      `Endpoint eNom tidak ada lagi (HTTP ${res.status} berisi halaman HTML): ${cfg.url}\n` +
+        'Host-nya hidup dan me-routing — yang lenyap alamatnya, bukan jaringannya, ' +
+        'dan bukan pula NIP-nya. Minta alamat endpoint yang berlaku ke pengelola eNom; ' +
+        'X-Secret dan bentuk permintaan kita sudah sesuai contoh resmi mereka.',
+    )
+  }
+
   let mentah: unknown
   try {
     mentah = JSON.parse(teks)
@@ -204,9 +242,13 @@ export async function ambilAsesmen(
       rekaman.push(...(await panggil(potong, cfg)))
     } catch (e) {
       if (!(e instanceof GalatEnom)) throw e
-      // Galat auth & konfigurasi berlaku untuk SEMUA batch — meneruskan sisanya
-      // hanya menghasilkan ratusan kegagalan identik dan membanjiri log eNom.
-      if (e.sebab === 'auth' || e.sebab === 'konfigurasi') throw e
+      // Galat auth, konfigurasi, & endpoint-hilang berlaku untuk SEMUA batch —
+      // meneruskan sisanya hanya menghasilkan ratusan kegagalan identik dan
+      // membanjiri log eNom. `'endpoint'` ikut di sini sejak 22 Agu 2026: satu
+      // jalan penuh atas 36 NIP menghasilkan 36 permintaan ke alamat yang sudah
+      // tidak dilayani, semuanya tercatat di sisi mereka, tanpa satu pun yang
+      // bisa berhasil.
+      if (e.sebab === 'auth' || e.sebab === 'konfigurasi' || e.sebab === 'endpoint') throw e
       gagal.push({ nip: potong, galat: e })
     }
   }

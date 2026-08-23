@@ -68,7 +68,10 @@ export default async function DetailNominasiPage({ params }: { params: Params })
         deskripsi={
           <>
             <span className="tabular">{formatNip(nominasi.nip)}</span> · dinominasikan untuk{' '}
-            <strong className="font-medium text-text">{nominasi.namaTarget}</strong> oleh{' '}
+            {/* `text-kepala-teks`, bukan `text-text` — deskripsi ini di atas pita
+                bergradien navy, dan `--text` di sana hanya 1,72–2,61:1. Lihat
+                catatan panjangnya di `app/(app)/inbox/page.tsx`. */}
+            <strong className="font-medium text-kepala-teks">{nominasi.namaTarget}</strong> oleh{' '}
             {nominasi.namaUnitPengaju}
             {nominasi.namaPengaju === null ? '' : ` (${nominasi.namaPengaju})`} pada{' '}
             {formatTanggal(nominasi.tanggalDiajukan)}

@@ -11,6 +11,18 @@ export type Predikat = 'Sangat Baik' | 'Baik' | 'Butuh Perbaikan' | 'Kurang' | '
 export type KategoriSumbuY = 'Di Atas Ekspektasi' | 'Sesuai Ekspektasi' | 'Di Bawah Ekspektasi'
 export type KategoriSumbuX = 'Tinggi' | 'Menengah' | 'Rendah'
 
+/**
+ * Ambang klasifikasi kedua sumbu Kotak 9. Batas bawah inklusif: `>= atas` →
+ * kategori teratas, `>= tengah` → tengah, sisanya terbawah.
+ *
+ * Berupa tipe, bukan konstanta, karena nilainya bisa diubah Super Admin lewat
+ * `pengaturan_sistem`. Nilai bawaannya `AMBANG_SUMBU` di `konstanta.ts`.
+ */
+export interface AmbangSumbu {
+  atas: number
+  tengah: number
+}
+
 export type Kotak9 = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export type Sumbu = 'Y_KINERJA' | 'X_POTENSIAL'

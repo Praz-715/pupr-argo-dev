@@ -1,3 +1,4 @@
+import { AMBANG_SUMBU } from '../scoring'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -260,13 +261,13 @@ describe('§6.2 & §6.12 · baris asesmen utuh', () => {
   }
 
   it('kotak_9 dihitung ulang; sumber yang cocok tidak menimbulkan temuan', () => {
-    const h = normalisasiAsesmen(dasar, { tahunSekarang: 2026 })
+    const h = normalisasiAsesmen(dasar, { tahunSekarang: 2026, ambang: AMBANG_SUMBU })
     expect(h.nilai.kotak9).toBe(9)
     expect(h.temuan).toHaveLength(0)
   })
 
   it('kotak_9 sumber yang beda ditandai, dan hasil hitung yang dipakai', () => {
-    const h = normalisasiAsesmen({ ...dasar, kotak9Sumber: 4 }, { tahunSekarang: 2026 })
+    const h = normalisasiAsesmen({ ...dasar, kotak9Sumber: 4 }, { tahunSekarang: 2026, ambang: AMBANG_SUMBU })
     expect(h.nilai.kotak9).toBe(9)
     expect(kode(h.temuan)).toEqual(['KOTAK9_BEDA_DENGAN_HITUNGAN'])
     expect(perluManusia(h.temuan)).toHaveLength(1)
@@ -275,7 +276,7 @@ describe('§6.2 & §6.12 · baris asesmen utuh', () => {
   it('kasus nyata Tasya/Tina: Y=100 X=69,58 → hitung 7, sumber bilang 4', () => {
     const h = normalisasiAsesmen(
       { ...dasar, nilaiKinerjaY: 100, potkom: 69.58, kotak9Sumber: 4 },
-      { tahunSekarang: 2026 },
+      { tahunSekarang: 2026, ambang: AMBANG_SUMBU },
     )
     expect(h.nilai.kotak9).toBe(7)
     expect(kode(h.temuan)).toContain('KOTAK9_BEDA_DENGAN_HITUNGAN')
@@ -284,7 +285,7 @@ describe('§6.2 & §6.12 · baris asesmen utuh', () => {
   it('asesmen tua berstatus "Berlaku" dikoreksi jadi Expired', () => {
     const h = normalisasiAsesmen(
       { ...dasar, tahunAsesmen: 2021, statusAsesmen: 'Berlaku', kotak9Sumber: 9 },
-      { tahunSekarang: 2026 },
+      { tahunSekarang: 2026, ambang: AMBANG_SUMBU },
     )
     expect(h.nilai.statusAsesmen).toBe('Expired')
     expect(kode(h.temuan)).toContain('STATUS_ASESMEN_TIDAK_KONSISTEN')
@@ -293,36 +294,52 @@ describe('§6.2 & §6.12 · baris asesmen utuh', () => {
   it('asesmen baru berstatus "Expired" juga dikoreksi (arah sebaliknya)', () => {
     const h = normalisasiAsesmen(
       { ...dasar, tahunAsesmen: 2026, statusAsesmen: 'Expired' },
-      { tahunSekarang: 2026 },
+      { tahunSekarang: 2026, ambang: AMBANG_SUMBU },
     )
     expect(h.nilai.statusAsesmen).toBe('Berlaku')
     expect(kode(h.temuan)).toContain('STATUS_ASESMEN_TIDAK_KONSISTEN')
   })
 
   it('status "Draft" dipertahankan & bukan ketidakkonsistenan', () => {
-    const h = normalisasiAsesmen({ ...dasar, statusAsesmen: 'Draft' }, { tahunSekarang: 2026 })
+    const h = normalisasiAsesmen({ ...dasar, statusAsesmen: 'Draft' }, { tahunSekarang: 2026, ambang: AMBANG_SUMBU })
     expect(h.nilai.statusAsesmen).toBe('Draft')
     expect(kode(h.temuan)).not.toContain('STATUS_ASESMEN_TIDAK_KONSISTEN')
   })
 
-  it('potkom di luar rentang + integritas skala kecil: dua temuan sekaligus', () => {
+  it('potkom >100 disimpan apa adanya; integritas skala kecil tetap dinaikkan', () => {
+    // Potkom TIDAK lagi dipotong (keputusan pemilik proses 18 Agu 2026), tapi
+    // penskalaan integritas 1–4 → 0–100 tetap berlaku: keduanya keputusan
+    // terpisah, dan yang dibatalkan hanya pemotongan potkom.
     const h = normalisasiAsesmen(
       { ...dasar, potkom: 115.1, nilaiIntegritas: 3, kotak9Sumber: null },
-      { tahunSekarang: 2026 },
+      { tahunSekarang: 2026, ambang: AMBANG_SUMBU },
     )
-    expect(h.nilai.potkom).toBe(100)
+    expect(h.nilai.potkom).toBe(115.1)
+    expect(h.nilai.nilaiPotensialX).toBe(115.1)
     expect(h.nilai.nilaiIntegritas).toBe(75)
-    expect(kode(h.temuan).sort()).toEqual(['INTEGRITAS_SKALA_KECIL', 'SKOR_DI_LUAR_RENTANG'])
+    expect(kode(h.temuan).sort()).toEqual(['INTEGRITAS_SKALA_KECIL', 'POTKOM_DI_ATAS_100'])
+  })
+
+  it('nilai_talenta TETAP diplafon 100 walau potkom melebihinya', () => {
+    // Yang dibatalkan hanya pemotongan potkom. `nilai_talenta` komposit berskala
+    // 0–100, jadi 50%·100 + 50%·115,1 = 107,55 tetap diplafon — kalau tidak,
+    // "nilai talenta" berhenti punya skala yang bisa dibandingkan antar pegawai.
+    const h = normalisasiAsesmen(
+      { ...dasar, nilaiKinerjaY: 100, potkom: 115.1, kotak9Sumber: null },
+      { tahunSekarang: 2026, ambang: AMBANG_SUMBU },
+    )
+    expect(h.nilai.nilaiTalenta).toBe(100)
+    expect(h.nilai.kotak9).toBe(9)
   })
 
   it('nilai potensial diturunkan dari potkom, tidak dari kolom sumber', () => {
-    const h = normalisasiAsesmen({ ...dasar, potkom: 77 }, { tahunSekarang: 2026 })
+    const h = normalisasiAsesmen({ ...dasar, potkom: 77 }, { tahunSekarang: 2026, ambang: AMBANG_SUMBU })
     expect(h.nilai.nilaiPotensialX).toBe(77)
     expect(h.nilai.nilaiTalenta).toBe(78.5) // 50% x 80 + 50% x 77
   })
 
   it('kotak_9 sumber kosong bukan pelanggaran', () => {
-    const h = normalisasiAsesmen({ ...dasar, kotak9Sumber: null }, { tahunSekarang: 2026 })
+    const h = normalisasiAsesmen({ ...dasar, kotak9Sumber: null }, { tahunSekarang: 2026, ambang: AMBANG_SUMBU })
     expect(h.temuan).toHaveLength(0)
   })
 })

@@ -1,3 +1,4 @@
+import { ambangSumbuDari, ambilPengaturan } from '@/lib/pengaturan'
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -80,11 +81,15 @@ async function IsiPeta({
   kotak: number | null
   halaman: number
 }) {
-  const [sebaran, opsi, peta] = await Promise.all([
+  const [sebaran, opsi, peta, pengaturan] = await Promise.all([
     ambilPetaSebaran(filter),
     ambilOpsiPeta(),
     ambilTitikPeta(filter),
+    ambilPengaturan(),
   ])
+  // Ambang yang sama dipakai kueri grid (di SQL) dan chart di klien — kalau
+  // keduanya berbeda, garis bantu digambar di tempat yang bukan batas kotaknya.
+  const ambang = ambangSumbuDari(pengaturan)
 
   const terpilih =
     filter.jabatanTargetId === undefined
@@ -228,7 +233,7 @@ async function IsiPeta({
             }
           />
           <div className="mt-3">
-            <TampilanPeta titik={peta.titik} labelX={labelX} />
+            <TampilanPeta titik={peta.titik} labelX={labelX} ambang={ambang} />
           </div>
           <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
             Sumbu Kinerja hanya punya lima nilai yang mungkin (100/80/60/40/20) karena diturunkan

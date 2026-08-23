@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, Pencil, Plus, Trash2, Users } from 'lucide-react'
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -125,19 +126,34 @@ export function PohonUnit({
                 <span className="tabular" title="Jabatan yang menempel langsung pada unit ini">
                   {formatAngka(n.jumlahJabatan)} jabatan
                 </span>
-                <span
-                  className="tabular"
-                  title="Pegawai aktif pada unit ini saja / termasuk seluruh turunannya"
+                {/* Jumlah pegawai MENAUT ke Direktori Pegawai yang sudah
+                    tersaring ke unit ini (permintaan user, 12 Agu 2026 —
+                    sebelumnya hanya angka mati).
+
+                    Tautannya memakai `?unit=` yang di direktori disaring dengan
+                    `SUBKUERI_UNIT_TURUNAN`, jadi yang terbuka adalah unit ini
+                    **beserta seluruh turunannya**. Karena itu angka yang
+                    dijanjikan tautan ini adalah `jumlahPegawaiTermasukTurunan`,
+                    bukan `jumlahPegawai`: menautkan angka unit-ini-saja ke
+                    halaman yang menampilkan turunannya juga akan membuat
+                    hitungannya tidak cocok begitu diklik — kelas kesalahan yang
+                    sama dengan kartu dashboard yang menyebut 7 sementara
+                    halamannya menampilkan 3. Keduanya tetap ditampilkan supaya
+                    perbedaannya terbaca sebelum diklik. */}
+                <Link
+                  href={`/talenta?unit=${n.id}`}
+                  className="tabular inline-flex items-center gap-1 rounded px-1 text-text-muted hover:bg-surface-3 hover:text-accent"
+                  title={`Buka Direktori Pegawai untuk ${n.namaUnit} beserta seluruh unit turunannya (${formatAngka(n.jumlahPegawaiTermasukTurunan)} pegawai aktif)`}
                 >
+                  <Users aria-hidden className="size-3" />
                   {formatAngka(n.jumlahPegawai)}
                   {n.jumlahPegawaiTermasukTurunan !== n.jumlahPegawai ? (
                     <span className="text-text-subtle">
-                      {' '}
                       ({formatAngka(n.jumlahPegawaiTermasukTurunan)} total)
                     </span>
-                  ) : null}{' '}
+                  ) : null}
                   pegawai
-                </span>
+                </Link>
                 {punyaAnak && lipat ? (
                   <Badge tone="netral">{formatAngka(n.jumlahAnak)} anak disembunyikan</Badge>
                 ) : null}

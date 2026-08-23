@@ -115,12 +115,33 @@ export async function hitungUlangSkor(
       const ringkasTulis = await tulisHasilSkor(idTarget.data, hasil.hasil, snapshot, jejakManual)
       jumlahBarisRincian = ringkasTulis.jumlahRincian
       jumlahAnggotaPool = ringkasTulis.jumlahAnggotaPool
+      /**
+       * Ringkasan LENGKAP satu sesi perhitungan disimpan di sini.
+       *
+       * Sebelumnya hanya tiga angka yang tersimpan (baris, eligible, galat
+       * rubrik) sementara sisanya — perlu review, jumlah rincian, nilai manual
+       * yang dipertahankan, anggota pool yang diperingkat, durasi — hanya
+       * dikirim ke layar lalu hilang begitu halaman ditutup. Akibatnya jejaknya
+       * bisa menjawab "siapa menghitung apa kapan" tapi TIDAK "apa hasilnya",
+       * dan laporan validasi per sesi tidak mungkin disusun setelahnya.
+       *
+       * Disimpan di `data_sesudah` (kolom JSON), bukan di tabel baru: seluruh
+       * yang dibutuhkan sudah lahir di sini, dan `jalankanMutasi()` sudah
+       * mencatat pelaku + waktu + entitasnya. Menambah tabel berarti dua tempat
+       * menyimpan peristiwa yang sama, dan yang kedua bisa tertinggal ketika
+       * jalur tulisnya berubah.
+       */
       return {
         entitasId: idTarget.data,
         sesudah: {
           jumlahBaris: hasil.hasil.length,
           eligible: hasil.jumlahEligible,
           galatRubrik: validasi.jumlahGalat,
+          perluReview: hasil.jumlahPerluReview,
+          barisRincian: ringkasTulis.jumlahRincian,
+          nilaiManualDipertahankan: jejakManual.length,
+          anggotaPoolDiperingkat: ringkasTulis.jumlahAnggotaPool,
+          durasiMs: Date.now() - mulai,
         },
       }
     },

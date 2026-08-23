@@ -26,11 +26,24 @@ interface Periksa {
 
 const PEMERIKSAAN: Periksa[] = [
   {
-    nama: 'Semua skor asesmen berada di 0–100',
+    nama: 'Skor asesmen di 0–100, KECUALI potkom & sumbu X yang sengaja tak diplafon',
+    /*
+      `potkom` dan `nilai_potensial_x` DIKELUARKAN dari pemeriksaan rentang.
+      Keputusan pemilik proses 18 Agu 2026: potkom disimpan apa adanya, dan sumbu
+      X ikut melewati 100 (lihat §Ambang/§potkom di CLAUDE.md). Membiarkan
+      pemeriksaan ini menuntut ≤100 berarti ia memerah **selamanya** atas keadaan
+      yang justru diminta — 10 baris, dan akan bertambah setiap impor. Penjaga
+      yang merah permanen berhenti dibaca orang, dan itu lebih berbahaya daripada
+      tidak punya penjaga.
+
+      Yang TETAP dijaga: batas bawah 0 untuk keduanya (potkom negatif tidak punya
+      arti apa pun), dan rentang penuh 0–100 untuk `nilai_kinerja_y`,
+      `nilai_talenta`, serta `nilai_integritas` — ketiganya memang berskala tetap.
+    */
     sql: `SELECT COUNT(*) n FROM asesmen_talenta
           WHERE nilai_kinerja_y NOT BETWEEN 0 AND 100
-             OR nilai_potensial_x NOT BETWEEN 0 AND 100
-             OR potkom NOT BETWEEN 0 AND 100
+             OR nilai_potensial_x < 0
+             OR potkom < 0
              OR nilai_talenta NOT BETWEEN 0 AND 100
              OR nilai_integritas NOT BETWEEN 0 AND 100`,
   },
@@ -90,9 +103,19 @@ const PEMERIKSAAN: Periksa[] = [
             AND (m.eligible <> 0 OR ABS(m.skor_total - 90.88) > 0.01)`,
   },
   {
-    nama: 'nilai_talenta = 50% Y + 50% X',
+    nama: 'nilai_talenta = 50% Y + 50% X (diplafon 100)',
+    /*
+      Plafon 100 ikut dituliskan di rumus pembandingnya.
+
+      `hitungNilaiTalenta()` memang memplafon hasilnya — komposit tanpa plafon
+      berhenti bisa dibandingkan antar pegawai. Sejak sumbu X boleh >100, ada 7
+      baris yang identitas 50/50-nya "gagal" hanya karena hasilnya menyentuh
+      plafon: mis. Y=100 X=111,53 → rata-rata 105,77 tapi tersimpan 100,00.
+      Membandingkan tanpa `LEAST(..., 100)` berarti penjaga ini menuduh mesinnya
+      salah justru saat ia berperilaku benar.
+    */
     sql: `SELECT COUNT(*) n FROM asesmen_talenta
-          WHERE ABS(nilai_talenta - ROUND(0.5*nilai_kinerja_y + 0.5*nilai_potensial_x, 2)) > 0.01`,
+          WHERE ABS(nilai_talenta - LEAST(ROUND(0.5*nilai_kinerja_y + 0.5*nilai_potensial_x, 2), 100)) > 0.01`,
   },
   {
     nama: 'skor_total = 65% PK + 20% KJ + 15% IM',

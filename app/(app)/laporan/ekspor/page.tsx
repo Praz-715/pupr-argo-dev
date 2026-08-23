@@ -71,6 +71,13 @@ const DAFTAR: JenisEkspor[] = [
     halaman: { href: '/laporan/nominasi', label: 'Laporan Nominasi & Approval' },
   },
   {
+    jenis: 'riwayat-perhitungan',
+    judul: 'Riwayat perhitungan (sesi validasi)',
+    isi: 'Satu baris per Hitung Ulang yang pernah dijalankan: waktu, siapa yang menjalankannya, jabatan target, lalu hasilnya — pegawai dinilai, lolos syarat, perlu ditinjau, nilai manual yang dipertahankan, dan durasinya. Sesi sebelum 12 Agu 2026 hanya mencatat sebagian, dan kolom yang belum ada tampil kosong (bukan nol).',
+    peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+    halaman: { href: '/jabatan-target', label: 'Jabatan Target' },
+  },
+  {
     jenis: 'audit-log',
     judul: 'Audit log',
     isi: '100 baris jejak audit terbaru: siapa, kapan, aksi, entitas. Isi perubahan sengaja TIDAK diekspor — nilai sebelum/sesudah memuat data yang aturan aksesnya berbeda.',

@@ -319,7 +319,23 @@ try {
     await page.waitForTimeout(1200)
 
     await langkah('perbandingan: tabel berdampingan berisi kolom per kandidat', async () => {
-      const kolom = await page.locator('table').last().locator('thead th').count()
+      /*
+        Tabelnya dipilih menurut ISI, bukan `.last()`.
+
+        React 19 menyisipkan `<table hidden></table>` sebagai template batas
+        Suspense, dan jumlahnya tumbuh seiring banyaknya batas Suspense di
+        halaman. Setelah daftar jabatan target pembanding bertambah, `.last()`
+        berhenti menunjuk tabel perbandingan dan mulai menunjuk placeholder
+        kosong — terukur: 30 `<table>`, yang terakhir `<table hidden>` dengan 0
+        kolom. Gejalanya ("kolom tabel = 0") terbaca seperti tabelnya tidak
+        terender, padahal ia terender dengan benar sejak awal.
+      */
+      const tabel = page.locator('table').filter({ hasText: 'Nilai Talenta' })
+      tegaskan(
+        (await tabel.count()) === 1,
+        `tabel perbandingan tidak ditemukan tepat satu (${await tabel.count()})`,
+      )
+      const kolom = await tabel.locator('thead th').count()
       tegaskan(kolom === 4, `kolom tabel = ${kolom}, seharusnya 1 atribut + 3 kandidat`)
       const teks = await page.locator('main').innerText()
       for (const baris of ['Nilai Talenta', 'Predikat kinerja', 'Kotak 9', 'Masa kerja ASN']) {

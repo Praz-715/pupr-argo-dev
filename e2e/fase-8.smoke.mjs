@@ -286,7 +286,18 @@ try {
   // -------------------------------------------------------------------------
   // 3. Daftar kartu di Pusat Ekspor = apa yang benar-benar dilayani
   // -------------------------------------------------------------------------
-  await langkah('Pusat Ekspor: Super Admin melihat 7 jenis, Admin Talenta 6', async () => {
+  /**
+   * Yang dijaga langkah ini adalah **aturannya**, bukan jumlah kartunya.
+   *
+   * Versi lama mematok `7` dan `6`; menambah satu jenis ekspor yang sah
+   * (`riwayat-perhitungan`, 12 Agu 2026) membuatnya merah tanpa ada yang rusak —
+   * dan angka ajaib itu akan merah lagi setiap kali jenis ekspor bertambah.
+   * Aturan yang benar-benar penting: **Audit log hanya untuk Super Admin**, dan
+   * selisih antara keduanya TEPAT satu kartu itu. Kalau suatu hari selisihnya
+   * jadi dua, berarti ada jenis lain yang tiba-tiba disembunyikan dari Admin
+   * Talenta — dan itu memang harus merah.
+   */
+  await langkah('Pusat Ekspor: Audit log hanya Super Admin, sisanya sama', async () => {
     const hitung = async (akun) => {
       const { ctx, page } = await konteksSebagai(akun)
       try {
@@ -300,11 +311,14 @@ try {
     }
     const sa = await hitung(AKUN.superAdmin)
     const at = await hitung(AKUN.adminTalenta)
-    tegaskan(sa.n === 7, `Super Admin melihat ${sa.n} kartu, seharusnya 7`)
+    tegaskan(sa.n > 0, 'Super Admin tidak melihat satu pun kartu ekspor')
     tegaskan(sa.adaAudit, 'kartu Audit log tidak tampil untuk Super Admin')
-    tegaskan(at.n === 6, `Admin Talenta melihat ${at.n} kartu, seharusnya 6`)
     tegaskan(!at.adaAudit, 'kartu Audit log tampil untuk Admin Talenta')
-    return 'kartu yang tampil = yang dilayani route handler-nya'
+    tegaskan(
+      sa.n - at.n === 1,
+      `selisih kartu ${sa.n} vs ${at.n} = ${sa.n - at.n}, seharusnya tepat 1 (Audit log)`,
+    )
+    return `Super Admin ${sa.n} kartu · Admin Talenta ${at.n} · selisihnya cuma Audit log`
   })
 
   // -------------------------------------------------------------------------

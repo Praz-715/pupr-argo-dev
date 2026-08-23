@@ -103,10 +103,39 @@ export function Kotak9Grid({
       <div
         className={cn(
           'grid min-w-0 flex-1 grid-cols-[repeat(3,minmax(0,1fr))_5.5rem] gap-1.5',
-          // Tiga baris sel berbagi sisa tinggi; dua baris terakhir (label kolom
-          // & judul sumbu) seukuran isinya. `minmax(0,1fr)` bukan `1fr`: tanpa
-          // batas bawah nol, isi sel menolak menyusut dan gridnya meluber.
-          isiTinggi && 'h-full min-h-0 grid-rows-[repeat(3,minmax(0,1fr))_auto_auto]',
+          // `minmax(0,1fr)` bukan `1fr`: tanpa batas bawah nol, isi sel menolak
+          // menyusut dan gridnya meluber.
+          //
+          // SEL DIBUAT KOTAK (permintaan user, 18 Agu 2026: "malah persegi
+          // panjang"). Sebelumnya baris grid meregang mengisi tinggi panel
+          // (`grid-rows-[repeat(3,minmax(0,1fr))]` + `h-full`), sehingga tinggi sel
+          // terpaku ~160px sementara lebarnya ikut lebar jendela — terukur, bentuk
+          // selnya berayun **0,76 di 1366px → 1,26 di 1920px**. Sembilan sel yang
+          // berubah bentuk mengikuti lebar jendela tidak terbaca sebagai grid kotak.
+          //
+          // Sekarang arahnya dibalik: LEBAR menentukan tinggi lewat `aspect-square`
+          // di selnya, jadi tinggi baris lahir dari isinya dan `h-full`/`grid-rows`
+          // justru harus DILEPAS — keduanya akan mematok tinggi baris lagi dan
+          // membatalkan rasionya.
+          //
+          // `max-w` memplafon ukuran selnya, dan itu wajib: tanpa plafon, di panel
+          // lebar sel ikut membesar sampai 3× tingginya melewati tinggi panel yang
+          // dipatok 39rem — terukur ~647px terpakai dari 533px tersedia di 1920px.
+          // 36,5rem menjaga sel ≤159px, jadi 3 baris + label = 521px, masih di dalam
+          // 533px. Sisa lebar jatuh sebagai margin (`mx-auto`), bukan luberan.
+          //
+          // Arah sebaliknya sudah dicoba dan GAGAL: kolom `auto` dengan lebar
+          // mengikuti tinggi baris membuat total 586px sementara gridnya 559px,
+          // dan label baris tercetak DI ATAS sel kolom ketiga. Jangan diulang.
+          // `content-start` WAJIB, dan ini yang paling mudah terlewat. Grid ini
+          // `flex-1` di dalam wadah `h-full`, jadi tingginya definit (533px)
+          // sementara barisnya sekarang `auto`. Dengan `align-content` berperilaku
+          // *stretch*, sisa ruang DIBAGI RATA ke kelima baris — terukur ~22px per
+          // baris, sehingga pembungkus baris jadi 144px padahal selnya 122px, dan
+          // jarak antar baris terlihat 28px sementara antar kolom 6px. Selnya
+          // sendiri tetap kotak; yang timpang justru ruang di antaranya, dan itu
+          // terbaca sebagai grid yang tidak rapi.
+          isiTinggi && 'mx-auto w-full max-w-[36.5rem] content-start',
         )}
       >
         {BARIS.map((baris) => (
@@ -134,8 +163,21 @@ export function Kotak9Grid({
                   // sebagian besar nol kembali jadi kotak abu-abu seragam.
                   style={{ borderColor: aktif ? undefined : warnaKotak9(kotak) }}
                   className={cn(
-                    'relative flex flex-col justify-between overflow-hidden rounded-md border p-2 transition-[transform,box-shadow]',
-                    isiTinggi ? 'h-full min-h-0' : 'aspect-4/3',
+                    // `translate` DISEBUT DULUAN, dan itu perbaikan bug — bukan
+                    // penulisan ulang yang setara. Di Tailwind v4,
+                    // `hover:-translate-y-0.5` di bawah menyetel properti CSS
+                    // `translate` yang berdiri sendiri, BUKAN `transform`. Daftar
+                    // lamanya cuma `[transform,box-shadow]`, jadi angkat 2px-nya
+                    // melompat seketika: terukur, `translate` langsung `0px -2px`
+                    // pada sampel pertama tanpa satu pun nilai di tengah.
+                    // Bandingkan tombol yang sudah benar — ia meluruh
+                    // 0 → 0,46 → 0,92 → 1px.
+                    'relative flex flex-col justify-between overflow-hidden rounded-md border p-2 transition-[translate,box-shadow,transform]',
+                    // `aspect-square`: tinggi sel lahir dari lebar kolomnya, jadi
+                    // selnya kotak di lebar jendela mana pun. TANPA `h-full` —
+                    // itu akan meregangkannya kembali mengikuti tinggi baris dan
+                    // membatalkan rasionya.
+                    isiTinggi ? 'aspect-square' : 'aspect-4/3',
                     aktif
                       ? 'border-accent ring-1 ring-accent'
                       : 'hover:-translate-y-0.5 hover:shadow-kartu-naik',

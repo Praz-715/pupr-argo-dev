@@ -1,4 +1,5 @@
 import type {
+  AmbangSumbu,
   KategoriSumbuX,
   KategoriSumbuY,
   Kotak9,
@@ -27,13 +28,24 @@ export const SKOR_PREDIKAT: Record<Predikat, number> = {
   'Sangat Kurang': 20,
 }
 
-/** Ambang klasifikasi kedua sumbu (Lampiran A). Batas bawah bersifat inklusif. */
-export const AMBANG_SUMBU = {
+/**
+ * Ambang klasifikasi kedua sumbu (Lampiran A) — **nilai BAWAAN.**
+ *
+ * Sejak 18 Agu 2026 angka ini bisa diubah Super Admin lewat `pengaturan_sistem`
+ * (`ambang_sumbu_atas` / `ambang_sumbu_tengah`), jadi ia bukan lagi satu-satunya
+ * sumber: ia nilai bawaan yang dipakai `PENGATURAN_BAWAAN`, seed, dan uji.
+ * Fungsi di `kotak9.ts` **tidak membacanya** — mereka menerima ambang sebagai
+ * argumen wajib, supaya jalur yang lupa mengambil pengaturan gagal kompilasi
+ * alih-alih diam-diam memakai angka lain.
+ *
+ * Batas bawah bersifat inklusif.
+ */
+export const AMBANG_SUMBU: AmbangSumbu = {
   /** ≥80 → kategori teratas */
   atas: 80,
   /** ≥60–<80 → kategori tengah; <60 → kategori terbawah */
   tengah: 60,
-} as const
+}
 
 /** KERANGKA §B.3 — Verifikasi Rekam Jejak Disiplin. */
 export const SKOR_INTEGRITAS: Record<TingkatHukuman, number> = {

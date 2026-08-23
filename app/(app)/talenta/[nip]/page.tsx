@@ -33,6 +33,8 @@ import {
   ambilRiwayatPendidikan,
   type ProfilPegawai,
 } from '@/lib/kueri/pegawai'
+import { ambangSumbuDari, ambilPengaturan } from '@/lib/pengaturan'
+import { adaFotoPegawai } from '@/lib/foto-pegawai'
 import { lingkupData, unitWajib } from '@/lib/lingkup'
 import { DESKRIPSI_KOTAK_9, klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
 import { DaftarDiklat } from './_komponen/daftar-diklat'
@@ -111,7 +113,9 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
       </Suspense>
 
       <div className="grid gap-5 xl:h-[36rem] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
-        <Suspense fallback={<PanelMemuat judul="Riwayat jabatan" baris={5} className="xl:h-full" />}>
+        <Suspense
+          fallback={<PanelMemuat judul="Riwayat jabatan" baris={5} className="xl:h-full" />}
+        >
           <BagianRiwayatJabatan profil={profil} />
         </Suspense>
         {/* Kolom kanan memuat DUA panel, jadi ia membagi tinggi barisnya sendiri:
@@ -150,16 +154,53 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
   // adalah satu-satunya pemakainya di luar riwayat jabatan, dan meneruskannya
   // lewat props berarti halaman ikut membayar kuerinya walau dialognya tidak
   // pernah dibuka.
-  const pilihanJabatan = await ambilPilihanJabatan()
+  const [pilihanJabatan, punyaFoto] = await Promise.all([
+    ambilPilihanJabatan(),
+    adaFotoPegawai(profil.nip),
+  ])
   const bio: Array<{ label: string; nilai: string; catatan?: string }> = [
-    { label: 'Pangkat / Golongan', nilai: `${profil.pangkat} · ${profil.golongan ?? '—'}`, catatan: profil.tmtGolongan ? `TMT ${formatTanggal(profil.tmtGolongan)}` : undefined },
-    { label: 'Jenjang', nilai: profil.jenjang ?? '—', catatan: profil.eselon === 'NON_ESELON' ? 'Non-eselon' : profil.eselon ? `Eselon ${profil.eselon}` : undefined },
-    { label: 'Lama menjabat', nilai: formatDurasiTahun(profil.lamaMenjabatTahun), catatan: profil.tmtJabatan ? `TMT ${formatTanggal(profil.tmtJabatan)}` : undefined },
-    { label: 'Pendidikan terakhir', nilai: formatTingkatPendidikan(profil.tingkatPendidikan), catatan: profil.bidangStudiTerakhir ?? undefined },
+    {
+      label: 'Pangkat / Golongan',
+      nilai: `${profil.pangkat} · ${profil.golongan ?? '—'}`,
+      catatan: profil.tmtGolongan ? `TMT ${formatTanggal(profil.tmtGolongan)}` : undefined,
+    },
+    {
+      label: 'Jenjang',
+      nilai: profil.jenjang ?? '—',
+      catatan:
+        profil.eselon === 'NON_ESELON'
+          ? 'Non-eselon'
+          : profil.eselon
+            ? `Eselon ${profil.eselon}`
+            : undefined,
+    },
+    {
+      label: 'Lama menjabat',
+      nilai: formatDurasiTahun(profil.lamaMenjabatTahun),
+      catatan: profil.tmtJabatan ? `TMT ${formatTanggal(profil.tmtJabatan)}` : undefined,
+    },
+    {
+      label: 'Pendidikan terakhir',
+      nilai: formatTingkatPendidikan(profil.tingkatPendidikan),
+      catatan: profil.bidangStudiTerakhir ?? undefined,
+    },
     // ---- Turunan NIP: tidak ada kolomnya di DB (phase.md §3 K-6) ----
-    { label: 'Usia', nilai: profil.usia === null ? '—' : `${formatAngka(profil.usia)} tahun`, catatan: profil.tanggalLahir ? formatTanggalPanjang(profil.tanggalLahir) : undefined },
-    { label: 'Jenis kelamin', nilai: profil.jenisKelamin === 'L' ? 'Laki-laki' : profil.jenisKelamin === 'P' ? 'Perempuan' : '—', catatan: 'dari NIP' },
-    { label: 'Masa kerja ASN', nilai: formatDurasiTahun(profil.masaKerjaTahun), catatan: profil.tmtCpns ? `CPNS ${profil.tmtCpns.bulan}/${profil.tmtCpns.tahun}` : undefined },
+    {
+      label: 'Usia',
+      nilai: profil.usia === null ? '—' : `${formatAngka(profil.usia)} tahun`,
+      catatan: profil.tanggalLahir ? formatTanggalPanjang(profil.tanggalLahir) : undefined,
+    },
+    {
+      label: 'Jenis kelamin',
+      nilai:
+        profil.jenisKelamin === 'L' ? 'Laki-laki' : profil.jenisKelamin === 'P' ? 'Perempuan' : '—',
+      catatan: 'dari NIP',
+    },
+    {
+      label: 'Masa kerja ASN',
+      nilai: formatDurasiTahun(profil.masaKerjaTahun),
+      catatan: profil.tmtCpns ? `CPNS ${profil.tmtCpns.bulan}/${profil.tmtCpns.tahun}` : undefined,
+    },
     {
       label: 'Batas usia pensiun',
       nilai: `${profil.batasUsiaPensiun} tahun`,
@@ -169,98 +210,151 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
 
   return (
     <Panel>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <span
-            aria-hidden
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-subtle text-sm font-semibold text-accent"
-          >
-            {inisial(profil.nama)}
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight text-text">{profil.nama}</h1>
-            <p className="tabular mt-0.5 text-[13px] text-text-muted">{formatNip(profil.nip)}</p>
-            <p className="mt-1.5 text-sm text-text-muted">
-              {profil.namaJabatan ?? 'Belum tertaut ke master jabatan'}
-            </p>
-            <p className="text-[13px] text-text-subtle">
-              {profil.namaUnit ?? '—'}
-              {profil.unitInduk ? ` · ${profil.unitInduk}` : ''}
-            </p>
-          </div>
+      {/*
+        Foto KIRI, rincian mengalir ke bawah di KANAN — permintaan user butir 5
+        ("kiri foto/wajahnya, kanan itu detail ke bawah, sama kaya format eHRM").
+
+        Kotaknya BERUKURAN TETAP dan `object-cover`, bukan mengikuti gambarnya.
+        Terukur: 26 foto sumber berdimensi 232×347 sampai 4016×5354 dengan rasio
+        0,67–1,00 — membiarkan tiap gambar menentukan tingginya sendiri membuat
+        seluruh baris identitas bergeser dari satu pegawai ke pegawai lain, dan
+        halaman ini justru sedang dibaca berurutan orang per orang. `object-top`
+        karena yang terpotong harus bagian bawah: wajah ada di atas.
+      */}
+      <div className="flex flex-col gap-5 sm:flex-row">
+        <div className="shrink-0">
+          {punyaFoto ? (
+            /*
+              `<img>`, BUKAN `next/image`. Pengoptimal Next mengambil gambarnya
+              lewat permintaan HTTP-nya sendiri dari sisi server, tanpa membawa
+              cookie sesi — dan rute foto ini berpenjaga sesi, jadi yang didapat
+              pengoptimal adalah 401 dan yang tampil di halaman adalah gambar
+              rusak. Gambar berpenjaga memang salah satu hal yang tidak bisa
+              lewat `next/image`.
+            */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/internal/foto/${profil.nip}`}
+              alt={`Foto ${profil.nama}`}
+              width={148}
+              height={198}
+              className="h-[12.375rem] w-[9.25rem] rounded-lg border border-border bg-surface-2 object-cover object-top"
+            />
+          ) : (
+            <div
+              className="flex h-[12.375rem] w-[9.25rem] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-2"
+              title="Belum ada foto untuk pegawai ini"
+            >
+              <span
+                aria-hidden
+                className="flex size-14 items-center justify-center rounded-full bg-accent-subtle text-lg font-semibold text-accent"
+              >
+                {inisial(profil.nama)}
+              </span>
+              <span className="text-[11px] text-text-subtle">Belum ada foto</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {profil.statusAktif !== 'AKTIF' ? (
-            <Badge tone="peringatan">{profil.statusAktif}</Badge>
-          ) : (
-            <Badge tone="sukses">
-              <StatusDot tone="sukses" />
-              Aktif
-            </Badge>
-          )}
-          {profil.segeraPensiun ? (
-            <Badge tone="peringatan" title="Mencapai batas usia pensiun dalam 2 tahun atau kurang">
-              Mendekati BUP
-            </Badge>
-          ) : null}
-          <Badge tone="netral" title={`Data terakhir disinkronkan dari ${profil.sumberSinkron}`}>
-            Sumber: {profil.sumberSinkron}
-          </Badge>
-          {/* Ditaruh berdampingan dengan lencana "Sumber", bukan di dekat nama:
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-text">{profil.nama}</h1>
+              <p className="tabular mt-0.5 text-[13px] text-text-muted">{formatNip(profil.nip)}</p>
+              <p className="mt-1.5 text-sm text-text-muted">
+                {profil.namaJabatan ?? 'Belum tertaut ke master jabatan'}
+              </p>
+              <p className="text-[13px] text-text-subtle">
+                {profil.namaUnit ?? '—'}
+                {profil.unitInduk ? ` · ${profil.unitInduk}` : ''}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {profil.statusAktif !== 'AKTIF' ? (
+                <Badge tone="peringatan">{profil.statusAktif}</Badge>
+              ) : (
+                <Badge tone="sukses">
+                  <StatusDot tone="sukses" />
+                  Aktif
+                </Badge>
+              )}
+              {profil.segeraPensiun ? (
+                <Badge
+                  tone="peringatan"
+                  title="Mencapai batas usia pensiun dalam 2 tahun atau kurang"
+                >
+                  Mendekati BUP
+                </Badge>
+              ) : null}
+              <Badge
+                tone="netral"
+                title={`Data terakhir disinkronkan dari ${profil.sumberSinkron}`}
+              >
+                Sumber: {profil.sumberSinkron}
+              </Badge>
+              {/* Ditaruh berdampingan dengan lencana "Sumber", bukan di dekat nama:
               menyimpan lewat dialog ini mengubah `sumber_sinkron` menjadi
               `manual`, dan itu yang paling perlu terlihat sebelum orang
               menyuntingnya — nilai yang diisi tangan tidak akan tertimpa
               sinkronisasi berikutnya tanpa disadari. */}
-          <TombolEditor
-            jenis="identitas"
-            pegawaiId={profil.pegawaiId}
-            pilihanJabatan={pilihanJabatan}
-            label="Ubah data"
-            baris={{
-              namaLengkap: profil.nama,
-              golongan: profil.golongan,
-              pangkat: profil.pangkat,
-              tmtGolongan: profil.tmtGolongan,
-              tmtJabatan: profil.tmtJabatan,
-              jabatanId: profil.jabatanId,
-              tingkatPendidikan: profil.tingkatPendidikan,
-              sekolahTerakhir: profil.sekolahTerakhir,
-              bidangStudiTerakhir: profil.bidangStudiTerakhir,
-              statusAktif: profil.statusAktif,
-            }}
-          />
+              <TombolEditor
+                jenis="identitas"
+                pegawaiId={profil.pegawaiId}
+                pilihanJabatan={pilihanJabatan}
+                label="Ubah data"
+                baris={{
+                  namaLengkap: profil.nama,
+                  golongan: profil.golongan,
+                  pangkat: profil.pangkat,
+                  tmtGolongan: profil.tmtGolongan,
+                  tmtJabatan: profil.tmtJabatan,
+                  jabatanId: profil.jabatanId,
+                  tingkatPendidikan: profil.tingkatPendidikan,
+                  sekolahTerakhir: profil.sekolahTerakhir,
+                  bidangStudiTerakhir: profil.bidangStudiTerakhir,
+                  statusAktif: profil.statusAktif,
+                }}
+              />
+            </div>
+          </div>
+
+          {!profil.nipValid ? (
+            <div className="mt-4 flex items-start gap-2 rounded-md border border-warning-border bg-warning-subtle p-2.5">
+              <TriangleAlert className="mt-px size-4 shrink-0 text-warning" />
+              <p className="text-[11px] leading-relaxed text-text-muted">
+                <span className="font-medium text-text">NIP tidak lolos validasi format.</span>{' '}
+                {profil.masalahNip.join('; ')}. Usia, jenis kelamin, dan proyeksi pensiun diturunkan
+                dari NIP, jadi nilai-nilai itu bisa keliru sampai NIP dibetulkan.
+              </p>
+            </div>
+          ) : null}
+
+          {/*
+            Tiga kolom, bukan empat: kolom ini sekarang menyisihkan 9,25rem untuk
+            foto, dan mempertahankan empat kolom membuat "Pangkat / Golongan"
+            terpotong di laptop 1280px. Delapan butir bio jadi 3+3+2 — mengalir
+            ke bawah, bentuk yang diminta.
+          */}
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4 lg:grid-cols-3">
+            {bio.map((b) => (
+              <div key={b.label} className="min-w-0">
+                <dt className="text-[10px] font-medium tracking-wide text-text-subtle uppercase">
+                  {b.label}
+                </dt>
+                <dd className="mt-0.5 truncate text-[13px] font-medium text-text" title={b.nilai}>
+                  {b.nilai}
+                </dd>
+                {b.catatan ? (
+                  <dd className="truncate text-[11px] text-text-subtle" title={b.catatan}>
+                    {b.catatan}
+                  </dd>
+                ) : null}
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
-
-      {!profil.nipValid ? (
-        <div className="mt-4 flex items-start gap-2 rounded-md border border-warning-border bg-warning-subtle p-2.5">
-          <TriangleAlert className="mt-px size-4 shrink-0 text-warning" />
-          <p className="text-[11px] leading-relaxed text-text-muted">
-            <span className="font-medium text-text">NIP tidak lolos validasi format.</span>{' '}
-            {profil.masalahNip.join('; ')}. Usia, jenis kelamin, dan proyeksi pensiun diturunkan
-            dari NIP, jadi nilai-nilai itu bisa keliru sampai NIP dibetulkan.
-          </p>
-        </div>
-      ) : null}
-
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4 sm:grid-cols-4">
-        {bio.map((b) => (
-          <div key={b.label} className="min-w-0">
-            <dt className="text-[10px] font-medium tracking-wide text-text-subtle uppercase">
-              {b.label}
-            </dt>
-            <dd className="mt-0.5 truncate text-[13px] font-medium text-text" title={b.nilai}>
-              {b.nilai}
-            </dd>
-            {b.catatan ? (
-              <dd className="truncate text-[11px] text-text-subtle" title={b.catatan}>
-                {b.catatan}
-              </dd>
-            ) : null}
-          </div>
-        ))}
-      </dl>
     </Panel>
   )
 }
@@ -286,7 +380,11 @@ async function BagianKelengkapan({ profil }: { profil: ProfilPegawai }) {
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
         <div
           className={
-            nada === 'sukses' ? 'h-full bg-success' : nada === 'peringatan' ? 'h-full bg-warning' : 'h-full bg-danger'
+            nada === 'sukses'
+              ? 'h-full bg-success'
+              : nada === 'peringatan'
+                ? 'h-full bg-warning'
+                : 'h-full bg-danger'
           }
           style={{ width: `${Math.max(2, k.persen)}%` }}
         />
@@ -318,6 +416,7 @@ async function BagianKelengkapan({ profil }: { profil: ProfilPegawai }) {
 }
 
 async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
+  const ambang = ambangSumbuDari(await ambilPengaturan())
   const asesmen = await ambilRiwayatAsesmen(profil.pegawaiId)
   const terbaru = asesmen[0]
 
@@ -336,108 +435,117 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
       </div>
 
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-      {!terbaru ? (
-        <p className="p-6 text-center text-[13px] text-text-muted">
-          Belum ada asesmen talenta. Tanpa asesmen, pegawai ini tidak punya posisi di Kotak 9 dan
-          tidak bisa dinilai untuk jabatan target.
-        </p>
-      ) : (
-        <>
-          <div className="flex items-start gap-4 border-b border-border p-4">
-            <span
-              aria-hidden
-              className="tabular flex size-14 shrink-0 flex-col items-center justify-center rounded-lg bg-accent-subtle text-accent"
-            >
-              <span className="text-[9px] font-medium tracking-wide uppercase">Kotak</span>
-              <span className="text-xl leading-none font-semibold">{terbaru.kotak9}</span>
-            </span>
-            <div className="min-w-0">
-              <p className="text-[13px] font-medium text-text">
-                {klasifikasiSumbuY(terbaru.nilaiKinerjaY)} × Potensial{' '}
-                {klasifikasiSumbuX(terbaru.nilaiPotensialX)}
-              </p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-text-subtle">
-                {DESKRIPSI_KOTAK_9[terbaru.kotak9]}
-              </p>
-              <p className="tabular mt-1.5 text-[11px] text-text-muted">
-                Kinerja {formatSkorRingkas(terbaru.nilaiKinerjaY)} · Potensial{' '}
-                {formatSkorRingkas(terbaru.nilaiPotensialX)} · Nilai Talenta{' '}
-                <span className="font-medium text-text">{formatSkor(terbaru.nilaiTalenta)}</span>
-              </p>
+        {!terbaru ? (
+          <p className="p-6 text-center text-[13px] text-text-muted">
+            Belum ada asesmen talenta. Tanpa asesmen, pegawai ini tidak punya posisi di Kotak 9 dan
+            tidak bisa dinilai untuk jabatan target.
+          </p>
+        ) : (
+          <>
+            <div className="flex items-start gap-4 border-b border-border p-4">
+              <span
+                aria-hidden
+                className="tabular flex size-14 shrink-0 flex-col items-center justify-center rounded-lg bg-accent-subtle text-accent"
+              >
+                <span className="text-[9px] font-medium tracking-wide uppercase">Kotak</span>
+                <span className="text-xl leading-none font-semibold">{terbaru.kotak9}</span>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-text">
+                  {klasifikasiSumbuY(terbaru.nilaiKinerjaY, ambang)} × Potensial{' '}
+                  {klasifikasiSumbuX(terbaru.nilaiPotensialX, ambang)}
+                </p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-text-subtle">
+                  {DESKRIPSI_KOTAK_9[terbaru.kotak9]}
+                </p>
+                <p className="tabular mt-1.5 text-[11px] text-text-muted">
+                  Kinerja {formatSkorRingkas(terbaru.nilaiKinerjaY)} · Potensial{' '}
+                  {formatSkorRingkas(terbaru.nilaiPotensialX)} · Nilai Talenta{' '}
+                  <span className="font-medium text-text">{formatSkor(terbaru.nilaiTalenta)}</span>
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-[12px]">
-              <thead>
-                <tr className="border-b border-border text-left text-[10px] tracking-wide text-text-subtle uppercase">
-                  <th className="px-4 py-1.5 font-medium">Tahun</th>
-                  <th className="px-4 py-1.5 font-medium">Jenis</th>
-                  <th className="px-4 py-1.5 text-right font-medium">Kinerja</th>
-                  <th className="px-4 py-1.5 text-right font-medium">Potensial</th>
-                  <th className="px-4 py-1.5 text-right font-medium">Kotak</th>
-                  <th className="px-4 py-1.5 font-medium">Status</th>
-                  <th className="px-4 py-1.5 text-right font-medium">
-                    <span className="sr-only">Aksi</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {asesmen.map((a) => (
-                  <tr key={a.id} className="border-b border-border last:border-b-0">
-                    <td className="tabular px-4 py-1.5 font-medium text-text">{a.tahunAsesmen}</td>
-                    <td className="px-4 py-1.5 text-text-muted">{a.jenisAsesmen}</td>
-                    <td className="tabular px-4 py-1.5 text-right">
-                      <span className="block text-text-muted">
-                        {formatSkorRingkas(a.nilaiKinerjaY)}
-                      </span>
-                      {/* Predikat & kategori sumbu adalah dua taksonomi berbeda (K-3) */}
-                      <span className="block text-[10px] text-text-subtle">
-                        {a.predikatKinerja}
-                      </span>
-                    </td>
-                    <td className="tabular px-4 py-1.5 text-right text-text-muted">
-                      {formatSkorRingkas(a.nilaiPotensialX)}
-                    </td>
-                    <td className="px-4 py-1.5 text-right">
-                      <Badge tone={a.kotak9 >= 7 ? 'sukses' : a.kotak9 >= 4 ? 'aksen' : 'peringatan'}>
-                        {a.kotak9}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-1.5">
-                      {a.statusAsesmen === 'Berlaku' ? (
-                        <span className="text-text-subtle">Berlaku</span>
-                      ) : (
-                        <Badge tone="peringatan">{a.statusAsesmen}</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-1.5 text-right">
-                      {/* `predikatKinerja` → `ratingKinerja`: nama kolom DB-nya
+            {/* `relative` — lihat catatan panjang di tabel-target.tsx: header
+                kolom aksi memuat `sr-only` yang `absolute`, dan tanpa containing
+                block di dalam kontainer gulir ini, luberannya pindah ke
+                scrollWidth halaman. Diperbaiki di sini sekalian, sebelum ia
+                muncul sebagai gulir horizontal di lebar sempit. */}
+            <div className="relative overflow-x-auto">
+              <table className="w-full min-w-[34rem] text-[12px]">
+                <thead>
+                  <tr className="border-b border-border text-left text-[10px] tracking-wide text-text-subtle uppercase">
+                    <th className="px-4 py-1.5 font-medium">Tahun</th>
+                    <th className="px-4 py-1.5 font-medium">Jenis</th>
+                    <th className="px-4 py-1.5 text-right font-medium">Kinerja</th>
+                    <th className="px-4 py-1.5 text-right font-medium">Potensial</th>
+                    <th className="px-4 py-1.5 text-right font-medium">Kotak</th>
+                    <th className="px-4 py-1.5 font-medium">Status</th>
+                    <th className="px-4 py-1.5 text-right font-medium">
+                      <span className="sr-only">Aksi</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {asesmen.map((a) => (
+                    <tr key={a.id} className="border-b border-border last:border-b-0">
+                      <td className="tabular px-4 py-1.5 font-medium text-text">
+                        {a.tahunAsesmen}
+                      </td>
+                      <td className="px-4 py-1.5 text-text-muted">{a.jenisAsesmen}</td>
+                      <td className="tabular px-4 py-1.5 text-right">
+                        <span className="block text-text-muted">
+                          {formatSkorRingkas(a.nilaiKinerjaY)}
+                        </span>
+                        {/* Predikat & kategori sumbu adalah dua taksonomi berbeda (K-3) */}
+                        <span className="block text-[10px] text-text-subtle">
+                          {a.predikatKinerja}
+                        </span>
+                      </td>
+                      <td className="tabular px-4 py-1.5 text-right text-text-muted">
+                        {formatSkorRingkas(a.nilaiPotensialX)}
+                      </td>
+                      <td className="px-4 py-1.5 text-right">
+                        <Badge
+                          tone={a.kotak9 >= 7 ? 'sukses' : a.kotak9 >= 4 ? 'aksen' : 'peringatan'}
+                        >
+                          {a.kotak9}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-1.5">
+                        {a.statusAsesmen === 'Berlaku' ? (
+                          <span className="text-text-subtle">Berlaku</span>
+                        ) : (
+                          <Badge tone="peringatan">{a.statusAsesmen}</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-1.5 text-right">
+                        {/* `predikatKinerja` → `ratingKinerja`: nama kolom DB-nya
                           `rating_kinerja`, dan antarmuka profil menamainya lain.
                           Salah satu dari keduanya harus diterjemahkan di sini. */}
-                      <TombolEditor
-                        jenis="asesmen"
-                        pegawaiId={profil.pegawaiId}
-                        baris={{
-                          id: a.id,
-                          tahunAsesmen: a.tahunAsesmen,
-                          jenisAsesmen: a.jenisAsesmen,
-                          statusAsesmen: a.statusAsesmen,
-                          nilaiKinerjaY: a.nilaiKinerjaY,
-                          potkom: a.potkom,
-                          nilaiIntegritas: a.nilaiIntegritas,
-                          tahunKinerja: a.tahunKinerja,
-                          ratingKinerja: a.predikatKinerja,
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                        <TombolEditor
+                          jenis="asesmen"
+                          pegawaiId={profil.pegawaiId}
+                          baris={{
+                            id: a.id,
+                            tahunAsesmen: a.tahunAsesmen,
+                            jenisAsesmen: a.jenisAsesmen,
+                            statusAsesmen: a.statusAsesmen,
+                            nilaiKinerjaY: a.nilaiKinerjaY,
+                            potkom: a.potkom,
+                            nilaiIntegritas: a.nilaiIntegritas,
+                            tahunKinerja: a.tahunKinerja,
+                            ratingKinerja: a.predikatKinerja,
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </Panel>
   )
@@ -477,57 +585,57 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
   return (
     <Panel className="flex flex-col xl:h-full xl:min-h-0">
       <div className="shrink-0">
-      <PanelHeader
-        judul={`Tren kinerja ${tahunTerbaru}`}
-        deskripsi={`${formatAngka(tahunIni.length)} periode SKP tercatat · nilai granular dari e-Kinerja, bukan skor sumbu Kotak 9`}
-        aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
-      />
+        <PanelHeader
+          judul={`Tren kinerja ${tahunTerbaru}`}
+          deskripsi={`${formatAngka(tahunIni.length)} periode SKP tercatat · nilai granular dari e-Kinerja, bukan skor sumbu Kotak 9`}
+          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
+        />
       </div>
 
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-      {tahunIni.length < 2 ? (
-        <p className="mt-3 text-[13px] text-text-muted">
-          Hanya {formatAngka(tahunIni.length)} periode tercatat pada {tahunTerbaru} — belum cukup
-          untuk menggambar tren. Nilai:{' '}
-          {tahunIni.map((t) => `${t.periode} ${formatSkor(t.nilaiKinerja)}`).join(' · ') || '—'}
-        </p>
-      ) : (
-        <div className="mt-2">
-          <TrenKinerja titik={tahunIni} />
-        </div>
-      )}
+        {tahunIni.length < 2 ? (
+          <p className="mt-3 text-[13px] text-text-muted">
+            Hanya {formatAngka(tahunIni.length)} periode tercatat pada {tahunTerbaru} — belum cukup
+            untuk menggambar tren. Nilai:{' '}
+            {tahunIni.map((t) => `${t.periode} ${formatSkor(t.nilaiKinerja)}`).join(' · ') || '—'}
+          </p>
+        ) : (
+          <div className="mt-2">
+            <TrenKinerja titik={tahunIni} />
+          </div>
+        )}
 
-      {/* Daftar periode: SELURUH tahun, bukan cuma yang digambar chart.
+        {/* Daftar periode: SELURUH tahun, bukan cuma yang digambar chart.
           Tanpa ini, periode tahun lama tidak punya satu pun jalan untuk
           disunting — dan penolakan "periode ini sudah terisi, ubah baris itu"
           dari `simpanKinerja` jadi jalan buntu. */}
-      <ul className="mt-3 divide-y divide-border border-t border-border">
-        {kinerja.map((k) => (
-          <li key={k.id} className="flex items-center justify-between gap-3 py-1.5">
-            <span className="tabular min-w-0 text-[12px] text-text-muted">
-              <span className="font-medium text-text">
-                {k.periode} {k.tahun}
+        <ul className="mt-3 divide-y divide-border border-t border-border">
+          {kinerja.map((k) => (
+            <li key={k.id} className="flex items-center justify-between gap-3 py-1.5">
+              <span className="tabular min-w-0 text-[12px] text-text-muted">
+                <span className="font-medium text-text">
+                  {k.periode} {k.tahun}
+                </span>
+                {' · '}
+                {k.nilaiKinerja === null ? 'nilai belum diisi' : formatSkor(k.nilaiKinerja)}
+                {' · '}
+                {k.predikat}
               </span>
-              {' · '}
-              {k.nilaiKinerja === null ? 'nilai belum diisi' : formatSkor(k.nilaiKinerja)}
-              {' · '}
-              {k.predikat}
-            </span>
-            <TombolEditor
-              jenis="kinerja"
-              pegawaiId={profil.pegawaiId}
-              baris={{
-                id: k.id,
-                tahun: k.tahun,
-                periodeSkp: k.periode,
-                nilaiKinerja: k.nilaiKinerja,
-                nilaiPerilaku: k.nilaiPerilaku,
-                predikat: k.predikat,
-              }}
-            />
-          </li>
-        ))}
-      </ul>
+              <TombolEditor
+                jenis="kinerja"
+                pegawaiId={profil.pegawaiId}
+                baris={{
+                  id: k.id,
+                  tahun: k.tahun,
+                  periodeSkp: k.periode,
+                  nilaiKinerja: k.nilaiKinerja,
+                  nilaiPerilaku: k.nilaiPerilaku,
+                  predikat: k.predikat,
+                }}
+              />
+            </li>
+          ))}
+        </ul>
       </div>
     </Panel>
   )
@@ -557,66 +665,74 @@ async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
           dibiarkan setinggi isinya: keduanya di bawah 200px, jadi mematoknya
           justru MENAMBAH ruang kosong, kebalikan dari yang diminta. */}
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-      {daftar.length === 0 ? (
-        <p className="p-6 text-center text-[13px] text-text-muted">
-          Belum ada perhitungan kecocokan. Skor terbentuk setelah pegawai dinilai terhadap suatu
-          jabatan target.
-        </p>
-      ) : (
-        <ul className="divide-y divide-border">
-          {daftar.map((s) => (
-            <li key={s.jabatanTargetId} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-text">{s.namaTarget}</p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-text-subtle">
-                    {s.eligible ? (
-                      <Badge tone="sukses">Lolos syarat</Badge>
-                    ) : (
-                      <Badge tone="bahaya">Tidak lolos syarat</Badge>
-                    )}
-                    {s.statusTalentPool ? (
-                      <Badge tone="aksen">
-                        Talent pool: {s.statusTalentPool}
-                        {s.ranking ? ` · peringkat ${s.ranking}` : ''}
-                      </Badge>
-                    ) : null}
-                  </p>
-                </div>
-                <span className="tabular shrink-0 text-right">
-                  <span className="block text-xl leading-none font-semibold text-text">
-                    {formatSkor(s.skorTotal)}
+        {daftar.length === 0 ? (
+          <p className="p-6 text-center text-[13px] text-text-muted">
+            Belum ada perhitungan kecocokan. Skor terbentuk setelah pegawai dinilai terhadap suatu
+            jabatan target.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {daftar.map((s) => (
+              <li key={s.jabatanTargetId} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-text">{s.namaTarget}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-text-subtle">
+                      {s.eligible ? (
+                        <Badge tone="sukses">Lolos syarat</Badge>
+                      ) : (
+                        <Badge tone="bahaya">Tidak lolos syarat</Badge>
+                      )}
+                      {s.statusTalentPool ? (
+                        <Badge tone="aksen">
+                          Talent pool: {s.statusTalentPool}
+                          {s.ranking ? ` · peringkat ${s.ranking}` : ''}
+                        </Badge>
+                      ) : null}
+                    </p>
+                  </div>
+                  <span className="tabular shrink-0 text-right">
+                    <span className="block text-xl leading-none font-semibold text-text">
+                      {formatSkor(s.skorTotal)}
+                    </span>
+                    <span className="text-[10px] text-text-subtle">skor total</span>
                   </span>
-                  <span className="text-[10px] text-text-subtle">skor total</span>
-                </span>
-              </div>
+                </div>
 
-              {s.catatanEligibility ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-text-subtle">
-                  {s.catatanEligibility}
-                </p>
-              ) : null}
+                {s.catatanEligibility ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-text-subtle">
+                    {s.catatanEligibility}
+                  </p>
+                ) : null}
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                <Komponen label="Potensi & Kompetensi" bobot={0.65} skor={s.skorPotensiKompetensi} />
-                <Komponen label="Kualifikasi Jabatan" bobot={0.2} skor={s.skorKualifikasiJabatan} />
-                <Komponen
-                  label="Integritas & Moralitas"
-                  bobot={0.15}
-                  skor={s.skorIntegritasMoralitas}
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <Komponen
+                    label="Potensi & Kompetensi"
+                    bobot={0.65}
+                    skor={s.skorPotensiKompetensi}
+                  />
+                  <Komponen
+                    label="Kualifikasi Jabatan"
+                    bobot={0.2}
+                    skor={s.skorKualifikasiJabatan}
+                  />
+                  <Komponen
+                    label="Integritas & Moralitas"
+                    bobot={0.15}
+                    skor={s.skorIntegritasMoralitas}
+                  />
+                </div>
+
+                <RincianSkor
+                  rincian={s.rincian}
+                  pegawaiId={profil.pegawaiId}
+                  jabatanTargetId={s.jabatanTargetId}
+                  bolehIsiManual={bolehIsiManual}
                 />
-              </div>
-
-              <RincianSkor
-                rincian={s.rincian}
-                pegawaiId={profil.pegawaiId}
-                jabatanTargetId={s.jabatanTargetId}
-                bolehIsiManual={bolehIsiManual}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </Panel>
   )
@@ -647,95 +763,99 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
   return (
     <Panel className="flex flex-col xl:h-full xl:min-h-0">
       <div className="shrink-0">
-      <PanelHeader
-        judul="Riwayat jabatan"
-        deskripsi={
-          riwayat.length === 0
-            ? undefined
-            : `${formatAngka(riwayat.length)} riwayat${belumTerpetakan > 0 ? ` · ${formatAngka(belumTerpetakan)} belum terpetakan ke master jabatan DJBK` : ''}`
-        }
-        aksi={
-          <>
-            {riwayat.some((r) => r.nonDefinitif) ? (
-              <Badge tone="aksen" title="Penugasan Plt/Plh menjadi input sub-indikator Substansi Riwayat Jabatan">
-                Ada penugasan Plt/Plh
-              </Badge>
-            ) : null}
-            <TombolEditor
-              jenis="riwayatJabatan"
-              pegawaiId={profil.pegawaiId}
-              pilihanJabatan={pilihanJabatan}
-            />
-          </>
-        }
-      />
-
+        <PanelHeader
+          judul="Riwayat jabatan"
+          deskripsi={
+            riwayat.length === 0
+              ? undefined
+              : `${formatAngka(riwayat.length)} riwayat${belumTerpetakan > 0 ? ` · ${formatAngka(belumTerpetakan)} belum terpetakan ke master jabatan DJBK` : ''}`
+          }
+          aksi={
+            <>
+              {riwayat.some((r) => r.nonDefinitif) ? (
+                <Badge
+                  tone="aksen"
+                  title="Penugasan Plt/Plh menjadi input sub-indikator Substansi Riwayat Jabatan"
+                >
+                  Ada penugasan Plt/Plh
+                </Badge>
+              ) : null}
+              <TombolEditor
+                jenis="riwayatJabatan"
+                pegawaiId={profil.pegawaiId}
+                pilihanJabatan={pilihanJabatan}
+              />
+            </>
+          }
+        />
       </div>
 
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-      {riwayat.length === 0 ? (
-        <p className="mt-3 text-[13px] text-text-muted">Belum ada riwayat jabatan tercatat.</p>
-      ) : (
-        <ol className="mt-4 space-y-0">
-          {riwayat.map((r, i) => (
-            <li key={r.urutan} className="relative flex gap-3 pb-4 last:pb-0">
-              {/* Garis timeline */}
-              {i < riwayat.length - 1 ? (
-                <span aria-hidden className="absolute top-3 left-[5px] h-full w-px bg-border" />
-              ) : null}
-              <span
-                aria-hidden
-                className={
-                  i === 0
-                    ? 'relative mt-1.5 size-2.5 shrink-0 rounded-full bg-accent ring-2 ring-accent-subtle'
-                    : 'relative mt-1.5 size-2.5 shrink-0 rounded-full bg-border-strong'
-                }
-              />
-              <div className="min-w-0 flex-1">
-                <span className="float-right ml-2">
-                  <TombolEditor
-                    jenis="riwayatJabatan"
-                    pegawaiId={profil.pegawaiId}
-                    pilihanJabatan={pilihanJabatan}
-                    baris={{
-                      id: r.id,
-                      jabatanNamaMentah: r.namaMentah,
-                      jabatanId: r.jabatanId,
-                      jenisPenugasan: r.jenisPenugasan,
-                      unitKerjaMentah: r.unitKerjaMentah,
-                      tanggalMulai: r.tanggalMulai,
-                      tanggalAkhir: r.tanggalAkhir,
-                      noSk: r.noSk,
-                    }}
-                  />
-                </span>
-                <p className="text-[13px] leading-snug font-medium text-text">
-                  {r.namaJabatan ?? r.namaMentah}
-                  {r.nonDefinitif ? (
-                    <Badge tone="aksen" className="ml-1.5">
-                      {r.nonDefinitif}
-                    </Badge>
-                  ) : null}
-                </p>
-                {r.namaJabatan && r.namaMentah !== r.namaJabatan ? (
-                  <p className="mt-0.5 text-[11px] text-text-subtle">Teks sumber: {r.namaMentah}</p>
+        {riwayat.length === 0 ? (
+          <p className="mt-3 text-[13px] text-text-muted">Belum ada riwayat jabatan tercatat.</p>
+        ) : (
+          <ol className="mt-4 space-y-0">
+            {riwayat.map((r, i) => (
+              <li key={r.urutan} className="relative flex gap-3 pb-4 last:pb-0">
+                {/* Garis timeline */}
+                {i < riwayat.length - 1 ? (
+                  <span aria-hidden className="absolute top-3 left-[5px] h-full w-px bg-border" />
                 ) : null}
-                <p className="tabular mt-0.5 text-[11px] text-text-subtle">
-                  {r.tanggalMulai ? formatTanggal(r.tanggalMulai) : 'tanggal belum ada'}
-                  {' – '}
-                  {r.tanggalAkhir ? formatTanggal(r.tanggalAkhir) : 'sekarang'}
-                  {r.lamaTahun !== null ? ` · ${formatDurasiTahun(r.lamaTahun)}` : ''}
-                </p>
-                <p className="mt-0.5 text-[11px] text-text-subtle">
-                  {r.namaUnit ?? (r.terpetakan ? '—' : 'Di luar master jabatan DJBK')}
-                  {r.eselon && r.eselon !== 'NON_ESELON' ? ` · Eselon ${r.eselon}` : ''}
-                  {r.noSk ? ` · ${r.noSk}` : ''}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
+                <span
+                  aria-hidden
+                  className={
+                    i === 0
+                      ? 'relative mt-1.5 size-2.5 shrink-0 rounded-full bg-accent ring-2 ring-accent-subtle'
+                      : 'relative mt-1.5 size-2.5 shrink-0 rounded-full bg-border-strong'
+                  }
+                />
+                <div className="min-w-0 flex-1">
+                  <span className="float-right ml-2">
+                    <TombolEditor
+                      jenis="riwayatJabatan"
+                      pegawaiId={profil.pegawaiId}
+                      pilihanJabatan={pilihanJabatan}
+                      baris={{
+                        id: r.id,
+                        jabatanNamaMentah: r.namaMentah,
+                        jabatanId: r.jabatanId,
+                        jenisPenugasan: r.jenisPenugasan,
+                        unitKerjaMentah: r.unitKerjaMentah,
+                        tanggalMulai: r.tanggalMulai,
+                        tanggalAkhir: r.tanggalAkhir,
+                        noSk: r.noSk,
+                      }}
+                    />
+                  </span>
+                  <p className="text-[13px] leading-snug font-medium text-text">
+                    {r.namaJabatan ?? r.namaMentah}
+                    {r.nonDefinitif ? (
+                      <Badge tone="aksen" className="ml-1.5">
+                        {r.nonDefinitif}
+                      </Badge>
+                    ) : null}
+                  </p>
+                  {r.namaJabatan && r.namaMentah !== r.namaJabatan ? (
+                    <p className="mt-0.5 text-[11px] text-text-subtle">
+                      Teks sumber: {r.namaMentah}
+                    </p>
+                  ) : null}
+                  <p className="tabular mt-0.5 text-[11px] text-text-subtle">
+                    {r.tanggalMulai ? formatTanggal(r.tanggalMulai) : 'tanggal belum ada'}
+                    {' – '}
+                    {r.tanggalAkhir ? formatTanggal(r.tanggalAkhir) : 'sekarang'}
+                    {r.lamaTahun !== null ? ` · ${formatDurasiTahun(r.lamaTahun)}` : ''}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-text-subtle">
+                    {r.namaUnit ?? (r.terpetakan ? '—' : 'Di luar master jabatan DJBK')}
+                    {r.eselon && r.eselon !== 'NON_ESELON' ? ` · Eselon ${r.eselon}` : ''}
+                    {r.noSk ? ` · ${r.noSk}` : ''}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </Panel>
   )
@@ -758,81 +878,80 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
   return (
     <Panel className="flex flex-col xl:min-h-0 xl:flex-1">
       <div className="shrink-0">
-      <PanelHeader
-        judul="Riwayat pendidikan"
-        deskripsi={
-          riwayat.length === 0 ? undefined : `${formatAngka(riwayat.length)} jenjang tercatat`
-        }
-        aksi={<TombolEditor jenis="pendidikan" pegawaiId={profil.pegawaiId} />}
-      />
-
+        <PanelHeader
+          judul="Riwayat pendidikan"
+          deskripsi={
+            riwayat.length === 0 ? undefined : `${formatAngka(riwayat.length)} jenjang tercatat`
+          }
+          aksi={<TombolEditor jenis="pendidikan" pegawaiId={profil.pegawaiId} />}
+        />
       </div>
 
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-      {riwayat.length === 0 ? (
-        <p className="mt-3 text-[13px] text-text-muted">
-          Belum ada riwayat pendidikan. Indikator Tingkat Pendidikan Formal & Kesesuaian Bidang Ilmu
-          tidak bisa dihitung tanpa data ini.
-        </p>
-      ) : (
-        <>
-          <ul className="mt-3 divide-y divide-border">
-            {riwayat.map((r) => (
-              <li key={`${r.jenjang}-${r.urutan}`} className="py-2.5 first:pt-0 last:pb-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-text">
-                      {formatTingkatPendidikan(r.jenjang)} · {r.bidangStudi}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-text-subtle">
-                      {r.namaSekolah ?? 'Nama sekolah belum terisi'}
-                      {r.tahunLulus ? ` · lulus ${r.tahunLulus}` : ' · tahun lulus belum terisi'}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-1">
-                    {/* Pemetaan kunci antarmuka → kunci formulir ditulis EKSPLISIT.
+        {riwayat.length === 0 ? (
+          <p className="mt-3 text-[13px] text-text-muted">
+            Belum ada riwayat pendidikan. Indikator Tingkat Pendidikan Formal & Kesesuaian Bidang
+            Ilmu tidak bisa dihitung tanpa data ini.
+          </p>
+        ) : (
+          <>
+            <ul className="mt-3 divide-y divide-border">
+              {riwayat.map((r) => (
+                <li key={`${r.jenjang}-${r.urutan}`} className="py-2.5 first:pt-0 last:pb-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium text-text">
+                        {formatTingkatPendidikan(r.jenjang)} · {r.bidangStudi}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-text-subtle">
+                        {r.namaSekolah ?? 'Nama sekolah belum terisi'}
+                        {r.tahunLulus ? ` · lulus ${r.tahunLulus}` : ' · tahun lulus belum terisi'}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center gap-1">
+                      {/* Pemetaan kunci antarmuka → kunci formulir ditulis EKSPLISIT.
                         Meneruskan `r` apa adanya akan diam-diam gagal: antarmukanya
                         memakai `jenjang` sementara formulirnya `jenjangPendidikan`,
                         jadi pemilihnya terbuka pada pilihan pertama dan menyimpan
                         akan MENGUBAH jenjang yang tidak disentuh siapa pun. */}
-                    <TombolEditor
-                      jenis="pendidikan"
-                      pegawaiId={profil.pegawaiId}
-                      baris={{
-                        id: r.id,
-                        jenjangPendidikan: r.jenjang,
-                        bidangStudi: r.bidangStudi,
-                        namaSekolah: r.namaSekolah,
-                        tahunLulus: r.tahunLulus,
-                        noPertekBkn: r.noPertekBkn,
-                      }}
-                    />
-                    {adaIjazah ? (
-                      r.urlIjazah ? (
-                        <Badge tone="sukses">Ijazah</Badge>
-                      ) : (
-                        <Badge tone="netral">Ijazah belum ada</Badge>
-                      )
-                    ) : null}
-                    {adaPertek && r.noPertekBkn ? (
-                      <Badge tone="aksen" title={r.noPertekBkn}>
-                        Pertek BKN
-                      </Badge>
-                    ) : null}
+                      <TombolEditor
+                        jenis="pendidikan"
+                        pegawaiId={profil.pegawaiId}
+                        baris={{
+                          id: r.id,
+                          jenjangPendidikan: r.jenjang,
+                          bidangStudi: r.bidangStudi,
+                          namaSekolah: r.namaSekolah,
+                          tahunLulus: r.tahunLulus,
+                          noPertekBkn: r.noPertekBkn,
+                        }}
+                      />
+                      {adaIjazah ? (
+                        r.urlIjazah ? (
+                          <Badge tone="sukses">Ijazah</Badge>
+                        ) : (
+                          <Badge tone="netral">Ijazah belum ada</Badge>
+                        )
+                      ) : null}
+                      {adaPertek && r.noPertekBkn ? (
+                        <Badge tone="aksen" title={r.noPertekBkn}>
+                          Pertek BKN
+                        </Badge>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
 
-          {kolomDisembunyikan.length > 0 ? (
-            <p className="mt-3 border-t border-border pt-3 text-[11px] text-text-subtle">
-              Kolom {kolomDisembunyikan.join(', ')} disembunyikan karena belum ada satu pun data
-              arsipnya. Unggah arsip dilakukan dari halaman Master Data
-            </p>
-          ) : null}
-        </>
-      )}
+            {kolomDisembunyikan.length > 0 ? (
+              <p className="mt-3 border-t border-border pt-3 text-[11px] text-text-subtle">
+                Kolom {kolomDisembunyikan.join(', ')} disembunyikan karena belum ada satu pun data
+                arsipnya. Unggah arsip dilakukan dari halaman Master Data
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
     </Panel>
   )
@@ -842,20 +961,20 @@ async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
   return (
     <Panel className="flex flex-col xl:min-h-0 xl:flex-1">
       <div className="shrink-0">
-      <PanelHeader
-        judul="Riwayat diklat & sertifikasi"
-        deskripsi={
-          profil.riwayatDiklat.length === 0
-            ? undefined
-            : // Sengaja TIDAK lagi menulis "input indikator Pengembangan Kompetensi":
-              // sejak doc/sql/014-015 yang menjadi input adalah KATEGORI hasil
-              // validasi, bukan daftar nama ini. Label lama akan membuat orang
-              // menyimpulkan skornya sudah terhitung padahal diklatnya belum
-              // dikategorikan — dan itu justru keadaan yang paling sering terjadi.
-              `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · indikator Pengembangan Kompetensi memakai kategori hasil validasi, bukan daftar ini`
-        }
-        aksi={<TombolEditor jenis="diklat" pegawaiId={profil.pegawaiId} />}
-      />
+        <PanelHeader
+          judul="Riwayat diklat & sertifikasi"
+          deskripsi={
+            profil.riwayatDiklat.length === 0
+              ? undefined
+              : // Sengaja TIDAK lagi menulis "input indikator Pengembangan Kompetensi":
+                // sejak doc/sql/014-015 yang menjadi input adalah KATEGORI hasil
+                // validasi, bukan daftar nama ini. Label lama akan membuat orang
+                // menyimpulkan skornya sudah terhitung padahal diklatnya belum
+                // dikategorikan — dan itu justru keadaan yang paling sering terjadi.
+                `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · indikator Pengembangan Kompetensi memakai kategori hasil validasi, bukan daftar ini`
+          }
+          aksi={<TombolEditor jenis="diklat" pegawaiId={profil.pegawaiId} />}
+        />
       </div>
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
         <DaftarDiklat diklat={profil.riwayatDiklat} pegawaiId={profil.pegawaiId} />

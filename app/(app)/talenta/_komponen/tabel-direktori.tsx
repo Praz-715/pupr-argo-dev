@@ -130,7 +130,10 @@ export function TabelDirektori({
     {
       kunci: 'potkom',
       judul: 'Potkom',
-      subjudul: '0–100',
+      // Bukan '0–100': potkom disimpan apa adanya sejak 18 Agu 2026, dan sekitar
+      // 40% rekaman dari sumber melebihi 100. Subjudul yang menjanjikan batas
+      // yang tidak ditegakkan membuat angka 114,93 di bawahnya terbaca sebagai bug.
+      subjudul: 'apa adanya dari sumber',
       rataKanan: true,
       render: (p) =>
         p.potkom === null ? (

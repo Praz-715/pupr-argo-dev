@@ -38,12 +38,25 @@ import { AKUN, konteksMasuk } from './_masuk.mjs'
 const BASE = process.argv[3] ?? 'http://localhost:3000'
 const OUT = process.argv[2] ?? '.'
 
-/**
- * Sebaran Kotak 9 generik `pupr_dev`, dicatat SEBELUM Fase 11 menyentuh kueri
- * peta (lihat CLAUDE.md baseline). Kalau angka ini bergeser, tampilan organisasi
- * ikut berubah — dan itu regresi, bukan perbaikan.
- */
-const SEBARAN_GENERIK = { 1: 3, 2: 5, 3: 2, 4: 4, 5: 4, 6: 2, 7: 6, 8: 4, 9: 10 }
+/*
+  DULU di sini ada `SEBARAN_GENERIK` — potret angka Kotak 9 `pupr_dev` yang
+  dipaku, untuk membuktikan Fase 11 tidak menggeser tampilan organisasi.
+
+  Dihapus 18 Agu 2026, dan alasannya penting: potret itu **tidak bisa
+  membedakan regresi dari perubahan data yang disengaja**. Sejak dicatat,
+  populasinya dikurasi (hanya yang ada di eNominasi) lalu ditambah 26 pegawai
+  dari Excel Talent Pool ES 2/3 — jadi angkanya WAJIB bergeser, dan langkahnya
+  merah tanpa ada yang rusak. Memperbaruinya jadi angka hari ini hanya menunda
+  masalah yang sama sampai impor berikutnya, sekaligus mengubah penjaga regresi
+  menjadi catatan keadaan data.
+
+  Penggantinya invarian yang tidak bergantung pada isi DB: sebaran generik
+  dihitung oleh DUA kueri yang benar-benar berbeda —
+  `ambilPetaSebaran()` (halaman Peta Talenta) dan `ambilSebaranKotak9()`
+  (widget dashboard) — dan keduanya HARUS sepakat. Itu justru menangkap hal
+  yang dikhawatirkan langkah lama (kueri peta bergeser sendiri) tanpa ikut
+  merah setiap kali datanya berubah.
+*/
 
 const errors = []
 const hasil = []
@@ -158,15 +171,28 @@ async function main() {
     return 'panel berjudul "Grid 9 Kotak — Sebaran Organisasi"'
   })
 
-  await langkah('Sebaran generik IDENTIK dengan baseline sebelum Fase 11', async () => {
+  await langkah('Sebaran generik SAMA dengan grid Kotak 9 dashboard (dua kueri)', async () => {
     sebaranGenerik = await bacaGrid(page)
-    const beda = Object.entries(SEBARAN_GENERIK)
-      .filter(([k, v]) => sebaranGenerik[k] !== v)
-      .map(([k, v]) => `K${k}: ${sebaranGenerik[k]} ≠ ${v}`)
-    tegaskan(beda.length === 0, `sebaran generik bergeser — ${beda.join(', ')}`)
-    return Object.entries(sebaranGenerik)
+    const total = Object.values(sebaranGenerik).reduce((a, b) => a + b, 0)
+    // "Sepakat" atas dua grid kosong bukan bukti apa pun.
+    tegaskan(total > 0, 'sebaran generik kosong — tidak ada yang bisa dibandingkan')
+
+    await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('[data-kotak]')
+    const dashboard = await bacaGrid(page)
+    const beda = Object.keys(sebaranGenerik)
+      .filter((k) => sebaranGenerik[k] !== dashboard[k])
+      .map((k) => `K${k}: peta ${sebaranGenerik[k]} ≠ dashboard ${dashboard[k]}`)
+    tegaskan(
+      beda.length === 0,
+      `dua kueri sebaran generik berselisih — ${beda.join(', ')}`,
+    )
+
+    await page.goto(`${BASE}/peta-talenta`, { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('[data-kotak]')
+    return `${total} pegawai · sepakat di 9 kotak · ${Object.entries(sebaranGenerik)
       .map(([k, v]) => `K${k}:${v}`)
-      .join(' ')
+      .join(' ')}`
   })
 
   await langkah('Sumbu X generik berlabel "Potensial", bukan "Match score"', async () => {
@@ -206,22 +232,55 @@ async function main() {
     return 'kedua panel berlabel kesiapan per jabatan'
   })
 
-  await langkah('Sebaran per jabatan target BERBEDA dari generik', async () => {
+  await langkah('Sebaran per jabatan target benar-benar memakai ?target=', async () => {
     sebaranTarget = await bacaGrid(page)
-    const pindah = Object.keys(SEBARAN_GENERIK).filter((k) => sebaranTarget[k] !== sebaranGenerik[k])
-    // Kalau identik, kemungkinan besar `?target=` diabaikan dan halaman diam-diam
-    // menyajikan angka generik — kegagalan yang paling mudah lolos di fase ini.
+
+    /*
+      Yang dijaga: `?target=` tidak diabaikan diam-diam.
+
+      Dulu ini diuji dengan menuntut JUMLAH per kotak berbeda dari generik. Itu
+      probe yang salah, dan sekarang terbukti: populasi `pupr_dev_v2` cukup
+      homogen sehingga sumbu potkom dan sumbu match score menempatkan orang yang
+      sama di kotak yang sama — 32 di K9, 4 di K7 pada keduanya. Langkahnya merah
+      padahal `?target=` dihormati sepenuhnya.
+
+      Penggantinya membandingkan NILAI sumbu X, bukan hitungan kotak: buka
+      drill-down kotak terpadat pada kedua tampilan lalu bandingkan kolom
+      sumbu X-nya. Generik memakai potkom, per jabatan target memakai match
+      score — kalau `?target=` diabaikan, kedua daftar akan berisi angka yang
+      sama persis. Ini menangkap parameter yang diabaikan bahkan ketika
+      sebarannya kebetulan identik.
+    */
+    const kotakTerpadat = Object.entries(sebaranTarget).sort((a, b) => b[1] - a[1])[0][0]
+    const bacaKolomX = async (url) => {
+      await page.goto(url, { waitUntil: 'networkidle' })
+      return page.evaluate(() => {
+        const th = [...document.querySelectorAll('table thead th')].map((e) => e.innerText)
+        const i = th.findIndex((t) => /potensial|match score/i.test(t))
+        if (i < 0) return null
+        return [...document.querySelectorAll('table tbody tr')]
+          .map((tr) => tr.children[i]?.innerText.trim())
+          .filter(Boolean)
+      })
+    }
+    const xGenerik = await bacaKolomX(`${BASE}/peta-talenta?kotak=${kotakTerpadat}`)
+    const xTarget = await bacaKolomX(`${BASE}/peta-talenta?kotak=${kotakTerpadat}&target=${targetId}`)
+    tegaskan(xGenerik !== null && xGenerik.length > 0, 'kolom sumbu X tidak ditemukan di drill-down generik')
+    tegaskan(xTarget !== null && xTarget.length > 0, 'kolom sumbu X tidak ditemukan di drill-down per jabatan target')
     tegaskan(
-      pindah.length > 0,
-      'sebaran per jabatan target identik dengan generik — ?target= kemungkinan diabaikan',
+      xGenerik.join('|') !== xTarget.join('|'),
+      `nilai sumbu X identik di kedua tampilan — ?target= kemungkinan diabaikan (${xGenerik.slice(0, 3).join(', ')})`,
     )
+
+    await page.goto(`${BASE}/peta-talenta?target=${targetId}`, { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('[data-kotak]')
     const jml = Object.values(sebaranTarget).reduce((a, b) => a + b, 0)
     const jmlGenerik = Object.values(sebaranGenerik).reduce((a, b) => a + b, 0)
     tegaskan(
       jml === jmlGenerik,
       `total pegawai berubah ${jmlGenerik} → ${jml}; seharusnya sama, hanya sebarannya bergeser`,
     )
-    return `${pindah.length} kotak berubah · total tetap ${jml} · ${Object.entries(sebaranTarget)
+    return `sumbu X berbeda di K${kotakTerpadat} · total tetap ${jml} · ${Object.entries(sebaranTarget)
       .map(([k, v]) => `K${k}:${v}`)
       .join(' ')}`
   })
@@ -319,10 +378,36 @@ async function main() {
   // -------------------------------------------------------------------------
   await langkah('?target= tak dikenal ditolak terang-terangan', async () => {
     await page.goto(`${BASE}/peta-talenta?target=999999`, { waitUntil: 'domcontentloaded' })
+    /*
+      DITUNGGU secara eksplisit, tidak dibaca seketika.
+
+      `domcontentloaded` bisa tiba saat `loading.tsx` masih terpasang, sehingga
+      `main` yang dibaca adalah skeleton dan asersinya merah tanpa ada yang
+      rusak — terbukti: pesan penolakannya HADIR pada pemeriksaan langsung, baik
+      dengan `domcontentloaded` maupun `networkidle`, tapi langkah ini tetap
+      merah kadang-kadang di rangkaian penuh saat mesinnya sedang sibuk.
+
+      Yang ditunggu adalah SALAH SATU dari dua keadaan akhir yang mungkin —
+      pesan penolakan, atau grid yang tergambar. Menunggu hanya pesannya akan
+      berubah jadi timeout 30 detik ketika halaman justru salah menggambar grid,
+      dan timeout menyembunyikan penyebabnya; dengan menunggu keduanya, asersi
+      di bawah tetap yang memutuskan lulus atau gagal.
+    */
+    await page
+      .waitForFunction(
+        () =>
+          document.body.innerText.includes('Jabatan target tidak ditemukan') ||
+          document.querySelector('[data-kotak]') !== null,
+        undefined,
+        { timeout: 20000 },
+      )
+      .catch(() => {})
     const teks = await page.locator('main').innerText()
     tegaskan(
       teks.includes('Jabatan target tidak ditemukan'),
-      'target tak dikenal tidak ditolak dengan pesan yang jelas',
+      `target tak dikenal tidak ditolak dengan pesan yang jelas — isi: ${teks
+        .slice(0, 120)
+        .replace(/\n/g, ' ')}`,
     )
     // Yang paling berbahaya: diam-diam menyajikan angka generik di bawah label
     // yang diminta pengguna.
@@ -342,7 +427,13 @@ async function main() {
       waitUntil: 'domcontentloaded',
     })
     const reset = page.locator('main button', { hasText: /^Reset$/ })
-    tegaskan((await reset.count()) === 1, 'tombol Reset tidak ditemukan tepat satu')
+    // Tombol Reset hanya muncul saat ada filter aktif, dan toolbarnya ikut
+    // dialirkan lewat Suspense — jadi `count()` seketika setelah
+    // `domcontentloaded` bisa membaca 0 padahal tombolnya menyusul beberapa
+    // milidetik kemudian. Ditunggu keberadaannya, lalu jumlahnya tetap
+    // ditegaskan tepat satu (dua tombol Reset berarti toolbar terender ganda).
+    await reset.first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {})
+    tegaskan((await reset.count()) === 1, `tombol Reset tidak ditemukan tepat satu (${await reset.count()})`)
     await reset.click()
     // Tunggu KEADAAN: parameter unit lenyap dari URL. Menunggu sebuah kata yang
     // sudah ada di layar akan lolos seketika (jebakan #1 di CLAUDE.md).
@@ -549,10 +640,28 @@ async function main() {
     await page.goto(`${BASE}/jabatan-target/${menyimpang.id}?tab=syarat`, {
       waitUntil: 'domcontentloaded',
     })
+    /*
+      Isi tab ini dialirkan lewat Suspense, jadi `domcontentloaded` bisa tiba
+      saat yang terpasang masih skeleton — dan asersi di bawah lalu merah 2 dari
+      3 kali di mesin yang sibuk, padahal datanya benar menyimpang (target #1:
+      rubrik 3 kata kunci vs gerbang 1) dan halamannya benar menandainya.
+      Ditunggu sampai penanda selisih ATAU label versi gerbang muncul; asersi di
+      bawah tetap yang memutuskan, bukan penantian ini.
+    */
+    await page
+      .waitForFunction(
+        () =>
+          /tersimpan dua kali dengan isi berbeda|Dipakai gerbang kelayakan/i.test(
+            document.body.innerText,
+          ),
+        undefined,
+        { timeout: 20000 },
+      )
+      .catch(() => {})
     const teks = await page.locator('main').innerText()
     tegaskan(
       /tersimpan dua kali dengan isi berbeda/i.test(teks),
-      'tab Persyaratan tidak menandai selisihnya',
+      `tab Persyaratan tidak menandai selisihnya — isi: ${teks.slice(0, 140).replace(/\n/g, ' ')}`,
     )
     tegaskan(/Dipakai gerbang kelayakan/i.test(teks), 'isi versi gerbang tidak ditampilkan')
     tegaskan(/Dipakai indikator rubrik/i.test(teks), 'isi versi rubrik tidak ditampilkan')

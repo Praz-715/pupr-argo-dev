@@ -1,5 +1,7 @@
 'use client'
 
+import { Users } from 'lucide-react'
+import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
 import { Bidang, kelasInput } from '@/components/ui/bidang'
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useToast } from '@/components/ui/toast'
 import { buatUnit, ubahUnit } from '@/lib/aksi/unit-organisasi'
+import { formatAngka } from '@/lib/format'
 import type { NodeUnit } from '@/lib/kueri/master'
 
 /**
@@ -110,6 +113,32 @@ export function FormUnit({
       }
     >
       <div className="space-y-3.5">
+        {/* Rujukan ke Direktori Pegawai dari dialog UBAH (permintaan user,
+            12 Agu 2026: "pilih edit/detail muncul reference ke directory pegawai
+            yg ikut di unor yg dipilih").
+
+            Hanya pada mode ubah: unit yang belum tersimpan belum punya id, jadi
+            tautannya akan menyaring ke `undefined` dan memunculkan seluruh
+            pegawai — persis kebalikan dari yang dijanjikannya.
+
+            Angka yang disebut `jumlahPegawaiTermasukTurunan`, sebab `?unit=` di
+            direktori menyaring dengan `SUBKUERI_UNIT_TURUNAN` — unit ini beserta
+            turunannya. */}
+        {mode === 'ubah' && unit !== null ? (
+          <Link
+            href={`/talenta?unit=${unit.id}`}
+            className="flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-[12px] text-text-muted transition-colors hover:border-accent-border hover:text-accent"
+          >
+            <Users aria-hidden className="size-3.5 shrink-0" />
+            <span>
+              Lihat{' '}
+              <strong className="font-medium">
+                {formatAngka(unit.jumlahPegawaiTermasukTurunan)} pegawai aktif
+              </strong>{' '}
+              di unit ini &amp; turunannya di Direktori Pegawai
+            </span>
+          </Link>
+        ) : null}
         <Bidang label="Kode unit" galat={galat.kodeUnit} wajib>
           <input
             value={kodeUnit}

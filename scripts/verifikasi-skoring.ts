@@ -26,13 +26,49 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 config({ path: '.env' })
 
-const SEKARANG = new Date(2026, 6, 30, 12)
-const TAHUN_SEKARANG = 2026
-const MASA_BERLAKU = 3
+/**
+ * Waktu acuan perbandingan — **jam NYATA, bukan tanggal yang dipaku.**
+ *
+ * Versi lama memaku `new Date(2026, 6, 30, 12)` supaya ujinya reproducible. Niatnya
+ * benar, akibatnya tidak: skrip ini membandingkan hasil hitung ulang dengan isi
+ * `match_score`, dan isi itu dihitung aplikasi memakai jam nyata. Begitu keduanya
+ * berbeda tanggal, gerbang kelayakan yang bergantung waktu (masa berlaku asesmen,
+ * masa menjabat) menjawab berbeda — dan skrip melaporkannya sebagai "kode
+ * menyimpang" padahal yang berbeda cuma pertanyaannya: layak **pada tanggal berapa**.
+ *
+ * Terukur 18 Agu 2026: Annisa Tasya Azhari di target 200, skor SAMA (69,23 = 69,23)
+ * tapi tersimpan `eligible` sementara skrip menghitung `tidak` — selisih 19 hari
+ * antara tanggal paku (30 Juli) dan jam nyata (18 Agustus).
+ *
+ * Reproducibility-nya tidak hilang begitu saja: yang membuat skrip ini bermakna
+ * adalah membandingkan DUA IMPLEMENTASI pada masukan yang SAMA, dan itu justru
+ * menuntut waktu yang sama dengan yang dipakai penulis barisnya.
+ */
+const SEKARANG = new Date()
+const TAHUN_SEKARANG = SEKARANG.getFullYear()
+
+/**
+ * ⚠️ Masa berlaku asesmen dibaca dari **`pengaturan_sistem`**, bukan dikonstanta.
+ *
+ * Ini penyebab sebenarnya penyimpangan 18 Agu 2026 — bukan tanggal, bukan nilai
+ * manual. Skrip memaku 3 tahun sementara pengaturan di DB bernilai **4**, jadi
+ * aplikasi menganggap asesmen seseorang masih berlaku dan skrip menganggapnya
+ * kedaluwarsa. Skornya identik (69,23) karena masa berlaku tidak mengubah bobot;
+ * yang bergeser hanya **kelayakan** — dan itu justru keluaran yang paling
+ * menentukan siapa boleh dinominasikan.
+ *
+ * Pelajarannya berlaku umum untuk skrip pembanding mana pun di repo ini: setiap
+ * parameter yang bisa diubah pengguna WAJIB dibaca dari sumbernya, bukan
+ * disalin sebagai konstanta. Konstanta yang kebetulan sama dengan default akan
+ * terlihat benar sampai seseorang mengubah pengaturannya — lalu skripnya
+ * melaporkan "kode menyimpang" untuk kode yang benar.
+ */
 const TOLERANSI = 0.005 // setengah satuan terkecil DECIMAL(6,2)
 
 async function main() {
-  const { ambilProfilKandidat, ambilRubrikUntukHitung, ambilSkorTersimpan } = await import(
+  const { ambilPengaturan } = await import('../lib/pengaturan')
+  const { ambilNilaiManual, ambilProfilKandidat, ambilRubrikUntukHitung, ambilSkorTersimpan } =
+    await import(
     '../lib/kueri/rubrik'
   )
   const { kueri } = await import('../lib/db')
@@ -42,31 +78,10 @@ async function main() {
     `SELECT id, nama_target, status FROM jabatan_target ORDER BY id`,
   )
 
-  /**
-   * Pasangan (pegawai, jabatan target) yang punya indikator bernilai MANUAL.
-   *
-   * **Wajib dikecualikan, dan itu bukan pelemahan.** Skrip ini menangkap KODE
-   * yang menyimpang: ia menjalankan `lib/skor-massal` lalu membandingkannya
-   * dengan isi `match_score`. Nilai manual adalah penyimpangan yang DISENGAJA —
-   * manusia memilih kategori rubrik untuk indikator yang datanya belum ada, dan
-   * `lib/skoring-tulis.ts` memang mempertahankannya saat Hitung Ulang. Karena
-   * `skor-massal` tidak tahu apa-apa soal jejak manual, setiap pemakaian fitur
-   * "Isi manual" di profil akan membuat skrip ini merah selamanya — merah yang
-   * tidak menunjukkan cacat apa pun, dan justru melatih orang mengabaikannya.
-   */
-  const manual = new Set(
-    (
-      await kueri<{ pegawai_id: number; jabatan_target_id: number }>(
-        `SELECT DISTINCT ms.pegawai_id, ms.jabatan_target_id
-           FROM match_score_detail d
-           JOIN match_score ms ON ms.id = d.match_score_id
-          WHERE d.sumber_nilai = 'MANUAL'`,
-      )
-    ).map((r) => `${r.jabatan_target_id}:${r.pegawai_id}`),
-  )
-  let dilewatiManual = 0
+  const dilewatiManual = 0
   let dilewatiDraft = 0
   const profil = await ambilProfilKandidat()
+  const pengaturan = await ambilPengaturan()
   console.log(`${profil.length} pegawai aktif · ${target.length} jabatan target\n`)
 
   let diperiksa = 0
@@ -91,10 +106,21 @@ async function main() {
     const siap = await ambilRubrikUntukHitung(Number(t.id))
     if (siap === null) continue
 
+    /**
+     * `nilaiManual` WAJIB diteruskan, sama seperti yang dilakukan aplikasi.
+     *
+     * Tanpa itu skrip menghitung tanpa nilai yang diisi manusia, lalu setiap
+     * indikator manual muncul sebagai penyimpangan. Dulu ditangani dengan
+     * MELEWATI pasangan ber-nilai-manual — aman, tapi berarti pegawai yang paling
+     * perlu diperiksa justru yang tidak pernah diperiksa. Sekarang masukannya
+     * disamakan, jadi cakupannya kembali penuh.
+     */
+    const nilaiManual = await ambilNilaiManual(Number(t.id))
     const hasil = hitungSkorMassal(siap.rubrik, profil, {
+      nilaiManual,
       sekarang: SEKARANG,
       tahunSekarang: TAHUN_SEKARANG,
-      masaBerlakuTahun: MASA_BERLAKU,
+      masaBerlakuTahun: pengaturan.masaBerlakuAsesmenTahun,
     })
     const tersimpan = new Map(
       (await ambilSkorTersimpan(Number(t.id))).map((s) => [s.pegawaiId, s]),
@@ -102,10 +128,6 @@ async function main() {
 
     let bedaTarget = 0
     for (const h of hasil.hasil) {
-      if (manual.has(`${t.id}:${h.pegawaiId}`)) {
-        dilewatiManual++
-        continue
-      }
       const lama = tersimpan.get(h.pegawaiId)
       if (lama === undefined) {
         contoh.push(`  target ${t.id} pegawai ${h.pegawaiId}: tidak ada baris match_score`)
@@ -147,17 +169,39 @@ async function main() {
   // yang cocok, sehingga satu baris tertukar hanya salah di sekitar ambang — 60
   // dan 80 — yaitu justru tempat yang paling jarang diperiksa orang dan paling
   // sering menentukan kotak seseorang. Karena itu diuji **exhaustif** atas kisi
-  // 0–100 langkah 5 (441 pasangan), bukan atas baris yang kebetulan ada di DB.
+  // langkah 5, bukan atas baris yang kebetulan ada di DB.
+  //
+  // Kisinya sengaja MELEWATI 100 (sumbu X sampai 130). Sejak potkom tidak lagi
+  // diplafon (`hitungKotak9()`, 18 Agu 2026), sumbu X yang nyata di DB memang
+  // bisa >100 — dan kisi yang berhenti di 100 akan menyatakan "setara" atas
+  // rentang yang sudah bukan seluruh rentangnya lagi. Sumbu Y tetap 0–100 karena
+  // ia turunan predikat kinerja yang berskala tetap; menguji Y=130 berarti
+  // menguji keadaan yang tidak bisa terjadi.
   const { ekspresiSqlKotak9, hitungKotak9 } = await import('../lib/scoring')
+  const { ambangSumbuDari } = await import('../lib/pengaturan')
+
+  /**
+   * Ambang dibaca dari `pengaturan_sistem` — dan justru itu yang membuat langkah
+   * ini jadi penjaga butir 7.
+   *
+   * Ambang 80/60 kini bisa diubah Super Admin. Kalau ada satu jalur yang masih
+   * memakai angka kode sementara yang lain memakai angka DB, `kotak_9` yang
+   * TERSIMPAN tidak akan lagi bisa dilahirkan ulang dari pengaturan yang berlaku
+   * — dan itu muncul di sini sebagai baris menyimpang, bukan sebagai keluhan
+   * pengguna berbulan-bulan kemudian.
+   */
+  const ambang = ambangSumbuDari(pengaturan)
+  console.log(`ambang sumbu dipakai: tengah ${ambang.tengah} · atas ${ambang.atas}`)
   const kisi = await kueri<{ y: number; x: number; kotak: number }>(
-    `WITH RECURSIVE n(v) AS (SELECT 0 UNION ALL SELECT v + 5 FROM n WHERE v < 100)
-     SELECT ny.v AS y, nx.v AS x, ${ekspresiSqlKotak9('ny.v', 'nx.v')} AS kotak
-     FROM n ny CROSS JOIN n nx`,
+    `WITH RECURSIVE ny(v) AS (SELECT 0 UNION ALL SELECT v + 5 FROM ny WHERE v < 100),
+                    nx(v) AS (SELECT 0 UNION ALL SELECT v + 5 FROM nx WHERE v < 130)
+     SELECT ny.v AS y, nx.v AS x, ${ekspresiSqlKotak9('ny.v', 'nx.v', ambang)} AS kotak
+     FROM ny CROSS JOIN nx`,
   )
 
   let bedaKisi = 0
   for (const r of kisi) {
-    const dariTs = hitungKotak9(Number(r.y), Number(r.x)).kotak
+    const dariTs = hitungKotak9(Number(r.y), Number(r.x), ambang).kotak
     if (Number(r.kotak) !== dariTs) {
       bedaKisi++
       if (contoh.length < 10) {

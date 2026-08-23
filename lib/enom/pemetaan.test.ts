@@ -1,3 +1,4 @@
+import { AMBANG_SUMBU } from '../scoring'
 import { describe, expect, it } from 'vitest'
 
 import { petakanRekaman, petakanSemua } from './pemetaan'
@@ -29,7 +30,7 @@ const REKAMAN_NYATA = {
   waktu_ambil: '10-08-2026 11:15:05',
 }
 
-const OPSI = { tahunSekarang: 2026 }
+const OPSI = { tahunSekarang: 2026, ambang: AMBANG_SUMBU }
 
 describe('SkemaRekamanEnom', () => {
   it('menerima angka yang datang sebagai string', () => {
@@ -58,12 +59,17 @@ describe('petakanRekaman', () => {
     expect(hasil?.asesmen.nilaiKinerjaY).toBe(100)
   })
 
-  it('memotong potkom di atas 100 dan MENCATATNYA sebagai temuan', () => {
-    // Ini bukan detail teknis: 130,73 menandakan skala eNom berbeda dari 0–100.
-    // Memotongnya diam-diam akan menyembunyikan pertanyaan itu.
+  it('MENYIMPAN potkom di atas 100 apa adanya dan mencatatnya sebagai temuan', () => {
+    // 130,73 menandakan skala eNom berbeda dari 0–100. Sampai 18 Agu 2026 nilai
+    // itu DIPOTONG ke 100; pemilik proses memutuskan sebaliknya — disimpan apa
+    // adanya, karena memotongnya membuat separuh populasi menumpuk di X=100 dan
+    // kehilangan daya bedanya. Temuannya tetap ada supaya pertanyaan skalanya
+    // tidak hilang, hanya kodenya berubah.
     const { hasil, temuan } = petakanRekaman(SkemaRekamanEnom.parse(REKAMAN_NYATA), OPSI)
-    expect(hasil?.asesmen.nilaiPotensialX).toBe(100)
-    expect(temuan.map((t) => t.kode)).toContain('SKOR_DI_LUAR_RENTANG')
+    expect(hasil?.asesmen.nilaiPotensialX).toBeGreaterThan(100)
+    expect(hasil?.asesmen.potkom).toBeGreaterThan(100)
+    expect(temuan.map((t) => t.kode)).toContain('POTKOM_DI_ATAS_100')
+    expect(temuan.map((t) => t.kode)).not.toContain('SKOR_DI_LUAR_RENTANG')
   })
 
   it('menaikkan integritas skala 1–4 ke skala rubrik', () => {

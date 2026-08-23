@@ -32,6 +32,24 @@ async function main() {
   const { kueri } = await import('../lib/db')
   const { hitungSkorMassal } = await import('../lib/skor-massal')
   const { tulisHasilSkor } = await import('../lib/skoring-tulis')
+  const { ambilPengaturan } = await import('../lib/pengaturan')
+
+  /**
+   * `masaBerlakuTahun` WAJIB dibaca dari `pengaturan_sistem`, bukan dibiarkan
+   * jatuh ke baku kode.
+   *
+   * Skrip ini menulis `match_score` lewat `tulisHasilSkor` — jalur tulis yang
+   * sama dengan tombol Hitung Ulang. Tombol itu mengirim
+   * `pengaturan.masaBerlakuAsesmenTahun`. Kalau skrip ini tidak, keduanya
+   * menghasilkan eligibilitas yang berbeda dari data yang sama, dan yang
+   * menang hanyalah yang jalan terakhir. Gejalanya menipu: skornya identik
+   * sampai dua desimal, hanya kolom eligible yang berbeda, sehingga mudah
+   * disalahsangkakan sebagai skor basi. `npm run verifikasi:skoring` membaca
+   * pengaturan yang sama dan akan memerahkan selisih ini.
+   */
+  const pengaturan = await ambilPengaturan()
+  const opsiUmum = { masaBerlakuTahun: pengaturan.masaBerlakuAsesmenTahun }
+  console.log(`masa berlaku asesmen: ${opsiUmum.masaBerlakuTahun} tahun (pengaturan_sistem)\n`)
 
   console.log(`Database: ${process.env.DATABASE_NAME}\n`)
 
@@ -66,12 +84,35 @@ async function main() {
         console.log(`target ${t.id} — rubrik tidak terbaca, dilewati`)
         continue
       }
+      /**
+       * Target BER-RUBRIK KOSONG dilewati — meniru penolakan `hitungUlangSkor()`.
+       *
+       * Aksi Hitung Ulang di UI menolak target tanpa komponen dengan alasan yang
+       * benar: mesin rubrik sengaja tidak melempar, jadi rubrik kosong
+       * menghasilkan **skor 0 untuk setiap pegawai** — dan halaman kandidat lalu
+       * memajang "35 dari 36 lolos syarat" di atas kolom skor yang seluruhnya
+       * 0,00. Itu bukan "belum dihitung", itu "sudah dihitung dan semuanya nol",
+       * dua keadaan yang sangat berbeda artinya bagi yang membacanya.
+       *
+       * Skrip ini sempat TIDAK menirunya, dan akibatnya terukur: sesudah 25
+       * jabatan target DRAFT dibuat dari struktur Excel, satu jalan `--semua`
+       * menulis **936 baris skor nol** ke 26 target tanpa rubrik. Dua jalur tulis
+       * dengan aturan berbeda untuk hal yang sama — larangan CLAUDE.md #1, dan
+       * jalur yang tidak lewat UI-lah yang melanggarnya.
+       */
+      if (siapT.rubrik.komponen.length === 0) {
+        console.log(
+          `target ${String(t.id).padStart(3)} — rubrik belum punya komponen, DILEWATI ` +
+            `(menghitungnya hanya akan menulis skor 0 untuk semua pegawai)  ${t.nama_target.slice(0, 40)}`,
+        )
+        continue
+      }
       const [profilT, manualT, jejakT] = await Promise.all([
         ambilProfilKandidat(),
         ambilNilaiManual(t.id),
         ambilJejakManual(t.id),
       ])
-      const hasilT = hitungSkorMassal(siapT.rubrik, profilT, { nilaiManual: manualT })
+      const hasilT = hitungSkorMassal(siapT.rubrik, profilT, { ...opsiUmum, nilaiManual: manualT })
       const ringkasT = await tulisHasilSkor(
         t.id,
         hasilT.hasil,
@@ -111,7 +152,7 @@ async function main() {
   const msProfil = Date.now() - t1
 
   const t2 = Date.now()
-  const hasil = hitungSkorMassal(siap.rubrik, profil, { nilaiManual })
+  const hasil = hitungSkorMassal(siap.rubrik, profil, { ...opsiUmum, nilaiManual })
   const msHitung = Date.now() - t2
 
   const t3 = Date.now()

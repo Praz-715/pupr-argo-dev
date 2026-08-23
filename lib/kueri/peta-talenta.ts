@@ -1,12 +1,20 @@
 import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
-import { BOBOT_FORMULA_A, ekspresiSqlKotak9, type Kotak9 } from '../scoring'
+import { ambangSumbuDari, ambilPengaturan } from '../pengaturan'
+import { BOBOT_FORMULA_A, ekspresiSqlKotak9, type AmbangSumbu, type Kotak9 } from '../scoring'
 import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
 
 /**
  * Kueri Peta Talenta (Fase 3, U-1) — grid 3×3, bubble Kinerja × Potensial, dan
  * drill-down per sel, **semuanya berfilter** unit/eselon/jenjang/tahun.
+ *
+ * **Ambang Kotak 9 dibaca dari `pengaturan_sistem`** (butir 7, 18 Agu 2026) dan
+ * diteruskan ke `ekspresiSqlKotak9()`. Kotak per jabatan target tidak tersimpan
+ * di kolom mana pun — ia lahir saat kueri berjalan — jadi kalau kueri ini
+ * memakai angka kode sementara `asesmen_talenta.kotak_9` ditulis memakai angka
+ * DB, tampilan generik dan tampilan per jabatan target akan memindahkan orang
+ * ke kotak berbeda tanpa satu pun galat. `verifikasi:skoring` menjaganya.
  *
  * Bedanya dengan `lib/kueri/dashboard.ts`: di dashboard ketiga angka itu tanpa
  * filter (ringkasan organisasi), di sini pengguna menyaringnya. Agregasinya
@@ -70,7 +78,7 @@ interface SumbuX {
   syaratDinilai: string | null
 }
 
-function sumbuX(f: FilterPeta): SumbuX {
+function sumbuX(f: FilterPeta, ambang: AmbangSumbu): SumbuX {
   if (f.jabatanTargetId === undefined) {
     return {
       join: '',
@@ -87,7 +95,7 @@ function sumbuX(f: FilterPeta): SumbuX {
     join: 'LEFT JOIN match_score ms ON ms.pegawai_id = p.id AND ms.jabatan_target_id = ?',
     paramJoin: [f.jabatanTargetId],
     x,
-    kotak: ekspresiSqlKotak9('a.nilai_kinerja_y', x),
+    kotak: ekspresiSqlKotak9('a.nilai_kinerja_y', x, ambang),
     // Bobot diambil dari konstanta Formula A, bukan ditulis `0.5` — kalau
     // bobotnya berubah, tidak ada angka 50/50 kedua yang tertinggal di SQL.
     talenta: `(a.nilai_kinerja_y * ${BOBOT_FORMULA_A.kinerja} + ${x} * ${BOBOT_FORMULA_A.potensial})`,
@@ -155,8 +163,8 @@ interface BentukKueri {
  * id unit dan hasilnya nol baris **tanpa galat apa pun**, yang di halaman terbaca
  * sebagai "tidak ada pegawai di jabatan target ini".
  */
-function bangunKueriPeta(f: FilterPeta): BentukKueri {
-  const sx = sumbuX(f)
+function bangunKueriPeta(f: FilterPeta, ambang: AmbangSumbu): BentukKueri {
+  const sx = sumbuX(f, ambang)
   const { syarat, params } = syaratFilter(f)
   if (sx.syaratDinilai !== null) syarat.push(sx.syaratDinilai)
 
@@ -190,7 +198,7 @@ export interface PetaSebaran {
 }
 
 export async function ambilPetaSebaran(f: FilterPeta): Promise<PetaSebaran> {
-  const { dari, where, params, sx } = bangunKueriPeta(f)
+  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
 
   const [sebaran, ringkas, tanpa, belum] = await Promise.all([
     kueri<{ kotak: number; jml: number }>(
@@ -242,7 +250,7 @@ export async function ambilPetaSebaran(f: FilterPeta): Promise<PetaSebaran> {
 async function hitungBelumDinilaiTarget(f: FilterPeta): Promise<number> {
   if (f.jabatanTargetId === undefined) return 0
 
-  const sx = sumbuX(f)
+  const sx = sumbuX(f, ambangSumbuDari(await ambilPengaturan()))
   const { syarat, params } = syaratFilter(f)
   syarat.push(`${sx.x} IS NULL`)
 
@@ -304,7 +312,7 @@ export async function ambilTitikPeta(f: FilterPeta): Promise<{
   titik: TitikPeta[]
   totalPegawai: number
 }> {
-  const { dari, where, params, sx } = bangunKueriPeta(f)
+  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
 
   const baris = await kueri<Record<string, unknown>>(
     `${CTE_ASESMEN_TERBARU}
@@ -365,7 +373,7 @@ export async function ambilAnggotaSel(
   f: FilterPeta,
   halaman = 1,
 ): Promise<{ daftar: AnggotaSel[]; total: number; halaman: number; ukuranHalaman: number }> {
-  const { dari, where, params, sx } = bangunKueriPeta(f)
+  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
   const gabung = where === '' ? `WHERE ${sx.kotak} = ?` : `${where} AND ${sx.kotak} = ?`
   const hal = Math.max(1, halaman)
   const offset = (hal - 1) * UKURAN_HALAMAN_SEL

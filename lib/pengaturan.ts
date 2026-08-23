@@ -3,7 +3,8 @@ import 'server-only'
 import { cache } from 'react'
 
 import { kueri } from './db'
-import { MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT } from './scoring/konstanta'
+import { AMBANG_SUMBU, MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT } from './scoring/konstanta'
+import type { AmbangSumbu } from './scoring/types'
 
 /**
  * Parameter sistem yang boleh diubah tanpa deploy (PRD §6.10 & §10.11).
@@ -22,6 +23,10 @@ import { MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT } from './scoring/konstanta'
 export interface Pengaturan {
   masaBerlakuAsesmenTahun: number
   tahunAsesmenAktif: number
+  /** Ambang kategori teratas Kotak 9 (`>= atas`). Lihat `ambangSumbuDari()`. */
+  ambangSumbuAtas: number
+  /** Ambang kategori tengah Kotak 9 (`>= tengah`). */
+  ambangSumbuTengah: number
   sesiIdleMenit: number
   sesiMaksimalJam: number
   maksGagalMasuk: number
@@ -31,6 +36,8 @@ export interface Pengaturan {
 export const PENGATURAN_BAWAAN: Pengaturan = {
   masaBerlakuAsesmenTahun: MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT,
   tahunAsesmenAktif: 2026,
+  ambangSumbuAtas: AMBANG_SUMBU.atas,
+  ambangSumbuTengah: AMBANG_SUMBU.tengah,
   sesiIdleMenit: 60,
   sesiMaksimalJam: 12,
   maksGagalMasuk: 5,
@@ -41,6 +48,8 @@ export const PENGATURAN_BAWAAN: Pengaturan = {
 export const KUNCI_PENGATURAN: Record<string, keyof Pengaturan> = {
   masa_berlaku_asesmen_tahun: 'masaBerlakuAsesmenTahun',
   tahun_asesmen_aktif: 'tahunAsesmenAktif',
+  ambang_sumbu_atas: 'ambangSumbuAtas',
+  ambang_sumbu_tengah: 'ambangSumbuTengah',
   sesi_idle_menit: 'sesiIdleMenit',
   sesi_maksimal_jam: 'sesiMaksimalJam',
   maks_gagal_masuk: 'maksGagalMasuk',
@@ -90,6 +99,25 @@ export const ambilPengaturan = cache(async (): Promise<Pengaturan> => {
   }
   return hasil
 })
+
+/**
+ * Bentuk ambang yang diterima `lib/scoring` — dua field pipih jadi satu objek.
+ *
+ * Ada supaya pemanggil tidak menyusunnya sendiri di enam tempat: `{ atas: p.x,
+ * tengah: p.y }` yang ditulis ulang berkali-kali adalah tempat tertukarnya dua
+ * angka yang sama tipenya, dan tertukar di satu tempat saja sudah membuat satu
+ * halaman mengklasifikasikan orang secara berbeda dari halaman lain.
+ *
+ * **Urutan terbalik dijaga di sini juga.** Kalau `atas <= tengah`, kategori
+ * tengah jadi wilayah kosong (`CASE` memakai cabang pertama yang cocok) dan
+ * setiap pegawai jatuh ke teratas atau terbawah. Aksi `ubahPengaturan` sudah
+ * menolaknya, tapi baris DB bisa juga diubah lewat SQL langsung — jadi jalur
+ * baca ikut jatuh kembali ke bawaan alih-alih menyebarkan keadaan mustahil.
+ */
+export function ambangSumbuDari(p: Pengaturan): AmbangSumbu {
+  if (!(p.ambangSumbuAtas > p.ambangSumbuTengah)) return AMBANG_SUMBU
+  return { atas: p.ambangSumbuAtas, tengah: p.ambangSumbuTengah }
+}
 
 /** Seluruh baris beserta metadata tampilan — hanya untuk halaman Pengaturan Sistem. */
 export async function ambilBarisPengaturan(): Promise<BarisPengaturan[]> {

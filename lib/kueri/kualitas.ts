@@ -259,7 +259,9 @@ export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
          WHERE a.kotak_9_sumber IS NOT NULL AND a.kotak_9_sumber <> a.kotak_9
            ${filterSumberPegawaiId('a.pegawai_id')})                               AS kotak9_beda,
       (SELECT COUNT(*) FROM pegawai p
-         WHERE p.jabatan_id IS NULL ${filterSumber('p')})                          AS tanpa_jabatan
+         WHERE p.jabatan_id IS NULL ${filterSumber('p')})                          AS tanpa_jabatan,
+      (SELECT COUNT(*) FROM asesmen_talenta a
+         WHERE a.potkom > 100 ${filterSumberPegawaiId('a.pegawai_id')})            AS potkom_lebih
   `)
 
   const jumlah: Partial<Record<KodeTemuan, number>> = {
@@ -268,6 +270,16 @@ export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
     PENDIDIKAN_TIDAK_TERURAI: Number(r?.pendidikan_belum ?? 0),
     TANGGAL_TIDAK_TERURAI: Number(r?.tanggal_kosong ?? 0),
     KOTAK9_BEDA_DENGAN_HITUNGAN: Number(r?.kotak9_beda ?? 0),
+    /**
+     * Dihitung, BUKAN dibiarkan 0.
+     *
+     * Nilainya sengaja tidak dipotong, jadi ia tidak akan pernah "hilang dari
+     * data" seperti temuan yang dikoreksi importir — ia tetap ada selamanya
+     * sampai pengelola sumber mengonfirmasi skalanya. Membiarkannya 0 di antrian
+     * berarti halaman ini menyatakan tidak ada yang perlu ditanyakan, padahal
+     * ada 10 rekaman yang skala aslinya belum pernah dikonfirmasi siapa pun.
+     */
+    POTKOM_DI_ATAS_100: Number(r?.potkom_lebih ?? 0),
   }
 
   return Object.values(DEFINISI_TEMUAN)
@@ -406,6 +418,30 @@ export async function ambilTemuanRinci(
         subjek: `${String(r.nama_lengkap)} — asesmen ${String(r.tahun_asesmen)}`,
         nip: String(r.nip),
         keterangan: `Sumber mengirim Kotak ${String(r.kotak_9_sumber)}, hasil hitung dari Kinerja ${String(r.nilai_kinerja_y)} × Potensial ${String(r.nilai_potensial_x)} adalah Kotak ${String(r.kotak_9)}.`,
+      }))
+    }
+
+    case 'POTKOM_DI_ATAS_100': {
+      const baris = await kueri<Record<string, unknown>>(
+        `SELECT a.id, a.tahun_asesmen, a.potkom, a.nilai_potensial_x, a.sumber_sync,
+                p.nama_lengkap, p.nip
+         FROM asesmen_talenta a
+         JOIN pegawai p ON p.id = a.pegawai_id
+         WHERE a.potkom > 100 ${filterSumber('p')}
+         ORDER BY a.potkom DESC LIMIT ?`,
+        [batas],
+      )
+      return baris.map((r) => ({
+        kode,
+        entitas: 'asesmen_talenta',
+        entitasId: Number(r.id),
+        subjek: `${String(r.nama_lengkap)} — asesmen ${String(r.tahun_asesmen)}`,
+        nip: String(r.nip),
+        keterangan:
+          `Potkom ${String(r.potkom)} dari ${String(r.sumber_sync)} disimpan apa adanya, ` +
+          `jadi sumbu X = ${String(r.nilai_potensial_x)}. Tidak ada yang perlu dikoreksi di ` +
+          `sistem — yang perlu dilakukan adalah menanyakan skala potkom yang sebenarnya ke ` +
+          `pengelola sumbernya, lalu mencatat jawabannya.`,
       }))
     }
 

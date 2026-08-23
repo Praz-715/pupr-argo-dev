@@ -45,7 +45,23 @@ export function TabelTarget({
   }
 
   return (
-    <div className="overflow-x-auto">
+    /*
+      `relative` WAJIB di kontainer gulir ini, bukan hiasan.
+
+      Header kolom aksi memuat span `sr-only`, dan `sr-only` itu
+      `position: absolute`. Elemen absolut mencari containing block pada leluhur
+      ber-`position` TERDEKAT — kalau di dalam kontainer gulir tidak ada satu
+      pun, ia melompati kontainer itu dan memakai containing block awal,
+      sehingga luberannya masuk ke `scrollWidth` HALAMAN alih-alih ke area gulir
+      tabelnya sendiri.
+
+      Terukur di `/jabatan-target` pada 768px: halaman menggulir horizontal 11px,
+      dan satu-satunya elemen di tepi 779px itu span "Aksi" — bukan tabelnya,
+      yang luberannya sudah tertampung benar. Gejalanya menyesatkan karena yang
+      tampak bergeser adalah tabel, sementara penyebabnya elemen selebar 1px yang
+      tidak terlihat sama sekali.
+    */
+    <div className="relative overflow-x-auto">
       <table className="w-full border-collapse text-[13px]">
         <thead className="bg-surface-2">
           <tr className="border-b border-border text-left text-[11px] tracking-wide text-text-subtle uppercase">

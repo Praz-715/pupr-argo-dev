@@ -12,7 +12,10 @@ import {
 } from '@/lib/kueri/pegawai'
 import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { angkaPositif, dariDaftar, nomorHalaman } from '@/lib/param'
+import { ambilPilihanJabatan } from '@/lib/kueri/master'
+import { punyaPeran } from '@/lib/peran'
 import { FilterDirektori as KontrolFilter } from './_komponen/filter-direktori'
+import { TombolTambahPegawai } from './_komponen/tombol-tambah-pegawai'
 import { TabelDirektori } from './_komponen/tabel-direktori'
 
 export const metadata = { title: 'Direktori Pegawai' }
@@ -40,11 +43,25 @@ export default async function DirektoriPage({ searchParams }: { searchParams: Pa
   // adanya — keduanya beririsan dengan sendirinya (lihat `lib/lingkup.ts`).
   const filter = { ...bacaFilter(params), unitWajib: unitWajib(lingkup) }
 
+  const pengguna = await getCurrentUser()
+  const bolehTambah = punyaPeran(pengguna, ['Super Admin', 'Admin Talenta', 'Pengelola Unit'])
+  // Daftar jabatan hanya diambil kalau tombolnya memang tampil — halaman ini
+  // dibuka jauh lebih sering oleh peran yang tidak boleh menambah pegawai, dan
+  // mereka tidak perlu ikut membayar kuerinya.
+  const opsiJabatan = bolehTambah ? await ambilPilihanJabatan() : []
+
   return (
     <div className="space-y-5">
       <PageHeader
         judul="Direktori Pegawai"
         deskripsi="Daftar talenta ASN Direktorat Jenderal Bina Konstruksi. Klik satu baris untuk membuka profil talenta 360°."
+        /*
+          Tombol tambah hanya untuk peran yang boleh menulis pegawai (butir 9).
+          Perannya sama dengan `PERAN_PROFIL` di `lib/aksi/profil.ts` — kalau
+          tombolnya tampil untuk peran lain, satu-satunya yang mereka dapat
+          adalah dialog yang ditolak server setelah semua isian diketik.
+        */
+        aksi={bolehTambah ? <TombolTambahPegawai opsiJabatan={opsiJabatan} /> : null}
       />
 
       <CatatanLingkup lingkup={lingkup} />

@@ -180,17 +180,69 @@ try {
         return 'pesan "tidak ada data yang cocok" + tombol reset'
       })
 
-      await langkah('pemilih kolom: bisa memunculkan kolom tersembunyi', async () => {
+      /*
+        Dulu langkah ini menguji tombol "Kolom" DI Direktori. Tombolnya sengaja
+        dilepas pada revisi `PUR.pdf` (prop `tanpaPemilihKolom`), jadi asersi
+        lamanya merah tanpa ada yang rusak — kelas kegagalan yang sama dengan
+        asersi "nol chart Recharts" di F1 setelah dashboard dapat widget chart.
+
+        Diganti DUA langkah, bukan satu, karena ada dua hal berbeda yang harus
+        tetap benar: tombolnya hilang **di sini**, dan fiturnya masih hidup **di
+        tempat lain**. Menghapus langkahnya begitu saja akan membuat pelepasan
+        tombol tidak terjaga sekaligus membiarkan `PemilihKolom` melapuk tanpa
+        pemakai yang teruji.
+      */
+      await langkah('pemilih kolom DILEPAS dari Direktori (revisi PUR.pdf)', async () => {
         await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        await tungguTabel(page)
+        const jumlah = await page.locator('main button:has-text("Kolom")').count()
+        tegaskan(jumlah === 0, `tombol Kolom masih ada di Direktori (${jumlah} tombol)`)
+        return 'tidak ada tombol Kolom di toolbar Direktori'
+      })
+
+      await langkah('pemilih kolom masih berfungsi di tabel yang memakainya', async () => {
+        // Master Jabatan salah satu dari tiga tabel yang MASIH memakai pemilih
+        // kolom (bersama Kandidat & drill-down Peta Talenta).
+        await page.goto(`${BASE}/master/jabatan`, { waitUntil: 'networkidle' })
         await tungguTabel(page)
         const sebelum = await page.locator('table thead th').count()
         await page.click('button:has-text("Kolom")')
         await page.waitForSelector('text=Tampilkan kolom', { timeout: 5000 })
-        await page.click('label:has-text("Usia") input[type="checkbox"]')
+        // SEMBUNYIKAN lalu MUNCULKAN lagi, bukan sebaliknya: di tabel ini semua
+        // kolom tampil secara baku, jadi asersi yang menunggu kolom tersembunyi
+        // tidak akan pernah punya yang bisa diklik. Dua arah sekaligus juga lebih
+        // kuat — pemilih yang bisa menyembunyikan tapi tidak bisa mengembalikan
+        // adalah cara paling rapi untuk membuat kolom hilang permanen.
+        const kotak = page
+          .locator('label:has(input[type="checkbox"]:checked:not(:disabled))')
+          .last()
+        tegaskan((await kotak.count()) === 1, 'tidak ada kolom opsional yang bisa disembunyikan')
+        const namaKolom = (await kotak.innerText()).trim()
+        /*
+          Klik kedua WAJIB ditambatkan ke nama kolomnya, bukan memakai ulang
+          locator `.last()` di atas.
+
+          Locator Playwright itu malas — ia mengevaluasi ulang setiap kali
+          dipakai. Sesudah kolomnya disembunyikan, centangnya tidak lagi
+          `:checked`, sehingga `.last()` menunjuk label LAIN dan klik kedua
+          menyembunyikan kolom kedua. Terukur sebagai `8 → 7 → 6`, dan gejalanya
+          terbaca seperti "kolom tidak bisa kembali" padahal pemilihnya benar.
+        */
+        const centang = page
+          .locator(`label:has-text("${namaKolom}")`)
+          .locator('input[type="checkbox"]')
+        await centang.click()
+        await page.waitForTimeout(300)
+        const disembunyikan = await page.locator('table thead th').count()
+        tegaskan(
+          disembunyikan === sebelum - 1,
+          `menyembunyikan tidak berpengaruh: ${sebelum} → ${disembunyikan}`,
+        )
+        await centang.click()
         await page.waitForTimeout(300)
         const sesudah = await page.locator('table thead th').count()
-        tegaskan(sesudah === sebelum + 1, `jumlah kolom ${sebelum} → ${sesudah}, seharusnya +1`)
-        return `kolom ${sebelum} → ${sesudah}`
+        tegaskan(sesudah === sebelum, `kolom tidak kembali: ${sebelum} → ${disembunyikan} → ${sesudah}`)
+        return `Master Jabatan: "${namaKolom}" ${sebelum} → ${disembunyikan} → ${sesudah}`
       })
 
       // ---------------- Profil ----------------
@@ -268,6 +320,138 @@ try {
         tegaskan(/tidak ditemukan/i.test(teks), 'pesan tidak ditemukan tidak ada')
         tegaskan(/Direktori Pegawai/i.test(teks), 'tidak ada jalan kembali ke direktori')
         return 'pesan + tautan kembali ke Direktori'
+      })
+
+      /*
+        Foto profil (permintaan user butir 5).
+
+        NIP-nya DITURUNKAN, tidak ditulis tangan: siapa yang punya foto bergantung
+        pada isi `doc/data/foto/`, dan konstanta di sini akan jadi merah begitu
+        datanya diganti — kegagalan yang sudah pernah terjadi di langkah pencarian
+        F3 yang memaku kata kunci 'bu'. Jadi daftar NIP diambil dari direktori yang
+        sedang tampil, lalu dicari yang rute fotonya menjawab 200.
+
+        Kalau TIDAK ADA satu pun yang berfoto, langkahnya melaporkan dilewati —
+        bukan lulus. "Lulus" yang sebenarnya berarti "tidak ada yang diperiksa"
+        adalah hijau yang menipu.
+      */
+      await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+      await tungguTabel(page)
+      const nipTampil = await page.evaluate(() =>
+        [...document.querySelectorAll('table tbody tr td a[href^="/talenta/"]')]
+          .map((a) => a.getAttribute('href').split('/').pop())
+          .filter((n) => /^\d{18}$/.test(n)),
+      )
+      let nipBerfoto = null
+      for (const n of nipTampil) {
+        const r = await ctx.request.get(`${BASE}/api/internal/foto/${n}`)
+        if (r.status() === 200) {
+          nipBerfoto = n
+          break
+        }
+      }
+
+      await langkah('profil: foto di KIRI, rincian mengalir ke bawah di kanan', async () => {
+        if (nipBerfoto === null) return 'DILEWATI — tidak ada pegawai berfoto di halaman 1 direktori'
+        await page.goto(`${BASE}/talenta/${nipBerfoto}`, { waitUntil: 'networkidle' })
+        const img = page.locator(`img[src="/api/internal/foto/${nipBerfoto}"]`)
+        tegaskan((await img.count()) === 1, 'gambar foto tidak terpasang di profil')
+        const alami = await img.evaluate((e) => e.naturalWidth)
+        tegaskan(alami > 0, 'gambar terpasang tapi GAGAL dimuat (ikon rusak)')
+        const kotakFoto = await img.boundingBox()
+        const kotakNama = await page.locator('h1').first().boundingBox()
+        tegaskan(
+          kotakFoto.x + kotakFoto.width <= kotakNama.x + 1,
+          `foto tidak di kiri nama (foto berakhir ${Math.round(kotakFoto.x + kotakFoto.width)}, nama mulai ${Math.round(kotakNama.x)})`,
+        )
+        tegaskan(
+          kotakNama.y <= kotakFoto.y + 8,
+          'identitas tidak sejajar puncak foto — rincian tidak mengalir ke bawah dari sana',
+        )
+        return `foto x=${Math.round(kotakFoto.x)}–${Math.round(kotakFoto.x + kotakFoto.width)} · nama x=${Math.round(kotakNama.x)} · natural ${alami}px`
+      })
+
+      await langkah('profil: foto dikecilkan & bisa di-cache, bukan berkas asli', async () => {
+        if (nipBerfoto === null) return 'DILEWATI — tidak ada pegawai berfoto'
+        const r = await ctx.request.get(`${BASE}/api/internal/foto/${nipBerfoto}`)
+        const isi = await r.body()
+        tegaskan(r.headers()['content-type'] === 'image/jpeg', `tipe salah: ${r.headers()['content-type']}`)
+        tegaskan(
+          (r.headers()['cache-control'] ?? '').includes('private'),
+          'Cache-Control tidak private — proxy bersama boleh menyimpan wajah orang',
+        )
+        // Berkas sumber terukur sampai 3,4 MB; 120 KB adalah batas yang membedakan
+        // "sudah dikecilkan" dari "dikirim apa adanya", bukan target kualitas.
+        tegaskan(isi.length < 120 * 1024, `terlalu besar untuk hasil kecilan: ${(isi.length / 1024).toFixed(0)} KB`)
+        const r304 = await ctx.request.get(`${BASE}/api/internal/foto/${nipBerfoto}`, {
+          headers: { 'if-none-match': r.headers()['etag'] },
+        })
+        tegaskan(r304.status() === 304, `ETag tidak dihormati: HTTP ${r304.status()}`)
+        return `${(isi.length / 1024).toFixed(0)} KB · ${r.headers()['cache-control']} · kunjungan kedua 304`
+      })
+
+      /*
+        Tambah pegawai (butir 9) — DIUJI HANYA JALUR PENOLAKANNYA.
+
+        Uji yang benar-benar menambah pegawai tidak bisa membersihkan jejaknya:
+        tidak ada aksi hapus pegawai di aplikasi ini (dan memang tidak boleh ada
+        sembarangan — pegawai punya asesmen, skor, dan nominasi yang mengaskade).
+        Jadi yang dijaga di sini adalah bahwa penolakannya bekerja dan TIDAK
+        menulis apa pun: total baris direktori harus sama sebelum & sesudah.
+        Jalur suksesnya diuji manual, sebab hanya itu yang bisa dibersihkan
+        manusia yang tahu konteksnya.
+      */
+      await langkah('tambah pegawai: dialog punya dua mode & menolak NIP cacat', async () => {
+        await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        await tungguTabel(page)
+        const totalSebelum = (await page.locator('main').innerText()).match(/dari ([\d.]+) baris/)?.[1]
+
+        await page.locator('main button', { hasText: /^Tambah pegawai$/ }).click()
+        const dialog = page.locator('dialog[open]')
+        await dialog.waitFor()
+        const teks = await dialog.innerText()
+        tegaskan(/Satu pegawai/.test(teks), 'mode manual tidak ada')
+        tegaskan(/Banyak sekaligus/.test(teks), 'mode massal tidak ada')
+
+        // NIP 17 digit — satu kurang. Kalau ini lolos, barisnya akan punya profil
+        // yang tidak bisa dibuka, sebab NIP adalah kunci URL profil.
+        await dialog.locator('input').first().fill('1990010120150310')
+        await dialog.getByRole('textbox').nth(1).fill('Uji Penolakan NIP')
+        await dialog.getByRole('button', { name: 'Simpan' }).click()
+        await page.waitForTimeout(1500)
+        const sesudahKlik = await page.locator('body').innerText()
+        tegaskan(
+          /18 angka|Periksa isian/i.test(sesudahKlik),
+          'NIP 17 digit tidak ditolak dengan pesan yang menyebut sebabnya',
+        )
+
+        await page.keyboard.press('Escape')
+        await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        await tungguTabel(page)
+        const totalSesudah = (await page.locator('main').innerText()).match(/dari ([\d.]+) baris/)?.[1]
+        tegaskan(
+          totalSebelum === totalSesudah,
+          `jumlah pegawai berubah ${totalSebelum} → ${totalSesudah} padahal penyimpanan ditolak`,
+        )
+        return `dua mode hadir · NIP 17 digit ditolak · total tetap ${totalSesudah}`
+      })
+
+      await langkah('rute foto berpenjaga: tanpa sesi & path traversal ditolak', async () => {
+        const nip = nipBerfoto ?? '196709091995021001'
+        const anon = await browser.newContext()
+        try {
+          const rAnon = await anon.request.get(`${BASE}/api/internal/foto/${nip}`)
+          tegaskan(
+            rAnon.status() === 401 || rAnon.status() === 404,
+            `tanpa sesi malah dilayani: HTTP ${rAnon.status()} — foto pegawai adalah data pribadi`,
+          )
+          var statusAnon = rAnon.status()
+        } finally {
+          await anon.close()
+        }
+        const rTrav = await ctx.request.get(`${BASE}/api/internal/foto/..%2f..%2fpackage.json`)
+        tegaskan(rTrav.status() === 404, `path traversal tidak ditolak: HTTP ${rTrav.status()}`)
+        return `tanpa sesi → ${statusAnon} · traversal → ${rTrav.status()}`
       })
     }
 

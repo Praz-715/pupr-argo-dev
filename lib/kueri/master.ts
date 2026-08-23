@@ -57,12 +57,21 @@ export async function ambilPohonUnit(): Promise<NodeUnit[]> {
            t.kedalaman,
            (SELECT COUNT(*) FROM jabatan j WHERE j.unit_organisasi_id = t.id
               AND j.status_jabatan <> 'DIHAPUS')                        AS jumlah_jabatan,
+           -- Kedua penghitung PEGAWAI ikut filter populasi; unit & jabatannya
+           -- tidak. Bedanya bukan selera: unit tetap ada terlepas dari siapa yang
+           -- terases, tapi "berapa pegawai di unit ini" adalah pertanyaan tentang
+           -- ORANG — dan angka itu sekarang jadi TAUTAN ke Direktori Pegawai yang
+           -- disaring. Tanpa filter di sini, pohon menjanjikan 40 lalu halaman
+           -- tujuannya menampilkan 7, tanpa apa pun yang menjelaskan selisihnya.
+           -- Terukur begitu pada 12 Agu 2026 sebelum baris ini ditambahkan.
            (SELECT COUNT(*) FROM pegawai pg JOIN jabatan j ON j.id = pg.jabatan_id
-              WHERE j.unit_organisasi_id = t.id AND pg.status_aktif = 'AKTIF') AS jumlah_pegawai,
+              WHERE j.unit_organisasi_id = t.id AND pg.status_aktif = 'AKTIF'
+                ${filterSumber('pg')}) AS jumlah_pegawai,
            (SELECT COUNT(*) FROM pegawai pg
               JOIN jabatan j ON j.id = pg.jabatan_id
               JOIN pohon t2 ON t2.id = j.unit_organisasi_id
               WHERE pg.status_aktif = 'AKTIF'
+                ${filterSumber('pg')}
                 AND (t2.jalur = t.jalur OR t2.jalur LIKE CONCAT(t.jalur, '/%'))) AS pegawai_turunan,
            (SELECT COUNT(*) FROM unit_organisasi c WHERE c.parent_id = t.id) AS jumlah_anak
     FROM pohon t

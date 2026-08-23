@@ -68,6 +68,17 @@ function kutip(s: string): string {
 }
 
 async function main() {
+  /*
+    Impor DINAMIS, bukan statis di kepala berkas.
+
+    `lib/pengaturan` menarik `lib/db`, dan `lib/db` membangun pool koneksinya
+    **saat modul dimuat** — sementara `config({ path: '.env.local' })` baru
+    mengisi env sesudahnya. Impor statis membuat pool lahir tanpa kredensial dan
+    skripnya mati dengan "DATABASE_NAME belum diset" sebelum satu baris pun
+    jalan. Aturan ini sudah tertulis di `scripts/recompute.ts`; saya melanggarnya
+    di empat skrip sekaligus saat memindahkan ambang ke pengaturan (22 Agu 2026).
+  */
+  const { ambangSumbuDari, ambilPengaturan } = await import('@/lib/pengaturan')
   const cfg = bacaKonfigurasi()
   const db = await koneksi()
   const mulai = new Date()
@@ -99,7 +110,7 @@ async function main() {
   const { rekaman, gagal } = await ambilAsesmen(nip, { konfigurasi: cfg })
   for (const g of gagal) console.log(`  ! gagal [${g.galat.sebab}]: ${g.galat.message}`)
 
-  const { hasil } = petakanSemua(rekaman, { tahunSekarang: mulai.getFullYear() })
+  const { hasil } = petakanSemua(rekaman, { tahunSekarang: mulai.getFullYear(), ambang: ambangSumbuDari(await ambilPengaturan()) })
   console.log(`  eNom menjawab ${rekaman.length} · terpetakan ${hasil.length}\n`)
 
   const rencana: Rencana[] = []

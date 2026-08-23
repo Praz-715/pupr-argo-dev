@@ -28,6 +28,9 @@ export default function Loading() {
 
       <KartuRingkasSkeleton />
 
+      {/* Kolomnya WAJIB sama dengan `page.tsx` — `6fr : 5fr`, Kotak 9 lebih lebar
+          (keputusan user, 18 Agu 2026). Kalau salah satu diubah tanpa yang lain,
+          halamannya melompat tepat pada detik data masuk. */}
       <div className="grid gap-5 xl:h-[39rem] xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] xl:grid-rows-[minmax(0,1fr)]">
         <SebaranKotak9Skeleton />
         <PetaSebaranSkeleton />

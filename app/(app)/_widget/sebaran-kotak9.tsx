@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ArrowDown, X } from 'lucide-react'
 import Link from 'next/link'
 
 import { Kotak9Grid } from '@/components/charts/kotak9-grid'
@@ -43,14 +43,20 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
     <Panel className="flex min-h-0 flex-col">
       <PanelHeader
         judul="Sebaran Kotak 9"
+        // Frasa "· asesmen terbaru per orang" DIHAPUS atas permintaan user
+        // (18 Agu 2026). Aturannya sendiri tidak hilang — asesmen mana yang
+        // berlaku tetap ditentukan `CTE_ASESMEN_TERBARU` di `lib/kueri/dasar.ts`,
+        // yang memang satu-satunya tempat aturan itu hidup.
+        //
+        // Satu string, BUKAN fragment `<>{angka} pegawai …</>`: bentuk fragment
+        // terukur menelan spasi setelah `}` dan terender "10pegawai" — kena hari
+        // ini di panel Peta, jadi jangan diulang di sini.
         deskripsi={
-          <>
-            {formatAngka(d.totalDinilai)} pegawai · asesmen terbaru per orang
-            {d.tahunTerlama && d.tahunTerbaru
-              ? ` · tahun ${d.tahunTerlama}–${d.tahunTerbaru}`
-              : ''}
-            {dikecualikan.length > 0 ? ` · ${dikecualikan.join(', ')}` : ''}
-          </>
+          `${formatAngka(d.totalDinilai)} pegawai` +
+          (d.tahunTerlama && d.tahunTerbaru
+            ? ` · tahun ${d.tahunTerlama}–${d.tahunTerbaru}`
+            : '') +
+          (dikecualikan.length > 0 ? ` · ${dikecualikan.join(', ')}` : '')
         }
         aksi={
           <span className="flex shrink-0 items-center gap-2">
@@ -71,6 +77,55 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
         }
       />
 
+      {/* PEMBERITAHUAN DRILL-DOWN — memecahkan cacat yang dilaporkan user
+          (18 Agu 2026): mengeklik sel memunculkan daftar nama di panel BAWAH, di
+          luar layar, sehingga orang yang tidak menggulir menyimpulkan kliknya
+          tidak melakukan apa-apa.
+
+          Letaknya DI ATAS grid, bukan di bawahnya, dan itu bukan selera. Versi
+          pertama menaruhnya di kaki panel dan terukur mendarat di y=958 — pada
+          laptop 900px ia sendiri ada di bawah lipatan, jadi pemberitahuan yang
+          mengabarkan sesuatu di luar layar ikut berada di luar layar. Di sini ia
+          duduk tepat di bawah judul panel yang barusan diklik, yaitu di tempat
+          mata pengguna sudah berada.
+
+          Kenapa pemberitahuan dan bukan sekadar anchor `#anggota-kotak` di tiap
+          sel: panel tujuannya dirender di dalam <Suspense> sendiri, jadi saat
+          navigasi terjadi elemennya BELUM ADA di DOM dan browser tidak punya apa
+          pun untuk digulir — jebakan yang sama dengan `permanentRedirect()` yang
+          tersangkut di batas Suspense (CLAUDE.md §Route). Pemberitahuan ini
+          dirender bersama gridnya sehingga selalu muncul; tautannya baru dipakai
+          setelah manusia membacanya, dan saat itu panelnya sudah tiba.
+
+          Ia HILANG SENDIRI setelah ~7 detik lewat `.pemberitahuan-sekejap`
+          (permintaan user: "beberapa detik setelah di klik nanti ngilang").
+          Animasinya CSS, bukan timer React — alasan lengkapnya di blok keyframes
+          di `app/globals.css`. */}
+      {kotakAktif !== null ? (
+        <p
+          // `key` WAJIB. Tanpa itu, mengeklik sel kedua hanya memperbarui teks
+          // elemen yang sama — React tidak melepasnya, animasi CSS tidak pernah
+          // mulai ulang, dan pemberitahuan yang sudah memudar tidak muncul lagi
+          // meski pengguna baru saja mengeklik. `key` memaksanya dilepas & dibuat
+          // ulang, dan animasinya ikut dari nol.
+          key={kotakAktif}
+          // role="status" supaya pembaca layar mengumumkannya saat ia masuk. Ini
+          // penting justru KARENA ia hilang sendiri: pengguna yang tidak melihat
+          // layar tidak punya kesempatan kedua membacanya.
+          role="status"
+          className="pemberitahuan-sekejap mt-3 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs leading-snug text-text"
+        >
+          <ArrowDown aria-hidden className="size-4 shrink-0 text-accent" />
+          <span>
+            Daftar nama pegawai <strong className="font-semibold">Kotak {kotakAktif}</strong> sudah
+            tersedia di bawah.{' '}
+            <a href="#anggota-kotak" className="font-medium text-accent underline">
+              Lihat daftarnya
+            </a>
+          </span>
+        </p>
+      ) : null}
+
       {/* flex-1 min-h-0: grid menyerap sisa tinggi panel, dan `min-h-0` yang
           membuatnya boleh MENYUSUT — tanpa itu flex item menolak lebih pendek
           dari isinya dan panelnya tetap memanjang. */}
@@ -83,15 +138,15 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
         />
       </div>
 
-      <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
-        <strong className="font-medium text-text-muted">Warna</strong> menyatakan band kualitas
-        kotak — merah di kiri-bawah (perlu perhatian) sampai hijau tua di kanan-atas (siap peran
-        strategis). <strong className="font-medium text-text-muted">Pekatnya</strong> menyatakan
-        jumlah pegawai, <strong className="font-medium text-text-muted">relatif</strong> terhadap
-        sel terpadat — bukan skala absolut. Predikat &ldquo;Baik&rdquo; sudah bernilai 80 dan
-        ambang Di Atas Ekspektasi adalah ≥80, jadi baris teratas memang cenderung berat. Klik sel
-        untuk melihat pegawainya.
-      </p>
+      {/* Paragraf keterangan warna DIHAPUS atas permintaan user (18 Agu 2026).
+          Keterangannya tidak hilang dari aplikasi: tiap sel membawa maknanya
+          sendiri di `title` & `aria-label` (nomor kotak, posisinya pada kedua
+          sumbu, plus `DESKRIPSI_KOTAK_9`), jadi hue-nya tetap punya penjelasan
+          yang menempel pada objeknya — bukan pada paragraf di kaki panel yang
+          bisa ikut terhapus lagi nanti.
+
+          JANGAN dikembalikan sebagai "perbaikan"; ini keputusan user, sama
+          seperti pita populasi dan lima widget dashboard yang dilepas. */}
     </Panel>
   )
 }
@@ -102,7 +157,9 @@ export async function AnggotaKotak({ kotak }: { kotak: number }) {
   const valid = kotak >= 1 && kotak <= 9
 
   return (
-    <Panel padat>
+    // Tujuan tautan pemberitahuan drill-down di panel Sebaran. `Panel` memasang
+    // `scroll-mt-4` sendiri begitu `id` ada, jadi tidak perlu diulang di sini.
+    <Panel padat id="anggota-kotak">
       <div className="flex items-start justify-between gap-4 border-b border-border p-4">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-text">

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 /**
  * Helper masuk untuk seluruh smoke test.
  *
@@ -25,6 +27,39 @@ export const AKUN = {
 /** Sandi seed dev. Ditolak kebijakan sandi kalau ada yang mencoba memakainya lagi. */
 export const SANDI_DEV = 'password123'
 
+/**
+ * Sandi per akun — sebagian akun TIDAK lagi memakai sandi seed.
+ *
+ * Operator mengganti sandi `superadmin` 21 Agu 2026 (terbaca di
+ * `users.password_diubah_pada`), dan sejak itu seluruh harness gagal login
+ * dengan gejala yang menyesatkan: `page.waitForFunction` timeout 60 detik di
+ * `stateUntuk()`, tanpa satu pun pesan yang menyebut sandi. Yang sebenarnya
+ * terjadi jauh lebih buruk daripada uji merah — tiap percobaan menaikkan
+ * `gagal_masuk_beruntun`, dan pada percobaan kelima **akun operator terkunci 15
+ * menit** oleh uji otomatis.
+ *
+ * Sandinya dibaca dari `.env.local` (`SANDI_SMOKE_SUPERADMIN`), BUKAN dipaku di
+ * berkas ini: berkas ini di-commit, `.env.local` tidak (`.gitignore: .env*.local`).
+ * Kalau variabelnya tidak ada, harness jatuh ke sandi seed dan akan gagal —
+ * itu disengaja, sebab menebak-nebak sandi adalah yang mengunci akun tadi.
+ */
+function sandiDariEnv(kunci) {
+  try {
+    const isi = readFileSync('.env.local', 'utf8')
+    return isi.match(new RegExp(`^${kunci}\\s*=\\s*"?([^"\\r\\n]+)"?`, 'm'))?.[1]?.trim()
+  } catch {
+    return undefined
+  }
+}
+
+const SANDI_KHUSUS = {
+  superadmin: sandiDariEnv('SANDI_SMOKE_SUPERADMIN'),
+}
+
+export function sandiUntuk(username) {
+  return SANDI_KHUSUS[username] ?? SANDI_DEV
+}
+
 const cache = new Map()
 
 /** Masuk lewat UI lalu kembalikan storageState-nya. Di-cache per username. */
@@ -37,7 +72,7 @@ export async function stateUntuk(browser, username, base) {
   try {
     await page.goto(`${base}/masuk`, { waitUntil: 'domcontentloaded' })
     await page.fill('input[name="identitas"]', username)
-    await page.fill('input[name="sandi"]', SANDI_DEV)
+    await page.fill('input[name="sandi"]', sandiUntuk(username))
     await page.click('button[type="submit"]')
 
     // Tunggu sampai BUKAN di halaman masuk lagi. Menunggu selector dashboard

@@ -446,6 +446,60 @@
     }
   }
 
+  /* ==========================================================================
+     Pemberitahuan sekejap — muncul, lalu hilang sendiri setelah ~7 detik.
+     Dipakai pemberitahuan drill-down Kotak 9 (permintaan user, 18 Agu 2026:
+     "dibuat sementara aja, beberapa detik setelah di klik nanti ngilang").
+
+     CSS, BUKAN timer di React, dan itu keputusan yang sengaja. Versi JS-nya
+     menuntut Client Component baru + `setState` di dalam effect, yang ditolak
+     lint repo ini (cascading renders) — sama alasannya dengan lahirnya
+     `useHydrated()`. CSS memberi hasil identik tanpa satu byte JS, tanpa
+     hidrasi, dan tanpa komponen yang bisa mati diam-diam kalau chunk-nya gagal
+     dimuat (lihat §"Tema mentok di gelap" di CLAUDE.md).
+
+     Tingginya ikut diciutkan, bukan cuma opacity: elemen yang tembus pandang
+     tapi masih memakan ruang membuat grid Kotak 9 tetap tersempit selamanya
+     setelah satu kali klik. `forwards` menahan keadaan akhir supaya ia tidak
+     berkedip kembali.
+
+     Panjang animasinya sengaja 7s dengan 78% pertama diam di opacity 1 —
+     tautan "Lihat daftarnya" di dalamnya harus masih bisa diklik, jadi ia perlu
+     ~5,5 detik penuh sebelum mulai memudar.
+     ========================================================================== */
+  .pemberitahuan-sekejap {
+    animation: pemberitahuan-sekejap 7s ease-in forwards;
+    overflow: hidden;
+  }
+
+  @keyframes pemberitahuan-sekejap {
+    0%,
+    78% {
+      opacity: 1;
+      max-height: 5rem;
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-width: 1px;
+    }
+    100% {
+      opacity: 0;
+      max-height: 0;
+      margin-top: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-width: 0;
+    }
+  }
+
+  /* Gerak yang dikurangi: ia tetap HILANG — itu yang diminta — hanya tanpa
+     peluruhan halus. `step-end` membuatnya berpindah sekali di ujung. */
+  @media (prefers-reduced-motion: reduce) {
+    .pemberitahuan-sekejap {
+      animation-timing-function: step-end;
+    }
+  }
+
   /* Progress indeterminate untuk tabel yang sedang memuat urutan/halaman baru */
   @keyframes geser {
     0% {

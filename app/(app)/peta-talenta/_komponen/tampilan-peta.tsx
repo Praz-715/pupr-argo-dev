@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { PetaTalenta, type TitikBubble } from '@/components/charts/peta-talenta'
 import { cn } from '@/lib/cn'
 import { formatAngka, formatSkorRingkas } from '@/lib/format'
-import { klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
+import { klasifikasiSumbuX, klasifikasiSumbuY, type AmbangSumbu } from '@/lib/scoring'
 
 /**
  * Bubble Kinerja × Potensial + **padanan tabelnya**.
@@ -25,9 +25,12 @@ import { klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
  */
 export function TampilanPeta({
   titik,
+  ambang,
   labelX = 'Potensial',
 }: {
   titik: TitikBubble[]
+  /** Ambang klasifikasi dari `pengaturan_sistem` — diteruskan, bukan diimpor. */
+  ambang: AmbangSumbu
   labelX?: string
 }) {
   const [tabel, setTabel] = useState(false)
@@ -49,7 +52,11 @@ export function TampilanPeta({
         </div>
       </div>
 
-      {tabel ? <TabelTitik titik={titik} labelX={labelX} /> : <PetaTalenta titik={titik} />}
+      {tabel ? (
+        <TabelTitik titik={titik} labelX={labelX} ambang={ambang} />
+      ) : (
+        <PetaTalenta titik={titik} ambang={ambang} />
+      )}
     </div>
   )
 }
@@ -81,7 +88,15 @@ function Tombol({
   )
 }
 
-function TabelTitik({ titik, labelX }: { titik: TitikBubble[]; labelX: string }) {
+function TabelTitik({
+  titik,
+  labelX,
+  ambang,
+}: {
+  titik: TitikBubble[]
+  labelX: string
+  ambang: AmbangSumbu
+}) {
   // Urut dari titik terpadat: yang paling banyak orangnya adalah yang paling
   // dulu ingin dilihat, sedangkan chart mengurutkan menurut koordinat.
   const urut = [...titik].sort((a, b) => b.jumlah - a.jumlah || b.x - a.x)
@@ -104,9 +119,9 @@ function TabelTitik({ titik, labelX }: { titik: TitikBubble[]; labelX: string })
           {urut.map((t) => (
             <tr key={`${t.y}-${t.x}`} className="border-b border-border last:border-b-0">
               <td className="tabular px-3 py-1.5 text-right text-text">{formatSkorRingkas(t.y)}</td>
-              <td className="px-3 py-1.5 text-text-muted">{klasifikasiSumbuY(t.y)}</td>
+              <td className="px-3 py-1.5 text-text-muted">{klasifikasiSumbuY(t.y, ambang)}</td>
               <td className="tabular px-3 py-1.5 text-right text-text">{formatSkorRingkas(t.x)}</td>
-              <td className="px-3 py-1.5 text-text-muted">{klasifikasiSumbuX(t.x)}</td>
+              <td className="px-3 py-1.5 text-text-muted">{klasifikasiSumbuX(t.x, ambang)}</td>
               <td className="tabular px-3 py-1.5 text-right font-medium text-text">{t.kotak}</td>
               <td className="tabular px-3 py-1.5 text-right text-text">{formatAngka(t.jumlah)}</td>
               <td className="px-3 py-1.5 text-text-subtle">

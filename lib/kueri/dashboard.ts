@@ -31,6 +31,10 @@ export interface KartuRingkas {
   jabatanTargetAktif: number
   nominasiMenunggu: number
   nominasiTotal: number
+  /** Nominasi yang sudah LOLOS verifikasi Admin Talenta (`status='DISETUJUI'`). */
+  nominasiTerverifikasi: number
+  /** Dari yang terverifikasi: sudah ditetapkan Pimpinan (`talent_pool='DITETAPKAN'`). */
+  nominasiDitetapkan: number
 }
 
 export async function ambilKartuRingkas(): Promise<KartuRingkas> {
@@ -65,7 +69,28 @@ export async function ambilKartuRingkas(): Promise<KartuRingkas> {
           ${filterSumberPegawaiId('tp_m.pegawai_id')})                                    AS nominasi_menunggu,
       (SELECT COUNT(*) FROM nominasi n_t
          JOIN talent_pool tp_t ON tp_t.id = n_t.talent_pool_id
-        WHERE 1=1 ${filterSumberPegawaiId('tp_t.pegawai_id')})                             AS nominasi_total
+        WHERE 1=1 ${filterSumberPegawaiId('tp_t.pegawai_id')})                             AS nominasi_total,
+      -- "Terverifikasi" = sudah LOLOS verifikasi Admin Talenta, dihitung
+      -- KUMULATIF: termasuk yang sesudahnya sudah ditetapkan Pimpinan.
+      --
+      -- Butir 2 PUR.pdf ditahan lama karena istilahnya ambigu antara nominasi
+      -- DISETUJUI dan talent_pool DIVERIFIKASI. Ambiguitasnya larut begitu
+      -- dibaca kumulatif: nominasi DISETUJUI (2) = talent_pool DIVERIFIKASI (1)
+      -- + DITETAPKAN (1). Dibaca "yang masih berstatus diverifikasi" keduanya
+      -- berselisih, dan selisih itulah yang akan jadi dua angka di dua layar.
+      --
+      -- Dihitung dari sisi nominasi supaya satu kartu ini sekeluarga dengan
+      -- kartu "Daftar nominasi" di sebelahnya — dua kartu bertetangga yang
+      -- menghitung dari tabel berbeda adalah cara termudah membuat pembaca
+      -- menyimpulkan selisih yang tidak ada.
+      (SELECT COUNT(*) FROM nominasi n_v
+         JOIN talent_pool tp_v ON tp_v.id = n_v.talent_pool_id
+        WHERE n_v.status = 'DISETUJUI'
+          ${filterSumberPegawaiId('tp_v.pegawai_id')})                                     AS nominasi_terverifikasi,
+      (SELECT COUNT(*) FROM nominasi n_d
+         JOIN talent_pool tp_d ON tp_d.id = n_d.talent_pool_id
+        WHERE n_d.status = 'DISETUJUI' AND tp_d.status = 'DITETAPKAN'
+          ${filterSumberPegawaiId('tp_d.pegawai_id')})                                     AS nominasi_ditetapkan
   `)
 
   return {
@@ -77,6 +102,8 @@ export async function ambilKartuRingkas(): Promise<KartuRingkas> {
     jabatanTargetAktif: angkaWajib(baris?.target_aktif as number),
     nominasiMenunggu: angkaWajib(baris?.nominasi_menunggu as number),
     nominasiTotal: angkaWajib(baris?.nominasi_total as number),
+    nominasiTerverifikasi: angkaWajib(baris?.nominasi_terverifikasi as number),
+    nominasiDitetapkan: angkaWajib(baris?.nominasi_ditetapkan as number),
   }
 }
 

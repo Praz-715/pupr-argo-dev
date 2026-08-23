@@ -284,6 +284,121 @@ function syaratAudit(f: FilterAudit): { where: string; params: unknown[] } {
   return { where: syarat.length > 0 ? `WHERE ${syarat.join(' AND ')}` : '', params }
 }
 
+/**
+ * Riwayat **sesi perhitungan** — satu baris per Hitung Ulang yang pernah
+ * dijalankan, beserta siapa yang menjalankannya dan apa hasilnya.
+ *
+ * **Dibaca dari `audit_log`, bukan dari tabel tersendiri.** Setiap Hitung Ulang
+ * sudah melewati `jalankanMutasi()` yang mencatat pelaku, waktu, jabatan target,
+ * dan — sejak 12 Agu 2026 — ringkasan lengkapnya di `data_sesudah`. Menambah
+ * tabel transaksi terpisah berarti dua tempat menyimpan peristiwa yang sama, dan
+ * yang kedua akan tertinggal begitu jalur tulisnya berubah.
+ *
+ * Ringkasan lama (sebelum tanggal itu) hanya memuat tiga angka; kolom yang belum
+ * ada dikembalikan `null` dan **bukan 0** — nol berarti "dihitung dan hasilnya
+ * nol", sementara yang sebenarnya terjadi adalah "tidak pernah dicatat". Laporan
+ * yang menyamakan keduanya akan melaporkan sesi lama sebagai sesi tanpa temuan.
+ */
+export interface SesiPerhitungan {
+  auditId: number
+  waktu: string
+  namaPengguna: string | null
+  peranPengguna: string | null
+  jabatanTargetId: number | null
+  namaTarget: string | null
+  kodeTarget: string | null
+  /** Keadaan SEBELUM: jumlah baris skor & eligible yang tersimpan saat itu. */
+  sebelumBaris: number | null
+  sebelumEligible: number | null
+  jumlahBaris: number | null
+  eligible: number | null
+  perluReview: number | null
+  barisRincian: number | null
+  nilaiManualDipertahankan: number | null
+  anggotaPoolDiperingkat: number | null
+  galatRubrik: number | null
+  durasiMs: number | null
+}
+
+const angkaJson = (v: unknown): number | null =>
+  v === null || v === undefined || v === '' || Number.isNaN(Number(v)) ? null : Number(v)
+
+export async function ambilRiwayatPerhitungan(
+  f: { dari?: string; sampai?: string; jabatanTargetId?: number; batas?: number } = {},
+): Promise<SesiPerhitungan[]> {
+  const syarat: string[] = ["a.aksi = 'RECOMPUTE'", "a.entitas = 'match_score'"]
+  const params: unknown[] = []
+  if (f.dari) {
+    syarat.push('DATE(a.created_at) >= ?')
+    params.push(f.dari)
+  }
+  if (f.sampai) {
+    syarat.push('DATE(a.created_at) <= ?')
+    params.push(f.sampai)
+  }
+  if (f.jabatanTargetId !== undefined) {
+    syarat.push('a.entitas_id = ?')
+    params.push(f.jabatanTargetId)
+  }
+  const batas = Math.min(Math.max(f.batas ?? 200, 1), 1000)
+
+  const baris = await kueri<Record<string, unknown>>(
+    `SELECT a.id, a.created_at, a.entitas_id, a.data_sebelum, a.data_sesudah,
+            u.nama AS nama_pengguna, r.nama_role AS peran_pengguna,
+            jt.nama_target, jt.kode_target
+       FROM audit_log a
+       LEFT JOIN users u ON u.id = a.user_id
+       -- Peran ada di tabel roles, BUKAN kolom users.peran — kolom itu tidak
+       -- pernah ada. Galatnya muncul sebagai HTTP 500 di ekspor dengan
+       -- "Unknown column 'u.peran'", bukan saat typecheck: nama kolom di string
+       -- SQL tidak diperiksa TypeScript sama sekali.
+       -- (Dan JANGAN memakai backtick di komentar SQL: string kuerinya template
+       --  literal JS, satu backtick mengakhirinya. Lihat catatan di CLAUDE.md.)
+       LEFT JOIN roles r ON r.id = u.role_id
+       LEFT JOIN jabatan_target jt ON jt.id = a.entitas_id
+      WHERE ${syarat.join(' AND ')}
+      ORDER BY a.id DESC
+      LIMIT ${batas}`,
+    params,
+  )
+
+  /** Kolom JSON bisa datang sebagai objek ATAU string, tergantung driver. */
+  const urai = (v: unknown): Record<string, unknown> => {
+    if (v === null || v === undefined) return {}
+    if (typeof v === 'object') return v as Record<string, unknown>
+    try {
+      const x = JSON.parse(String(v))
+      return typeof x === 'object' && x !== null ? (x as Record<string, unknown>) : {}
+    } catch {
+      return {}
+    }
+  }
+
+  return baris.map((r) => {
+    const sebelum = urai(r.data_sebelum)
+    const sesudah = urai(r.data_sesudah)
+    return {
+      auditId: Number(r.id),
+      waktu: String(r.created_at),
+      namaPengguna: r.nama_pengguna === null ? null : String(r.nama_pengguna),
+      peranPengguna: r.peran_pengguna === null ? null : String(r.peran_pengguna),
+      jabatanTargetId: r.entitas_id === null ? null : Number(r.entitas_id),
+      namaTarget: r.nama_target === null ? null : String(r.nama_target),
+      kodeTarget: r.kode_target === null ? null : String(r.kode_target),
+      sebelumBaris: angkaJson(sebelum.jumlah_baris),
+      sebelumEligible: angkaJson(sebelum.eligible),
+      jumlahBaris: angkaJson(sesudah.jumlahBaris),
+      eligible: angkaJson(sesudah.eligible),
+      perluReview: angkaJson(sesudah.perluReview),
+      barisRincian: angkaJson(sesudah.barisRincian),
+      nilaiManualDipertahankan: angkaJson(sesudah.nilaiManualDipertahankan),
+      anggotaPoolDiperingkat: angkaJson(sesudah.anggotaPoolDiperingkat),
+      galatRubrik: angkaJson(sesudah.galatRubrik),
+      durasiMs: angkaJson(sesudah.durasiMs),
+    }
+  })
+}
+
 export async function ambilAuditLog(f: FilterAudit = {}): Promise<HasilAudit> {
   // `Math.max(NaN, 1)` adalah NaN, bukan 1 — jadi menjepit saja tidak cukup.
   // `OFFSET NaN` sampai ke MySQL sebagai `Undeclared variable: NaN`.

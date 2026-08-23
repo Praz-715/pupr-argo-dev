@@ -1,7 +1,7 @@
 import { catatEkspor } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth'
 import { headerCsv, namaBerkasCsv, susunCsv, type KolomEkspor } from '@/lib/ekspor'
-import { ambilAuditLog } from '@/lib/kueri/admin'
+import { ambilAuditLog, ambilRiwayatPerhitungan } from '@/lib/kueri/admin'
 import {
   ambilGapIndikator,
   ambilGapPerJenjang,
@@ -55,6 +55,7 @@ type Jenis =
   | 'rekap-periode'
   | 'rekap-unit'
   | 'audit-log'
+  | 'riwayat-perhitungan'
 
 const PERAN_LAPORAN: readonly Peran[] = ['Super Admin', 'Admin Talenta', 'Pimpinan']
 const PERAN_AUDIT: readonly Peran[] = ['Super Admin']
@@ -67,6 +68,11 @@ const PERAN_PER_JENIS: Record<Jenis, readonly Peran[]> = {
   'rekap-periode': PERAN_LAPORAN,
   'rekap-unit': PERAN_LAPORAN,
   'audit-log': PERAN_AUDIT,
+  // Laporan sesi perhitungan boleh dibaca peran laporan, BUKAN cuma Super Admin
+  // seperti audit log penuh: isinya ringkasan angka per sesi (siapa, kapan,
+  // berapa baris, berapa perlu ditinjau) — bukan `data_sebelum`/`data_sesudah`
+  // mentah yang bisa memuat nilai kolom apa pun.
+  'riwayat-perhitungan': PERAN_LAPORAN,
 }
 
 export const JENIS_EKSPOR = Object.keys(PERAN_PER_JENIS) as Jenis[]
@@ -237,6 +243,42 @@ async function susun(
         { kunci: 'ip', judul: 'IP', nilai: (b) => b.ipAddress },
       ]
       return { csv: susunCsv(kolom, hasil.baris), jumlah: hasil.baris.length }
+    }
+
+    case 'riwayat-perhitungan': {
+      const baris = await ambilRiwayatPerhitungan({
+        dari: filter.dari,
+        sampai: filter.sampai,
+        jabatanTargetId: filter.jabatanTargetId,
+        batas: 1000,
+      })
+      const kolom: Array<KolomEkspor<(typeof baris)[number]>> = [
+        { kunci: 'waktu', judul: 'Waktu', nilai: (b) => b.waktu },
+        { kunci: 'pengguna', judul: 'Dijalankan oleh', nilai: (b) => b.namaPengguna },
+        { kunci: 'peran', judul: 'Peran', nilai: (b) => b.peranPengguna },
+        { kunci: 'kodeTarget', judul: 'Kode Jabatan Target', nilai: (b) => b.kodeTarget },
+        { kunci: 'namaTarget', judul: 'Jabatan Target', nilai: (b) => b.namaTarget },
+        { kunci: 'sebelumBaris', judul: 'Baris Skor Sebelum', nilai: (b) => b.sebelumBaris },
+        { kunci: 'sebelumEligible', judul: 'Eligible Sebelum', nilai: (b) => b.sebelumEligible },
+        { kunci: 'jumlahBaris', judul: 'Pegawai Dinilai', nilai: (b) => b.jumlahBaris },
+        { kunci: 'eligible', judul: 'Lolos Syarat', nilai: (b) => b.eligible },
+        { kunci: 'perluReview', judul: 'Perlu Ditinjau', nilai: (b) => b.perluReview },
+        { kunci: 'barisRincian', judul: 'Baris Rincian Indikator', nilai: (b) => b.barisRincian },
+        {
+          kunci: 'manual',
+          judul: 'Nilai Manual Dipertahankan',
+          nilai: (b) => b.nilaiManualDipertahankan,
+        },
+        {
+          kunci: 'pool',
+          judul: 'Anggota Pool Diperingkat',
+          nilai: (b) => b.anggotaPoolDiperingkat,
+        },
+        { kunci: 'galatRubrik', judul: 'Galat Rubrik', nilai: (b) => b.galatRubrik },
+        { kunci: 'durasiMs', judul: 'Durasi (ms)', nilai: (b) => b.durasiMs },
+        { kunci: 'auditId', judul: 'ID Audit', nilai: (b) => b.auditId },
+      ]
+      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
     }
   }
 }

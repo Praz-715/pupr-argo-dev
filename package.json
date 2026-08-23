@@ -21,6 +21,7 @@
     "uji:enom": "tsx --conditions react-server scripts/uji-enom.ts",
     "sinkron:enom": "tsx --conditions react-server scripts/sinkron-enom.ts",
     "nama:enom": "tsx --conditions react-server scripts/nama-enom.ts",
+    "impor:talentpool": "tsx --conditions react-server scripts/impor-talentpool.ts",
     "verifikasi:data": "tsx scripts/verifikasi-data.ts",
     "ukur:kueri": "tsx --conditions react-server scripts/ukur-kueri.ts",
     "db:volume": "tsx scripts/seed-volume.ts",
@@ -36,7 +37,8 @@
     "ukur:hitung-ulang:volume": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts --volume",
     "ukur:hitung-ulang:volume:semua": "tsx --conditions react-server scripts/ukur-hitung-ulang.ts --volume --semua",
     "db:gen-token-api": "tsx scripts/gen-013-token-api.ts",
-    "ukur:dampak-skoring": "tsx --conditions react-server scripts/ukur-dampak-tahap2.ts"
+    "ukur:dampak-skoring": "tsx --conditions react-server scripts/ukur-dampak-tahap2.ts",
+    "impor:jabatan-target": "tsx --conditions react-server scripts/impor-jabatan-target.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -53,6 +55,7 @@
     "react-dom": "^19.2.8",
     "recharts": "^3.10.1",
     "server-only": "^0.0.1",
+    "sharp": "0.34.5",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

@@ -100,7 +100,7 @@ export function TabelBanding({
     },
     {
       label: 'Nilai Potensial (sumbu X)',
-      keterangan: 'rubrik generik · 0–100',
+      keterangan: 'rubrik generik · bisa >100 bila potkom sumber >100',
       nilai: kandidat.map((k) => k.nilaiPotensialX),
       format: formatSkorRingkas,
       lebihBaik: 'naik',
@@ -115,7 +115,7 @@ export function TabelBanding({
     },
     {
       label: 'Potkom',
-      keterangan: 'asesmen jabatan saat ini · 0–100',
+      keterangan: 'asesmen jabatan saat ini · disimpan apa adanya, tidak dipotong',
       nilai: kandidat.map((k) => k.potkom),
       format: formatSkorRingkas,
       lebihBaik: 'naik',

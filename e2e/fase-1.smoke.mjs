@@ -134,13 +134,37 @@ try {
     })
 
     await langkah(`tema ${tema}: grid Kotak 9 menyebut basis datanya`, async () => {
-      const teks = await page.locator('main').innerText()
-      tegaskan(/\d+ pegawai · asesmen terbaru per orang/.test(teks), 'basis grid Kotak 9 tidak ada')
-      // Warna sel sekarang membawa DUA informasi (band kualitas + kepadatan),
-      // jadi keterangannya wajib menjelaskan keduanya — kalau tidak, hue-nya
-      // jadi informasi tanpa penjelasan.
-      tegaskan(/band kualitas/i.test(teks), 'keterangan tidak menjelaskan arti warna band')
-      return 'basis data & arti warna keduanya disebut'
+      // Dua hal yang dijaga langkah ini, dan keduanya PINDAH TEMPAT pada
+      // 18 Agu 2026 ketika user meminta empat kalimat keterangan dihapus:
+      //
+      //   1. **basis data** — dulu berbunyi "N pegawai · asesmen terbaru per
+      //      orang" di deskripsi panel. Frasa "asesmen terbaru per orang" dihapus;
+      //      jumlah pegawainya tetap ada, dan itulah basis yang sebenarnya
+      //      dijaga. Diperiksa pada `<p>` deskripsi panel — BUKAN pada seluruh
+      //      `main`, karena tiap sel grid juga memuat kata "pegawai" sehingga
+      //      regex selebar itu akan lulus meski deskripsinya lenyap sama sekali.
+      //
+      //   2. **arti warna** — dulu paragraf "band kualitas" di kaki panel, kini
+      //      melekat di `title` tiap sel. Asersinya diarahkan ke tempat barunya,
+      //      BUKAN dilonggarkan: melonggarkannya berarti sel boleh kehilangan
+      //      penjelasannya sama sekali nanti tanpa satu pun uji yang merah.
+      const panel = page.locator('main section').filter({ hasText: 'Sebaran Kotak 9' }).last()
+      const deskripsi = (await panel.locator('header p').first().innerText()).trim()
+      tegaskan(
+        /^\d[\d.,]* pegawai\b/.test(deskripsi),
+        `deskripsi panel tidak menyebut basis datanya: "${deskripsi}"`,
+      )
+
+      const judulSel = await page.locator('a[aria-label^="Kotak "]').first().getAttribute('title')
+      tegaskan(
+        judulSel !== null && /Kotak \d+ · .+ × .+/.test(judulSel),
+        `title sel tidak menyebut posisi kotak pada kedua sumbu: ${judulSel}`,
+      )
+      tegaskan(
+        judulSel.split('\n').filter((b) => b.trim() !== '').length >= 2,
+        'title sel tidak memuat deskripsi maknanya, cuma koordinat',
+      )
+      return `basis data "${deskripsi}" · tiap sel membawa keterangannya di title`
     })
 
     await langkah(`tema ${tema}: tanpa scroll horizontal`, async () => {

@@ -1,3 +1,4 @@
+import type { AmbangSumbu } from '../scoring'
 import {
   normalisasiAsesmen,
   buatTemuan,
@@ -44,7 +45,7 @@ export interface AsesmenTerpetakan {
  */
 export function petakanRekaman(
   r: RekamanEnom,
-  opsi: { tahunSekarang: number },
+  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
 ): { hasil: AsesmenTerpetakan | null; temuan: Temuan[] } {
   const temuan: Temuan[] = []
 
@@ -103,7 +104,7 @@ export function petakanRekaman(
 /** Petakan sekumpulan rekaman. Baris yang tidak terpakai tetap meninggalkan temuan. */
 export function petakanSemua(
   rekaman: readonly RekamanEnom[],
-  opsi: { tahunSekarang: number },
+  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
 ): { hasil: AsesmenTerpetakan[]; temuan: Temuan[] } {
   const hasil: AsesmenTerpetakan[] = []
   const temuan: Temuan[] = []

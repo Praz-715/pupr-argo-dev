@@ -40,13 +40,36 @@ config({ path: '.env' })
 const BERKAS = 'doc/sql/007_recompute.sql'
 const SEKARANG = new Date(2026, 6, 30, 12)
 const TAHUN_SEKARANG = 2026
-const MASA_BERLAKU = 3
 
 const q = (s: string | null): string => (s === null ? 'NULL' : `'${s.replace(/'/g, "''")}'`)
 const num = (n: number | null): string => (n === null ? 'NULL' : n.toFixed(2))
 
 async function main() {
   const { kueri } = await import('../lib/db')
+  const { ambangSumbuDari, ambilPengaturan } = await import('../lib/pengaturan')
+
+  /**
+   * Parameter yang bisa diubah operator DIBACA dari `pengaturan_sistem`, tidak
+   * dipaku di berkas ini.
+   *
+   * Sebelum 18 Agu 2026 di sini ada `const MASA_BERLAKU = 3`, sementara nilai di
+   * DB sudah 4 — jadi menjalankan `db:recompute` akan menuliskan status masa
+   * berlaku menurut 3 tahun ke `007_recompute.sql`, lalu `verifikasi:skoring`
+   * (yang membaca pengaturan) memerahkannya. Skornya identik sampai dua desimal
+   * dan hanya kolom kelayakan yang berbeda, jadi gejalanya mudah disalahsangkakan
+   * sebagai skor basi. Bug serupa ditemukan di `ukur-hitung-ulang.ts` hari yang
+   * sama; keduanya lahir dari kebiasaan yang sama, yaitu menyalin nilai bawaan
+   * ke dalam skrip.
+   *
+   * `ambilPengaturan()` sudah jatuh kembali ke nilai bawaan kalau tabelnya belum
+   * ada, jadi ini tetap aman dijalankan pada database yang belum menjalankan 012.
+   */
+  const pengaturan = await ambilPengaturan()
+  const MASA_BERLAKU = pengaturan.masaBerlakuAsesmenTahun
+  const AMBANG = ambangSumbuDari(pengaturan)
+  console.log(
+    `pengaturan: masa berlaku ${MASA_BERLAKU} tahun · ambang ${AMBANG.tengah}/${AMBANG.atas}`,
+  )
   const { ambilPohonRubrik, ambilProfilKandidat, ambilRubrikUntukHitung, indikatorBerkunciDari } =
     await import('../lib/kueri/rubrik')
   const { hitungSkorMassal } = await import('../lib/skor-massal')
@@ -119,7 +142,7 @@ async function main() {
       ...(idPotkomGenerik !== undefined ? { [idPotkomGenerik]: potkom } : {}),
     })
 
-    const kotak = hitungKotak9(y, hasilX.skor)
+    const kotak = hitungKotak9(y, hasilX.skor, AMBANG)
     const banding = bandingkanKotak9(
       kotak,
       a.kotak_9_sumber === null || a.kotak_9_sumber === undefined

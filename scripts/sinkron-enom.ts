@@ -31,7 +31,7 @@ import mysql from 'mysql2/promise'
 config({ path: '.env.local' })
 config({ path: '.env' })
 
-import { ambilAsesmen, bacaKonfigurasi } from '@/lib/enom/klien'
+import { ambilAsesmen, bacaKonfigurasi, GalatEnom } from '@/lib/enom/klien'
 import { petakanSemua, type AsesmenTerpetakan } from '@/lib/enom/pemetaan'
 
 const arg = process.argv.slice(2)
@@ -69,6 +69,17 @@ function samaAngka(db: unknown, baru: number | null): boolean {
 }
 
 async function main() {
+  /*
+    Impor DINAMIS, bukan statis di kepala berkas.
+
+    `lib/pengaturan` menarik `lib/db`, dan `lib/db` membangun pool koneksinya
+    **saat modul dimuat** — sementara `config({ path: '.env.local' })` baru
+    mengisi env sesudahnya. Impor statis membuat pool lahir tanpa kredensial dan
+    skripnya mati dengan "DATABASE_NAME belum diset" sebelum satu baris pun
+    jalan. Aturan ini sudah tertulis di `scripts/recompute.ts`; saya melanggarnya
+    di empat skrip sekaligus saat memindahkan ambang ke pengaturan (22 Agu 2026).
+  */
+  const { ambangSumbuDari, ambilPengaturan } = await import('@/lib/pengaturan')
   const cfg = bacaKonfigurasi()
   const db = await koneksi()
 
@@ -91,21 +102,58 @@ async function main() {
   console.log(`  ${nip.length} NIP akan ditanyakan ke eNom`)
 
   // ── Ambil & petakan ────────────────────────────────────────────────────────
-  const { rekaman, gagal } = await ambilAsesmen(nip, { konfigurasi: cfg })
+  /*
+    Galat yang berlaku untuk SELURUH jalan (auth, konfigurasi, endpoint hilang)
+    sengaja dilempar `ambilAsesmen` — meneruskan 36 permintaan ke alamat yang
+    sudah tidak dilayani hanya membanjiri log eNom tanpa satu pun bisa berhasil.
+    Ditangkap DI SINI supaya yang dilihat operator adalah kalimat yang bisa
+    ditindak, bukan stack trace. Stack trace pada kegagalan yang sudah dipahami
+    membuat orang mengira aplikasinya rusak, padahal yang perlu dilakukan hanya
+    meminta alamat baru ke pengelola sumber.
+  */
+  let rekaman, gagal
+  try {
+    ;({ rekaman, gagal } = await ambilAsesmen(nip, { konfigurasi: cfg }))
+  } catch (e) {
+    if (!(e instanceof GalatEnom)) throw e
+    console.log(`\n  GAGAL TOTAL [${e.sebab}] — tidak ada yang ditulis.\n`)
+    for (const baris of e.message.split('\n')) console.log(`  ${baris}`)
+    console.log('')
+    await db.end()
+    process.exit(1)
+  }
   for (const g of gagal) console.log(`  ! batch gagal [${g.galat.sebab}]: ${g.galat.message}`)
 
-  const { hasil, temuan } = petakanSemua(rekaman, { tahunSekarang: TAHUN_SEKARANG })
+  const { hasil, temuan } = petakanSemua(rekaman, { tahunSekarang: TAHUN_SEKARANG, ambang: ambangSumbuDari(await ambilPengaturan()) })
   const tidakDitemukan = nip.length - rekaman.length
   console.log(
     `  eNom menjawab ${rekaman.length} · terpetakan ${hasil.length} · tidak ada di eNom ${tidakDitemukan} · temuan ${temuan.length}`,
   )
 
   if (hasil.length === 0) {
+    /*
+      Kesimpulannya BERGANTUNG pada sebab kegagalannya, dan itu bukan detail.
+
+      Versi sebelumnya selalu menyimpulkan "populasi dev sebagian besar NIP hasil
+      generator" — menyalahkan DATA. Pada 22 Agu 2026 kesimpulan itu keliru dan
+      memakan waktu: endpoint-nya yang lenyap (HTTP 404 berisi halaman HTML pada
+      keempat varian path & metode, termasuk untuk NIP contoh yang sebelumnya
+      berhasil). Tidak ada daftar NIP yang bisa memperbaiki alamat yang sudah
+      tidak dilayani.
+    */
+    const endpointHilang = gagal.some((g) => g.galat.sebab === 'endpoint')
     console.log(
-      '\n  Tidak ada satu pun NIP yang dijawab eNom, jadi tidak ada yang bisa disinkronkan.\n' +
-        '  Ini BUKAN kegagalan teknis: populasi dev sebagian besar NIP hasil generator, dan\n' +
-        '  eNom hanya memuat pegawai yang sudah punya rekaman asesmen di sana. Minta daftar\n' +
-        '  NIP yang ada di eNom ke pengelolanya, lalu ulangi.\n',
+      endpointHilang
+        ? '\n  ENDPOINT eNom TIDAK ADA LAGI — bukan soal NIP, dan bukan soal jaringan.\n' +
+            `  ${gagal[0]?.galat.message.split('\n')[0] ?? ''}\n` +
+            '  Host-nya hidup dan me-routing; X-Secret serta bentuk permintaan kita sudah sesuai\n' +
+            '  contoh resmi mereka (lihat CLAUDE.md §API eNominasi). Yang dibutuhkan: ALAMAT\n' +
+            '  endpoint yang berlaku sekarang dari pengelola eNom. Sampai itu ada, jalur ini\n' +
+            '  tidak bisa dijalankan sama sekali.\n'
+        : '\n  Tidak ada satu pun NIP yang dijawab eNom, jadi tidak ada yang bisa disinkronkan.\n' +
+            '  Ini BUKAN kegagalan teknis: populasi dev sebagian besar NIP hasil generator, dan\n' +
+            '  eNom hanya memuat pegawai yang sudah punya rekaman asesmen di sana. Minta daftar\n' +
+            '  NIP yang ada di eNom ke pengelolanya, lalu ulangi.\n',
     )
     await db.end()
     return

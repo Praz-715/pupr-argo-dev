@@ -1,4 +1,12 @@
-import { ArrowDown, ArrowRight, Briefcase, FileCheck2, Target, Users } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowRight,
+  BadgeCheck,
+  Briefcase,
+  FileCheck2,
+  Target,
+  Users,
+} from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -8,7 +16,7 @@ import { ambilKartuRingkas } from '@/lib/kueri/dashboard'
 import { formatAngka, formatPersenNilai } from '@/lib/format'
 
 /**
- * W1 · Empat angka yang paling sering ditanya pimpinan.
+ * W1 · Lima angka yang paling sering ditanya pimpinan.
  *
  * Setiap kartu menyertakan **konteks pembanding** (mis. "6 dari 19 jabatan
  * strategis"), karena angka telanjang tanpa penyebut tidak bisa dinilai
@@ -24,7 +32,7 @@ export async function KartuRingkas() {
       : 0
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <Kartu
         ikon={<Users className="size-5" />}
         label="Pegawai aktif"
@@ -96,6 +104,40 @@ export async function KartuRingkas() {
         // (phase.md §5.2) — gejala yang terbaca sebagai "tautannya rusak".
         tautan={{ href: '/nominasi', label: 'Buka Nominasi & Approval' }}
       />
+
+      <Kartu
+        ikon={<BadgeCheck className="size-5" />}
+        /*
+          Butir 2 PUR.pdf, ditahan sampai istilahnya jelas.
+
+          Alasan aslinya — "biar tidak digabung dengan tab nominasi menunggu
+          tindakan" — dijawab dengan memisahkan TAHAPnya: kartu sebelah memajang
+          seluruh nominasi dengan "menunggu tindakan" sebagai konteks, kartu ini
+          memajang yang sudah LEWAT verifikasi. Keduanya dihitung dari tabel
+          `nominasi` yang sama, jadi angkanya bisa dijumlahkan tanpa selisih yang
+          tak terjelaskan — dua kartu bertetangga yang menghitung dari tabel
+          berbeda adalah cara termudah membuat pembaca menyimpulkan selisih yang
+          sebenarnya tidak ada.
+
+          Konteksnya memecah angkanya lagi jadi "sudah ditetapkan" vs "menunggu
+          Pimpinan", sebab "terverifikasi" sendirian tidak menjawab apakah masih
+          ada yang perlu ditindak — dan itu justru pertanyaan yang dibawa
+          pimpinan ke dashboard ini.
+        */
+        label="Terverifikasi"
+        nilai={d.nominasiTerverifikasi}
+        nada={d.nominasiTerverifikasi > d.nominasiDitetapkan ? 'violet' : 'teal'}
+        konteks={
+          d.nominasiTerverifikasi === 0
+            ? 'Belum ada nominasi yang lolos verifikasi'
+            : d.nominasiTerverifikasi === d.nominasiDitetapkan
+              ? 'seluruhnya sudah ditetapkan Pimpinan'
+              : `${formatAngka(d.nominasiDitetapkan)} ditetapkan · ${formatAngka(
+                  d.nominasiTerverifikasi - d.nominasiDitetapkan,
+                )} menunggu Pimpinan`
+        }
+        tautan={{ href: '/nominasi?tahap=APPROVAL', label: 'Lihat yang menunggu approval' }}
+      />
     </div>
   )
 }
@@ -126,7 +168,7 @@ type Nada = keyof typeof KELAS_NADA
  * Bentuk kartunya diporting dari v1 `StatCard`: bar warna di tepi kiri, angka
  * besar + chip ikon sebaris, label, lalu baris hint di bawah garis putus-putus.
  *
- * Tinggi kartu SERAGAM (`h-40` + label diklem 2 baris) karena keempatnya berdiri
+ * Tinggi kartu SERAGAM (`h-40` + label diklem 2 baris) karena kelimanya berdiri
  * berdampingan: label yang panjangnya berbeda membuat baris konteks tiap kartu
  * berhenti di ketinggian berbeda, dan mata membacanya sebagai empat kartu yang
  * tidak sejajar. Hint tetap menyisakan tingginya walau kosong — alasan yang
@@ -208,9 +250,12 @@ function Kartu({
 
 export function KartuRingkasSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        // h-40 menyamai tinggi kartu jadinya — tanpa itu keempat kartu melompat
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {/* LIMA, sejumlah kartu jadinya. Skeleton yang jumlahnya beda dari isi
+          akhirnya membuat barisnya melompat justru pada momen yang seharusnya
+          ia tenangkan. */}
+      {Array.from({ length: 5 }).map((_, i) => (
+        // h-40 menyamai tinggi kartu jadinya — tanpa itu kartunya melompat
         // tingginya begitu data masuk (phase.md §5.3: skeleton meniru bentuk akhir).
         <CardSkeleton key={i} className="h-40" />
       ))}

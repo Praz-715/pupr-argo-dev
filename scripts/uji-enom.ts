@@ -76,6 +76,17 @@ async function asesmenDiDb(nip: readonly string[]) {
 }
 
 async function main() {
+  /*
+    Impor DINAMIS, bukan statis di kepala berkas.
+
+    `lib/pengaturan` menarik `lib/db`, dan `lib/db` membangun pool koneksinya
+    **saat modul dimuat** — sementara `config({ path: '.env.local' })` baru
+    mengisi env sesudahnya. Impor statis membuat pool lahir tanpa kredensial dan
+    skripnya mati dengan "DATABASE_NAME belum diset" sebelum satu baris pun
+    jalan. Aturan ini sudah tertulis di `scripts/recompute.ts`; saya melanggarnya
+    di empat skrip sekaligus saat memindahkan ambang ke pengaturan (22 Agu 2026).
+  */
+  const { ambangSumbuDari, ambilPengaturan } = await import('@/lib/pengaturan')
   const arg = process.argv.slice(2)
   const idxDb = arg.indexOf('--dari-db')
   const nip =
@@ -131,7 +142,7 @@ async function main() {
   )
 
   // ── Lapis 5: pemetaan ────────────────────────────────────────────────────────
-  const { hasil, temuan } = petakanSemua(rekaman.rekaman, { tahunSekarang: TAHUN_SEKARANG })
+  const { hasil, temuan } = petakanSemua(rekaman.rekaman, { tahunSekarang: TAHUN_SEKARANG, ambang: ambangSumbuDari(await ambilPengaturan()) })
   lapis(
     'pemetaan ke asesmen_talenta',
     hasil.length === rekaman.rekaman.length,

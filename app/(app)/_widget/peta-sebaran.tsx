@@ -1,3 +1,4 @@
+import { ambangSumbuDari, ambilPengaturan } from '@/lib/pengaturan'
 import { PetaTalenta } from '@/components/charts/peta-talenta'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { ChartSkeleton, Skeleton } from '@/components/ui/skeleton'
@@ -28,31 +29,31 @@ export async function PetaSebaran() {
     )
   }
 
-  const terpadat = titik.reduce((a, b) => (b.jumlah > a.jumlah ? b : a), titik[0]!)
-
   return (
     <Panel className="flex flex-col">
       <PanelHeader
         judul="Peta Kinerja × Potensial"
-        deskripsi={
-          <>
-            {formatAngka(totalPegawai)} pegawai dikelompokkan jadi {formatAngka(titik.length)} titik
-            · ukuran gelembung = jumlah pegawai · garis putus-putus = ambang 60 & 80
-          </>
-        }
+        // Legenda ("dikelompokkan jadi N titik · ukuran gelembung = jumlah
+        // pegawai · garis putus-putus = ambang 60 & 80") DIHAPUS atas permintaan
+        // user (18 Agu 2026). Angkanya tetap DINAMIS — `totalPegawai` dijumlahkan
+        // dari hasil kueri `ambilTitikTalenta()`, bukan konstanta.
+        //
+        // Template string, BUKAN fragment: bentuk fragment terukur menelan spasi
+        // setelah `}` dan terender "10pegawai".
+        deskripsi={`${formatAngka(totalPegawai)} pegawai`}
       />
 
       <div className="mt-2">
-        <PetaTalenta titik={titik} />
+        <PetaTalenta titik={titik} ambang={ambangSumbuDari(await ambilPengaturan())} />
       </div>
 
-      <p className="mt-2 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
-        Digambar sebagai gelembung, bukan titik ber-<em>jitter</em>: sumbu Kinerja hanya punya lima
-        nilai yang mungkin (100/80/60/40/20), sehingga pegawai bertumpuk. <em>Jitter</em>{' '}
-        mengatasinya dengan memindahkan titik ke koordinat yang bukan nilainya — pada halaman
-        pengambilan keputusan, itu berarti menampilkan posisi palsu. Titik terpadat saat ini:{' '}
-        {formatAngka(terpadat.jumlah)} pegawai di Kinerja {terpadat.y} × Potensial {terpadat.x}.
-      </p>
+      {/* Paragraf metodologi (kenapa gelembung, bukan titik ber-jitter) DIHAPUS
+          atas permintaan user, 18 Agu 2026. Alasan teknisnya tidak hilang — ia
+          sudah tertulis sebagai komentar di `components/charts/peta-talenta.tsx`,
+          tempat keputusannya benar-benar dieksekusi. Yang hilang cuma
+          penyampaiannya di layar.
+
+          JANGAN dikembalikan sebagai "perbaikan"; ini keputusan user. */}
     </Panel>
   )
 }

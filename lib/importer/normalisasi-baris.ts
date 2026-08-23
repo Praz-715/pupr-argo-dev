@@ -1,8 +1,10 @@
 import {
   bandingkanKotak9,
+  bulatkan2,
   clampSkor,
   evaluasiMasaBerlaku,
   hitungKotak9,
+  type AmbangSumbu,
   type StatusAsesmen,
 } from '../scoring'
 import {
@@ -96,6 +98,35 @@ export function normalisasiNilaiIntegritas(
 // ---------------------------------------------------------------------------
 // §6.1 · Skor umum (potkom, nilai potensial, dsb.)
 // ---------------------------------------------------------------------------
+
+/**
+ * Potkom apa adanya — hanya dicatat kalau melebihi 100, tidak dipotong.
+ *
+ * Dipisah dari `normalisasiSkor()` supaya pemotongan tetap berlaku untuk field
+ * lain yang memang berskala 0–100. Kalau suatu hari pengelola sumber memastikan
+ * skalanya, yang diubah cuma fungsi ini.
+ */
+export function normalisasiPotkom(mentah: number | null | undefined): HasilImpor<number | null> {
+  if (mentah === null || mentah === undefined || Number.isNaN(mentah)) {
+    return { nilai: null, temuan: [] }
+  }
+  const nilai = bulatkan2(mentah)
+  return {
+    nilai,
+    temuan:
+      nilai > 100
+        ? [
+            buatTemuan(
+              'POTKOM_DI_ATAS_100',
+              'potkom',
+              mentah,
+              nilai,
+              `Potkom ${nilai} melebihi 100 dan DISIMPAN apa adanya — sumbu X ikut melebihi 100. Skala potkom sumber belum dikonfirmasi pengelolanya.`,
+            ),
+          ]
+        : [],
+  }
+}
 
 export function normalisasiSkor(
   mentah: number | null | undefined,
@@ -332,12 +363,36 @@ export interface AsesmenBersih {
  */
 export function normalisasiAsesmen(
   m: AsesmenMentah,
-  opsi: { tahunSekarang: number },
+  /**
+   * `ambang` WAJIB dikirim pemanggil, tidak berbawaan.
+   *
+   * Fungsi ini menulis `kotak_9` yang TERSIMPAN, jadi ia jalur tulis. Kalau
+   * ambangnya boleh dihilangkan, satu pemanggil yang lupa akan menyimpan kotak
+   * menurut angka kode sementara halaman membacanya menurut angka
+   * `pengaturan_sistem` — dan selisihnya tidak terlihat sebagai galat, hanya
+   * sebagai orang yang duduk di kotak yang salah.
+   */
+  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
 ): HasilImpor<AsesmenBersih> {
   const temuan: Temuan[] = []
 
   const kinerja = normalisasiSkor(m.nilaiKinerjaY, 'nilai_kinerja_y')
-  const potkom = normalisasiSkor(m.potkom, 'potkom')
+  /**
+   * **Potkom TIDAK dipotong** — keputusan pemilik proses, 18 Agu 2026.
+   *
+   * Sebelumnya potkom melewati `normalisasiSkor()` yang memotongnya ke 0–100.
+   * Terukur pada dua sumber INDEPENDEN: eNominasi (5 dari 10 rekaman >100,
+   * sampai 130,73) dan Excel Talent Pool ES 2/3 (10 dari 26, sampai 114,93).
+   * Memotongnya membuat sekitar 40% populasi menumpuk di X=100 tepat dan
+   * kehilangan seluruh daya bedanya di sumbu X — sebaran Kotak 9 lalu menyempit
+   * bukan karena orangnya serupa, melainkan karena angkanya diseragamkan.
+   *
+   * Yang TIDAK berubah: `nilai_kinerja_y` tetap diplafon (ia turunan predikat,
+   * yang memang berskala 0–100), dan `nilai_talenta` tetap diplafon di
+   * `hitungNilaiTalenta()` karena ia komposit berskala 0–100. Klasifikasi Kotak 9
+   * tidak terpengaruh: ambang teratas `≥80`, dan nilai >100 tetap memenuhinya.
+   */
+  const potkom = normalisasiPotkom(m.potkom)
   const integritas = normalisasiNilaiIntegritas(m.nilaiIntegritas)
   const jenis = normalisasiJenisAsesmenBerjejak(m.jenisAsesmen)
   temuan.push(...kinerja.temuan, ...potkom.temuan, ...integritas.temuan, ...jenis.temuan)
@@ -347,7 +402,7 @@ export function normalisasiAsesmen(
   // pembanding — sama perlakuannya dengan kotak_9.
   const y = kinerja.nilai ?? 0
   const x = potkom.nilai ?? 0
-  const hasilKotak = hitungKotak9(y, x)
+  const hasilKotak = hitungKotak9(y, x, opsi.ambang)
 
   const banding = bandingkanKotak9(hasilKotak, m.kotak9Sumber)
   if (banding.perluReview) {
