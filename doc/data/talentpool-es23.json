@@ -9,7 +9,6 @@
   "namaJabatan": "Kepala Bagian Perencanaan, Program, dan Keuangan",
   "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "12-05-2026",
   "sekolah": "Universitas Katolik Parahyangan",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -26,39 +25,57 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Bagian Perencanaan, Program, dan Keuangan",
-    "masaKerja": "2 Tahun 7 Bulan"
+    "masaKerja": "2 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tengah",
-    "masaKerja": "2 bulan"
+    "masaKerja": "2 bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Utara",
-    "masaKerja": "2 Tahun 3 Bulan"
+    "masaKerja": "2 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bangka Belitung",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pengaturan Pengadaan, Sub Direktorat Pengaturan dan Pengembangan Sistem Pelaksanaan Pengadaaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Fasilitasi Investasi, Subdirektorat Fasilitasi dan Mitigasi Risiko Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "2 Tahun 8 Bulan"
+    "masaKerja": "2 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bangka Belitung, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "0 Tahun 11 Bulan"
+    "masaKerja": "0 Tahun 11 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Pertama PEMBINAAN JASA KONSTRUKSI PERTAMA PEMBINA JASA KONSTRUKSI PERTAMA PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU",
-    "masaKerja": "0 Tahun 7 Bulan"
+    "masaKerja": "0 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana di BPKSDM",
-    "masaKerja": "5 Tahun 0 Bulan"
+    "masaKerja": "5 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -67,6 +84,7 @@
    "Pengadaan Barang/Jasa Pemerintah",
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
   ],
+  "tmtDiklat": "12-05-2026",
   "foto": "doc/data/foto/198207012009121001.png"
  },
  {
@@ -79,7 +97,6 @@
   "namaJabatan": "Kepala Bagian Kepegawaian dan Umum",
   "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "03-08-2026",
   "sekolah": "Institut Teknologi Bandung",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -96,23 +113,33 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Bagian Kepegawaian dan Umum",
-    "masaKerja": "1 tahun"
+    "masaKerja": "1 tahun",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Direktorat Bina Penataan Bangunan",
-    "masaKerja": "4 Tahun 5 Bulan"
+    "masaKerja": "4 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pejabat Pembuat Komitmen Mandiri, PPK KOTAKU 2, Satker Infrastruktur Berbasis Masyarakat, Direktorat Pengembangan Kawasan Permukiman",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pejabat Pembuat Komitmen PEJABAT PEMBUAT KOMITMEN PENGEMBANGAN KAWASAN PERMUKIMAN BERBASIS MASYARAKAT, DIREKTORAT PENGEMBANGAN KAWASAN PERMUKIMAN, DIREKTORAT JENDERAL CIPTA KARYA,",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana Pada Ditjen Cipta Karya",
-    "masaKerja": "9 Tahun 1 Bulan"
+    "masaKerja": "9 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -121,6 +148,7 @@
    "Manajemen Pengembangan SDM",
    "Certified Risk Officer in Public Sector (CROP)"
   ],
+  "tmtDiklat": "03-08-2026",
   "foto": "doc/data/foto/198603202008122001.png"
  },
  {
@@ -133,7 +161,6 @@
   "namaJabatan": "Kepala Bagian Hukum, Informasi Jasa Konstruksi, dan Komunikasi Publik",
   "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "22-06-2026",
   "sekolah": "Universitas Gadjah Mada",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -150,31 +177,45 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Bagian Hukum, Informasi Jasa Konstruksi, dan Komunikasi Publik",
-    "masaKerja": "6 Tahun 1 Bulan"
+    "masaKerja": "6 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Hukum, Bagian Hukum, Data, Dan Komunikasi Publik",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Hukum, Bagian Hukum, Data, Dan Komunikasi Publik",
-    "masaKerja": "2 Tahun 3 Bulan"
+    "masaKerja": "2 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Organisasi dan Tata Laksana, Bagian Kepegawaian, Organisasi, dan Tata Laksana",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Muda PEMBINA JASA KONSTRUKSI MUDA SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
-    "masaKerja": "0 Tahun 2 Bulan"
+    "masaKerja": "0 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian",
-    "masaKerja": "4 Tahun 4 Bulan"
+    "masaKerja": "4 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana pada BAG. KEPEGAWAIAN & ORTALA, SEKRETARIAT BADAN PEMBINAAN KONSTR. & SDM, DEP. PU.",
-    "masaKerja": "4 Tahun 9 Bulan"
+    "masaKerja": "4 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -183,6 +224,7 @@
    "Elearning Manajemen Risiko",
    "Diklat Kepemimpinan Tingkat III"
   ],
+  "tmtDiklat": "22-06-2026",
   "foto": "doc/data/foto/198302152006041004.png"
  },
  {
@@ -195,7 +237,6 @@
   "namaJabatan": "Direktur Usaha dan Kelembagaan Jasa Konstruksi",
   "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "10 Juni 2026\ns/d\n10 Juni 2026",
   "sekolah": "ERASMUS UNIVERSITEIT ROTTERDAM",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -212,55 +253,81 @@
   "riwayatJabatan": [
    {
     "nama": "Direktur Usaha dan Kelembagaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan 0 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Direktur Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 0 Bulan 16 Hari"
+    "masaKerja": "0 Tahun 0 Bulan 16 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLH. Direktur Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 2 Bulan 14 Hari"
+    "masaKerja": "0 Tahun 2 Bulan 14 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Prasarana Permukiman Wilayah Jawa Timur, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 4 Bulan 16 Hari"
+    "masaKerja": "0 Tahun 4 Bulan 16 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Prasarana Permukiman Wilayah Jawa Timur, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 4 Bulan 21 Hari"
+    "masaKerja": "0 Tahun 4 Bulan 21 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Kepala Balai Prasarana Permukiman Wilayah Sumatera Selatan, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 4 Bulan 16 Hari"
+    "masaKerja": "0 Tahun 4 Bulan 16 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Wilayah I, Direktorat Pengembangan Kawasan Permukiman, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "4 Tahun 3 Bulan 14 Hari"
+    "masaKerja": "4 Tahun 3 Bulan 14 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Standardisasi dan Kelembagaan, Direktorat Pengembangan Kawasan Permukiman, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 9 Bulan 9 Hari"
+    "masaKerja": "0 Tahun 9 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Kawasan Permukiman Wilayah I.a, Sub Direktorat Kawasan Permukiman Wilayah I, Direktorat Pengembangan Kawasan Permukiman, Direktorat Jenderal Cipta Karya",
-    "masaKerja": "0 Tahun 5 Bulan 20 Hari"
+    "masaKerja": "0 Tahun 5 Bulan 20 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI KAWASAN PERMUKIMAN PERKOTAAN I, SUBDIREKTORAT KAWASAN PERMUKIMAN PERKOTAAN, DIREKTORAT PENGEMBANGAN KAWASAN PERMUKIMAN, DIREKTORAT JENDERAL CIPTA KARYA",
-    "masaKerja": "1 Tahun 11 Bulan 14 Hari"
+    "masaKerja": "1 Tahun 11 Bulan 14 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI KAWASAN PERMUKIMAN PERDESAAN II, SUBDIREKTORAT KAWASAN PERMUKIMAN PERDESAAN, DIREKTORAT PENGEMBANGAN KAWASAN PERMUKIMAN, DIREKTORAT JENDERAL CIPTA KARYA",
-    "masaKerja": "1 Tahun 8 Bulan 6 Hari"
+    "masaKerja": "1 Tahun 8 Bulan 6 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SEKSI WILAYAH II B, SUBDIT PENINGKATAN PERMUKIMAN WILAYAH II, DIREKTORAT PENGEMBANGAN PERMUKIMAN ,DITJEN CIPTA KARYA",
-    "masaKerja": "4 Tahun 6 Bulan 5 Hari"
+    "masaKerja": "4 Tahun 6 Bulan 5 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Staf di Direktorat Jenderal Cipta Karya",
-    "masaKerja": "5 Tahun 11 Bulan 23 Hari"
+    "masaKerja": "5 Tahun 11 Bulan 23 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -275,6 +342,7 @@
    "SEPALA/ADUM/DIKLAT PIM TK.IV",
    "Diklat Kepemimpinan Tingkat IV"
   ],
+  "tmtDiklat": "10 Juni 2026\ns/d\n10 Juni 2026",
   "foto": "doc/data/foto/198004032005022002.png"
  },
  {
@@ -287,7 +355,6 @@
   "namaJabatan": "Kepala Subdirektorat Usaha Jasa Konstruksi",
   "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "13-04-2026",
   "sekolah": "Institut Teknologi Bandung",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -304,27 +371,39 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Usaha Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda",
-    "masaKerja": "1 Tahun 1 Bulan"
+    "masaKerja": "1 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Pengembangan Profesi Jasa Konstruksi",
-    "masaKerja": "0 Tahun 5 Bulan"
+    "masaKerja": "0 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI STANDAR DAN PEDOMAN, SUBDIREKTORAT PRODUKTIVITAS, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "3 Tahun 9 Bulan"
+    "masaKerja": "3 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana padaBADAN PEMBINAAN KONSTRUKSI DAN SDM",
-    "masaKerja": "7 Tahun 2 Bulan"
+    "masaKerja": "7 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -333,6 +412,7 @@
    "Pelatihan Asesor Akreditasi Lembaga Sertifikasi Badan Usaha (LSBU) Sektor Jasa Konstruksi",
    "Aparatur Sipil Negara (ASN) Berintegritas"
   ],
+  "tmtDiklat": "13-04-2026",
   "foto": "doc/data/foto/198802032009122001.png"
  },
  {
@@ -345,7 +425,6 @@
   "namaJabatan": "Kepala Subdirektorat Kelembagaan",
   "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "29-07-2026",
   "sekolah": "Universitas Diponegoro",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -362,43 +441,63 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Kelembagaan",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Keamanan dan Keselamatan Konstruksi",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah III Jakarta",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Material dan Peralatan Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah VII Jayapura, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 5 Bulan"
+    "masaKerja": "1 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Penerapan Kompetensi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "0 Tahun 10 Bulan"
+    "masaKerja": "0 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Sistem Penyelenggaraan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 9 Bulan"
+    "masaKerja": "1 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pejabat Pembuat Komitmen PEJABAT PEMBUAT KOMITMEN SATKER PKP PERKOTAAN STRATEGIS III, DIREKTORAT PENGEMBANGAN PERMUKIMAN,DITJEN CIPTA KARYA KEMENTERIAN PU",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana",
-    "masaKerja": "6 Tahun 10 Bulan"
+    "masaKerja": "6 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -407,6 +506,7 @@
    "Sistem Manajemen Keselamatan Konstruksi (SMKK) Blended Learning",
    "Pengadaan Barang dan Jasa Pemerintah"
   ],
+  "tmtDiklat": "29-07-2026",
   "foto": "doc/data/foto/198004082005021001.png"
  },
  {
@@ -419,7 +519,6 @@
   "namaJabatan": "Kepala Subdirektorat Pasar Jasa Konstruksi",
   "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Institut Ilmu Sosial Dan Manajemen STIAMI",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -436,31 +535,45 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pasar Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Utara",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Unit Eselon IV, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "8 Tahun 1 Bulan"
+    "masaKerja": "8 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Kepala Sub Bidang Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Staf, Departemen Pekerjaan Umum",
-    "masaKerja": "3 Tahun 9 Bulan"
+    "masaKerja": "3 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -469,6 +582,7 @@
    "Pengadaan Barang/Jasa Pemerintah",
    "ADMINISTRASI KEUANGAN DAERAH"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/197008272006041011.png"
  },
  {
@@ -481,7 +595,6 @@
   "namaJabatan": "Kepala Subdirektorat Material, Peralatan Konstruksi, dan Pengelolaan Produk Dalam Negeri",
   "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Universitas Gunadarma",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -498,51 +611,75 @@
   "riwayatJabatan": [
    {
     "nama": "Plt Sesditjen Bina Kontruksi",
-    "masaKerja": "2 bulan"
+    "masaKerja": "2 bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Material, Peralatan Konstruksi, dan Pengelolaan Produk Dalam Negeri",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Pengembangan Profesi Jasa Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah II Palembang",
-    "masaKerja": "4 Tahun 3 Bulan"
+    "masaKerja": "4 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Manajemen Mutu",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBDIREKTORAT SINKRONISASI DAN EVALUASI INVESTASI INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "2 Tahun 9 Bulan"
+    "masaKerja": "2 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA BAGIAN HUKUM, DATA, DAN KOMUNIKASI PUBLIK, SEKRETARIAT DIREKTORAT JENDERAL, DIREKTORAT JENDERAL BINA KONSTRUKSI",
-    "masaKerja": "0 Tahun 10 Bulan"
+    "masaKerja": "0 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBIDANG SUMBER DAYA PERALATAN, BIDANG MATERIAL DAN PERALATAN, PUSAT PEMBINAAN SUMBER DAYA INVESTASI, BPK KEMENTERIAN PU",
-    "masaKerja": "0 Tahun 10 Bulan"
+    "masaKerja": "0 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBAGIAN PENGELOLAAN BARANG MILIK NEGARA, BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
-    "masaKerja": "3 Tahun 8 Bulan"
+    "masaKerja": "3 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBAG DATA DAN INFORMASI, BAG. UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTR. & SDM, DEP. PU.",
-    "masaKerja": "6 Tahun 4 Bulan"
+    "masaKerja": "6 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana SETBA. PENGEMBANGAN SDM, BADAN PSDM",
-    "masaKerja": "3 Tahun 8 Bulan"
+    "masaKerja": "3 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana PADA SETJEN Dep PU",
-    "masaKerja": "7 Tahun 2 Bulan"
+    "masaKerja": "7 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -552,6 +689,7 @@
    "SEPADYA/SPAMA/DIKLAT PIM TK. III",
    "Peningkatan Kompetensi Bagi Kepala Balai Pelaksana Pemilihan Jasa Konstruksi dan Kasubdit di Direktorat Pengadaan Jasa Konstruksi"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/197210251994011001.png"
  },
  {
@@ -564,7 +702,6 @@
   "namaJabatan": "Direktur Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "06 April 2026\ns/d\n10 April 2026",
   "sekolah": "UNESCO-IHE",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -581,47 +718,69 @@
   "riwayatJabatan": [
    {
     "nama": "Direktur Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan"
+    "masaKerja": "1 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Direktur, Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "5 Tahun 2 Bulan"
+    "masaKerja": "5 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Direktur Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 6 Bulan"
+    "masaKerja": "1 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBDIREKTORAT PASAR INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI",
-    "masaKerja": "2 Tahun 2 Bulan"
+    "masaKerja": "2 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBDIREKTORAT TEKNOLOGI KONSTRUKSI DAN PRODUKSI DALAM NEGERI, DIREKTORAT BINA KELEMBAGAAN DAN SUMBER DAYA JASA KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI",
-    "masaKerja": "0 Tahun 1 Bulan"
+    "masaKerja": "0 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Pertama PEMBINAAN JASA KONSTRUKSI PERTAMA PEMBINA JASA KONSTRUKSI MADYA PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU",
-    "masaKerja": "0 Tahun 2 Bulan"
+    "masaKerja": "0 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA BIDANG PENGEMBANGAN USAHA, PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU",
-    "masaKerja": "4 Tahun 7 Bulan"
+    "masaKerja": "4 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBID PENDUKUNG USAHA, BID. SARANA USAHA, PUSAT PEMB. USAHA KONS. , BPK DAN SDM, DEP. PU",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SUBBID LINGKUNGAN USAHA, BID.PENGEMB.USAHA JASA KONST. PUSAT PEMB. USAHA KONS., BPK DAN SDM, DEP. PU",
-    "masaKerja": "2 Tahun 4 Bulan"
+    "masaKerja": "2 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SUBBID PENDUKUNG USAHA, BID. SARANA USAHA, PUSAT PEMB. USAHA KONS., BPK DAN SDM, DEP. PU",
-    "masaKerja": "1 Tahun 11 Bulan"
+    "masaKerja": "1 Tahun 11 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "staf di Sekretariat Jenderal",
-    "masaKerja": "10 Tahun 6 Bulan"
+    "masaKerja": "10 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -641,6 +800,7 @@
    "SEPALA/ADUM/DIKLAT PIM TK.IV",
    "PELATIHAN PENGADAAN BARANG DAN JASA KONSULTAN"
   ],
+  "tmtDiklat": "06 April 2026\ns/d\n10 April 2026",
   "foto": "doc/data/foto/196709091995021001.png"
  },
  {
@@ -653,7 +813,6 @@
   "namaJabatan": "Kepala Subdirektorat Penerapan Kompetensi Tenaga Kerja Konstruksi",
   "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "20-04-2026",
   "sekolah": "Universitas Hasanuddin",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -670,39 +829,57 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Penerapan Kompetensi Tenaga Kerja Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah IV Surabaya",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah VI Makassar",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Sub Direktorat Advokasi dan Fasilitasi Pengelolaan Pengadaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PEMANTAUAN, SUBDIREKTORAT PEMANTAUAN DAN EVALUASI, DIREKTORAT RUMAH KHUSUS, DIREKTORAT JENDERAL PENYEDIAAN PERUMAHAN, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "3 Tahun 5 Bulan"
+    "masaKerja": "3 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA KASUBBAG. TU STAF AHLI MENTERI, BAG. ADMINISTRASI, BIRO UMUM, SEKRETARIAT KEMENTERIAN",
-    "masaKerja": "1 Tahun 6 Bulan"
+    "masaKerja": "1 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana PELAKSANA STAF AHLI MENTERI PADA SEKRETARIAT KEMENTERIAN PERUMAHAN RAKYAT, Kementerian Perumahan Rakyat",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLK Pelaksana PLK PELAKSANA ASISTEN PERENCANAAN SATKER. KAWASAN PERMUKIMAN SULAWESI BARAT",
-    "masaKerja": "2 Tahun 0 Bulan"
+    "masaKerja": "2 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana di SULBAR",
-    "masaKerja": "5 Tahun 8 Bulan"
+    "masaKerja": "5 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -711,6 +888,7 @@
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
    "Bimbingan Teknis Narasumber SMKK"
   ],
+  "tmtDiklat": "20-04-2026",
   "foto": "doc/data/foto/197908042006041012.png"
  },
  {
@@ -723,7 +901,6 @@
   "namaJabatan": "Kepala Subdirektorat Pengembangan Profesi Jasa Konstruksi",
   "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Institut Ilmu Sosial Dan Manajemen STIAMI",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -740,35 +917,51 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pengembangan Profesi Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Sub Direktorat, Subdirektorat Pengelolaan Jabatan Fungsional Bidang Jasa Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Kepegawaian dan Umum",
-    "masaKerja": "2 Tahun 7 Bulan"
+    "masaKerja": "2 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Administrasi",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Kerjasama, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PEMANTAUAN DAN EVALUASI, SUBDIREKTORAT MANAJEMEN MUTU, DIREKTORAT BINA PENYELENGGARAAN JASA KONSTRUKSI,",
-    "masaKerja": "0 Tahun 7 Bulan"
+    "masaKerja": "0 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbagian Tata Usaha, Unit Eselon IV, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi,",
-    "masaKerja": "2 Tahun 5 Bulan"
+    "masaKerja": "2 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksaana di Dit Bina Program Cipta Karya",
-    "masaKerja": "10 Tahun 5 Bulan"
+    "masaKerja": "10 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -781,6 +974,7 @@
    "Microlearning Pemberdayaan Masyarakat dan Penyelesaian Konflik",
    "Microlearning Sistem Informasi Sumber Daya Air"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/198104132005022005.png"
  },
  {
@@ -793,7 +987,6 @@
   "namaJabatan": "Kepala Subdirektorat Bakuan Kompetensi",
   "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Institut Teknologi Bandung",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -810,43 +1003,63 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Bakuan Kompetensi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Lampung",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tengah",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bangka Belitung",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI STANDAR DAN PEDOMAN, SUBDIREKTORAT PENERAPAN KOMPETENSI, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI,",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Direktorat Bina Kompetensi dan Produktivitas Konstruksi,",
-    "masaKerja": "2 Tahun 0 Bulan"
+    "masaKerja": "2 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pejabat Pembuat Komitmen PPK Pengembangan Keprofesionalan Berkelanjutan pada Satker Direktorat Bina Kompetensi dan Produktivitas Konstruksi Tahun 2014 dan 2015, Kementerian PU",
-    "masaKerja": "1 Tahun 6 Bulan"
+    "masaKerja": "1 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SUBBIDANG PROGRAM PENGEMBANGAN KEAHLIAN, BIDANG PENGEMBANGAN KEAHLIAN KONSTRUKSI, PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONTRUKSI ,BPK KEMENTERIAN PU",
-    "masaKerja": "1 Tahun 5 Bulan"
+    "masaKerja": "1 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBIDANG BAKUAN KOMPETENSI KETERAMPILAN , BIDANG KOMPETENSI KONSTRUKSI, PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONSTRUKSI ,BPK KEMENTERIAN PU",
-    "masaKerja": "2 Tahun 1 Bulan"
+    "masaKerja": "2 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksaana di SEKRETARIAT BADAN PEMBINAAN KONSTR. & SDM,",
-    "masaKerja": "6 Tahun 0 Bulan"
+    "masaKerja": "6 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -857,6 +1070,7 @@
    "Pengadaan Barang dan Jasa Pemerintah",
    "Aparatur Sipil Negara (ASN) Berintegritas"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/197607172005021001.png"
  },
  {
@@ -869,7 +1083,6 @@
   "namaJabatan": "Kepala Subdirektorat Pengelolaan Jabatan Fungsional Bidang Jasa Konstruksi",
   "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "29-07-2026",
   "sekolah": "Institut Ilmu Sosial Dan Manajemen STIAMI",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -886,43 +1099,63 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pengelolaan Jabatan Fungsional Bidang Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Kepegawaian dan Umum",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Pengelolaan Jabatan Fungsional Bidang Jasa Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi,",
-    "masaKerja": "2 Tahun 3 Bulan"
+    "masaKerja": "2 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Pemberdayaan Wilayah II, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "0 Tahun 8 Bulan"
+    "masaKerja": "0 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBAGIAN PENGEMBANGAN PEGAWAI, BAGIAN KEPEGAWAIAN, ORGANISASI, DAN TATA LAKSANA, SEKRETARIAT DIREKTORAT JENDERAL, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "3 Tahun 0 Bulan"
+    "masaKerja": "3 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pola Investasi, Subdirektorat Penyiapan Kebijakan Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SUBBAG KEPEGAWAIAN DAN RUMAH TANGGA, BAGIAN TATA USAHA, PUSAT PEMBINAAN SUMBER DAYA INVESTASI ,BPK KEMENTERIAN PU, Kementerian Pekerjaan Umum",
-    "masaKerja": "3 Tahun 0 Bulan"
+    "masaKerja": "3 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana BIRO PERENCANAAN DAN KERJASAMA LUAR NEGERI ,SETJEN KEMENTERIAN PU",
-    "masaKerja": "6 Tahun 0 Bulan"
+    "masaKerja": "6 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -932,6 +1165,7 @@
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
    "Pengadaan Barang dan Jasa Pemerintah (PBJ)"
   ],
+  "tmtDiklat": "29-07-2026",
   "foto": "doc/data/foto/197506022005022006.png"
  },
  {
@@ -944,7 +1178,6 @@
   "namaJabatan": "Direktur Pengadaan Jasa Konstruksi",
   "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "27 April 2026\ns/d\n01 Mei 2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S3",
@@ -961,55 +1194,81 @@
   "riwayatJabatan": [
    {
     "nama": "Direktur Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan 0 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Kontrak Konstruksi, Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan 13 Hari"
+    "masaKerja": "0 Tahun 9 Bulan 13 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah kalimantan Tengah, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 7 Bulan 9 Hari"
+    "masaKerja": "0 Tahun 7 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tenggara, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 5 Bulan 4 Hari"
+    "masaKerja": "0 Tahun 5 Bulan 4 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi , Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "4 Tahun 3 Bulan 17 Hari"
+    "masaKerja": "4 Tahun 3 Bulan 17 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Sub Direktorat Pengaturan dan Pengembangan Sistem Pelaksanaan Pengadaaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi , Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 4 Bulan 7 Hari"
+    "masaKerja": "1 Tahun 4 Bulan 7 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Layanan Pengadaan, Biro Pengelolaan BMN dan Layanan Pengadaan, Sekretariat Jenderal",
-    "masaKerja": "2 Tahun 6 Bulan 1 Hari"
+    "masaKerja": "2 Tahun 6 Bulan 1 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbidang Sistem Informasi, Bidang Infrastruktur Teknologi Informasi dan Sistem Informasi, Pusat Data dan Teknologi Informasi, Sekretariat Jenderal",
-    "masaKerja": "1 Tahun 0 Bulan 5 Hari"
+    "masaKerja": "1 Tahun 0 Bulan 5 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Sub Bidang Pengembangan Aplikasi, Bidang Penyelenggaraan Sistem Jaringan dan Aplikasi, Pusat Pengolahan Data, Sekretariat Jenderal",
-    "masaKerja": "0 Tahun 0 Bulan 11 Hari"
+    "masaKerja": "0 Tahun 0 Bulan 11 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PRANATA KOMPUTER MUDA PUSAT PENGOLAHAN DATA",
-    "masaKerja": "0 Tahun 6 Bulan 17 Hari"
+    "masaKerja": "0 Tahun 6 Bulan 17 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PRANATA KOMPUTER MUDA PADA SUBBIDANG PENGEMBANGAN APLIKASI, BIDANG PENYELENGGARAAN SISTEM JARINGAN DAN APLIKASI, PUSAT PENGOLAHAN DATA",
-    "masaKerja": "1 Tahun 0 Bulan 28 Hari"
+    "masaKerja": "1 Tahun 0 Bulan 28 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PRANATA KOMPUTER MUDA SUBBID APLIKASI, BID. PENYELG. SISTEM JARINGAN & APLIKASI, PUSAT PENGOLAHAN DATA, SETJEN",
-    "masaKerja": "0 Tahun 9 Bulan 30 Hari"
+    "masaKerja": "0 Tahun 9 Bulan 30 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "staf di Sekretariat Jenderal",
-    "masaKerja": "5 Tahun 1 Bulan 30 Hari"
+    "masaKerja": "5 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1024,6 +1283,7 @@
    "SEPALA/ADUM/DIKLAT PIM TK.IV",
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
   ],
+  "tmtDiklat": "27 April 2026\ns/d\n01 Mei 2026",
   "foto": "doc/data/foto/198008192005021003.png"
  },
  {
@@ -1036,7 +1296,6 @@
   "namaJabatan": "Kepala Subdirektorat Sistem Pengadaan Jasa Konstruksi",
   "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "12-05-2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -1053,35 +1312,51 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Sistem Pengadaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Sistem Pengadaan Jasa Konstruksi",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Pengembangan Profesi Jasa Konstruksi",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Perencanaan, Program, dan Keuangan",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALASUBBAGIAN PROGRAM DAN ANGGARAN , BAGIAN PERENCANAAN, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
-    "masaKerja": "2 Tahun 4 Bulan"
+    "masaKerja": "2 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBIDANG PERIZINAN, BIDANG REGULASI DAN PERIZINAN, PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU",
-    "masaKerja": "2 Tahun 2 Bulan"
+    "masaKerja": "2 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBID PASAR JASA KONSTRUKSI, BID. PENGEMB. USAHA JASA KONST. PUSAT PEMB. USAHA KONS. , BPK DAN SDM, DEP. PU",
-    "masaKerja": "1 Tahun 6 Bulan"
+    "masaKerja": "1 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PELAKSANA BADAN PEMBINAAN KONSTRUKSI DAN SDM, DEP. PU",
-    "masaKerja": "4 Tahun 5 Bulan"
+    "masaKerja": "4 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1094,6 +1369,7 @@
    "Diklat aplikasi value engineering",
    "pelatihan asesor"
   ],
+  "tmtDiklat": "12-05-2026",
   "foto": "doc/data/foto/197712282005021001.png"
  },
  {
@@ -1106,7 +1382,6 @@
   "namaJabatan": "Kepala Subdirektorat Pengelolaan Katalog Elektronik",
   "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "30-06-2026",
   "sekolah": "Universiti Teknologi Malaysia",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -1123,35 +1398,51 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pengelolaan Katalog Elektronik",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 6 Bulan"
+    "masaKerja": "1 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kepulauan Riau",
-    "masaKerja": "1 Tahun 10 Bulan"
+    "masaKerja": "1 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Penyelenggaraan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 7 Bulan"
+    "masaKerja": "1 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Sistem Penyelenggaraan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "3 Tahun 2 Bulan"
+    "masaKerja": "3 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PASAR NASIONAL, SUBDIREKTORAT PASAR INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "0 Tahun 6 Bulan"
+    "masaKerja": "0 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Penjaminan Mutu, Subdirektorat Pemberdayaan Wilayah I, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana SEKRETARIAT BADAN PEMBINAAN KONSTR. & SUMBER DAYA MANUSIA, KEMENTERIAN PU.",
-    "masaKerja": "6 Tahun 5 Bulan"
+    "masaKerja": "6 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1163,6 +1454,7 @@
    "Hukum Kontrak Kerja Konstruksi (Distance Learning)",
    "Kepemimpinan Tingkat IV"
   ],
+  "tmtDiklat": "30-06-2026",
   "foto": "doc/data/foto/198305152009121001.png"
  },
  {
@@ -1175,7 +1467,6 @@
   "namaJabatan": "Kepala Subdirektorat Kontrak Konstruksi",
   "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "29-07-2026",
   "sekolah": "Institut Teknologi Bandung",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1192,31 +1483,45 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Kontrak Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Sistem Penyelenggaraan Jasa Konstruksi",
-    "masaKerja": "3 Tahun 1 Bulan"
+    "masaKerja": "3 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 9 Bulan"
+    "masaKerja": "1 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Usaha Jasa Konstruksi",
-    "masaKerja": "3 Tahun 3 Bulan"
+    "masaKerja": "3 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Sistem Penyelenggaraan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 9 Bulan"
+    "masaKerja": "1 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Unit Organik",
-    "masaKerja": "3 Tahun 2 Bulan"
+    "masaKerja": "3 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PELAKSANA BADAN PEMBINAAN KONSTRUKSI DAN SDM, DEP. PU",
-    "masaKerja": "6 Tahun 1 Bulan"
+    "masaKerja": "6 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1228,6 +1533,7 @@
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
    "Perencanaan Konstruksi dengan Sistem Teknologi Building Information Modeling (BIM)"
   ],
+  "tmtDiklat": "29-07-2026",
   "foto": "doc/data/foto/198210312006042001.png"
  },
  {
@@ -1240,7 +1546,6 @@
   "namaJabatan": "Kepala Subdirektorat Fasilitasi dan Kelembagaan Pengadaan Jasa Konstruksi",
   "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Universitas Mercu Buana",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1257,23 +1562,33 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Fasilitasi dan Kelembagaan Pengadaan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Sistem Penyelenggaraan Jasa Konstruksi",
-    "masaKerja": "0 Tahun 10 Bulan"
+    "masaKerja": "0 Tahun 10 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Penyelenggaraan Jasa Konstruksi",
-    "masaKerja": "4 Tahun 1 Bulan"
+    "masaKerja": "4 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Sistem Penyelenggaraan",
-    "masaKerja": "2 Tahun 8 Bulan"
+    "masaKerja": "2 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana BADAN PEMBINAAN KONSTRUKSI, Kementerian Pekerjaan Umum",
-    "masaKerja": "7 Tahun 0 Bulan"
+    "masaKerja": "7 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1282,6 +1597,7 @@
    "Manajemen Risiko Investasi Infrastruktur (Distance Learning)",
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/198611102010122010.png"
  },
  {
@@ -1294,7 +1610,6 @@
   "namaJabatan": "Direktur Keselamatan dan Keberlanjutan Konstruksi",
   "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "13 April 2026\ns/d\n17 April 2026",
   "sekolah": "Institut Pertanian Bogor",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -1311,47 +1626,69 @@
   "riwayatJabatan": [
    {
     "nama": "Direktur Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan 0 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Kelembagaan, Material, Peralatan, dan Usaha Jasa Konstruksi, Direktorat Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "3 Tahun 9 Bulan 27 Hari"
+    "masaKerja": "3 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Direktur Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 6 Bulan 15 Hari"
+    "masaKerja": "0 Tahun 6 Bulan 15 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan 18 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 18 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 0 Bulan 30 Hari"
+    "masaKerja": "0 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Pemberdayaan Wilayah I, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "3 Tahun 3 Bulan 3 Hari"
+    "masaKerja": "3 Tahun 3 Bulan 3 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Penerapan Kompetensi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 5 Bulan 9 Hari"
+    "masaKerja": "0 Tahun 5 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Manajemen Mutu, Direktorat Bina Penyelenggaraan Jasa Konstruksi",
-    "masaKerja": "1 Tahun 2 Bulan 17 Hari"
+    "masaKerja": "1 Tahun 2 Bulan 17 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subbidang Pemberdayaan Konstruksi, Bidang Teknik Konstruksi Berkelanjutan",
-    "masaKerja": "4 Tahun 5 Bulan 27 Hari"
+    "masaKerja": "4 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "kepala Seksi Program dan Pelayanan Teknis, Balai Kajian Penyelenggaraan Konstruksi, Pusat Pembina Penyelenggaraan Konstruksi",
-    "masaKerja": "1 Tahun 6 Bulan 4 Hari"
+    "masaKerja": "1 Tahun 6 Bulan 4 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Staf, Departemen Permukiman dan Prasarana Wilayah",
-    "masaKerja": "7 Tahun 7 Bulan 25 Hari"
+    "masaKerja": "7 Tahun 7 Bulan 25 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1376,6 +1713,7 @@
    "Pengadaan Barang/Jasa Pemerintah (PBJ)",
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
   ],
+  "tmtDiklat": "13 April 2026\ns/d\n17 April 2026",
   "foto": "doc/data/foto/197503132001122003.png"
  },
  {
@@ -1388,7 +1726,6 @@
   "namaJabatan": "Kepala Subdirektorat Keselamatan Konstruksi",
   "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "28-07-2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1405,27 +1742,39 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Keselamatan Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Administrasi",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Barat",
-    "masaKerja": "3 Tahun 0 Bulan"
+    "masaKerja": "3 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Teknologi Konstruksi dan Produksi Dalam Negeri",
-    "masaKerja": "3 Tahun 6 Bulan"
+    "masaKerja": "3 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Usaha Jasa Konstruksi, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "STAF PUSAT PEMBINAAN USAHA KONSTRUKSI, BADAN PEMBINAAN KONSTRUKSI DAN SUMBER DAYA MANUSIA, DEP. PU",
-    "masaKerja": "5 tahun 9 bulan"
+    "masaKerja": "5 tahun 9 bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1436,6 +1785,7 @@
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
    "Pengembangan Kapasitas Aparatur Bidang Perencanaan BP KonstruksiLAIN"
   ],
+  "tmtDiklat": "28-07-2026",
   "foto": "doc/data/foto/198108032008121001.png"
  },
  {
@@ -1448,7 +1798,6 @@
   "namaJabatan": "Kepala Subdirektorat Analisis Biaya Pekerjaan Konstruksi",
   "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "22-06-2026",
   "sekolah": "",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1465,35 +1814,51 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Analisis Biaya Pekerjaan Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya",
-    "masaKerja": "0 Tahun 5 Bulan"
+    "masaKerja": "0 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Keamanan dan Keselamatan Konstruksi",
-    "masaKerja": "4 Tahun 0 Bulan"
+    "masaKerja": "4 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Pengadaan Jasa Konstruksi",
-    "masaKerja": "0 Tahun 5 Bulan"
+    "masaKerja": "0 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Evaluasi Pelaksanaan Wilayah II, Sub Direktorat Evaluasi, Direktorat Pengadaan Jasa Konstruksi , Direktorat Jenderal Bina Konstruksi,",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PERENCANAAN DAN INFORMASI, BALAI JASA KONSTRUKSI WILAYAH II PALEMBANG, DIREKTORAT JENDERAL BINA KONSTRUKSI,",
-    "masaKerja": "2 Tahun 3 Bulan"
+    "masaKerja": "2 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SUBBAGIAN TATA USAHA, BALAI SUMBER DAYA INVESTASI, DIREKTORAT JENDERAL BINA KONSTRUKSI,",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PELAKSANA PUSAT PEMB. PENYEL. KONST. , BPKSDM DEP. PU",
-    "masaKerja": "10 tahun 5 bulan"
+    "masaKerja": "10 tahun 5 bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1504,6 +1869,7 @@
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
    "Performance -Based Road Contracts"
   ],
+  "tmtDiklat": "22-06-2026",
   "foto": "doc/data/foto/198401202008011002.png"
  },
  {
@@ -1516,7 +1882,6 @@
   "namaJabatan": "Kepala Subdirektorat Keberlanjutan Konstruksi",
   "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "30-06-2026",
   "sekolah": "UNVERSITY OF ROORKEE",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1533,31 +1898,45 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Keberlanjutan Konstruksi",
-    "masaKerja": "1 Tahun 0 Bulan"
+    "masaKerja": "1 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Kontrak Konstruksi",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kontrak Konstruksi",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Manajemen Mutu",
-    "masaKerja": "3 Tahun 8 Bulan"
+    "masaKerja": "3 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Penerapan Kompetensi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 2 Bulan"
+    "masaKerja": "1 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala KEPALA SEKSI PENYELENGGARAAN PELATIHAN, BALAI PELATIHAN KONSTRUKSI WILAYAH II, PUSAT PEMB KOMPETENSI DAN PELATIHAN KONSTRUKSI, BPK KEMENTERIAN PU",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana PUSAT PEMBINAAN KOMPETENSI & PELATIHAN KONSTRUKSI, BADAN PEMBINAAN KONSTRUKSI DAN SDM DEP. PU",
-    "masaKerja": "6 Tahun 3 Bulan"
+    "masaKerja": "6 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1569,6 +1948,7 @@
    "Kepemimpinan Tingkat IV",
    "Tadaa! Tanya Pengadaan - Sosialisasi Peraturan Presiden Nomor 46 Tahun 2025 tentang Perubahan Kedua atas Peraturan Presiden Nomor 16 Tahun 2018 tentang Pengadaan Barang/Jasa"
   ],
+  "tmtDiklat": "30-06-2026",
   "foto": "doc/data/foto/198306142008012004.png"
  },
  {
@@ -1581,7 +1961,6 @@
   "namaJabatan": "Direktur Kepatuhan Intern",
   "unitKerja": "Direktorat Kepatuhan Intern",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "13 April 2026\ns/d\n17 April 2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1598,63 +1977,93 @@
   "riwayatJabatan": [
    {
     "nama": "Direktur Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "1 Tahun 1 Bulan 0 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLT. Direktur Preservasi Jalan dan Jembatan Wilayah I, Direktorat Jenderal Bina Marga",
-    "masaKerja": "0 Tahun 0 Bulan 9 Hari"
+    "masaKerja": "0 Tahun 0 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Direktur Preservasi Jalan dan Jembatan Wilayah II, Direktorat Jenderal Bina Marga",
-    "masaKerja": "0 Tahun 10 Bulan 8 Hari"
+    "masaKerja": "0 Tahun 10 Bulan 8 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Besar Pelaksanaan Jalan Nasional Jawa Tengah - DI Yogyakarta, Direktorat Jenderal Bina Marga",
-    "masaKerja": "1 Tahun 4 Bulan 6 Hari"
+    "masaKerja": "1 Tahun 4 Bulan 6 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksanaan Jalan Nasional Lampung, Direktorat Jenderal Bina Marga",
-    "masaKerja": "2 Tahun 10 Bulan 9 Hari"
+    "masaKerja": "2 Tahun 10 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "PLH. Kepala Bidang Perencanaan dan Pemantauan, Balai Besar Pelaksanaan Jalan Nasional V Palembang, Direktorat Jenderal Bina Marga",
-    "masaKerja": "0 Tahun 3 Bulan 10 Hari"
+    "masaKerja": "0 Tahun 3 Bulan 10 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bagian Tata Usaha, Balai Besar Pelaksanaan Jalan Nasional V Palembang, Direktorat Jenderal Bina Marga",
-    "masaKerja": "1 Tahun 4 Bulan 10 Hari"
+    "masaKerja": "1 Tahun 4 Bulan 10 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SATKER PERENCANAAN DAN PENGAWASAN JALAN NASIONAL KOTA METROPOLITAN JAKARTA, BIDANG PERENCANAAN DAN PEMANTAUAN, BALAI BESAR PELAKSANAAN JALAN NASIONAL VI JAKARTA, DIREKTORAT JENDERAL BINA MARGA",
-    "masaKerja": "1 Tahun 1 Bulan 9 Hari"
+    "masaKerja": "1 Tahun 1 Bulan 9 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala SNVT PERENCANAAN DAN PENGAWASAN JALAN NASIONAL KOTA METROPOLITAN JAKARTA, Bidang Perencanaan dan Pemantauan, Balai Besar Pelaksanaan Jalan Nasional VI Jakarta, Direktorat Jenderal Bina Marga",
-    "masaKerja": "0 Tahun 11 Bulan 30 Hari"
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Keselamatan Jalan, Subdirektorat Lingkungan dan Keselamatan Jalan, Direktorat Pengembangan Jaringan Jalan, Direktorat Jenderal Bina Marga",
-    "masaKerja": "1 Tahun 5 Bulan 4 Hari"
+    "masaKerja": "1 Tahun 5 Bulan 4 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI KERJA SAMA LUAR NEGERI, SUBDIT PEMBIAYAAN DAN KERJASAMA LUAR NEGERI, DIREKTORAT BINA PROGRAM ,DITJEN BINA MARGA",
-    "masaKerja": "1 Tahun 4 Bulan 19 Hari"
+    "masaKerja": "1 Tahun 4 Bulan 19 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PEMBIAYAAN, SUBDIT PEMBIAYAAN DAN KERJASAMA LUAR NEGERI, DIREKTORAT BINA PROGRAM ,DITJEN BINA MARGA",
-    "masaKerja": "3 Tahun 1 Bulan 12 Hari"
+    "masaKerja": "3 Tahun 1 Bulan 12 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Koordinator Ketua Pelaksana Harian PMU EINRIP Ditjen Bina Marga",
-    "masaKerja": "2 Tahun 11 Bulan 22 Hari"
+    "masaKerja": "2 Tahun 11 Bulan 22 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Staf STAF SEKSI PENGEMBANGAN JARINGAN JALAN, SUBDIT PEREN. UMUM, DIT BINA PROGRAM, DITJEN. BINA MARGA",
-    "masaKerja": "3 Tahun 2 Bulan 15 Hari"
+    "masaKerja": "3 Tahun 2 Bulan 15 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "staf di Sekretariat Jenderal",
-    "masaKerja": "7 Tahun 8 Bulan 12 Hari"
+    "masaKerja": "7 Tahun 8 Bulan 12 Hari",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1672,6 +2081,7 @@
    "Leadership Lecture \"Enterpreneurship Penyelenggaraan Infrastruktur Publik\"",
    "AHLI MUDA K3 KONSTRUKSI"
   ],
+  "tmtDiklat": "13 April 2026\ns/d\n17 April 2026",
   "foto": "doc/data/foto/197203191997032003.png"
  },
  {
@@ -1684,7 +2094,6 @@
   "namaJabatan": "Kepala Subdirektorat Pembinaan dan Pengembangan Kepatuhan Intern dan Manajemen Risiko",
   "unitKerja": "Direktorat Kepatuhan Intern",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "22-06-2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1701,31 +2110,45 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pembinaan dan Pengembangan\nKepatuhan Intern dan Manajemen Risiko",
-    "masaKerja": "1 Tahun 1 Bulan"
+    "masaKerja": "1 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Bidang Preservasi I,",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Teknik Jalan Dan Jembatan Ahli Madya Perencanaan Dan Pengawasan Jalan Nasional Provinsi Sumatera Barat",
-    "masaKerja": "0 Tahun 4 Bulan"
+    "masaKerja": "0 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Teknik Jalan Dan Jembatan Ahli Muda",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI LINGKUNGAN, SUBDIREKTORAT LINGKUNGAN DAN KESELAMATAN JALAN, DIREKTORAT PENGEMBANGAN JARINGAN JALAN, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "2 Tahun 5 Bulan"
+    "masaKerja": "2 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Unit Organik",
-    "masaKerja": "1 Tahun 4 Bulan"
+    "masaKerja": "1 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana di DJBM",
-    "masaKerja": "9 Tahun 1 Bulan"
+    "masaKerja": "9 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1736,6 +2159,7 @@
    "Bimbingan Teknis Pelaksanaan Uji Laik Fungsi Jalan dengan Pemeringkatan Bintang",
    "Pengadaan Barang dan Jasa Pemerintah (PBJ)"
   ],
+  "tmtDiklat": "22-06-2026",
   "foto": "doc/data/foto/197906072005021001.png"
  },
  {
@@ -1748,7 +2172,6 @@
   "namaJabatan": "Kepala Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko",
   "unitKerja": "Direktorat Kepatuhan Intern",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "29-07-2026",
   "sekolah": "Universitas Gadjah Mada",
   "bidangStudi": "Teknik",
   "tingkatPendidikan": "S2",
@@ -1765,35 +2188,51 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko",
-    "masaKerja": "1 Tahun 1 Bulan"
+    "masaKerja": "1 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Subdirektorat Kepatuhan Intern",
-    "masaKerja": "3 Tahun 4 Bulan"
+    "masaKerja": "3 Tahun 4 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Madya",
-    "masaKerja": "0 Tahun 0 Bulan"
+    "masaKerja": "0 Tahun 0 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kompetensi Tenaga Kerja Konstruksi",
-    "masaKerja": "1 Tahun 9 Bulan"
+    "masaKerja": "1 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Penyelenggaraan dan Pengendalian Mutu, Balai Jasa Konstruksi Wilayah III Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "3 Tahun 2 Bulan"
+    "masaKerja": "3 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PENYELENGGARAAN DAN PENGENDALIAN MUTU, BALAI JASA KONSTRUKSI WILAYAH V BANJARMASIN, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "0 Tahun 6 Bulan"
+    "masaKerja": "0 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PENYELENGGARAAN PELATIHAN, BALAI PELATIHAN KONSTRUKSI WILAYAH III, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "2 Tahun 6 Bulan"
+    "masaKerja": "2 Tahun 6 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana di Pusat PEMBINAAN KOMPETENSI DAN PELATIHAN KONTRUKSI ,BPK KEMENTERIAN PU",
-    "masaKerja": "1 Tahun 3 Bulan"
+    "masaKerja": "1 Tahun 3 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1806,6 +2245,7 @@
    "Pelatihan Auditor Internal SNI ISO 37001:2016",
    "Bimbingan Teknis Penyusunan Standar Kompetensi Kerja Nasional Indonesia (SKKNI) Angkatan II"
   ],
+  "tmtDiklat": "29-07-2026",
   "foto": "doc/data/foto/198301142008011005.png"
  },
  {
@@ -1818,7 +2258,6 @@
   "namaJabatan": "Kepala Subdirektorat Pemantauan Kepatuhan Intern dan Manajemen Risiko",
   "unitKerja": "Direktorat Kepatuhan Intern",
   "tmtJabatan": "18-07-2025",
-  "tmtDiklat": "22-06-2026",
   "sekolah": "Universitas Indonesia",
   "bidangStudi": "Non Teknik",
   "tingkatPendidikan": "S2",
@@ -1835,39 +2274,57 @@
   "riwayatJabatan": [
    {
     "nama": "Kepala Subdirektorat Pemantauan Kepatuhan Intern dan Manajemen Risiko",
-    "masaKerja": "1 Tahun 1 Bulan"
+    "masaKerja": "1 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Jasa Konstruksi Wilayah II Palembang",
-    "masaKerja": "0 Tahun 9 Bulan"
+    "masaKerja": "0 Tahun 9 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Barat",
-    "masaKerja": "1 Tahun 8 Bulan"
+    "masaKerja": "1 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Pengadaan Jasa Konstruksi",
-    "masaKerja": "2 Tahun 5 Bulan"
+    "masaKerja": "2 Tahun 5 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Pengembangan Teknologi Konstruksi, Balai Penerapan Teknologi Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
-    "masaKerja": "3 Tahun 2 Bulan"
+    "masaKerja": "3 Tahun 2 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "KEPALA SEKSI PEMANTAUAN DAN EVALUASI, SUBDIREKTORAT USAHA JASA KONSTRUKSI, DIREKTORAT BINA KELEMBAGAAN DAN SUMBER DAYA JASA KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
-    "masaKerja": "0 Tahun 8 Bulan"
+    "masaKerja": "0 Tahun 8 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Kepala Seksi Sinkronisasi, Subdirektorat Sinkronisasi dan Evaluasi Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi",
-    "masaKerja": "0 Tahun 11 Bulan"
+    "masaKerja": "0 Tahun 11 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Teknik Penyehatan Lingkungan Ahli Pertama TEKNIK PENYEHATAN LINGKUNGAN PERTAMA SUBBAG INFORMASI DAN TATA LAKSANA, BAGIAN UMUM, BPPSPAM, KEMENTERIAN PU",
-    "masaKerja": "1 Tahun 7 Bulan"
+    "masaKerja": "1 Tahun 7 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    },
    {
     "nama": "Pelaksana di DJCK",
-    "masaKerja": "5 Tahun 1 Bulan"
+    "masaKerja": "5 Tahun 1 Bulan",
+    "tmtMulaiSerial": "",
+    "tmtAkhirSerial": ""
    }
   ],
   "riwayatDiklat": [
@@ -1878,6 +2335,7 @@
    "Sistem Manajemen K3 Konstruksi (E-Learning)",
    "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
   ],
+  "tmtDiklat": "22-06-2026",
   "foto": "doc/data/foto/198203012008122001.png"
  }
 ]

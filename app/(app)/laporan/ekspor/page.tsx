@@ -78,6 +78,20 @@ const DAFTAR: JenisEkspor[] = [
     halaman: { href: '/jabatan-target', label: 'Jabatan Target' },
   },
   {
+    jenis: 'master-jabatan',
+    judul: 'Master jabatan (untuk crosscheck)',
+    isi: 'Seluruh jabatan di master: kode, nama, rumpun, unit, jenis (struktural/fungsional), jenjang, eselon, status — plus pemakaiannya: berapa penghuni aktif, apakah sudah jadi kursi jabatan target, berapa kali dipakai sebagai jabatan asal kandidat, dan berapa baris riwayat yang tertaut. Kolom pemakaian itu yang memperlihatkan jabatan mana yang sebenarnya tidak dipakai apa pun.',
+    peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+    halaman: { href: '/master/jabatan', label: 'Master Data Jabatan' },
+  },
+  {
+    jenis: 'riwayat-jabatan-mentah',
+    judul: 'Riwayat jabatan mentah (lembar pemetaan)',
+    isi: 'Setiap nama jabatan yang muncul di riwayat pegawai APA ADANYA dari sumber, dikelompokkan & diurutkan menurut seberapa sering dipakai, lengkap dengan usulan kategori (struktural/fungsional/lainnya) dan jenjangnya. Dua kolom terakhir sengaja kosong — di situ keputusan manusia dituliskan lalu dikembalikan. Inilah yang menghalangi filter per kategori: hanya sebagian kecil baris riwayat yang sudah tertaut ke master.',
+    peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+    halaman: { href: '/data/validasi-riwayat', label: 'Validasi Riwayat' },
+  },
+  {
     jenis: 'audit-log',
     judul: 'Audit log',
     isi: '100 baris jejak audit terbaru: siapa, kapan, aksi, entitas. Isi perubahan sengaja TIDAK diekspor — nilai sebelum/sesudah memuat data yang aturan aksesnya berbeda.',
@@ -89,11 +103,18 @@ const DAFTAR: JenisEkspor[] = [
 /**
  * Pusat Ekspor (PRD §6.8).
  *
- * ## Kenapa CSV saja, dan kenapa itu bukan kekurangan
+ * ## Format `.xlsx` sungguhan, bukan CSV — dan bukan lewat pustaka pihak ketiga
  *
- * PRD menyebut PDF/Excel. Yang terpasang: **CSV**, yang dibuka Excel & LibreOffice
- * apa adanya, tanpa satu pun dependensi baru. Excel asli (`.xlsx`) dan PDF menuntut
- * pustaka tambahan — itu keputusan yang pantas diambil sadar, bukan diselipkan.
+ * Sampai 2 Sep 2026 yang terpasang CSV. Permintaan pemilik proses: *"yang pusat
+ * ekspor kayanya bikin excel aja dah jangan csv."* Alasannya nyata, bukan
+ * kosmetik: CSV memaksa semua jadi teks — kolom "Rata-rata Skor" dibuka Excel
+ * sebagai teks kiri-rata, bukan angka, sampai pengguna mengubah tipenya sendiri.
+ *
+ * Ditulis SENDIRI (`lib/ekspor-xlsx.ts` + `lib/zip-tulis.ts`), pola yang sama
+ * dengan `lib/importer/xlsx.ts` yang sudah lebih dulu membaca `.xlsx` tanpa
+ * dependensi baru: berkas itu cuma ZIP berisi XML, dan Node sudah membawa
+ * `zlib.deflateRawSync`. PDF **tetap** belum ada — itu jenis berkas berbeda yang
+ * masih menuntut mesin layout sendiri, keputusan terpisah.
  *
  * ## Kenapa sinkron, menyimpang dari U-10
  *
@@ -149,7 +170,7 @@ export default async function PusatEksporPage() {
     <div className="space-y-5">
       <PageHeader
         judul="Pusat Ekspor"
-        deskripsi="Unduh laporan sebagai CSV — dibuka langsung oleh Excel & LibreOffice. Setiap unduhan tercatat di audit log: jenis, penyaring, dan jumlah baris (isi datanya tidak)."
+        deskripsi="Unduh laporan sebagai .xlsx — dibuka langsung oleh Excel & LibreOffice, angka & tanggalnya tetap bertipe. Setiap unduhan tercatat di audit log: jenis, penyaring, dan jumlah baris (isi datanya tidak)."
       />
 
       <CatatanLingkup lingkup={lingkup} />
@@ -194,9 +215,11 @@ export default async function PusatEksporPage() {
         />
         <ul className="mt-2 space-y-2 text-[13px] leading-relaxed text-text-muted">
           <li>
-            <strong className="font-medium text-text">Excel (.xlsx) &amp; PDF</strong> belum ada.
-            Keduanya menuntut pustaka tambahan; CSV memenuhi kebutuhan menyalin angka tanpa
-            menambah dependensi apa pun. Menambahkannya adalah keputusan, bukan pekerjaan sisa.
+            <strong className="font-medium text-text">PDF</strong> belum ada — beda dari Excel,
+            ia menuntut mesin tata letak halaman sendiri (margin, pemenggalan baris antar
+            halaman), bukan sekadar format berkas. <strong className="font-medium text-text">
+            Rekap Suksesi</strong> sudah bisa dicetak langsung dari halamannya (Ctrl/⌘+P), dengan
+            opsi memilih sebagian jabatan target — itu jalan keluar sampai PDF diputuskan.
           </li>
           <li>
             <strong className="font-medium text-text">Ekspor gambar chart</strong> belum ada. Warna

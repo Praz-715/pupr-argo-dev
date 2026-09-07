@@ -7,7 +7,12 @@ import { PageHeader, Panel } from '@/components/ui/panel'
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { formatAngka } from '@/lib/format'
-import { ambilRencanaPengembangan, ambilSuksesorDitetapkan } from '@/lib/kueri/suksesi'
+import {
+  ambilRencanaPengembangan,
+  ambilSuksesorDitetapkan,
+  cariPegawaiUntukRencana,
+} from '@/lib/kueri/suksesi'
+import { lingkupData, unitWajib } from '@/lib/lingkup'
 import { punyaPeran } from '@/lib/peran'
 import { DaftarRencana } from './_komponen/daftar-rencana'
 
@@ -33,17 +38,36 @@ export default async function RencanaPengembanganPage({ searchParams }: { search
   const p = await searchParams
   const pengguna = await getCurrentUser()
   const poolTerpilih = Number(p.pool ?? 0) || null
+  const cariPegawai = (p.cariPegawai ?? '').slice(0, 80)
   const bolehUbah = punyaPeran(pengguna, PERAN_UBAH)
 
   return (
     <div className="space-y-5">
       <PageHeader
         judul="Rencana Suksesi & Pengembangan"
-        deskripsi="Rencana diklat, rotasi, mentoring, atau penugasan untuk suksesor yang sudah ditetapkan — beserta target waktu dan progresnya."
+        deskripsi="Rencana diklat, rotasi, mentoring, atau penugasan — untuk suksesor yang sudah ditetapkan, dan untuk pegawai mana pun yang perlu dikembangkan."
       />
 
-      <Suspense fallback={<RencanaSkeleton />}>
-        <IsiRencana poolTerpilih={poolTerpilih} bolehUbah={bolehUbah} />
+      {/*
+        `cariPegawai` SENGAJA tidak ikut ke dalam key — dan ini bukan kelalaian.
+
+        Key yang berubah membuat React membuang batas Suspense-nya lalu memasang
+        yang baru, jadi seluruh subpohon (termasuk KOTAK PENCARIANNYA sendiri)
+        dibongkar-pasang: fokus lompat ke `<body>`, dan huruf berikutnya yang
+        diketik tidak masuk ke mana pun. Terukur sebelum diperbaiki: `INPUT` →
+        `BODY` 50 ms setelah Enter.
+
+        Isinya tetap tersegarkan tanpa key itu — navigasi menghasilkan payload
+        RSC baru dan React merekonsiliasinya di tempat. Yang hilang cuma skeleton
+        yang muncul lagi tiap kali mencari, dan itu justru diinginkan: hasil lama
+        bertahan sementara penanda "mencari…" menyala, alih-alih halaman berkedip
+        jadi kerangka.
+
+        `poolTerpilih` tetap di key: memilih jabatan target lain adalah pindah
+        konteks, bukan menyaring daftar yang sama.
+      */}
+      <Suspense key={poolTerpilih} fallback={<RencanaSkeleton />}>
+        <IsiRencana poolTerpilih={poolTerpilih} cariPegawai={cariPegawai} bolehUbah={bolehUbah} />
       </Suspense>
     </div>
   )
@@ -51,20 +75,32 @@ export default async function RencanaPengembanganPage({ searchParams }: { search
 
 async function IsiRencana({
   poolTerpilih,
+  cariPegawai,
   bolehUbah,
 }: {
   poolTerpilih: number | null
+  cariPegawai: string
   bolehUbah: boolean
 }) {
-  const [suksesor, semuaRencana] = await Promise.all([
+  const lingkup = lingkupData(await getCurrentUser())
+  const [suksesor, semuaRencana, hasilCari] = await Promise.all([
     ambilSuksesorDitetapkan(),
     ambilRencanaPengembangan(),
+    cariPegawaiUntukRencana(cariPegawai, unitWajib(lingkup)),
   ])
 
+  /*
+    Tiga kelompok, dan ketiganya dipisah dari SATU daftar supaya tidak ada
+    rencana yang jatuh di antaranya. Sebelum `doc/sql/029` hanya ada dua, dan
+    yang ketiga tidak mungkin ada: rencana tanpa entri pool tidak bisa disimpan.
+  */
+  const idSuksesor = new Set(suksesor.map((s) => s.talentPoolId))
   // Rencana milik entri pool yang penetapannya dibatalkan tetap ada — kelompokkan
   // terpisah supaya tidak hilang dari pandangan tanpa penjelasan.
-  const idSuksesor = new Set(suksesor.map((s) => s.talentPoolId))
-  const rencanaYatim = semuaRencana.filter((r) => !idSuksesor.has(r.talentPoolId))
+  const rencanaYatim = semuaRencana.filter(
+    (r) => r.talentPoolId !== null && !idSuksesor.has(r.talentPoolId),
+  )
+  const rencanaUmum = semuaRencana.filter((r) => r.talentPoolId === null)
 
   const berjalan = semuaRencana.filter((r) => r.status === 'BERJALAN').length
   const selesai = semuaRencana.filter((r) => r.status === 'SELESAI').length
@@ -72,11 +108,11 @@ async function IsiRencana({
     (r) => r.status !== 'SELESAI' && r.sisaHari !== null && r.sisaHari < 0,
   ).length
 
-  if (suksesor.length === 0 && rencanaYatim.length === 0) {
+  if (suksesor.length === 0 && rencanaYatim.length === 0 && rencanaUmum.length === 0 && cariPegawai === '') {
     return (
       <EmptyState
         judul="Belum ada suksesor yang ditetapkan"
-        deskripsi="Rencana pengembangan disusun untuk kandidat yang sudah ditetapkan sebagai suksesor. Selesaikan alur nominasi & penetapannya lebih dulu di Talent Pool."
+        deskripsi="Belum ada suksesor yang ditetapkan, dan belum ada rencana pengembangan umum. Keduanya bisa dimulai dari sini: selesaikan alur penetapan di Talent Pool, atau cari pegawainya di kotak pencarian untuk menyusun rencana tanpa menunggu pencalonan."
         ikon={<Sprout className="size-5" />}
         aksi={
           <Link href="/talent-pool" className="text-[13px] text-accent hover:underline">
@@ -117,6 +153,9 @@ async function IsiRencana({
         suksesor={suksesor}
         rencana={semuaRencana}
         rencanaYatim={rencanaYatim}
+        rencanaUmum={rencanaUmum}
+        hasilCariPegawai={hasilCari}
+        cariPegawai={cariPegawai}
         poolTerpilih={poolTerpilih}
         bolehUbah={bolehUbah}
       />

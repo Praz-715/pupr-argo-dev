@@ -159,12 +159,35 @@ try {
       })
 
       await langkah('pencarian: debounce & menyaring hasil', async () => {
-        await page.fill('input[aria-label="Cari nama atau NIP"]', 'irwan')
-        await page.waitForURL(/cari=irwan/, { timeout: 10000 })
+        /*
+          Kata kunci DITURUNKAN dari NIP baris pertama, tidak dipaku dan bukan nama.
+
+          Sebelumnya ia `'irwan'` — dan itu mencocokkan "Eddy Irwanto", satu dari
+          10 pegawai eNominasi yang dikeluarkan 24 Agu 2026. Sejak itu pencarian
+          mengembalikan nol baris dan `tungguTabel()` timeout 30 detik, sehingga
+          yang terbaca "pencariannya rusak" padahal pencariannya benar dan orangnya
+          yang tidak ada. Kekambuhan persis: langkah F3 dulu memaku `'bu'`.
+
+          NIP, BUKAN nama (permintaan user 24 Agu 2026), dan itu memang lebih kuat:
+          NIP unik sehingga hasilnya bisa ditegaskan **tepat satu baris** alih-alih
+          "minimal satu", ia bebas gelar & tanda baca yang bisa memecah pencarian,
+          dan ia sekalian menguji cabang NIP dari kotak "Cari nama atau NIP" — yang
+          sebelumnya tidak pernah teruji sama sekali.
+        */
+        await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
+        await tungguTabel(page)
+        const nipCari = await page.evaluate(() => {
+          const a = document.querySelector('table tbody tr td a[href^="/talenta/"]')
+          return a ? a.getAttribute('href').split('/').pop() : null
+        })
+        tegaskan(/^\d{18}$/.test(nipCari ?? ''), `NIP baris pertama tidak terbaca: ${nipCari}`)
+
+        await page.fill('input[aria-label="Cari nama atau NIP"]', nipCari)
+        await page.waitForURL(new RegExp(`cari=${nipCari}`), { timeout: 10000 })
         await tungguTabel(page)
         const jml = await page.locator('table tbody tr').count()
-        tegaskan(jml >= 1, 'pencarian "irwan" tidak menghasilkan baris')
-        return `${jml} baris cocok`
+        tegaskan(jml === 1, `pencarian NIP ${nipCari} menghasilkan ${jml} baris, seharusnya tepat 1`)
+        return `NIP ${nipCari} → ${jml} baris (tepat satu, sesuai sifat NIP yang unik)`
       })
 
       await langkah('pencarian: kata kunci tak cocok → keadaan "tidak ada hasil"', async () => {
@@ -181,28 +204,50 @@ try {
       })
 
       /*
-        Dulu langkah ini menguji tombol "Kolom" DI Direktori. Tombolnya sengaja
-        dilepas pada revisi `PUR.pdf` (prop `tanpaPemilihKolom`), jadi asersi
-        lamanya merah tanpa ada yang rusak — kelas kegagalan yang sama dengan
-        asersi "nol chart Recharts" di F1 setelah dashboard dapat widget chart.
+        Langkah ini sudah DUA KALI berbalik arah, dan itu perlu diketahui sebelum
+        mengubahnya lagi:
 
-        Diganti DUA langkah, bukan satu, karena ada dua hal berbeda yang harus
-        tetap benar: tombolnya hilang **di sini**, dan fiturnya masih hidup **di
-        tempat lain**. Menghapus langkahnya begitu saja akan membuat pelepasan
-        tombol tidak terjaga sekaligus membiarkan `PemilihKolom` melapuk tanpa
-        pemakai yang teruji.
+          - awalnya menguji tombol "Kolom" ADA di Direktori;
+          - revisi `PUR.pdf` 12 Agu 2026 MELEPAS tombolnya, jadi langkahnya dibalik
+            menjadi menguji tombolnya HILANG;
+          - 24 Agu 2026 user memintanya kembali ("kasih buat pilih kolom kaya di
+            dashboard sama peta talenta"), jadi ia dibalik lagi.
+
+        Yang membuatnya boleh berbalik tanpa jadi kebisingan: yang diuji selalu
+        **perilaku yang diminta sekarang**, bukan potret masa lalu. Asersi yang
+        dibiarkan menjaga keputusan lama akan merah tanpa ada yang rusak — kelas
+        kegagalan yang sama dengan asersi "nol chart Recharts" di F1 setelah
+        dashboard dapat widget chart.
       */
-      await langkah('pemilih kolom DILEPAS dari Direktori (revisi PUR.pdf)', async () => {
+      await langkah('pemilih kolom ADA di Direktori & benar-benar menyembunyikan', async () => {
         await page.goto(`${BASE}/talenta`, { waitUntil: 'networkidle' })
         await tungguTabel(page)
-        const jumlah = await page.locator('main button:has-text("Kolom")').count()
-        tegaskan(jumlah === 0, `tombol Kolom masih ada di Direktori (${jumlah} tombol)`)
-        return 'tidak ada tombol Kolom di toolbar Direktori'
+        const tombol = page.locator('main button:has-text("Kolom")')
+        tegaskan((await tombol.count()) === 1, `tombol Kolom tidak tepat satu di Direktori`)
+        const sebelum = await page.locator('main table thead th').count()
+        await tombol.click()
+        await page.waitForSelector('text=Tampilkan kolom', { timeout: 5000 })
+        // Sembunyikan satu kolom opsional, lalu tegaskan jumlah kolomnya turun.
+        // Menguji tombolnya ADA tanpa menguji ia BEKERJA akan lulus atas pemilih
+        // yang membuka lalu tidak berpengaruh apa pun.
+        const kotak = page
+          .locator('label:has(input[type="checkbox"]:checked:not(:disabled))')
+          .last()
+        tegaskan((await kotak.count()) === 1, 'tidak ada kolom opsional yang bisa disembunyikan')
+        await kotak.locator('input[type="checkbox"]').click()
+        await page.waitForTimeout(300)
+        const sesudah = await page.locator('main table thead th').count()
+        tegaskan(sesudah === sebelum - 1, `menyembunyikan tidak berpengaruh: ${sebelum} → ${sesudah}`)
+        await page.keyboard.press('Escape')
+        return `tombol Kolom ada · kolom ${sebelum} → ${sesudah}`
       })
 
       await langkah('pemilih kolom masih berfungsi di tabel yang memakainya', async () => {
-        // Master Jabatan salah satu dari tiga tabel yang MASIH memakai pemilih
-        // kolom (bersama Kandidat & drill-down Peta Talenta).
+        // Master Jabatan — tabel LAIN yang memakai pemilih kolom. Langkah ini tetap
+        // ada walau Direktori sudah punya pemilihnya kembali: yang dijaga di sini
+        // bahwa `PemilihKolom` bekerja pada tabel yang kolomnya berbeda, dan
+        // urutan sembunyikan-lalu-munculkan-nya diuji dua arah (lihat catatan
+        // locator malas di bawah).
         await page.goto(`${BASE}/master/jabatan`, { waitUntil: 'networkidle' })
         await tungguTabel(page)
         const sebelum = await page.locator('table thead th').count()
@@ -290,7 +335,15 @@ try {
       })
 
       await langkah('profil: rincian skor per indikator bisa dibuka (U-3)', async () => {
+        /*
+          DITUNGGU dulu. Panel Kecocokan datang lewat `<Suspense>` sendiri, sementara
+          langkah sebelum ini hanya menunggu butir turunan NIP di kepala halaman —
+          jadi `count()` di sini mengukur "apakah panelnya kebetulan sudah sampai",
+          bukan "apakah tombolnya ada". Ia lulus di dev server dan GAGAL di build
+          produksi pada hari yang sama, tanpa satu pun perubahan pada tombolnya.
+        */
         const tombol = page.locator('button:has-text("Lihat rincian perhitungan")').first()
+        await tombol.waitFor({ state: 'attached', timeout: 30000 })
         tegaskan((await tombol.count()) > 0, 'tombol rincian perhitungan tidak ada')
         await tombol.click()
         await page.waitForSelector('text=Nilai mentah', { timeout: 8000 })
@@ -305,6 +358,10 @@ try {
       })
 
       await langkah('profil: skor komponen 65/20/15 dijelaskan', async () => {
+        // Alasan yang sama: kalimat bobotnya ada di kepala panel Kecocokan.
+        await page.waitForFunction(() => /65%/.test(document.body.innerText), null, {
+          timeout: 30000,
+        })
         const teks = await page.locator('main').innerText()
         tegaskan(/65%/.test(teks) && /20%/.test(teks) && /15%/.test(teks), 'bobot tidak ditampilkan')
         tegaskan(
@@ -452,6 +509,67 @@ try {
         const rTrav = await ctx.request.get(`${BASE}/api/internal/foto/..%2f..%2fpackage.json`)
         tegaskan(rTrav.status() === 404, `path traversal tidak ditolak: HTTP ${rTrav.status()}`)
         return `tanpa sesi → ${statusAnon} · traversal → ${rTrav.status()}`
+      })
+
+      await langkah('riwayat berdurasi: lama menjabat tampil & bisa disunting', async () => {
+        /*
+          Menjaga dua hal sekaligus untuk baris riwayat yang sumbernya hanya memberi
+          LAMANYA, tanpa tanggal (229 baris dari berkas Talent Pool ES 2 & 3):
+
+            - halamannya TIDAK menulisnya sebagai rentang. "tanggal belum ada –
+              sekarang" menyatakan jabatan yang masih berjalan, dan itu salah untuk
+              baris yang justru sudah berakhir;
+            - dialog Ubah punya bidang "Lama menjabat (bulan)" BERISI nilainya. Bidang
+              yang ada tanpa nilai awal adalah cacat kehilangan data, bukan kosmetik:
+              menyimpan tanpa menyentuhnya akan menulis `null` (tiga kejadian sekelas
+              sudah tercatat di CLAUDE.md).
+
+          Subjeknya DITURUNKAN dari data yang sedang tampil — pegawai pertama yang
+          punya baris begitu — bukan NIP yang dipaku: populasi repo ini sudah tiga kali
+          membuat konstanta di harness meledak. Kalau tidak ada satu pun, langkahnya
+          melaporkan DILEWATI, bukan lulus.
+        */
+        await page.goto(`${BASE}/talenta`, { waitUntil: 'domcontentloaded' })
+        await tungguTabel(page)
+        const nipDaftar = await page
+          .locator('table tbody tr td:nth-child(2)')
+          .allInnerTexts()
+          .catch(() => [])
+
+        let subjek = null
+        for (const teks of nipDaftar.slice(0, 10)) {
+          const nip = teks.replace(/\D/g, '')
+          if (nip.length !== 18) continue
+          await page.goto(`${BASE}/talenta/${nip}`, { waitUntil: 'domcontentloaded' })
+          const adaDurasi = await page
+            .getByText(/tanggal tidak ada di sumbernya/i)
+            .first()
+            .waitFor({ timeout: 8000 })
+            .then(() => true)
+            .catch(() => false)
+          if (adaDurasi) {
+            subjek = nip
+            break
+          }
+        }
+        if (subjek === null) return 'DILEWATI — tidak ada riwayat berdurasi-tanpa-tanggal di 10 pegawai pertama'
+
+        const rentangPalsu = await page.getByText(/tanggal belum ada – sekarang/i).count()
+        tegaskan(
+          rentangPalsu === 0,
+          `${rentangPalsu} baris masih ditulis sebagai rentang "tanggal belum ada – sekarang"`,
+        )
+
+        const panel = page.locator('section').filter({ hasText: 'Riwayat Jabatan' }).last()
+        await panel.getByRole('button', { name: /^Ubah$/ }).first().click({ timeout: 30000 })
+        const dlg = page.locator('dialog[open]')
+        // `getByLabel` sekalian menuntut labelnya benar-benar tertaut ke kontrolnya.
+        const kontrol = dlg.getByLabel(/Lama menjabat \(bulan\)/i).first()
+        await kontrol.waitFor({ timeout: 15000 })
+        const isi = await kontrol.inputValue()
+        tegaskan(/^\d+$/.test(isi), `nilai awal bidang lama menjabat kosong/tak terbaca: "${isi}"`)
+        await page.keyboard.press('Escape')
+        return `NIP ${subjek} · 0 rentang palsu · nilai awal ${isi} bulan`
       })
     }
 

@@ -27,6 +27,11 @@ function riwayat(p: Partial<RiwayatJabatanUntukSkor> = {}): RiwayatJabatanUntukS
     unitOrganisasiId: 7,
     tanggalMulai: new Date(2020, 0, 1, 12),
     tanggalAkhir: new Date(2023, 0, 1, 12),
+    // Bawaannya null: fixture bertanggal tidak boleh sekaligus berdurasi, sebab
+    // yang diuji justru URUTAN sumbernya (tanggal dulu, durasi kalau tanggal
+    // tidak ada). Fixture yang punya keduanya membuat kedua cabang lulus atas
+    // jalan yang sama.
+    lamaBulan: null,
     // Bawaannya DEFINITIF, yaitu "sudah diperiksa manusia, dan bukan Plt/Plh".
     // Sengaja bukan `null`: fixture yang bawaannya "belum divalidasi" membuat
     // setiap uji Substansi mengembalikan null dan lulusnya jadi kebetulan.
@@ -185,6 +190,126 @@ describe('Lama Jabatan (§B.2.4.a) — dikembalikan sbg jumlah tahun', () => {
     expect(nilaiLamaJabatan([], null, null, SEKARANG)).toBeNull()
   })
 
+  it('TANGGAL menang atas durasi bila keduanya ada', () => {
+    /*
+      Yang diuji urutan sumbernya, bukan bahwa keduanya "bisa dibaca". Kalau
+      durasi menang, angkanya jadi 10 — dan itu tepat kelas kesalahan yang mahal:
+      berkas Pengawas punya KEDUANYA (durasi 386/386 cocok dengan selisih
+      tanggalnya), jadi cabang yang salah tetap menghasilkan angka wajar.
+    */
+    const hasil = nilaiLamaJabatan(
+      [
+        riwayat({
+          jenjang: 'Administrator',
+          tanggalMulai: new Date(2020, 0, 1, 12),
+          tanggalAkhir: new Date(2023, 0, 1, 12),
+          lamaBulan: 120,
+        }),
+      ],
+      'Administrator',
+      null,
+      SEKARANG,
+    )
+    expect(hasil).toBeGreaterThan(2.98)
+    expect(hasil).toBeLessThan(3.02)
+  })
+
+  it('menjumlahkan DURASI riwayat sejenjang yang tak bertanggal', () => {
+    // 31 + 12 bulan = 43 → 3,58 tahun. Nilainya dari berkas nyata: "2 Tahun
+    // 7 Bulan" (=31) adalah isi kolom MASA KERJA JABATAN PENEMPATAN.
+    const hasil = nilaiLamaJabatan(
+      [
+        riwayat({ jenjang: 'Administrator', tanggalMulai: null, lamaBulan: 31 }),
+        riwayat({ jenjang: 'Administrator', tanggalMulai: null, lamaBulan: 12 }),
+        riwayat({ jenjang: 'Pengawas', tanggalMulai: null, lamaBulan: 60 }),
+      ],
+      'Administrator',
+      null,
+      SEKARANG,
+    )
+    expect(hasil).toBe(3.58)
+  })
+
+  it('memakai durasi jabatan SEKARANG bila tidak satu pun baris berjenjang', () => {
+    /*
+      Keadaan 26 pegawai eselon II & III: riwayatnya belum terpetakan ke master,
+      jadi `jenjang` tiap barisnya null dan penjumlahan sejenjang tidak
+      menemukan apa pun. Yang menyelamatkan pencocokan NAMA jabatan sekarang.
+    */
+    const hasil = nilaiLamaJabatan(
+      [
+        riwayat({
+          jabatanNamaMentah: 'Direktur  Pengadaan Jasa Konstruksi',
+          jenjang: null,
+          tanggalMulai: null,
+          lamaBulan: 31,
+        }),
+        riwayat({
+          jabatanNamaMentah: 'Kepala Subdirektorat Pengadaan',
+          jenjang: null,
+          tanggalMulai: null,
+          lamaBulan: 126,
+        }),
+      ],
+      'JPT Pratama',
+      new Date(2025, 6, 18, 12),
+      SEKARANG,
+      // Spasi ganda di riwayat & besar-kecil berbeda: dinormalkan, bukan gagal.
+      'DIREKTUR PENGADAAN JASA KONSTRUKSI',
+    )
+    expect(hasil).toBe(2.58)
+  })
+
+  it('menjumlahkan SEMUA baris berjabatan sama, bukan barisnya yang pertama', () => {
+    // Satu orang bisa menduduki kursi yang sama dua periode; mengambil satu
+    // baris membuang periode lainnya.
+    const hasil = nilaiLamaJabatan(
+      [
+        riwayat({ jabatanNamaMentah: 'Kepala Balai', jenjang: null, tanggalMulai: null, lamaBulan: 24 }),
+        riwayat({ jabatanNamaMentah: 'Kepala Balai', jenjang: null, tanggalMulai: null, lamaBulan: 12 }),
+      ],
+      null,
+      null,
+      SEKARANG,
+      'Kepala Balai',
+    )
+    expect(hasil).toBe(3)
+  })
+
+  it('durasi jabatan sekarang MENANG atas tmt_jabatan', () => {
+    /*
+      Selisih yang benar-benar terukur di data: sumber menyebut 2 tahun 7 bulan
+      sementara `tmt_jabatan` 18-07-2025 menyiratkan ~1,1 tahun. `tmt_jabatan`
+      adalah tanggal SK TERAKHIR, jadi pengangkatan ulang pada kursi yang sama
+      memotong masa kerja yang sebenarnya berjalan terus.
+    */
+    const hasil = nilaiLamaJabatan(
+      [riwayat({ jabatanNamaMentah: 'Direktur', jenjang: null, tanggalMulai: null, lamaBulan: 31 })],
+      null,
+      new Date(2025, 6, 18, 12),
+      SEKARANG,
+      'Direktur',
+    )
+    expect(hasil).toBe(2.58)
+  })
+
+  it('lamaBulan 0 tetap jatuh ke tmt_jabatan, bukan menyatakan "nol tahun"', () => {
+    /*
+      "0 Tahun 0 Bulan 11 Hari" ada di berkas nyata. Nol bulan bukan jawaban
+      yang lebih baik daripada tanggal SK yang benar-benar ada — dan memakainya
+      akan MENURUNKAN nilai orang yang datanya justru lebih lengkap.
+    */
+    const hasil = nilaiLamaJabatan(
+      [riwayat({ jabatanNamaMentah: 'Direktur', jenjang: null, tanggalMulai: null, lamaBulan: 0 })],
+      null,
+      new Date(2022, 5, 1, 12),
+      SEKARANG,
+      'Direktur',
+    )
+    expect(hasil).toBeGreaterThan(4)
+    expect(hasil).toBeLessThan(4.2)
+  })
+
   it('nilai tahun cocok dengan ambang rubrik yang sudah kontinu', () => {
     const rubrik = rubrikJabatanTarget()
     const hasil = hitungMatchScore(rubrik, {
@@ -340,6 +465,26 @@ describe('turunan untuk kelayakan', () => {
     expect(totalPengalamanTahun([riwayat({ tanggalMulai: null })], SEKARANG)).toBeNull()
   })
 
+  it('mencampur baris bertanggal & baris berdurasi, tanpa menghitung ganda', () => {
+    /*
+      Baris pertama punya KEDUANYA dan harus dihitung sekali (3 tahun, dari
+      tanggalnya — bukan 3 + 10). Baris kedua hanya berdurasi. Total 3 + 2,58.
+    */
+    const hasil = totalPengalamanTahun(
+      [
+        riwayat({
+          tanggalMulai: new Date(2020, 0, 1, 12),
+          tanggalAkhir: new Date(2023, 0, 1, 12),
+          lamaBulan: 120,
+        }),
+        riwayat({ tanggalMulai: null, tanggalAkhir: null, lamaBulan: 31 }),
+      ],
+      SEKARANG,
+    )
+    expect(hasil).toBeGreaterThan(5.56)
+    expect(hasil).toBeLessThan(5.6)
+  })
+
   it('perbandingan pendidikan minimal', () => {
     expect(memenuhiPendidikanMinimal('S2', 'S1_D4')).toBe(true)
     expect(memenuhiPendidikanMinimal('S1_D4', 'S1_D4')).toBe(true)
@@ -369,6 +514,8 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         riwayatDiklat: ['Diklat Pengadaan Barang/Jasa'],
         kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
+        namaJabatanSaatIni: null,
+        jabatanIdSaatIni: null,
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2019, 0, 1, 12),
         riwayatJabatan: [
@@ -396,6 +543,7 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         ],
         potkom: 100,
         hukumanDisiplin: [],
+        golongan: null,
       },
       { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
@@ -421,11 +569,14 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         riwayatDiklat: ['Diklat Pengadaan'],
         kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
+        namaJabatanSaatIni: null,
+        jabatanIdSaatIni: null,
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2025, 6, 18, 12),
         riwayatJabatan: [riwayat({ jabatanId: null, unitOrganisasiId: null })],
         potkom: 115.1,
         hukumanDisiplin: [],
+        golongan: null,
       },
       { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
@@ -449,11 +600,14 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         riwayatDiklat: [],
         kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Administrator',
+        namaJabatanSaatIni: null,
+        jabatanIdSaatIni: null,
         eselonSaatIni: 'III',
         tmtJabatan: new Date(2025, 1, 10, 12),
         riwayatJabatan: [riwayat({ unitOrganisasiId: 14 })],
         potkom: 82,
         hukumanDisiplin: [{ tingkatHukuman: 'Ringan', statusAktif: true }],
+        golongan: null,
       },
       { jabatanTargetId: 1, kataKunciRelevansi: ['semua', 'pengadaan'], syaratKategoriDiklat: ['PBJ'] },
       idIndikator,
@@ -473,11 +627,14 @@ describe('petaNilaiIndikator → rangkai penuh ke mesin rubrik', () => {
         riwayatDiklat: [],
         kategoriDiklatTervalidasi: ['PBJ'],
         jenjangSaatIni: 'Ahli Utama',
+        namaJabatanSaatIni: null,
+        jabatanIdSaatIni: null,
         eselonSaatIni: 'NON_ESELON',
         tmtJabatan: new Date(2019, 3, 1, 12),
         riwayatJabatan: [riwayat({ unitOrganisasiId: 5 })],
         potkom: 97,
         hukumanDisiplin: [{ tingkatHukuman: 'Sedang', statusAktif: false }],
+        golongan: null,
       },
       { jabatanTargetId: 3, kataKunciRelevansi: ['teknik', 'konstruksi'], syaratKategoriDiklat: ['MANAJEMEN_KONSTRUKSI'] },
       idIndikator,

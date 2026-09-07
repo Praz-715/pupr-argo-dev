@@ -26,6 +26,50 @@ interface Periksa {
 
 const PEMERIKSAAN: Periksa[] = [
   {
+    nama: 'Asesmen yang dipakai: tidak ada yang Expired padahal punya yang masih berlaku',
+    /*
+      Aturan pemilih bawaan (`urutAsesmenBerlaku()` di `lib/kueri/dasar.ts`, 1 Sep
+      2026): potkom TERTINGGI, **dahulukan yang masih berlaku**, dan yang Expired
+      hanya boleh menang kalau seluruh asesmen orang itu memang kedaluwarsa.
+
+      Dijaga di sini karena aturannya bisa melapuk dari DUA arah tanpa satu pun
+      galat: ekspresi `ORDER BY`-nya diubah, atau baris `asesmen_dipakai` disetel
+      lewat SQL langsung. Keduanya menghasilkan potkom yang lebih rendah dipakai
+      diam-diam — skor turun untuk sebagian orang, dan tidak ada yang menyatakannya.
+
+      Pilihan MANUSIA sengaja TIDAK dikecualikan: verifikator memang boleh memilih
+      asesmen kedaluwarsa dengan sadar, dan kalau itu terjadi pemeriksaan ini akan
+      memerah — yang benar, sebab keadaan itu perlu dilihat, bukan disembunyikan.
+    */
+    sql: `SELECT COUNT(*) n FROM asesmen_dipakai d
+            JOIN asesmen_talenta a ON a.id = d.asesmen_id
+           WHERE a.status_asesmen = 'Expired'
+             AND EXISTS (SELECT 1 FROM asesmen_talenta b
+                          WHERE b.pegawai_id = d.pegawai_id
+                            AND b.status_asesmen <> 'Expired')`,
+    detail: 'Jalankan `npm run asesmen:tertinggi -- --tulis` lalu `npm run hitung:ulang -- --tulis`.',
+  },
+  {
+    nama: 'Asesmen yang dipakai adalah potkom TERTINGGI di antara yang sederajat berlakunya',
+    /*
+      Pelengkap pemeriksaan di atas: yang itu menjaga "jangan pakai yang Expired",
+      ini menjaga "ambil yang tertinggi". Dipisah supaya kalau merah, yang salah
+      langsung ketahuan yang mana — satu pemeriksaan gabungan cuma bisa bilang
+      "pilihannya salah" tanpa menyebut sebabnya.
+
+      Dibandingkan HANYA di dalam kelompok status yang sama, sebab asesmen berlaku
+      berpotkom rendah memang harus mengalahkan yang Expired berpotkom tinggi.
+    */
+    sql: `SELECT COUNT(*) n FROM asesmen_dipakai d
+            JOIN asesmen_talenta a ON a.id = d.asesmen_id
+           WHERE d.ditetapkan_oleh IS NULL
+             AND EXISTS (SELECT 1 FROM asesmen_talenta b
+                          WHERE b.pegawai_id = d.pegawai_id
+                            AND (b.status_asesmen <> 'Expired') = (a.status_asesmen <> 'Expired')
+                            AND b.potkom > a.potkom)`,
+    detail: 'Hanya memeriksa pilihan bawaan; pilihan verifikator (ditetapkan_oleh terisi) dikecualikan.',
+  },
+  {
     nama: 'Skor asesmen di 0–100, KECUALI potkom & sumbu X yang sengaja tak diplafon',
     /*
       `potkom` dan `nilai_potensial_x` DIKELUARKAN dari pemeriksaan rentang.
@@ -192,8 +236,22 @@ const PEMERIKSAAN: Periksa[] = [
              OR (2026 - tahun_asesmen <= 3 AND status_asesmen <> 'Berlaku')`,
   },
   {
-    nama: 'Seluruh riwayat jabatan sudah bertanggal (indikator Lama Jabatan bisa otomatis)',
-    sql: `SELECT COUNT(*) n FROM riwayat_jabatan WHERE tanggal_mulai IS NULL`,
+    /*
+      Yang dijaga: "lama menjabat setiap baris bisa dihitung", BUKAN "setiap baris
+      bertanggal". Keduanya sama sampai `doc/sql/021` menambahkan `lama_bulan`;
+      sesudahnya tidak lagi — berkas Talent Pool ES 2 & 3 memberi durasi TANPA
+      tanggal untuk 229 baris, dan tidak ada tanggal yang bisa diisi tanpa
+      mengarangnya. Menuntut tanggal berarti penjaga ini merah PERMANEN atas batas
+      sumbernya, dan penjaga yang selalu merah berhenti dibaca — lalu temuan
+      sungguhan ikut terabaikan bersamanya (pelajaran yang sama seperti dua penjaga
+      potkom pada 22 Agu 2026).
+
+      Tanggal tetap lebih baik dan tetap diutamakan `nilaiLamaJabatan()`; yang
+      berubah cuma ambang "cukup untuk dihitung".
+    */
+    nama: 'Lama menjabat tiap baris riwayat bisa dihitung (bertanggal ATAU berdurasi)',
+    sql: `SELECT COUNT(*) n FROM riwayat_jabatan
+          WHERE tanggal_mulai IS NULL AND lama_bulan IS NULL`,
   },
   {
     nama: 'Setiap pegawai punya TW1–TW3 + TAHUNAN tahun 2025',

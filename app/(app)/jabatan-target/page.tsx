@@ -1,12 +1,14 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+import { CatatanLingkup } from '@/components/ui/catatan-lingkup'
 import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { formatAngka } from '@/lib/format'
+import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { ambilDaftarJabatanTarget } from '@/lib/kueri/rubrik'
-import { punyaPeran } from '@/lib/peran'
+import { PERAN_KELOLA_TARGET, PERAN_USUL_TARGET, punyaPeran } from '@/lib/peran'
 import {
   bacaAmbang,
   KosongSkeleton,
@@ -15,13 +17,20 @@ import {
   RisikoSkeleton,
 } from './_komponen/panel-kekosongan'
 import { TabelTarget } from './_komponen/tabel-target'
-import { TombolBuatTarget } from './_komponen/form-target'
+import { TombolBuatTarget } from './_komponen/pemilih-jabatan-target'
 
 export const metadata = { title: 'Jabatan Target & Kekosongan' }
 
 type ParamHalaman = Promise<Record<string, string | undefined>>
 
-const PERAN_UBAH = ['Super Admin', 'Admin Talenta'] as const
+/*
+  Dua kemampuan, dua daftar — keduanya diimpor dari `lib/peran.ts`, daftar yang
+  SAMA dengan yang dipakai server action untuk menolak. Menyalinnya ke sini akan
+  membuat tombol dan penolakan bisa berselisih tanpa memunculkan galat apa pun.
+
+    - `bolehUsul` → menjadikan kursi kosong sebagai draft (unit ikut);
+    - `bolehUbah` → membuat/menyunting target langsung & aksi statusnya.
+*/
 
 /**
  * Daftar Jabatan Target (PRD §6.5).
@@ -34,16 +43,29 @@ const PERAN_UBAH = ['Super Admin', 'Admin Talenta'] as const
 export default async function JabatanTargetPage({ searchParams }: { searchParams: ParamHalaman }) {
   const params = await searchParams
   const pengguna = await getCurrentUser()
-  const bolehUbah = punyaPeran(pengguna, PERAN_UBAH)
+  const bolehUbah = punyaPeran(pengguna, PERAN_KELOLA_TARGET)
+  const bolehUsul = punyaPeran(pengguna, PERAN_USUL_TARGET)
   const ambang = bacaAmbang(params.ambang)
   const hanyaStrategis = params.strategis === '1'
+
+  /*
+    Lingkup unit penonton, diselesaikan SEKALI di sini lalu diturunkan. Pengelola
+    Unit melihat kekosongan unitnya saja — barisnya membawa tombol "Jadikan draft",
+    dan baris di luar unitnya akan ditolak server (`jabatanTerjangkau()`).
+
+    `tanpaAkses` = Pengelola Unit yang belum ditautkan ke unit mana pun (FK-nya
+    `ON DELETE SET NULL`, jadi keadaan ini nyata, bukan teoretis). Ia GAGAL TERTUTUP:
+    lebih baik memajang keterangan kosong daripada seluruh organisasi.
+  */
+  const lingkup = lingkupData(pengguna)
+  const batasUnit = unitWajib(lingkup)
 
   return (
     <div className="space-y-5">
       <PageHeader
         judul="Jabatan Target & Kekosongan"
-        deskripsi="Profil jabatan yang menjadi sasaran suksesi — jabatan anggotanya, syarat minimalnya, dan rubrik penilaian match score — berdampingan dengan jabatan yang sudah kosong dan yang akan kosong."
-        aksi={bolehUbah ? <TombolBuatTarget /> : null}
+        deskripsi="Profil jabatan yang menjadi sasaran suksesi — jabatan asal kandidatnya, syarat minimalnya, dan rubrik penilaian match score — berdampingan dengan jabatan yang sudah kosong dan yang akan kosong."
+        aksi={bolehUsul ? <TombolBuatTarget /> : null}
       />
 
       <Suspense fallback={<DaftarSkeleton />}>
@@ -57,13 +79,23 @@ export default async function JabatanTargetPage({ searchParams }: { searchParams
         Selama keduanya di halaman berbeda, "6 kosong tapi hanya 2 punya rubrik"
         harus dicocokkan sendiri oleh pembacanya — dan tidak ada yang melakukannya.
       */}
-      <Suspense key={`kosong-${hanyaStrategis}`} fallback={<KosongSkeleton />}>
-        <PanelJabatanKosong hanyaStrategis={hanyaStrategis} bolehUbah={bolehUbah} />
-      </Suspense>
+      <CatatanLingkup lingkup={lingkup} />
 
-      <Suspense key={`risiko-${ambang}`} fallback={<RisikoSkeleton />}>
-        <PanelRisikoKekosongan ambang={ambang} />
-      </Suspense>
+      {tanpaAkses(lingkup) ? null : (
+        <>
+          <Suspense key={`kosong-${hanyaStrategis}-${batasUnit ?? 'semua'}`} fallback={<KosongSkeleton />}>
+            <PanelJabatanKosong
+              hanyaStrategis={hanyaStrategis}
+              bolehUbah={bolehUsul}
+              unitWajib={batasUnit}
+            />
+          </Suspense>
+
+          <Suspense key={`risiko-${ambang}-${batasUnit ?? 'semua'}`} fallback={<RisikoSkeleton />}>
+            <PanelRisikoKekosongan ambang={ambang} unitWajib={batasUnit} />
+          </Suspense>
+        </>
+      )}
     </div>
   )
 }
@@ -96,7 +128,7 @@ async function IsiDaftar({ bolehUbah }: { bolehUbah: boolean }) {
           <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
             {draft.length === 0
               ? 'Tidak ada rubrik yang sedang disusun.'
-              : 'Rubriknya belum lolos pemeriksaan atau belum punya jabatan anggota.'}
+              : 'Rubriknya belum lolos pemeriksaan atau kursinya belum ditentukan.'}
           </p>
         </Panel>
         <Panel>
@@ -155,7 +187,13 @@ function DaftarSkeleton() {
           <Skeleton className="h-4 w-48" />
           <Skeleton className="mt-2 h-3 w-full max-w-xl" />
         </div>
-        <TableSkeleton rows={4} cols={['2.4fr', '1fr', '0.8fr', '0.8fr', '1fr', '1.2fr']} />
+        {/* 7 kolom — kolom Unit organisasi ditambahkan 1 Sep 2026. Skeleton yang
+            jumlah kolomnya beda dari isinya membuat baris melompat tepat pada
+            momen yang seharusnya ia tenangkan. */}
+        <TableSkeleton
+          rows={4}
+          cols={['2.4fr', '1.6fr', '1fr', '0.8fr', '0.8fr', '1fr', '1.2fr']}
+        />
       </Panel>
     </div>
   )

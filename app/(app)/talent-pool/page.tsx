@@ -15,7 +15,9 @@ import {
   ambilRingkasPool,
   ambilTalentPool,
 } from '@/lib/kueri/suksesi'
+import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { angkaPositif } from '@/lib/param'
+import { PERAN_KELOLA_POOL } from '@/lib/peran'
 import { aksiTersedia, type StatusPool } from '@/lib/workflow'
 import { PemilihTarget } from './_komponen/pemilih-target'
 import { TabelPool } from './_komponen/tabel-pool'
@@ -50,19 +52,40 @@ export default async function TalentPoolPage({ searchParams }: { searchParams: C
 
   const opsiTarget = await ambilOpsiTargetPool()
   const targetDiminta = angkaPositif(p.target)
-  // Tanpa `?target=`, dahulukan jabatan target yang PUNYA pekerjaan menunggu.
-  // Mendarat di jabatan target yang antriannya kosong membuat kartu "Menunggu
-  // tindakan 0" terbaca sebagai nol secara keseluruhan, padahal itu nol untuk
-  // satu jabatan target saja.
+  /*
+    Tanpa `?target=`, dahulukan jabatan target yang PUNYA pekerjaan menunggu.
+    Mendarat di jabatan target yang antriannya kosong membuat kartu "Menunggu
+    tindakan 0" terbaca sebagai nol secara keseluruhan, padahal itu nol untuk satu
+    jabatan target saja.
+
+    Penyeimbang kedua — jumlah entri pool — ditambahkan 24 Agu 2026. Sejak 41
+    jabatan target per balai dibuat, SEMUA target punya `jumlahMenunggu` 0, jadi
+    urutan bergantung sepenuhnya pada urutan kueri: halaman mendarat di target
+    berpool KOSONG (#2), memajang tabel nihil, dan terbaca seperti talent pool yang
+    tidak berisi apa-apa. Hanya 2 dari 72 target punya entri pool, jadi peluang
+    mendarat di yang kosong nyaris pasti.
+  */
   const targetAktif =
     opsiTarget.find((o) => o.id === targetDiminta) ??
-    [...opsiTarget].sort((a, b) => b.jumlahMenunggu - a.jumlahMenunggu)[0] ??
+    [...opsiTarget].sort(
+      (a, b) => b.jumlahMenunggu - a.jumlahMenunggu || b.jumlahPool - a.jumlahPool,
+    )[0] ??
     opsiTarget[0]
 
   const totalMenunggu = opsiTarget.reduce((n, o) => n + o.jumlahMenunggu, 0)
 
   const status = STATUS_SAH.find((s) => s === p.status)
   const cari = (p.cari ?? '').slice(0, 100)
+
+  /*
+    Lingkup unit penonton. Yang dibatasi di sini hanya DAFTAR CALON KANDIDAT — nama
+    yang bisa ditambahkan ke pool — sebab `tambahKePool` menolak pegawai di luar
+    unit penggunanya. Isi pool yang sudah ada TIDAK dibatasi: unit perlu melihat
+    seluruh peringkat untuk tahu posisi kandidatnya, dan nominasi memang lintas
+    unit.
+  */
+  const lingkup = lingkupData(pengguna)
+  const batasUnit = tanpaAkses(lingkup) ? -1 : unitWajib(lingkup)
 
   return (
     <div className="space-y-5">
@@ -105,6 +128,7 @@ export default async function TalentPoolPage({ searchParams }: { searchParams: C
               cari={cari}
               peran={pengguna?.peran ?? null}
               unitPenggunaId={pengguna?.unitOrganisasiId ?? null}
+              unitWajibLingkup={batasUnit}
             />
           </Suspense>
         </>
@@ -120,6 +144,7 @@ async function IsiPool({
   cari,
   peran,
   unitPenggunaId,
+  unitWajibLingkup,
 }: {
   jabatanTargetId: number
   namaTarget: string
@@ -127,6 +152,14 @@ async function IsiPool({
   cari: string
   peran: Parameters<typeof aksiTersedia>[1]
   unitPenggunaId: number | null
+  /**
+   * Batas unit untuk daftar CALON kandidat: `null` = lingkup penuh, `-1` = tidak
+   * ada akses sama sekali (Pengelola Unit tanpa unit — FK-nya `ON DELETE SET NULL`,
+   * jadi keadaan ini nyata). `-1` dipilih alih-alih membuang komponennya karena isi
+   * pool tetap boleh dibaca; yang harus kosong hanya daftar tawarannya, dan id unit
+   * negatif tidak akan pernah cocok.
+   */
+  unitWajibLingkup: number | null
 }) {
   const [baris, ringkas, opsiUnit, kandidatLuar] = await Promise.all([
     ambilTalentPool({
@@ -136,8 +169,15 @@ async function IsiPool({
     }),
     ambilRingkasPool(jabatanTargetId),
     ambilOpsiUnitPengaju(),
-    ambilKandidatLuarPool(jabatanTargetId),
+    ambilKandidatLuarPool(jabatanTargetId, unitWajibLingkup),
   ])
+
+  /*
+    Daftarnya `PERAN_KELOLA_POOL` di `lib/peran.ts` — satu daftar dengan yang dipakai
+    `tambahKePool` untuk menolak. Pengelola Unit ikut sejak 24 Agu 2026; batas
+    lingkupnya ditegakkan di dalam SQL (`pegawaiTerjangkau()`), bukan di sini.
+  */
+  const bolehTambah = peran !== null && PERAN_KELOLA_POOL.includes(peran)
 
   // Aksi dihitung DI SERVER dari state machine, lalu dikirim sebagai data.
   const barisDenganAksi = baris.map((b) => ({
@@ -151,9 +191,16 @@ async function IsiPool({
         destruktif: d.destruktif,
       }),
     ),
+    /*
+      Boleh dikeluarkan kecuali sudah DITETAPKAN — syarat yang SAMA dengan yang
+      ditegakkan `keluarkanDariPool()`. Menggambar tombolnya di baris yang pasti
+      ditolak server berarti klik mati (phase.md §5.2); menyalin syaratnya ke sini
+      bukan duplikasi aturan melainkan cerminnya, dan servernya tetap penegak
+      terakhir.
+    */
+    bolehKeluar: bolehTambah && b.status !== 'DITETAPKAN',
   }))
 
-  const bolehTambah = peran === 'Super Admin' || peran === 'Admin Talenta'
 
   return (
     <div className="space-y-4">
@@ -192,7 +239,7 @@ async function IsiPool({
             Kandidat lolos syarat di luar pool
           </p>
           <p className="tabular mt-1.5 text-2xl leading-none font-semibold text-text">
-            {formatAngka(kandidatLuar.length)}
+            {formatAngka(kandidatLuar.total)}
           </p>
         </Panel>
       </div>
@@ -227,13 +274,15 @@ async function IsiPool({
           baris={barisDenganAksi}
           opsiUnit={opsiUnit}
           unitPenggunaId={unitPenggunaId}
-        />
+          jabatanTargetId={jabatanTargetId}
+          />
       </Panel>
 
-      {bolehTambah && kandidatLuar.length > 0 ? (
+      {bolehTambah && kandidatLuar.baris.length > 0 ? (
         <TambahKandidat
           jabatanTargetId={jabatanTargetId}
-          kandidat={kandidatLuar}
+          kandidat={kandidatLuar.baris}
+          totalKandidat={kandidatLuar.total}
           namaTarget={namaTarget}
         />
       ) : null}

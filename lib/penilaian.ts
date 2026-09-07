@@ -1,3 +1,4 @@
+import { URUTAN_ESELON } from './eselon'
 import { URUTAN_PENDIDIKAN, type TingkatPendidikan } from './normalisasi'
 import { selisihTahun } from './nip'
 import type { Eselon } from './scoring/eligibility'
@@ -17,14 +18,6 @@ import type { NilaiMentah, PetaNilai, Predikat } from './scoring/types'
  * bukan definisi operasional. Setiap fungsi menyebutkan aturannya agar bisa
  * diaudit dan diubah kalau pemilik proses berpendapat lain.
  */
-
-const URUTAN_ESELON: Record<Eselon, number> = {
-  NON_ESELON: 0,
-  IV: 1,
-  III: 2,
-  II: 3,
-  I: 4,
-}
 
 /** KERANGKA §B.2.1 — jenjang pendidikan → label kategori rubrik. */
 const LABEL_PENDIDIKAN: Record<TingkatPendidikan, string> = {
@@ -127,6 +120,15 @@ export interface RiwayatJabatanUntukSkor {
    * `null` = belum diperiksa. Usulan regex tidak pernah masuk ke sini.
    */
   jenisPenugasan: 'DEFINITIF' | 'PLT' | 'PLH' | null
+  /**
+   * Lama menjabat dalam BULAN, dari kolom "MASA KERJA JABATAN PENEMPATAN" berkas
+   * Talent Pool (`doc/sql/021`). Dipakai HANYA kalau `tanggalMulai` tidak ada.
+   *
+   * `null` = tidak diketahui, bukan nol. Berkas ES 2 & 3 memberi durasi tanpa
+   * tanggal untuk 229 baris; tanpa kolom ini mereka tak terhitung sama sekali dan
+   * 26 pegawai eselon II/III seluruhnya jatuh ke kategori terendah.
+   */
+  lamaBulan: number | null
 }
 
 /**
@@ -137,15 +139,41 @@ export interface RiwayatJabatanUntukSkor {
  * Aturan: "masa kerja dalam jenjang jabatan" ditafsirkan sebagai total durasi
  * seluruh riwayat jabatan yang **jenjangnya sama** dengan jabatan sekarang
  * (mis. akumulasi seluruh masa sebagai Administrator, bukan hanya di posisi
- * terakhir). Kalau riwayat belum bertanggal, jatuh ke lama menjabat di posisi
- * sekarang dari `tmt_jabatan`; kalau itu juga tidak ada, kembalikan null supaya
- * indikatornya ditandai NILAI_KOSONG, bukan diberi 0 diam-diam.
+ * terakhir).
+ *
+ * ## Empat sumber, dipakai berurutan dari yang paling bisa dipertanggungjawabkan
+ *
+ *   1. **riwayat sejenjang yang BERTANGGAL** — paling presisi;
+ *   2. **riwayat sejenjang yang berdurasi** (`lamaBulan`, `doc/sql/021`) — dipakai
+ *      untuk baris yang sumbernya tidak memberi tanggal;
+ *   3. **durasi jabatan SEKARANG** dari riwayat yang namanya sama dengan jabatan
+ *      sekarang — jalan keluar untuk pegawai yang seluruh riwayatnya belum
+ *      terpetakan ke master (jenjang tiap barisnya belum diketahui), yang di data
+ *      nyata berarti **26 pegawai eselon II & III**;
+ *   4. **`tmt_jabatan`** — turunan tanggal SK terakhir.
+ *
+ * Urutan 3 sebelum 4 disengaja, dan bukan sekadar "yang mana saja yang ada":
+ * `tmt_jabatan` adalah tanggal SK **terakhir**, jadi pengangkatan ulang pada kursi
+ * yang sama memotong masa kerja yang sebenarnya berjalan terus. Kolom durasi
+ * sumbernya mengukur periode jabatannya sendiri. Terukur di data nyata: keduanya
+ * berselisih (mis. 2 tahun 7 bulan menurut sumber vs 1,1 tahun menurut
+ * `tmt_jabatan`) — dan selisih itu dilaporkan ke pemilik proses, bukan ditutup
+ * dengan memilih yang lebih menguntungkan.
+ *
+ * Kalau tidak satu pun tersedia, kembalikan `null` supaya indikatornya ditandai
+ * NILAI_KOSONG — bukan diberi 0 diam-diam.
  */
 export function nilaiLamaJabatan(
   riwayat: RiwayatJabatanUntukSkor[],
   jenjangSaatIni: string | null,
   tmtJabatan: Date | null,
   sekarang: Date = new Date(),
+  /**
+   * Nama jabatan sekarang — dipakai sumber (3). Opsional supaya pemanggil lama
+   * tidak berubah perilaku: tanpa ini, urutannya langsung ke `tmt_jabatan` seperti
+   * sebelumnya.
+   */
+  namaJabatanSekarang: string | null = null,
 ): number | null {
   const sejenjang = riwayat.filter(
     (r) =>
@@ -163,6 +191,41 @@ export function nilaiLamaJabatan(
       if (tahun !== null) total += tahun
     }
     return Math.round(total * 100) / 100
+  }
+
+  /*
+    (2) Riwayat sejenjang yang berdurasi. Baris yang jenjangnya diketahui tapi
+    tanpa tanggal — mis. sebagian sudah dipetakan lewat antrian Validasi Riwayat
+    sementara tanggalnya tetap tidak ada di sumbernya.
+  */
+  const durasiSejenjang = riwayat.filter(
+    (r) =>
+      r.jenjang !== null &&
+      jenjangSaatIni !== null &&
+      r.jenjang.toLowerCase() === jenjangSaatIni.toLowerCase() &&
+      r.lamaBulan !== null,
+  )
+  if (durasiSejenjang.length > 0) {
+    const bulan = durasiSejenjang.reduce((n, r) => n + (r.lamaBulan ?? 0), 0)
+    return Math.round((bulan / 12) * 100) / 100
+  }
+
+  /*
+    (3) Durasi jabatan SEKARANG dari sumbernya. Dipakai ketika tidak satu pun baris
+    riwayat punya jenjang — keadaan 26 pegawai eselon II & III, yang riwayatnya
+    belum terpetakan ke master jabatan sehingga jenjang tiap barisnya belum
+    diketahui.
+
+    Yang dijumlahkan baris yang NAMANYA sama dengan jabatan sekarang (dinormalkan
+    spasi & besar-kecilnya), bukan baris pertama: satu orang bisa menjabat kursi yang
+    sama dua periode, dan mengambil satu baris saja membuang periode lainnya.
+  */
+  if (namaJabatanSekarang !== null) {
+    const kunci = namaJabatanSekarang.replace(/\s+/g, ' ').trim().toLowerCase()
+    const bulan = riwayat
+      .filter((r) => r.lamaBulan !== null && r.jabatanNamaMentah.replace(/\s+/g, ' ').trim().toLowerCase() === kunci)
+      .reduce((n, r) => n + (r.lamaBulan ?? 0), 0)
+    if (bulan > 0) return Math.round((bulan / 12) * 100) / 100
   }
 
   const dariTmt = selisihTahun(tmtJabatan, sekarang)
@@ -258,7 +321,23 @@ export interface ProfilPenilaian {
    */
   kategoriDiklatTervalidasi: string[]
   jenjangSaatIni: string | null
+  /**
+   * Nama jabatan yang diduduki SEKARANG (dari master, bukan teks riwayat).
+   *
+   * Dipakai satu hal saja: mencocokkan baris riwayat mana yang menyatakan lama
+   * menjabat di kursi sekarang, ketika riwayatnya berdurasi tanpa tanggal dan
+   * jenjangnya belum diketahui. `null` = pegawai belum tertaut ke master jabatan.
+   */
+  namaJabatanSaatIni: string | null
+  /** Id jabatan yang sedang dijabat — gerbang `JABATAN_ASAL` mencocokkannya. */
+  jabatanIdSaatIni: number | null
   eselonSaatIni: Eselon | null
+  /**
+   * Golongan/pangkat saat ini apa adanya (`III/d`). Dipakai HANYA gerbang
+   * kelayakan (`GOLONGAN_MIN`, PP 11/2017), tidak masuk perhitungan skor —
+   * golongan bukan salah satu indikator rubrik.
+   */
+  golongan: string | null
   tmtJabatan: Date | null
   riwayatJabatan: RiwayatJabatanUntukSkor[]
   /** Potkom mentah dari asesmen; boleh >100, mesin rubrik yang meng-clamp. */
@@ -356,6 +435,30 @@ export const SUMBER_KUNCI: Record<KunciIndikator, { label: string; asal: string 
   },
 }
 
+/**
+ * SATUAN nilai mentah tiap indikator — kunci yang tidak terdaftar berarti angkanya
+ * memang sudah berupa skor atau nama kategori, jadi satuan akan menyesatkan.
+ *
+ * Ditanyakan pemilik proses 2 Sep 2026 sambil menunjuk satu sel: *"maksudnya apa
+ * nilai mentah 0,89"*. Jawabannya 0,89 **tahun** — tapi kolomnya menulis angka
+ * telanjang, sementara di baris sebelahnya "95,49" adalah skor Potkom dan "100"
+ * adalah nilai kategori. Tiga besaran berbeda dengan bentuk yang sama persis, dan
+ * tidak ada apa pun di layar yang membedakannya.
+ *
+ * Ditulis SEKALI di sini karena dua halaman memajang kolom itu (rincian di profil
+ * & panel Rincian di halaman Kandidat). Disalin, keduanya akan berselisih pada
+ * indikator berikutnya yang punya satuan.
+ */
+export const SATUAN_MENTAH: Partial<
+  Record<KunciIndikator, { satuan: string; jelaskan: (n: number) => string }>
+> = {
+  LAMA_JABATAN: {
+    satuan: 'tahun',
+    jelaskan: (n) =>
+      `≈ ${Math.round(n * 12)} bulan — total masa kerja pada jenjang jabatan yang sama`,
+  },
+}
+
 export function adalahKunciIndikator(nilai: string): nilai is KunciIndikator {
   return (KUNCI_INDIKATOR as readonly string[]).includes(nilai)
 }
@@ -393,6 +496,7 @@ export function nilaiUntukKunci(
         profil.jenjangSaatIni,
         profil.tmtJabatan,
         sekarang,
+        profil.namaJabatanSaatIni,
       )
     case 'KERAGAMAN_JABATAN':
       return nilaiKeragamanJabatan(profil.riwayatJabatan)
@@ -504,20 +608,42 @@ export function eselonTertinggi(riwayat: RiwayatJabatanUntukSkor[]): Eselon | nu
   return terbaik
 }
 
-/** Total tahun pengalaman jabatan dari seluruh riwayat bertanggal. */
+/**
+ * Total tahun pengalaman jabatan dari SELURUH riwayat.
+ *
+ * **Per baris**, tanggalnya dipakai kalau ada; kalau tidak, durasi `lamaBulan`
+ * (`doc/sql/021`). Bukan "salah satu untuk seluruh riwayat": satu orang bisa
+ * punya sebagian baris bertanggal dan sebagian hanya berdurasi, dan memilih satu
+ * cara untuk semuanya berarti membuang separuh riwayatnya. Baris yang punya
+ * keduanya dihitung SEKALI, dari tanggalnya — kalau tidak, ia terhitung ganda.
+ *
+ * `null` hanya kalau tidak satu pun baris punya salah satunya; nol berarti "baru
+ * mulai", dan menyamakan keduanya membuat pegawai yang riwayatnya belum masuk
+ * gagal syarat pengalaman sebagai kalau ia memang belum berpengalaman.
+ */
 export function totalPengalamanTahun(
   riwayat: RiwayatJabatanUntukSkor[],
   sekarang: Date = new Date(),
 ): number | null {
-  const bertanggal = riwayat.filter((r) => r.tanggalMulai !== null)
-  if (bertanggal.length === 0) return null
-
   let total = 0
-  for (const r of bertanggal) {
-    const tahun = selisihTahun(r.tanggalMulai, r.tanggalAkhir ?? sekarang)
-    if (tahun !== null) total += tahun
+  let adaYangDiketahui = false
+
+  for (const r of riwayat) {
+    if (r.tanggalMulai !== null) {
+      const tahun = selisihTahun(r.tanggalMulai, r.tanggalAkhir ?? sekarang)
+      if (tahun !== null) {
+        total += tahun
+        adaYangDiketahui = true
+      }
+      continue
+    }
+    if (r.lamaBulan !== null) {
+      total += r.lamaBulan / 12
+      adaYangDiketahui = true
+    }
   }
-  return Math.round(total * 100) / 100
+
+  return adaYangDiketahui ? Math.round(total * 100) / 100 : null
 }
 
 /** Bandingkan tingkat pendidikan terhadap syarat minimal. */

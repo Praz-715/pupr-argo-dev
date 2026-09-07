@@ -36,6 +36,19 @@ export function bulatkan2(nilai: number): number {
   return Math.round((nilai + Number.EPSILON) * 100) / 100
 }
 
+/**
+ * Nilai mentah berskala 0–`skalaMaks` → skala 0–100.
+ *
+ * `skalaMaks` null/0/negatif dikembalikan APA ADANYA, bukan dianggap 100:
+ * skala nol berarti pembagian nol, dan menebak 100 di situ akan mengubah skor
+ * secara senyap untuk rubrik yang kolomnya kebetulan salah isi. Yang lewat sini
+ * tanpa skala tetap menempuh jalur lama persis.
+ */
+export function keSkala100(nilai: number, skalaMaks: number | null): number {
+  if (skalaMaks === null || !Number.isFinite(skalaMaks) || skalaMaks <= 0) return nilai
+  return (nilai / skalaMaks) * 100
+}
+
 function samakan(teks: string): string {
   return teks.trim().replace(/\s+/g, ' ').toLowerCase()
 }
@@ -91,6 +104,7 @@ export function pilihKategori(
   nilai: NilaiMentah | null | undefined,
   kategori: KategoriSkor[],
   modeSkor: ModeSkor,
+  skalaMaks: number | null = null,
 ): HasilKategori {
   if (nilai === null || nilai === undefined || nilai === '') {
     return {
@@ -105,7 +119,7 @@ export function pilihKategori(
   if (kategori.length === 0) {
     // Rubrik tanpa kategori: masih bisa dipakai kalau modenya NILAI_LANGSUNG.
     if (modeSkor === 'NILAI_LANGSUNG' && typeof nilai === 'number') {
-      const { skor, diClamp } = clampSkor(nilai)
+      const { skor, diClamp } = clampSkor(keSkala100(nilai, skalaMaks))
       return {
         kategoriTerpilih: null,
         skor,
@@ -134,8 +148,16 @@ export function pilihKategori(
         keterangan: `Mode NILAI_LANGSUNG butuh angka, diterima "${nilai}"`,
       }
     }
-    const { skor, diClamp } = clampSkor(nilai)
-    const label = urutAmbangMenurun(kategori).find((k) => cocokAmbang(skor, k))
+    const { skor, diClamp } = clampSkor(keSkala100(nilai, skalaMaks))
+    // Label dipilih dari nilai MENTAH, bukan dari skor terskala. Ambang di
+    // rubrik ("Tinggi ≥ 80") ditulis pada skala sumbernya, jadi mencocokkannya
+    // ke skor yang sudah dinormalkan akan menurunkan kategori setiap orang
+    // sekaligus — potkom 120 ("Tinggi" di skala 150) akan jatuh ke "Menengah"
+    // karena skornya 80. Tanpa skala, `keSkala100` mengembalikan nilai apa
+    // adanya sehingga keduanya sama dan perilaku lama tidak bergeser.
+    const label = urutAmbangMenurun(kategori).find((k) =>
+      cocokAmbang(skalaMaks === null ? skor : nilai, k),
+    )
     return {
       kategoriTerpilih: label?.namaKategori ?? null,
       skor,
@@ -286,7 +308,7 @@ function hitungIndikator(
   }
 
   const mentah = nilai[node.id] ?? null
-  const hasil = pilihKategori(mentah, node.kategori, node.modeSkor)
+  const hasil = pilihKategori(mentah, node.kategori, node.modeSkor, node.skalaMaks)
 
   if (hasil.perluReview && hasil.alasan) {
     catatan.push({

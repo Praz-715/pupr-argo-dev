@@ -253,7 +253,10 @@ async function IsiDetail({
           </dl>
 
           <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 text-[12px]">
-            <Link href={`/talenta/${nominasi.nip}`} className="text-accent hover:underline">
+            <Link
+              href={`/talenta/${nominasi.nip}?target=${nominasi.jabatanTargetId}`}
+              className="text-accent hover:underline"
+            >
               Profil 360°
             </Link>
             <span className="text-text-subtle">·</span>

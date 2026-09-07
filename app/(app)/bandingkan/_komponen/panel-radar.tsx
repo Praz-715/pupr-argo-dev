@@ -50,7 +50,7 @@ export function PanelRadar({
                 <th className="py-1.5 pr-3 font-medium">Indikator</th>
                 {seri.map((s) => (
                   <th key={s.nama} className="px-2 py-1.5 text-right font-medium">
-                    <span className="block max-w-[6rem] truncate" title={s.nama}>
+                    <span className="block max-w-[6rem] break-words" title={s.nama}>
                       {s.nama}
                     </span>
                   </th>

@@ -4,7 +4,14 @@ import { Suspense } from 'react'
 import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatAngka } from '@/lib/format'
-import { ambilOpsiIndukUnit, ambilPohonUnit, ambilUnitYatim } from '@/lib/kueri/master'
+import {
+  ambilJabatanPohon,
+  ambilOpsiIndukUnit,
+  ambilPohonUnit,
+  ambilUnitYatim,
+} from '@/lib/kueri/master'
+import { getCurrentUser } from '@/lib/auth'
+import { punyaPeran } from '@/lib/peran'
 import { PohonUnit } from './_komponen/pohon-unit'
 
 export const metadata = { title: 'Master Unit Organisasi' }
@@ -34,8 +41,14 @@ export default async function MasterUnitPage() {
 }
 
 async function IsiPohon() {
-  const [node, opsiInduk, yatim] = await Promise.all([
+  const pengguna = await getCurrentUser()
+  // Sama dengan `PERAN_MASTER_UNIT` di `lib/aksi/unit-organisasi.ts`. Kalau
+  // keduanya berselisih, yang menang tetap server — dan yang didapat pengguna
+  // adalah tombol yang selalu ditolak.
+  const bolehUbah = punyaPeran(pengguna, ['Super Admin'])
+  const [node, jabatan, opsiInduk, yatim] = await Promise.all([
     ambilPohonUnit(),
+    ambilJabatanPohon(),
     ambilOpsiIndukUnit(),
     ambilUnitYatim(),
   ])
@@ -76,7 +89,7 @@ async function IsiPohon() {
       ) : null}
 
       <Panel padat>
-        <PohonUnit node={node} opsiInduk={opsiInduk} />
+        <PohonUnit node={node} jabatan={jabatan} opsiInduk={opsiInduk} bolehUbah={bolehUbah} />
       </Panel>
 
       <Panel>

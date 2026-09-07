@@ -1,17 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  aksiTersedia,
-  aksiUntukKeadaan,
-  giliranSiapa,
-  periksaKonsistensi,
-  terapkanAksi,
-  timelineTahap,
-  TAHAP_PIMPINAN,
-  TAHAP_VERIFIKASI,
-  type KeadaanWorkflow,
-  type StatusApproval,
-} from './workflow'
+import { LABEL_TAHAP, TAHAP_PIMPINAN, TAHAP_VERIFIKASI, aksiTersedia, aksiUntukKeadaan, giliranSiapa, periksaKonsistensi, tahapNominasi, terapkanAksi, timelineTahap, type KeadaanWorkflow, type StatusApproval } from './workflow'
 
 /**
  * Uji state machine workflow (Fase 6).
@@ -80,7 +69,9 @@ describe('perjalanan penuh: kandidat → ditetapkan', () => {
     const hasil = terapkanAksi('VERIFIKASI_SETUJU', kandidat, 'Admin Talenta')
     expect(hasil.ok).toBe(false)
     if (hasil.ok) return
-    // Dari keadaan KANDIDAT, yang mungkin adalah AJUKAN & TOLAK_KANDIDAT.
+    // Dari keadaan KANDIDAT, satu-satunya transisi status yang mungkin AJUKAN.
+    // (Mengeluarkan dari pool bukan transisi — ia menghapus barisnya, lihat
+    // `keluarkanDariPool()`.)
     expect(hasil.alasan).toContain('Ajukan nominasi')
     expect(hasil.alasan).toContain('muat ulang')
   })
@@ -161,21 +152,70 @@ describe('wewenang per peran', () => {
 })
 
 describe('aksi yang tersedia per keadaan', () => {
-  it('KANDIDAT: ajukan atau keluarkan dari pool', () => {
-    expect(label(kandidat).sort()).toEqual(['AJUKAN', 'TOLAK_KANDIDAT'])
+  /*
+    Sejak 2 Sep 2026 hanya AJUKAN. `TOLAK_KANDIDAT` dihapus atas permintaan
+    pemilik proses: labelnya "Keluarkan dari pool" sementara akibatnya menyetel
+    status DITOLAK, dan yang dibaca pengguna labelnya. Penggantinya
+    `keluarkanDariPool()` — bukan aksi workflow, sebab ia MENGHAPUS barisnya dan
+    state machine ini hanya bisa mengungkapkan perpindahan status.
+  */
+  it('KANDIDAT: hanya bisa diajukan', () => {
+    expect(label(kandidat).sort()).toEqual(['AJUKAN'])
   })
 
-  it('menunggu verifikasi: setuju / revisi / tolak', () => {
+  it('menunggu verifikasi: setuju / revisi / tolak / tarik nominasi', () => {
+    // `BATALKAN_NOMINASI` ditambahkan 1 Sep 2026 — pengaju harus bisa menarik
+    // kembali nominasi yang salah pencet tanpa memaksa Admin Talenta menolaknya,
+    // sebab penolakan mencatat keputusan yang tidak pernah benar-benar diambil.
     expect(
       label({ statusPool: 'DINOMINASIKAN', statusNominasi: 'MENUNGGU_VERIFIKASI' }).sort(),
-    ).toEqual(['MINTA_REVISI', 'VERIFIKASI_SETUJU', 'VERIFIKASI_TOLAK'])
+    ).toEqual(['BATALKAN_NOMINASI', 'MINTA_REVISI', 'VERIFIKASI_SETUJU', 'VERIFIKASI_TOLAK'])
   })
 
-  it('diverifikasi: tetapkan atau tolak di tahap pimpinan', () => {
+  it('diverifikasi: tetapkan, tolak, atau batalkan verifikasinya', () => {
     expect(label({ statusPool: 'DIVERIFIKASI', statusNominasi: 'DISETUJUI' }).sort()).toEqual([
+      'BATALKAN_VERIFIKASI',
       'TETAPKAN',
       'TOLAK_PIMPINAN',
     ])
+  })
+
+  /*
+    Jalan buntu yang diperbaiki 1 Sep 2026, dan inilah kontrolnya.
+
+    `entri.statusNominasi` membaca nominasi TERAKHIR. Sebelum perbaikan, `AJUKAN`
+    hanya menerima `null`, jadi kandidat yang pernah dinominasikan lalu turun lagi
+    punya baris nominasi lama berstatus DITOLAK — dan tombol Ajukan tidak pernah
+    muncul lagi untuknya, tanpa satu pun pesan yang menjelaskan.
+  */
+  it('kandidat yang nominasi lamanya DITOLAK masih bisa diajukan lagi', () => {
+    expect(label({ statusPool: 'KANDIDAT', statusNominasi: 'DITOLAK' }).sort()).toEqual(['AJUKAN'])
+  })
+
+  it('turun penuh: verifikasi dibatalkan → nominasi ditarik → bisa diajukan lagi', () => {
+    const diverifikasi = { statusPool: 'DIVERIFIKASI', statusNominasi: 'DISETUJUI' } as const
+    const a = terapkanAksi('BATALKAN_VERIFIKASI', diverifikasi, 'Admin Talenta')
+    expect(a.ok).toBe(true)
+    if (!a.ok) return
+    expect([a.statusPoolBaru, a.statusNominasiBaru]).toEqual(['DINOMINASIKAN', 'MENUNGGU_VERIFIKASI'])
+
+    const b = terapkanAksi(
+      'BATALKAN_NOMINASI',
+      { statusPool: a.statusPoolBaru, statusNominasi: a.statusNominasiBaru },
+      'Admin Talenta',
+    )
+    expect(b.ok).toBe(true)
+    if (!b.ok) return
+    // DITARIK, bukan DITOLAK: pengajuannya yang dibatalkan, bukan orangnya yang
+    // gagal. Kalau ia ditutup sebagai DITOLAK, salah pencet yang sudah dibatalkan
+    // tetap mengendap di rekam jejaknya dan muncul di penyaring "Ditolak" —
+    // kebalikan dari "diatas datanya klir" (butir 3 PDF).
+    expect([b.statusPoolBaru, b.statusNominasiBaru]).toEqual(['KANDIDAT', 'DITARIK'])
+
+    // Dan dari situ ia benar-benar bisa maju lagi — bukan cuma "terlihat" di pool.
+    expect(
+      label({ statusPool: b.statusPoolBaru, statusNominasi: b.statusNominasiBaru }),
+    ).toContain('AJUKAN')
   })
 
   it('ditetapkan: hanya bisa dibatalkan', () => {
@@ -305,5 +345,41 @@ describe('timelineTahap', () => {
   it('tahap yang tidak dikenal diabaikan, tidak menjatuhkan timeline', () => {
     const t = timelineTahap([{ tahap: 'Tahap Karangan', status: 'DISETUJUI' }])
     expect(t.every((l) => l.status === 'BELUM')).toBe(true)
+  })
+})
+
+/*
+  Nominasi yang DITARIK ≠ ditolak (`doc/sql/033`, butir 3 PDF: "diatas datanya klir").
+
+  Diuji terpisah karena bedanya tidak terlihat dari status pool — keduanya sama-sama
+  mengembalikan orangnya jadi KANDIDAT. Yang berbeda apa yang MENGENDAP di rekam
+  jejaknya, dan itu baru terbaca lewat tahap & labelnya.
+*/
+describe('nominasi ditarik bukan nominasi ditolak', () => {
+  it('tahapnya DITARIK, bukan DITOLAK maupun REVISI', () => {
+    // DITOLAK akan menaruhnya di penyaring "Ditolak" — penolakan yang tidak pernah
+    // terjadi. REVISI akan berbunyi "Dikembalikan untuk revisi", padahal tidak ada
+    // yang mengembalikannya untuk diperbaiki.
+    expect(tahapNominasi({ statusNominasi: 'DITARIK', statusPool: 'KANDIDAT' })).toBe('DITARIK')
+    expect(LABEL_TAHAP.DITARIK).toBe('Ditarik kembali')
+  })
+
+  it('pasangan status DITARIK + KANDIDAT dianggap konsisten', () => {
+    expect(periksaKonsistensi({ statusPool: 'KANDIDAT', statusNominasi: 'DITARIK' })).toBeNull()
+  })
+
+  it('sesudah ditarik, ia bisa diajukan lagi', () => {
+    const aksi = aksiUntukKeadaan({ statusPool: 'KANDIDAT', statusNominasi: 'DITARIK' }).map(
+      (a) => a.aksi,
+    )
+    expect(aksi).toContain('AJUKAN')
+  })
+})
+
+describe('giliran sesudah nominasi ditarik', () => {
+  it('kembali ke unit pengaju, BUKAN "tidak menunggu siapa pun"', () => {
+    // Kontrol atas cabang `default` yang menelan status baru tanpa suara: ia akan
+    // menjawab SELESAI untuk keadaan yang justru masih menunggu tindakan.
+    expect(giliranSiapa({ statusPool: 'KANDIDAT', statusNominasi: 'DITARIK' })).toBe('UNIT')
   })
 })

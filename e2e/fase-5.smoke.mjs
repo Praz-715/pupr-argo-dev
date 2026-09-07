@@ -47,14 +47,66 @@ function tegaskan(kondisi, pesan) {
   return pesan
 }
 
-const RUTE = [
-  ['/jabatan-target', 'Jabatan Target'],
-  ['/jabatan-target/1', 'Kepala Balai'],
-  ['/jabatan-target/1/kandidat', 'Kandidat & Eligibility Check'],
-  ['/jabatan-target/1/simulasi', 'Simulasi & Diff'],
-]
+/*
+  Jabatan target subjek uji DITURUNKAN dari daftar yang sedang tampil, tidak dipaku.
 
-const KODE_UJI = `SMOKE5-${Date.now().toString().slice(-6)}`
+  Sampai 1 Sep 2026 berkas ini memaku `/jabatan-target/1`. Id itu lenyap ketika
+  pemilik proses meminta `jabatan_target` dikosongkan lalu disimulasikan ulang dari
+  `sample.xlsx` — dan sesudah itu SEBELAS langkah gagal sekaligus dengan pesan
+  "Halaman tidak ditemukan", yang terbaca seperti halaman jabatan target rusak.
+  Padahal yang rusak ujinya.
+
+  Ini kali keenam konstanta data di harness meledak setelah datanya berubah dengan
+  sengaja (CLAUDE.md mencatat lima sebelumnya). Aturannya sudah tertulis di sana:
+  sebelum menulis asersi, tanyakan *"apa yang membuat ini merah kalau datanya
+  berubah tapi kodenya benar?"*
+*/
+async function targetAktifPertama(page) {
+  await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'domcontentloaded' })
+  /*
+    Ditunggu TAUTANNYA, bukan judul halaman. Judul "Jabatan Target" sudah ada di
+    HTML awal sementara tabelnya dialirkan lewat `<Suspense>` — menunggu judulnya
+    lolos SEKETIKA lalu membaca daftar yang belum tiba, dan hasilnya "tidak ada
+    satu pun jabatan target". Jebakan #1 di CLAUDE.md, dan versi pertama fungsi ini
+    kena persis di situ.
+  */
+  await page.waitForSelector('main a[href^="/jabatan-target/"]', { timeout: 30000 })
+  /*
+    Yang dicari baris berstatus AKTIF, bukan baris PERTAMA — dan bedanya terbukti
+    menggigit: jalan yang dihentikan di tengah meninggalkan jabatan target DRAFT
+    buatan smoke sendiri, ia duduk di baris pertama, terpilih jadi subjek, lalu
+    dihapus oleh langkah pembersihan berikutnya. Langkah terakhir ("subjek uji
+    tetap AKTIF") kemudian gagal atas target yang memang sengaja dibuang.
+
+    "Nonaktif" memuat kata "aktif", jadi keduanya harus dikeluarkan eksplisit.
+  */
+  const href = await page.locator('main tbody tr').evaluateAll((baris) => {
+    for (const tr of baris) {
+      const teks = (tr.innerText ?? '').toLowerCase()
+      if (!/\baktif\b/.test(teks) || teks.includes('nonaktif') || teks.includes('draft')) continue
+      for (const a of tr.querySelectorAll('a[href]')) {
+        const m = /^\/jabatan-target\/(\d+)$/.exec(a.getAttribute('href') ?? '')
+        if (m !== null) return m[1]
+      }
+    }
+    return null
+  })
+  if (href === null) {
+    throw new Error(
+      'Tidak ada satu pun jabatan target AKTIF di /jabatan-target — ini PRASYARAT, bukan temuan tentang halaman jabatan target.',
+    )
+  }
+  return Number(href)
+}
+
+let ID_TARGET = 0
+let NAMA_TARGET = ''
+/** Kode target yang PASTI sudah dipakai — untuk menguji penolakan kode ganda. */
+let KODE_TERPAKAI = ''
+let RUTE = []
+
+/** Label jabatan yang dipilih dari master — diisi langkah pembuatan. */
+let namaJabatanUji = ''
 const browser = await chromium.launch()
 
 try {
@@ -64,6 +116,25 @@ try {
   page.on('response', (r) => {
     if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`)
   })
+
+  ID_TARGET = await targetAktifPertama(page)
+  NAMA_TARGET = (
+    await page.locator(`main a[href="/jabatan-target/${ID_TARGET}"]`).first().innerText()
+  ).trim()
+  KODE_TERPAKAI =
+    /\bJT-[A-Z0-9-]+/.exec(
+      await page
+        .locator('tr')
+        .filter({ has: page.locator(`a[href="/jabatan-target/${ID_TARGET}"]`) })
+        .first()
+        .innerText(),
+    )?.[0] ?? ''
+  RUTE = [
+    ['/jabatan-target', 'Jabatan Target'],
+    [`/jabatan-target/${ID_TARGET}`, NAMA_TARGET.slice(0, 24)],
+    [`/jabatan-target/${ID_TARGET}/kandidat`, 'Kandidat & Eligibility Check'],
+    [`/jabatan-target/${ID_TARGET}/simulasi`, 'Simulasi & Diff'],
+  ]
 
   // -------------------------------------------------------------------------
   // 0. Bersihkan sisa uji sebelumnya (idempoten)
@@ -111,12 +182,12 @@ try {
     }
 
     if (tema === 'dark') {
-      await p.goto(`${BASE}/jabatan-target/1?tab=rubrik`, { waitUntil: 'networkidle' })
+      await p.goto(`${BASE}/jabatan-target/${ID_TARGET}?tab=rubrik`, { waitUntil: 'networkidle' })
       await p.screenshot({ path: `${OUT}/f5-rubrik-dark.png`, fullPage: true })
     } else {
-      await p.goto(`${BASE}/jabatan-target/1?tab=rubrik`, { waitUntil: 'networkidle' })
+      await p.goto(`${BASE}/jabatan-target/${ID_TARGET}?tab=rubrik`, { waitUntil: 'networkidle' })
       await p.screenshot({ path: `${OUT}/f5-rubrik-light.png`, fullPage: true })
-      await p.goto(`${BASE}/jabatan-target/1/kandidat`, { waitUntil: 'networkidle' })
+      await p.goto(`${BASE}/jabatan-target/${ID_TARGET}/kandidat`, { waitUntil: 'networkidle' })
       await p.screenshot({ path: `${OUT}/f5-kandidat.png`, fullPage: true })
     }
     await ctxTema.close()
@@ -136,7 +207,7 @@ try {
   // 3. Panel pemeriksaan rubrik pada rubrik yang benar
   // -------------------------------------------------------------------------
   await langkah('rubrik seed lolos pemeriksaan & bisa diaktifkan', async () => {
-    await page.goto(`${BASE}/jabatan-target/1?tab=rubrik`, { waitUntil: 'networkidle' })
+    await page.goto(`${BASE}/jabatan-target/${ID_TARGET}?tab=rubrik`, { waitUntil: 'networkidle' })
     const teks = await page.locator('body').innerText()
     tegaskan(
       teks.includes('Rubrik lolos seluruh pemeriksaan'),
@@ -163,71 +234,133 @@ try {
   // -------------------------------------------------------------------------
   // 4. Jabatan target baru: DRAFT, rubrik kosong, aktivasi ditolak
   // -------------------------------------------------------------------------
-  await langkah('buat jabatan target baru → lahir DRAFT & diarahkan ke editornya', async () => {
+  await langkah('buat jabatan target baru → DIPILIH dari master, lahir DRAFT', async () => {
+    /*
+      Sejak 25 Agu 2026 pembuatan **tidak lagi bebas-teks**: kode & nama diturunkan
+      dari baris master jabatan (`buatJabatanTarget()` dicabut seluruhnya). Jadi uji
+      ini tidak bisa lagi menentukan kodenya sendiri — dan kode uji yang dulu dipakai
+      mengisolasi barisnya hilang bersamanya.
+
+      Isolasinya sekarang **id** yang dikembalikan URL editor. Itu justru lebih kuat:
+      kode bisa berubah bentuk, id tidak; dan pembersihan yang mencari baris menurut
+      TEKS akan cocok dengan baris lain begitu ada nama yang mirip.
+    */
     await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: 'Buat jabatan target' }).click()
-    await page.getByPlaceholder('mis. JT-KABALAI-BJKW').fill(KODE_UJI)
-    await page
-      .getByPlaceholder('mis. Kepala Balai Jasa Konstruksi Wilayah')
-      .fill(`Jabatan Uji Smoke ${KODE_UJI}`)
-    await page.getByRole('button', { name: 'Simpan' }).click()
-    await page.waitForURL(/\/jabatan-target\/\d+$/, { timeout: 15000 })
-    // Menunggu TEKS, bukan waktu: editor dirender streaming, jadi membaca
-    // body terlalu cepat menangkap skeleton yang belum memuat badge status.
-    await page.waitForFunction(
-      () => document.body.innerText.includes('DRAFT'),
-      undefined,
-      { timeout: 15000 },
-    )
-    return `dialihkan ke ${new URL(page.url()).pathname} · berstatus DRAFT`
+    const dialog = page.locator('dialog[open]')
+    await dialog.locator('input[aria-label="Cari jabatan di master"]').waitFor({ timeout: 20000 })
+    // Tombol Pilih yang HIDUP = jabatan yang belum punya jabatan target. Yang sudah
+    // punya tetap ditampilkan dengan tombol mati, jadi `.first()` saja bisa mengenai
+    // baris yang tidak bisa dipilih.
+    const pilih = dialog.locator('button:not([disabled])', { hasText: /^Pilih$/ })
+    await pilih.first().waitFor({ state: 'attached', timeout: 20000 })
+    namaJabatanUji = (await pilih.first().getAttribute('aria-label')) ?? ''
+    await pilih.first().click()
+    await page.waitForURL(/\/jabatan-target\/\d+\?tab=syarat$/, { timeout: 20000 })
+    // Menunggu TEKS, bukan waktu: editor dirender streaming, jadi membaca body
+    // terlalu cepat menangkap skeleton yang belum memuat badge status.
+    await page.waitForFunction(() => document.body.innerText.includes('DRAFT'), undefined, {
+      timeout: 20000,
+    })
+    return `${namaJabatanUji} · dialihkan ke ${new URL(page.url()).pathname} · DRAFT`
   })
 
   const idBaru = Number(new URL(page.url()).pathname.split('/').pop())
 
   await langkah('validasi Zod tampil PER FIELD, bukan sebagai toast', async () => {
+    /*
+      Diuji di dialog **Ubah profil**, sebab dialog Buat tidak punya field identitas
+      lagi (25 Agu 2026). Yang dijaga tetap sama dan tetap penting: pesan kesalahan
+      muncul di sebelah kotak yang salah, dan **isian tidak hilang** — form yang
+      mengosongkan dirinya tiap kali ditolak memaksa orang mengetik ulang segalanya.
+    */
     await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
-    await page.getByRole('button', { name: 'Buat jabatan target' }).click()
-    await page.getByPlaceholder('mis. JT-KABALAI-BJKW').fill('X')
-    await page.getByPlaceholder('mis. Kepala Balai Jasa Konstruksi Wilayah').fill('Pendek')
+    const barisUji = page
+      .locator('tr')
+      .filter({ has: page.locator(`a[href="/jabatan-target/${idBaru}"]`) })
+    await barisUji.locator('button[aria-label^="Aksi untuk"]').click()
+    await page.getByRole('button', { name: /^Ubah profil$/ }).first().click()
+    const dialog = page.locator('dialog[open]')
+    await dialog.waitFor()
+    const kode = dialog.locator('input').first()
+    await kode.fill('X')
     await page.getByRole('button', { name: 'Simpan' }).click()
-    await page.waitForTimeout(1200)
+    await page.waitForTimeout(1500)
     const galat = await page.locator('[role="alert"]').allInnerTexts()
     tegaskan(galat.length > 0, 'tidak ada pesan galat per field')
     tegaskan(
-      galat.some((g) => g.includes('minimal 3 karakter')),
+      galat.some((g) => /minimal \d+ karakter/.test(g)),
       `pesan galat tidak menyebut batas panjang: ${galat.join(' | ')}`,
     )
-    const isian = await page.getByPlaceholder('mis. JT-KABALAI-BJKW').inputValue()
-    tegaskan(isian === 'X', 'isian hilang setelah gagal validasi')
+    tegaskan((await kode.inputValue()) === 'X', 'isian hilang setelah gagal validasi')
     await page.keyboard.press('Escape')
     return `${galat.length} pesan per field · isian tetap utuh`
   })
 
   await langkah('kode target ganda ditolak dengan pesan yang bisa ditindak', async () => {
+    // Jalur duplikat kode masih hidup — lewat penyuntingan, bukan pembuatan.
     await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
-    await page.getByRole('button', { name: 'Buat jabatan target' }).click()
-    await page.getByPlaceholder('mis. JT-KABALAI-BJKW').fill(KODE_UJI)
-    await page
-      .getByPlaceholder('mis. Kepala Balai Jasa Konstruksi Wilayah')
-      .fill('Jabatan Uji Duplikat Kode')
+    const barisUji = page
+      .locator('tr')
+      .filter({ has: page.locator(`a[href="/jabatan-target/${idBaru}"]`) })
+    await barisUji.locator('button[aria-label^="Aksi untuk"]').click()
+    await page.getByRole('button', { name: /^Ubah profil$/ }).first().click()
+    const dialog = page.locator('dialog[open]')
+    await dialog.waitFor()
+    /*
+      Kodenya DITURUNKAN dari jabatan target yang sedang ada, tidak dipaku.
+      Versi sebelumnya memakai `JT-KABALAI-BP2JK-KASUBDIT-PENGADAAN`, kode milik
+      target seed #1 — dan begitu seed itu hilang, kodenya bukan duplikat lagi:
+      penyimpanan BERHASIL, tidak ada pesan galat, dan langkah ini melapor "pesan
+      duplikat tidak jelas" atas penolakan yang memang tidak pernah terjadi.
+      Sekelas dengan `/jabatan-target/1` di atas.
+    */
+    tegaskan(KODE_TERPAKAI !== '', 'tidak ada kode target yang bisa dipakai menguji duplikat')
+    await dialog.locator('input').first().fill(KODE_TERPAKAI)
     await page.getByRole('button', { name: 'Simpan' }).click()
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(2000)
     const galat = (await page.locator('[role="alert"]').allInnerTexts()).join(' ')
-    tegaskan(galat.includes('sudah dipakai'), `pesan duplikat tidak jelas: "${galat}"`)
+    const badan = await page.locator('body').innerText()
+    tegaskan(
+      /sudah dipakai/i.test(galat) || /sudah dipakai/i.test(badan),
+      `pesan duplikat tidak jelas: "${galat}"`,
+    )
     await page.keyboard.press('Escape')
     return 'pesan menyebut kode sudah dipakai'
   })
 
   await langkah('aktivasi ditolak: belum ada jabatan anggota, alasannya disebut', async () => {
-    await page.goto(`${BASE}/jabatan-target/${idBaru}`, { waitUntil: 'networkidle' })
-    await page.getByRole('button', { name: 'Aktifkan' }).click()
-    await page.waitForTimeout(1500)
-    const toast = await page.locator('body').innerText()
-    tegaskan(
-      toast.includes('Belum ada jabatan anggota') || toast.includes('jabatan anggota'),
-      'penolakan tidak menyebut jabatan anggota',
+    /*
+      Keadaan "nol jabatan anggota" harus DIBUAT lebih dulu sekarang. Sejak
+      pembuatan dipindah ke pemilih master (25 Agu 2026), jabatan target lahir
+      **sudah** membawa satu anggota — itu justru salah satu tujuan perubahannya.
+      Jadi anggotanya dilepas dulu; langkah berikutnya (`tambah jabatan anggota
+      lewat pencarian`) yang memasangnya kembali.
+
+      Invariannya tidak dilonggarkan, malah bertambah satu jalur yang teruji:
+      melepas anggota terakhir mengembalikan target ke keadaan yang tidak boleh
+      diaktifkan.
+    */
+    await page.goto(`${BASE}/jabatan-target/${idBaru}?tab=anggota`, { waitUntil: 'networkidle' })
+    const lepas = page.locator('button[aria-label^="Lepas "]')
+    await lepas.first().waitFor({ state: 'attached', timeout: 20000 })
+    await lepas.first().click()
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Belum ada jabatan anggota'),
+      undefined,
+      { timeout: 25000 },
     )
-    return 'penolakan menyebut jabatan anggota'
+
+    await page.getByRole('button', { name: 'Aktifkan' }).click()
+    // Menunggu KEADAAN penolakan, bukan waktu tetap: toast bisa datang setelah
+    // 1,5 detik di server yang sedang sibuk, dan pembacaan yang mendahuluinya
+    // melaporkan "penolakan tidak menyebut apa pun".
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Belum ada jabatan anggota'),
+      undefined,
+      { timeout: 25000 },
+    )
+    return 'anggota dilepas → penolakan menyebut jabatan anggota'
   })
 
   await langkah('panel pemeriksaan menandai rubrik kosong sebagai galat', async () => {
@@ -279,7 +412,19 @@ try {
     }
 
     await tungguMengendap()
-    const tombol = page.getByRole('button', { name: 'Tambah' }).first()
+    /*
+      `exact: true` WAJIB, dan ini kena 1 Sep 2026. `getByRole(name:)` bawaannya
+      mencocokkan SUBSTRING, jadi `name: 'Tambah'` juga cocok dengan tombol
+      **"Tambah semua (2)"** — dan sejak daftar pilihan dikelompokkan per RUMPUN
+      (`koreksi sistem informasi.pdf` 1 Sep 2026, butir 1), baris teratasnya bisa
+      berupa rumpun ber-2 kursi. Satu klik lalu menambahkan DUA jabatan anggota,
+      dan langkah ini melapor "jumlah bukan 1 (terbaca 2)" — yang terbaca seperti
+      aksinya rusak, padahal tombolnya memang menambahkan dua dan mengatakannya.
+
+      Yang diuji langkah ini menambahkan SATU kursi lewat pencarian, jadi yang
+      benar menargetkan tombol yang namanya persis "Tambah".
+    */
+    const tombol = page.getByRole('button', { name: 'Tambah', exact: true }).first()
     tegaskan(await tombol.isVisible(), 'tidak ada jabatan yang bisa ditambahkan')
     await tombol.click()
     await page
@@ -291,7 +436,7 @@ try {
     let jml = await jumlahAnggota()
     if (jml === 0) {
       await tungguMengendap()
-      await page.getByRole('button', { name: 'Tambah' }).first().click()
+      await page.getByRole('button', { name: 'Tambah', exact: true }).first().click()
       await page
         .waitForFunction(() => /Jabatan anggota \(1\)/.test(document.body.innerText), undefined, {
           timeout: 10000,
@@ -390,9 +535,34 @@ try {
 
   await langkah('aktivasi berhasil setelah anggota & rubrik lengkap', async () => {
     await page.getByRole('button', { name: 'Aktifkan' }).click()
-    await page.waitForTimeout(2000)
+    /*
+      DITUNGGU keadaannya, bukan dijeda sekian detik. Versi lama memakai
+      `waitForTimeout(2000)` lalu langsung membaca body — dan itu merah pada mesin
+      yang sedang sibuk (terukur: gagal dua jalan berturut-turut, lalu hijau dengan
+      2.500 ms). Menaikkan jedanya hanya memindahkan ambangnya; yang benar menunggu
+      sampai tombolnya berganti menjadi "Nonaktifkan", yaitu bukti status barunya
+      sudah dirender ulang server.
+    */
+    await page
+      .getByRole('button', { name: 'Nonaktifkan' })
+      .waitFor({ timeout: 30000 })
+      .catch(() => {})
     const teks = await page.locator('body').innerText()
-    tegaskan(teks.includes('AKTIF'), 'status tidak berubah menjadi AKTIF')
+    /*
+      Kalau gagal, SEBUTKAN alasannya: aksinya menampilkan penolakan lewat toast
+      ("Belum bisa diaktifkan" + keterangan), dan pesan "status tidak berubah"
+      saja memaksa orang berikutnya menelusuri dari nol — padahal jawabannya ada
+      di layar saat itu juga.
+    */
+    if (!teks.includes('AKTIF')) {
+      const toast = await page
+        .locator('[role="status"], [role="alert"]')
+        .allInnerTexts()
+        .catch(() => [])
+      throw new Error(
+        `status tidak berubah menjadi AKTIF${toast.length > 0 ? ` — pesan di layar: ${toast.join(' | ').replace(/\s+/g, ' ').slice(0, 220)}` : ' (tanpa pesan di layar)'}`,
+      )
+    }
     return 'status AKTIF'
   })
 
@@ -627,25 +797,34 @@ try {
 
   await langkah('kembalikan bobot & bersihkan jabatan target uji', async () => {
     await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
-    const baris = page.locator('tr', { hasText: KODE_UJI }).first()
+    const tautanUji = `a[href="/jabatan-target/${idBaru}"]`
+    const baris = page.locator('tr').filter({ has: page.locator(tautanUji) })
     await baris.locator('button[aria-label^="Aksi untuk"]').click()
     await page.getByRole('button', { name: 'Hapus' }).first().click()
     await page.getByRole('button', { name: /^(Hapus|Nonaktifkan)$/ }).last().click()
-    await page.waitForTimeout(2500)
-    const teks = await page.locator('body').innerText()
-    tegaskan(!teks.includes(KODE_UJI), 'jabatan target uji masih ada setelah dihapus')
-    return 'jabatan target uji dihapus'
+    /*
+      Dicari menurut ID, bukan teks: nama target sekarang diturunkan dari master
+      sehingga bisa sama dengan target lain — dan pembersihan yang mencocokkan nama
+      akan menyatakan berhasil atas baris milik orang lain.
+    */
+    await page.waitForFunction((sel) => document.querySelector(sel) === null, tautanUji, {
+      timeout: 25000,
+    })
+    return `jabatan target uji #${idBaru} dihapus`
   })
 
   // -------------------------------------------------------------------------
   // 8. Tidak ada regresi pada jabatan target seed
   // -------------------------------------------------------------------------
-  await langkah('jabatan target seed tetap AKTIF & rubriknya utuh', async () => {
-    await page.goto(`${BASE}/jabatan-target/1?tab=rubrik`, { waitUntil: 'networkidle' })
+  await langkah('jabatan target subjek uji tetap AKTIF & rubriknya utuh', async () => {
+    await page.goto(`${BASE}/jabatan-target/${ID_TARGET}?tab=rubrik`, { waitUntil: 'networkidle' })
     const teks = await page.locator('body').innerText()
-    tegaskan(teks.includes('AKTIF'), 'jabatan target 1 tidak lagi AKTIF')
-    tegaskan(teks.includes('Rubrik lolos seluruh pemeriksaan'), 'rubrik seed tidak lagi lolos')
-    return 'rubrik seed utuh'
+    tegaskan(teks.includes('AKTIF'), `jabatan target ${ID_TARGET} tidak lagi AKTIF`)
+    tegaskan(
+      teks.includes('Rubrik lolos seluruh pemeriksaan'),
+      `rubrik jabatan target ${ID_TARGET} tidak lagi lolos`,
+    )
+    return `rubrik #${ID_TARGET} utuh`
   })
 
   await langkah('audit tercatat untuk mutasi Fase 5', async () => {
@@ -680,7 +859,7 @@ try {
   ]) {
     const c = await konteksMasuk(browser, { base: BASE, viewport: { width: lebar, height: 1180 } })
     const p = await c.newPage()
-    for (const rute of ['/jabatan-target', '/jabatan-target/1', '/jabatan-target/1/simulasi']) {
+    for (const rute of ['/jabatan-target', `/jabatan-target/${ID_TARGET}`, `/jabatan-target/${ID_TARGET}/simulasi`]) {
       await p.goto(`${BASE}${rute}`, { waitUntil: 'networkidle' })
       await p.waitForTimeout(700)
       await langkah(`${nama}: ${rute} tanpa scroll horizontal halaman`, async () => {

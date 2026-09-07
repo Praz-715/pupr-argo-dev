@@ -42,7 +42,25 @@ const SQL_FAKTA: Record<string, string> = {
     '(EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id) AND NOT EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id AND rj.tanggal_mulai IS NULL))',
   riwayatJabatanTerpetakan:
     '(EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id) AND NOT EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id AND rj.jabatan_id IS NULL))',
-  disiplinTerverifikasi: 'EXISTS (SELECT 1 FROM hukuman_disiplin h WHERE h.pegawai_id = p.id)',
+  /*
+    Terpenuhi oleh DUA jalan, dan yang kedua baru ditambahkan 25 Agu 2026 atas
+    permintaan pemilik proses: *"di profil kan ada verifikasi kalo dia gak ada
+    hukuman ya itu belum mempengaruhi kesiapan data, masih dianggap blm diisi
+    disiplinnya"*.
+
+      1. ada baris `hukuman_disiplin` — rekam jejaknya memang tercatat;
+      2. `pegawai.hukdis_diverifikasi_pada` terisi — seseorang sudah MEMERIKSA dan
+         menyatakan tidak ada catatan (`doc/sql/020`).
+
+    Tanpa jalan kedua, satu-satunya cara menaikkan skor kesiapan data adalah
+    **membuat catatan hukuman** — untuk pegawai yang justru bersih. Itu mendorong
+    orang mengarang baris "Tidak Pernah" demi angka, dan angka yang dinaikkan dengan
+    cara begitu tidak lagi berarti apa pun. Ceklis verifikasinya ada supaya "sudah
+    diperiksa, hasilnya bersih" bisa dinyatakan tanpa memalsukan catatan.
+  */
+  disiplinTerverifikasi:
+    '(EXISTS (SELECT 1 FROM hukuman_disiplin h WHERE h.pegawai_id = p.id)' +
+    ' OR p.hukdis_diverifikasi_pada IS NOT NULL)',
 }
 
 function bangunEkspresiKelengkapan(): { skor: string; totalBobot: number } {

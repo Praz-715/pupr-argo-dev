@@ -1,8 +1,10 @@
 import { Suspense } from 'react'
 
 import { PageHeader } from '@/components/ui/panel'
+import { InfoRumpun } from './_komponen/info-rumpun'
 import { PetaSebaran, PetaSebaranSkeleton } from './_widget/peta-sebaran'
 import { KartuRingkas, KartuRingkasSkeleton } from './_widget/kartu-ringkas'
+import { dariDaftar, nomorHalaman } from '@/lib/param'
 import {
   AnggotaKotak,
   AnggotaKotakSkeleton,
@@ -41,10 +43,24 @@ export const metadata = { title: 'Dashboard' }
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kotak?: string }>
+  searchParams: Promise<{
+    kotak?: string
+    halKotak?: string
+    urutKotak?: string
+    arahKotak?: string
+  }>
 }) {
   const params = await searchParams
   const kotakDipilih = bacaKotak(params.kotak)
+  // Paginasi drill-down. `halKotak`, bukan `hal`: URL ini sudah membawa `?kotak=`
+  // dan `hal` adalah nama bawaan DataTable yang dipakai tabel lain di halaman lain.
+  const halKotak = nomorHalaman(params.halKotak)
+  // Nama sendiri (`urutKotak`/`arahKotak`), bukan `urut`/`arah` bawaan DataTable —
+  // alasan yang sama dengan `halKotak`. Nilainya TIDAK divalidasi di sini: kuerinya
+  // memakai daftar putih dan jatuh ke `talenta` untuk kunci yang tak dikenal, jadi
+  // memvalidasinya dua kali berarti dua tempat yang harus sepakat.
+  const urutKotak = params.urutKotak ?? null
+  const arahKotak = dariDaftar(params.arahKotak, ['asc', 'desc'] as const) ?? null
 
   return (
     <div className="space-y-5">
@@ -52,6 +68,18 @@ export default async function DashboardPage({
         judul="Dashboard Talenta"
         deskripsi="Ringkasan kondisi talenta ASN Direktorat Jenderal Bina Konstruksi — sebaran Kotak 9 dan jabatan strategis yang kosong."
       />
+
+      {/*
+        Keterangan penyaring rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`,
+        butir 4). Ber-`Suspense` sendiri: ia butuh satu kueri master jabatan, dan
+        menaruhnya di badan halaman berarti seluruh dashboard menunggunya.
+        Fallback-nya `null` — pita setinggi 32px yang muncul belakangan tidak
+        menggeser apa pun yang sedang dibaca, sementara skeleton di posisi itu
+        justru menarik mata ke keterangan yang paling tidak mendesak di halaman.
+      */}
+      <Suspense fallback={null}>
+        <InfoRumpun />
+      </Suspense>
 
       {/* W1 */}
       <Suspense fallback={<KartuRingkasSkeleton />}>
@@ -89,23 +117,31 @@ export default async function DashboardPage({
           terukur, panel tumbuh 613px → 2.062px begitu daftarnya diisi 24 baris,
           dan `overflow-y-auto` di dalamnya tidak pernah aktif.
 
-          `6fr : 5fr` — Sebaran Kotak 9 SENGAJA lebih lebar daripada Peta
-          Kinerja × Potensial (keputusan user, 18 Agu 2026). Rasio ini sempat
-          diseimbangkan ke `1fr : 1fr` pada hari yang sama lalu dikembalikan:
-          Kotak 9 adalah isi utama halaman ini — sembilan sel yang bisa diklik,
-          masing-masing memuat nomor, jumlah, dan persentase — sementara Peta
-          menyebar populasi yang sama pada dua sumbu sebagai pendamping. Yang
-          utama mendapat ruang lebih.
+          `xl:grid-cols-2` — kedua panel SAMA LEBAR, seperti di halaman Peta
+          Talenta yang memakai grid dua kolom yang sama.
 
-          Angkanya, terukur: pada `1fr : 1fr` keduanya 566px di 1440 dan 646px di
-          1600; pada `6fr : 5fr` Kotak 9 mendapat 617px vs 515px, dan 705px vs
-          587px. Sel Kotak 9 tetap KOTAK di kedua rasio — bentuknya ditentukan
-          `aspect-square` di `kotak9-grid.tsx`, bukan oleh lebar panelnya.
+          ## Riwayat rasio ini, supaya tidak diubah bolak-balik lagi
 
-          `minmax(0,6fr)` bukan `6fr` — batas bawah nol itu yang membuat panel
-          boleh MENYUSUT; tanpanya isi panel menolak lebih sempit dari lebar
-          alaminya lalu gridnya meluber. */}
-      <div className="grid gap-5 xl:h-[39rem] xl:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] xl:grid-rows-[minmax(0,1fr)]">
+          Pernah `6fr : 5fr` (Kotak 9 lebih lebar) sebagai keputusan user 18 Agu
+          2026, sesudah `1fr : 1fr` dicoba lalu dikembalikan pada hari yang sama.
+          Alasannya waktu itu: Kotak 9 adalah isi utama halaman, Peta cuma
+          pendamping. **Dikembalikan ke sama lebar pada 24 Agu 2026** atas
+          permintaan user: *"ukuran Sebaran Kotak 9 dan Peta Kinerja × Potensial
+          di dashboard samain kaya di peta talenta biar sama ukurannya kiri
+          kanan"* — halaman Peta Talenta memajang pasangan panel yang sama
+          persis dengan `xl:grid-cols-2`, dan dua halaman yang memajang pasangan
+          panel yang sama dengan proporsi berbeda terbaca seperti salah satunya
+          belum selesai. **Ini keputusan user yang paling baru; jangan
+          mengembalikan `6fr : 5fr` sebagai "perbaikan".**
+
+          `grid-cols-2` di Tailwind sudah `repeat(2, minmax(0, 1fr))`, jadi batas
+          bawah nol yang dulu ditulis eksplisit (`minmax(0,6fr)`) tetap ada —
+          itu yang membuat panel boleh MENYUSUT; tanpanya isi panel menolak lebih
+          sempit dari lebar alaminya lalu gridnya meluber.
+
+          Sel Kotak 9 tetap KOTAK pada rasio apa pun — bentuknya ditentukan
+          `aspect-square` di `kotak9-grid.tsx`, bukan oleh lebar panelnya. */}
+      <div className="grid gap-5 xl:h-[39rem] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
         <Suspense fallback={<SebaranKotak9Skeleton />}>
           <SebaranKotak9 kotakAktif={kotakDipilih} />
         </Suspense>
@@ -118,8 +154,16 @@ export default async function DashboardPage({
           tabel pegawai, dan memaksanya ke separuh kolom membuat kolom NIP &
           jabatan terpotong padahal ruangnya ada. */}
       {kotakDipilih !== null ? (
-        <Suspense key={kotakDipilih} fallback={<AnggotaKotakSkeleton />}>
-          <AnggotaKotak kotak={kotakDipilih} />
+        <Suspense
+          key={`${kotakDipilih}-${halKotak}-${urutKotak}-${arahKotak}`}
+          fallback={<AnggotaKotakSkeleton />}
+        >
+          <AnggotaKotak
+            kotak={kotakDipilih}
+            halaman={halKotak}
+            urut={urutKotak}
+            arah={arahKotak}
+          />
         </Suspense>
       ) : null}
     </div>

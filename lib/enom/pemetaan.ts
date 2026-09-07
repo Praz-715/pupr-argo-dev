@@ -1,4 +1,4 @@
-import type { AmbangSumbu } from '../scoring'
+import type { ParameterSkoring } from '../scoring'
 import {
   normalisasiAsesmen,
   buatTemuan,
@@ -45,13 +45,13 @@ export interface AsesmenTerpetakan {
  */
 export function petakanRekaman(
   r: RekamanEnom,
-  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
+  opsi: { tahunSekarang: number } & ParameterSkoring,
 ): { hasil: AsesmenTerpetakan | null; temuan: Temuan[] } {
   const temuan: Temuan[] = []
 
   // `skorPredikat` sudah case-insensitive & merapikan spasi, jadi "SANGAT BAIK"
   // dari eNom cocok dengan "Sangat Baik" di rubrik tanpa peta terjemahan sendiri.
-  const y = skorPredikat(r.predikat_kinerja)
+  const y = skorPredikat(r.predikat_kinerja, opsi.skalaPredikat)
   if (y === null) {
     return {
       hasil: null,
@@ -104,7 +104,7 @@ export function petakanRekaman(
 /** Petakan sekumpulan rekaman. Baris yang tidak terpakai tetap meninggalkan temuan. */
 export function petakanSemua(
   rekaman: readonly RekamanEnom[],
-  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
+  opsi: { tahunSekarang: number } & ParameterSkoring,
 ): { hasil: AsesmenTerpetakan[]; temuan: Temuan[] } {
   const hasil: AsesmenTerpetakan[] = []
   const temuan: Temuan[] = []

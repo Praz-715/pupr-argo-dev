@@ -1,6 +1,14 @@
-import { BOBOT_FORMULA_A, MATRIKS_KOTAK_9, SKOR_PREDIKAT } from './konstanta'
+import { MATRIKS_KOTAK_9 } from './konstanta'
 import { bulatkan2, clampSkor } from './rubrik'
-import type { AmbangSumbu, KategoriSumbuX, KategoriSumbuY, Kotak9, Predikat } from './types'
+import type {
+  AmbangSumbu,
+  BobotTalenta,
+  KategoriSumbuX,
+  KategoriSumbuY,
+  Kotak9,
+  Predikat,
+  SkalaPredikat,
+} from './types'
 
 /**
  * Formula A — Nilai Talenta & pemetaan 9 Kotak Manajemen Talenta ASN.
@@ -8,13 +16,22 @@ import type { AmbangSumbu, KategoriSumbuX, KategoriSumbuY, Kotak9, Predikat } fr
  * doc/manajemen talenta 27 juli utk tim SIM.md.
  */
 
-/** Predikat kinerja → skor sumbu Y (100/80/60/40/20). */
-export function skorPredikat(predikat: Predikat | string | null | undefined): number | null {
+/**
+ * Predikat kinerja → skor sumbu Y (bawaan 100/80/60/40/20).
+ *
+ * `skala` WAJIB — alasannya sama dengan `ambang` di bawah. Pencocokan namanya
+ * longgar (case-insensitive, spasi dirapikan) sebab sumber mengirim
+ * "SANGAT BAIK" huruf besar sementara DB menyimpan Title Case.
+ */
+export function skorPredikat(
+  predikat: Predikat | string | null | undefined,
+  skala: SkalaPredikat,
+): number | null {
   if (!predikat) return null
-  const cocok = (Object.keys(SKOR_PREDIKAT) as Predikat[]).find(
+  const cocok = (Object.keys(skala) as Predikat[]).find(
     (p) => p.toLowerCase() === predikat.trim().replace(/\s+/g, ' ').toLowerCase(),
   )
-  return cocok ? SKOR_PREDIKAT[cocok] : null
+  return cocok ? (skala[cocok] ?? null) : null
 }
 
 /**
@@ -53,10 +70,19 @@ export function klasifikasiSumbuX(nilai: number, ambang: AmbangSumbu): KategoriS
   return 'Rendah'
 }
 
-/** Nilai Talenta = 50% sumbu Y + 50% sumbu X. */
-export function hitungNilaiTalenta(nilaiKinerjaY: number, nilaiPotensialX: number): number {
-  const total =
-    nilaiKinerjaY * BOBOT_FORMULA_A.kinerja + nilaiPotensialX * BOBOT_FORMULA_A.potensial
+/**
+ * Nilai Talenta = bobot.kinerja × Y + bobot.potensial × X (bawaan 50/50).
+ *
+ * `bobot` WAJIB. Hasilnya tetap DIPLAFON 100 walau X boleh melewatinya: ia
+ * komposit yang dipakai membandingkan pegawai satu dengan lainnya, dan komposit
+ * tanpa plafon berhenti bisa dibandingkan begitu satu sumbunya berskala lain.
+ */
+export function hitungNilaiTalenta(
+  nilaiKinerjaY: number,
+  nilaiPotensialX: number,
+  bobot: BobotTalenta,
+): number {
+  const total = nilaiKinerjaY * bobot.kinerja + nilaiPotensialX * bobot.potensial
   return bulatkan2(clampSkor(total).skor)
 }
 
@@ -78,6 +104,7 @@ export function hitungKotak9(
   nilaiKinerjaY: number,
   nilaiPotensialX: number,
   ambang: AmbangSumbu,
+  bobot: BobotTalenta,
 ): HasilKotak9 {
   const y = clampSkor(nilaiKinerjaY).skor
   /**
@@ -108,7 +135,7 @@ export function hitungKotak9(
     kategoriX,
     nilaiKinerjaY: bulatkan2(y),
     nilaiPotensialX: bulatkan2(x),
-    nilaiTalenta: hitungNilaiTalenta(y, x),
+    nilaiTalenta: hitungNilaiTalenta(y, x, bobot),
   }
 }
 

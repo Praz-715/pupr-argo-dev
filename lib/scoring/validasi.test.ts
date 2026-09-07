@@ -41,6 +41,7 @@ function indikator(ubah: Partial<IndikatorNode> = {}): IndikatorNode {
     namaIndikator: 'Tingkat Pendidikan Formal',
     bobot: 1,
     modeSkor: 'KATEGORI_TETAP',
+    skalaMaks: null,
     urutan: 1,
     kategori: KATEGORI_PENDIDIKAN,
     anak: [],

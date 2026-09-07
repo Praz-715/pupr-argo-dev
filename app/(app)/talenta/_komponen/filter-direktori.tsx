@@ -1,12 +1,12 @@
 'use client'
 
-import { RotateCcw, Search } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { Pilih } from '@/components/ui/pilih'
-import { Spinner } from '@/components/ui/spinner'
 import { formatAngka, formatTingkatPendidikan } from '@/lib/format'
 import type { OpsiFilter } from '@/lib/kueri/pegawai'
 
@@ -53,18 +53,6 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
   const [pending, mulaiTransisi] = useTransition()
 
   const cariAwal = searchParams.get('cari') ?? ''
-  const [cari, setCari] = useState(cariAwal)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Kalau URL berubah dari luar (tombol back, klik sel Kotak 9 di dashboard),
-  // field pencarian ikut disesuaikan.
-  const [cariUrlTerakhir, setCariUrlTerakhir] = useState(cariAwal)
-  if (cariAwal !== cariUrlTerakhir) {
-    setCariUrlTerakhir(cariAwal)
-    setCari(cariAwal)
-  }
-
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
   function terapkan(perubahan: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -80,35 +68,21 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
     })
   }
 
-  function onCariBerubah(nilai: string) {
-    setCari(nilai)
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => terapkan({ cari: nilai }), 300)
-  }
-
   const filterAktif = ['cari', 'unit', 'eselon', 'jenjang', 'pendidikan', 'kotak', 'statusAsesmen']
     .filter((k) => searchParams.get(k))
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
-        {/* Pencarian */}
-        <div className="relative min-w-56 flex-1 xl:min-w-44">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-          <input
-            value={cari}
-            onChange={(e) => onCariBerubah(e.target.value)}
-            placeholder="Cari nama atau NIP…"
-            aria-label="Cari nama atau NIP"
-            className="h-8 w-full rounded-md border border-border bg-surface pr-16 pl-8 text-[13px] text-text outline-none placeholder:text-text-subtle focus:border-accent"
-          />
-          {pending ? (
-            <span className="absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1 text-[10px] text-text-subtle">
-              <Spinner className="size-3" />
-              mencari
-            </span>
-          ) : null}
-        </div>
+        {/* Pencarian — dijalankan saat Enter, bukan per huruf (2 Sep 2026). */}
+        <KotakCari
+          nilaiAwal={cariAwal}
+          onCari={(q: string) => terapkan({ cari: q })}
+          placeholder="Cari nama atau NIP…"
+          label="Cari nama atau NIP"
+          pending={pending}
+          className="min-w-56 flex-1 xl:min-w-44"
+        />
 
         <Pilih
           label="Unit organisasi"
@@ -120,6 +94,28 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
               nilai: String(u.id),
               // Indentasi mencerminkan hierarki unit (3 level)
               label: `${'  '.repeat(u.level)}${u.nama}`,
+            })),
+          ]}
+          lebar={`w-52 ${LEBAR_RINGKAS}`}
+        />
+
+        {/*
+          Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4) — penyaring
+          KASAR: satu pilihan "Kepala Balai" menjaring seluruh kepala balai, apa
+          pun nama balainya. Ia sengaja duduk SEBELUM Eselon: rumpun adalah
+          pertanyaan "jabatan apa", dan itu yang orang tanyakan lebih dulu.
+
+          Bawaannya "Semua rumpun" — tidak menyaring apa pun.
+        */}
+        <Pilih
+          label="Rumpun jabatan"
+          nilai={searchParams.get('rumpun') ?? ''}
+          onUbah={(v) => terapkan({ rumpun: v })}
+          opsi={[
+            { nilai: '', label: 'Semua rumpun jabatan' },
+            ...opsi.rumpun.map((r) => ({
+              nilai: r.kunci,
+              label: `${r.label} (${r.jumlahPegawai})`,
             })),
           ]}
           lebar={`w-52 ${LEBAR_RINGKAS}`}
@@ -198,10 +194,14 @@ export function FilterDirektori({ opsi, total }: { opsi: OpsiFilter; total: numb
           <Button
             size="sm"
             variant="halus"
-            onClick={() => {
-              setCari('')
-              mulaiTransisi(() => router.push(pathname, { scroll: false }))
-            }}
+            /*
+              Kotak pencariannya ikut kosong dengan sendirinya: `KotakCari`
+              menyesuaikan isinya ketika `nilaiAwal` (dari URL) berubah, dan Reset
+              membuang seluruh param. Sebelum kotaknya diangkat jadi komponen, di
+              sini harus ada `setCari('')` yang mudah tertinggal saat ada penyaring
+              baru ditambahkan.
+            */
+            onClick={() => mulaiTransisi(() => router.push(pathname, { scroll: false }))}
             ikon={<RotateCcw className="size-3.5" />}
           >
             Reset

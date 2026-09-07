@@ -33,11 +33,26 @@ export function TabelKandidat({
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const nipTerbuka = (searchParams.get('rincian') ?? '').replace(/\D/g, '')
 
+  /*
+    Tautan rinciannya TOGGLE, bukan sekali-arah: menekan "Lihat" pada baris yang
+    rinciannya sedang terbuka menutupnya kembali. Tanpa itu satu-satunya cara
+    menutup panel adalah tombol silang di panelnya — yang letaknya justru di bawah,
+    tempat pengguna baru saja pergi dari sini.
+
+    `#rincian` DILEPAS dari href. Ia tidak pernah bekerja: panelnya dirender server
+    di balik `<Suspense>`, jadi saat navigasi terjadi elemen tujuannya belum ada.
+    Yang menggulir sekarang panelnya sendiri, tepat ketika ia terpasang (lihat
+    `GulirKeSini` di `panel-rincian.tsx`). Menyisakan anchor yang tidak menuju apa
+    pun hanya menyesatkan orang berikutnya yang membaca berkas ini.
+  */
   function tautanRincian(nip: string): string {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('rincian', nip)
-    return `${pathname}?${params.toString()}#rincian`
+    if (nip === nipTerbuka) params.delete('rincian')
+    else params.set('rincian', nip)
+    const q = params.toString()
+    return q === '' ? pathname : `${pathname}?${q}`
   }
 
   const kolom: Array<KolomTabel<BarisKandidat>> = [
@@ -162,9 +177,10 @@ export function TabelKandidat({
           <Link
             href={tautanRincian(b.nip)}
             scroll={false}
+            aria-expanded={b.nip === nipTerbuka}
             className="text-[12px] text-accent hover:underline"
           >
-            Lihat
+            {b.nip === nipTerbuka ? 'Sembunyikan' : 'Lihat'}
           </Link>
           {b.jumlahPerluReview > 0 ? (
             <span
@@ -194,6 +210,18 @@ export function TabelKandidat({
       kolom={kolom}
       baris={baris}
       kunciBaris={(b) => b.nip}
+      barisAktif={(b) => b.nip === nipTerbuka}
+      /*
+        Penanda kuning untuk pegawai berkode catatan (`2 sept- masukan sistem
+        informasi.pdf` butir 1). Alasannya dikembalikan sebagai teks, bukan boolean:
+        ia jadi `title` barisnya, dan warna sendirian tidak terbaca pembaca layar
+        maupun pengguna CVD.
+      */
+      barisDitandai={(b) =>
+        b.catatanKategori === null
+          ? null
+          : `Catatan: ${b.catatanKategori}${b.catatanKeterangan ? ` — ${b.catatanKeterangan}` : ''}`
+      }
       total={total}
       halaman={halaman}
       ukuranHalaman={ukuranHalaman}

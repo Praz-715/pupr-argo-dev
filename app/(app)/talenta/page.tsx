@@ -83,6 +83,7 @@ async function IsiDirektori({ filter }: { filter: FilterDirektori }) {
       filter.unitId ||
       filter.eselon ||
       filter.jenjang ||
+      filter.rumpun ||
       filter.tingkatPendidikan ||
       filter.kotak9 ||
       filter.statusAsesmen,
@@ -121,8 +122,10 @@ function bacaFilter(params: Record<string, string | undefined>): FilterDirektori
   return {
     cari: params.cari?.slice(0, 100),
     unitId: angkaPositif(params.unit),
+    jabatanId: angkaPositif(params.jabatan),
     eselon: dariDaftar(params.eselon, ESELON),
     jenjang: params.jenjang?.slice(0, 60),
+    rumpun: params.rumpun?.slice(0, 80),
     tingkatPendidikan: dariDaftar(params.pendidikan, TINGKAT_PENDIDIKAN),
     kotak9: kotak !== undefined && kotak <= 9 ? kotak : undefined,
     statusAsesmen: dariDaftar(params.statusAsesmen, STATUS_ASESMEN),

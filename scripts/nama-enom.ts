@@ -78,7 +78,7 @@ async function main() {
     jalan. Aturan ini sudah tertulis di `scripts/recompute.ts`; saya melanggarnya
     di empat skrip sekaligus saat memindahkan ambang ke pengaturan (22 Agu 2026).
   */
-  const { ambangSumbuDari, ambilPengaturan } = await import('@/lib/pengaturan')
+  const { ambilPengaturan, parameterSkoringDari } = await import('@/lib/pengaturan')
   const cfg = bacaKonfigurasi()
   const db = await koneksi()
   const mulai = new Date()
@@ -110,7 +110,7 @@ async function main() {
   const { rekaman, gagal } = await ambilAsesmen(nip, { konfigurasi: cfg })
   for (const g of gagal) console.log(`  ! gagal [${g.galat.sebab}]: ${g.galat.message}`)
 
-  const { hasil } = petakanSemua(rekaman, { tahunSekarang: mulai.getFullYear(), ambang: ambangSumbuDari(await ambilPengaturan()) })
+  const { hasil } = petakanSemua(rekaman, { tahunSekarang: mulai.getFullYear(), ...parameterSkoringDari(await ambilPengaturan()) })
   console.log(`  eNom menjawab ${rekaman.length} · terpetakan ${hasil.length}\n`)
 
   const rencana: Rencana[] = []

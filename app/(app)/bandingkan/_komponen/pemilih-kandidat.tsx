@@ -1,10 +1,10 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
-import { Spinner } from '@/components/ui/spinner'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { MAKS_KANDIDAT } from '@/lib/banding'
 
 /**
@@ -26,22 +26,6 @@ export function PemilihKandidat({
   const [pending, mulaiTransisi] = useTransition()
 
   const cariAwal = searchParams.get('cari') ?? ''
-  const [cari, setCari] = useState(cariAwal)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Kalau URL berubah dari luar (tombol back, klik "tambahkan"), field ikut.
-  const [cariUrlTerakhir, setCariUrlTerakhir] = useState(cariAwal)
-  if (cariAwal !== cariUrlTerakhir) {
-    setCariUrlTerakhir(cariAwal)
-    setCari(cariAwal)
-  }
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    [],
-  )
 
   function terapkan(perubahan: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -50,12 +34,6 @@ export function PemilihKandidat({
       else params.set(k, v)
     }
     mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
-  }
-
-  function onCariBerubah(nilai: string) {
-    setCari(nilai)
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => terapkan({ cari: nilai }), 300)
   }
 
   function hapus(nip: string) {
@@ -93,27 +71,20 @@ export function PemilihKandidat({
           </span>
         ))}
 
-        <div className="relative min-w-56 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-          <input
-            value={cari}
-            onChange={(e) => onCariBerubah(e.target.value)}
-            disabled={penuh}
-            placeholder={
-              penuh
-                ? `Maksimum ${MAKS_KANDIDAT} kandidat — keluarkan satu untuk menambah`
-                : 'Cari nama atau NIP untuk ditambahkan…'
-            }
-            aria-label="Cari kandidat"
-            className="h-8 w-full rounded-md border border-border bg-surface pr-16 pl-8 text-[13px] text-text outline-none placeholder:text-text-subtle focus:border-accent disabled:opacity-60"
-          />
-          {pending ? (
-            <span className="absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1 text-[10px] text-text-subtle">
-              <Spinner className="size-3" />
-              mencari
-            </span>
-          ) : null}
-        </div>
+        {/* Pencarian dijalankan saat Enter, bukan per huruf (2 Sep 2026). */}
+        <KotakCari
+          nilaiAwal={cariAwal}
+          onCari={(q: string) => terapkan({ cari: q })}
+          disabled={penuh}
+          placeholder={
+            penuh
+              ? `Maksimum ${MAKS_KANDIDAT} kandidat — keluarkan satu untuk menambah`
+              : 'Cari nama atau NIP untuk ditambahkan…'
+          }
+          label="Cari kandidat"
+          pending={pending}
+          className="min-w-56 flex-1"
+        />
       </div>
     </div>
   )

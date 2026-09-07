@@ -5,9 +5,18 @@ import { z } from 'zod'
 
 import { jalankanMutasi } from '../audit'
 import { eksekusi, kueri, kueriSatu } from '../db'
-import { ambilPohonRubrik } from '../kueri/rubrik'
-import { validasiRubrik } from '../scoring'
+import { halanganAktivasi } from '../aktivasi-target'
+import { SEMUA_JENIS_SYARAT } from '../scoring/eligibility'
+import { rumpunSatuTingkatDiBawah } from '../kueri/rumpun'
+import { ambilPohonRubrik, cariJabatanUntukTargetBaru, type JabatanAnggota } from '../kueri/rubrik'
+import { beritahuTargetAktif, beritahuUsulanTarget } from '../notifikasi'
+import { getCurrentUser } from '../auth'
+import { bakukanGolongan } from '../golongan'
+import { lingkupData, tanpaAkses, unitWajib } from '../lingkup'
+import { PERAN_KELOLA_TARGET, PERAN_USUL_TARGET } from '../peran'
+import { salinPohonRubrik } from '../rubrik-salin'
 import { gerbangPeran } from './gerbang'
+import { jabatanTerjangkau, targetTerjangkau } from './lingkup-data'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -23,7 +32,12 @@ import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from 
  *     entri pool-nya lewat `ON DELETE CASCADE`.
  */
 
-const PERAN_JABATAN_TARGET = ['Super Admin', 'Admin Talenta'] as const
+/*
+  Daftar perannya ada di `lib/peran.ts` (`PERAN_KELOLA_TARGET` &
+  `PERAN_USUL_TARGET`) supaya halaman yang menggambar tombolnya memakai daftar yang
+  SAMA, bukan salinan. Ringkasnya: unit mengusulkan (draft + persyaratan), Admin
+  Talenta memutuskan (rubrik + aktivasi). Alasan lengkapnya di modul itu.
+*/
 
 const SkemaTarget = z.object({
   kodeTarget: z
@@ -61,47 +75,22 @@ function segarkan(id?: number): void {
   }
 }
 
-export async function buatJabatanTarget(
-  masukan: unknown,
-): Promise<HasilAksi<{ id: number }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
-  if (tolak) return tolak
+/*
+  `buatJabatanTarget()` — pembuatan bebas-teks (kode & nama diketik) — DICABUT
+  25 Agu 2026 atas permintaan pemilik proses: *"jabatan target itu kalo mau nambah
+  jangan freetext tapi ambil dari master jabatan unit organisasi aja"*.
 
-  const urai = SkemaTarget.safeParse(masukan)
-  if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
-  const d = urai.data
+  Dicabut, bukan disembunyikan dari UI. Server action yang tidak dipakai halaman
+  mana pun tetap dapat dipanggil, dan yang tersisa akan menjadi satu-satunya jalan
+  membuat jabatan target yang namanya tidak sama dengan master serta tidak menunjuk
+  kursi apa pun — persis tiga akibat yang pencabutan ini hendak menutup (lihat
+  `app/(app)/jabatan-target/_komponen/pemilih-jabatan-target.tsx`).
 
-  try {
-    const hasil = await jalankanMutasi({
-      entitas: 'jabatan_target',
-      aksi: 'BUAT',
-      peranDiizinkan: PERAN_JABATAN_TARGET,
-      jalankan: async () => {
-        // Selalu lahir DRAFT: jabatan target tanpa rubrik & anggota belum bisa
-        // menilai siapa pun, jadi status AKTIF pada saat dibuat akan berbohong.
-        // `kata_kunci_relevansi` lahir kosong dan **hanya** ditulis lewat tab
-        // Persyaratan (Fase 11 no. 3). Form profil ini mengurus identitas jabatan
-        // target — kode, nama, deskripsi — bukan syaratnya; dua form yang bisa
-        // menulis satu kolom adalah cara kolom itu berselisih dengan dirinya.
-        const { insertId } = await eksekusi(
-          `INSERT INTO jabatan_target (kode_target, nama_target, deskripsi, kata_kunci_relevansi, status)
-           VALUES (?, ?, ?, JSON_ARRAY(), 'DRAFT')`,
-          [d.kodeTarget, d.namaTarget, d.deskripsi],
-        )
-        return { entitasId: insertId, sesudah: { id: insertId, ...d, status: 'DRAFT' } }
-      },
-    })
-    segarkan(hasil.entitasId ?? undefined)
-    return berhasil(
-      { id: hasil.entitasId ?? 0 },
-      `Jabatan target "${d.namaTarget}" dibuat sebagai draft.`,
-    )
-  } catch (e) {
-    const pesan = pesanDariGalatDb(e, { unik: `Kode target "${d.kodeTarget}"` })
-    if (pesan) return gagal(pesan, { kodeTarget: pesan })
-    throw e
-  }
-}
+  Satu-satunya jalan membuat sekarang: `buatTargetDariJabatan()` di bawah, yang
+  menurunkan kode & nama dari master DAN menautkan jabatan anggotanya dalam mutasi
+  yang sama. Menyunting nama/deskripsi target yang SUDAH ada tetap ada
+  (`ubahJabatanTarget()`) — itu bukan penambahan.
+*/
 
 /**
  * Buat jabatan target DRAFT dari sebuah jabatan kosong (Fase 11 no. 2, U-14).
@@ -121,10 +110,41 @@ export async function buatJabatanTarget(
  * Keduanya tetap bisa disunting sesudahnya dari Editor Jabatan Target — DRAFT
  * memang untuk itu.
  */
+/**
+ * Cari master jabatan untuk pemilih "Buat jabatan target".
+ *
+ * ## Kenapa pencariannya server action, bukan `?cari=` di URL
+ *
+ * Pemilihnya hidup di dalam dialog. Menggeser pencarian ke URL berarti dialognya
+ * juga harus dikendalikan URL supaya tidak tertutup tiap kali daftarnya disaring —
+ * dua keadaan yang harus dijaga sinkron demi satu kotak pencarian. Tab Jabatan
+ * Anggota memang memakai `?cariJabatan=`, dan itu tetap benar di sana: ia bagian
+ * halaman, bukan dialog.
+ *
+ * Ia BACAAN, tapi tetap bergerbang peran: daftar master jabatan lengkap beserta
+ * jumlah penghuninya bukan sesuatu yang perlu dijawab ke sembarang sesi. Gerbangnya
+ * sama dengan yang membuat targetnya (`PERAN_USUL_TARGET`) — kalau seseorang tidak
+ * boleh membuat, tidak ada gunanya ia mencari.
+ *
+ * Lingkup unit ditegakkan di dalam SQL, bukan dengan menyembunyikan tombol: hasil
+ * yang tidak tersaring akan menawarkan kursi yang `jabatanTerjangkau()` pasti tolak.
+ */
+export async function cariJabatanMaster(cari: unknown): Promise<HasilAksi<JabatanAnggota[]>> {
+  const tolak = await gerbangPeran(PERAN_USUL_TARGET)
+  if (tolak) return tolak
+
+  const teks = typeof cari === 'string' ? cari : ''
+  const lingkup = lingkupData(await getCurrentUser())
+  // Gagal TERTUTUP: Pengelola Unit tanpa unit tidak mendapat daftar apa pun,
+  // bukan daftar seluruh organisasi.
+  if (tanpaAkses(lingkup)) return berhasil([])
+  return berhasil(await cariJabatanUntukTargetBaru(teks, unitWajib(lingkup)))
+}
+
 export async function buatTargetDariJabatan(
   jabatanId: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_USUL_TARGET)
   if (tolak) return tolak
 
   const idJabatan = idPositif.safeParse(jabatanId)
@@ -133,17 +153,49 @@ export async function buatTargetDariJabatan(
   const jabatan = await kueriSatu<{
     kode_jabatan: string
     nama_jabatan: string
+    eselon: string | null
     status_jabatan: string
+    nama_unit: string | null
     nama_target_ada: string | null
   }>(
-    `SELECT j.kode_jabatan, j.nama_jabatan, j.status_jabatan,
-            (SELECT t.nama_target FROM jabatan_target_anggota a
-               JOIN jabatan_target t ON t.id = a.jabatan_target_id
-              WHERE a.jabatan_id = j.id LIMIT 1) AS nama_target_ada
-       FROM jabatan j WHERE j.id = ?`,
+    `SELECT j.kode_jabatan, j.nama_jabatan, j.eselon, j.status_jabatan, u.nama_unit,
+            /*
+              "Kursi ini sudah punya jabatan target atau belum" — dibaca dari kolom
+              jabatan_target.jabatan_id sejak doc/sql/032. Lewat tabel anggota,
+              jawabannya jadi "kursi ini termasuk jabatan ASAL sebuah target", hal
+              yang sama sekali berbeda: setiap Kepala Seksi akan dinyatakan sudah
+              jadi jabatan target dan pembuatan draft barunya ditolak.
+
+              (Tanpa backtick — ini di dalam template literal; satu backtick di
+              komentar SQL mengakhiri stringnya dan galatnya muncul belasan baris
+              dari penyebabnya. Tercatat di CLAUDE.md, dan tetap kena.)
+            */
+            (SELECT t.nama_target FROM jabatan_target t
+              WHERE t.jabatan_id = j.id LIMIT 1) AS nama_target_ada
+       FROM jabatan j
+       LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
+      WHERE j.id = ?`,
     [idJabatan.data],
   )
   if (jabatan === null) return gagal('Jabatan itu tidak ada. Muat ulang halaman lalu coba lagi.')
+  /*
+    Pengelola Unit hanya boleh mengusulkan kursi DI UNITNYA.
+
+    Tanpa ini ia bisa membuat draft untuk jabatan unit lain — dan sesudah dibuat ia
+    tidak akan bisa membukanya lagi (halaman menyaring per unit), sehingga barisnya
+    jadi draft hantu: ada di DB, tak terjangkau pembuatnya, tak diketahui unit yang
+    sebenarnya memilikinya. Kelas kegagalan yang sama sudah dicatat di
+    `jabatanTerjangkau()`.
+
+    Super Admin & Admin Talenta lolos sendiri: `unitWajib()` untuk mereka `null`,
+    jadi penjaganya tidak membatasi apa pun.
+  */
+  if ((await jabatanTerjangkau(idJabatan.data)) === null) {
+    return gagal(
+      'Jabatan itu tidak ada atau di luar lingkup unit Anda. Anda hanya bisa mengusulkan kursi di unit sendiri.',
+    )
+  }
+
   if (jabatan.status_jabatan === 'DIHAPUS') {
     return gagal(`"${jabatan.nama_jabatan}" sudah diarsipkan di master jabatan.`)
   }
@@ -164,7 +216,7 @@ export async function buatTargetDariJabatan(
     const hasil = await jalankanMutasi({
       entitas: 'jabatan_target',
       aksi: 'BUAT',
-      peranDiizinkan: PERAN_JABATAN_TARGET,
+      peranDiizinkan: PERAN_USUL_TARGET,
       jalankan: async () => {
         const { insertId } = await eksekusi(
           `INSERT INTO jabatan_target (kode_target, nama_target, deskripsi, kata_kunci_relevansi, status)
@@ -175,13 +227,48 @@ export async function buatTargetDariJabatan(
             `Dibuat dari jabatan kosong ${jabatan.kode_jabatan}. Lengkapi persyaratan & rubrik sebelum diaktifkan.`,
           ],
         )
-        // Satu mutasi, dua baris. Kalau keanggotaannya dipisah jadi aksi kedua,
-        // kegagalan di tengah meninggalkan jabatan target tanpa anggota — yang
-        // tampil sebagai draft kosong tanpa petunjuk asal-usulnya.
-        await eksekusi(
-          `INSERT INTO jabatan_target_anggota (jabatan_target_id, jabatan_id) VALUES (?, ?)`,
-          [insertId, idJabatan.data],
-        )
+        /*
+          Kursinya ditulis ke kolom jabatan_id, BUKAN ke tabel anggota.
+
+          Sampai doc/sql/032 keduanya satu hal, jadi barisnya disisipkan ke tabel
+          anggota. Sejak tabel itu berarti "jabatan asal kandidat", menyisipkannya
+          berarti draft baru lahir dengan SATU jabatan asal — yaitu kursi yang justru
+          kosong — sehingga gerbangnya menggugurkan semua orang. Pemilik proses
+          meminta bawaannya KOSONG (tidak menyaring).
+        */
+        await eksekusi(`UPDATE jabatan_target SET jabatan_id = ? WHERE id = ?`, [
+          idJabatan.data,
+          insertId,
+        ])
+
+        /*
+          Syarat RUMPUN JABATAN ASAL, diisi dari jabatan anggotanya (pilihan pemilik
+          proses 1 Sep 2026: *"filtering kandidat dari jabatan anggota itu juga"*,
+          dengan bawaan **satu tingkat di bawah**).
+
+          Nilainya DITULIS ke barisnya, bukan dibaca hidup — kalau aturannya
+          dihitung ulang tiap kali skor dievaluasi, menambah satu jabatan anggota
+          akan diam-diam mengubah siapa yang lolos tanpa ada yang memutuskannya.
+          Sebagai baris syarat ia terlihat, bisa disunting, dan tercatat di audit.
+
+          Kalau tidak ada tingkat di bawahnya (jabatan fungsional / eselon tak
+          dikenali), barisnya TIDAK dibuat sama sekali. Menulis syarat berisi kosong
+          jauh lebih buruk daripada tidak menulisnya: `RUMPUN_JABATAN` tanpa nilai
+          membuat SEMUA kandidat berstatus PERLU_VERIFIKASI_MANUAL.
+        */
+        const pengumpan = await rumpunSatuTingkatDiBawah(jabatan.eselon)
+        if (pengumpan.length > 0) {
+          await eksekusi(
+            `INSERT INTO jabatan_target_persyaratan (jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal)
+             VALUES (?, 'RUMPUN_JABATAN', ?, ?)`,
+            [
+              insertId,
+              `Kandidat sedang menjabat pada rumpun satu tingkat di bawah ${jabatan.nama_jabatan} (eselon ${jabatan.eselon ?? '-'}). Ubah kalau jalur pengisiannya berbeda; isi "semua" untuk tidak menyaring.`,
+              pengumpan.join(', '),
+            ],
+          )
+        }
+
         return {
           entitasId: insertId,
           sesudah: {
@@ -196,9 +283,38 @@ export async function buatTargetDariJabatan(
     })
     segarkan(hasil.entitasId ?? undefined)
     revalidatePath('/jabatan-target')
+
+    /*
+      Serah-terima ke yang memutuskan. Tanpa kabar ini, draft usulan unit hanya
+      menunggu di daftar Jabatan Target sampai ada yang kebetulan membukanya —
+      antrean yang tidak ditonton siapa pun. Pelakunya dikecualikan supaya Admin
+      Talenta yang membuat draft sendiri tidak mengabari dirinya.
+
+      Sengaja SESUDAH mutasi berhasil dan tidak dibungkus `try` yang membatalkan:
+      kabar yang gagal terkirim tidak boleh menghapus usulan yang sudah tersimpan.
+    */
+    const pengguna = await getCurrentUser()
+    await beritahuUsulanTarget({
+      jabatanTargetId: hasil.entitasId ?? 0,
+      namaTarget,
+      namaJabatan: jabatan.nama_jabatan,
+      namaUnit: jabatan.nama_unit,
+      namaPengusul: pengguna?.nama ?? 'Seorang pengguna',
+      pelakuId: pengguna?.id ?? null,
+    })
+
+    /*
+      Pesan sukses mengikuti apa yang BOLEH dilakukan pembacanya. Mengatakan
+      "lengkapi rubriknya lalu aktifkan" kepada Pengelola Unit menyuruhnya
+      mengerjakan dua hal yang tombolnya tidak akan pernah ia lihat — dan itu
+      terbaca sebagai aplikasi yang rusak, bukan sebagai izin yang memang dibatasi.
+    */
+    const bolehMemutuskan = pengguna !== null && PERAN_KELOLA_TARGET.includes(pengguna.peran)
     return berhasil(
       { id: hasil.entitasId ?? 0 },
-      `Draft jabatan target "${namaTarget}" dibuat. Lengkapi persyaratan & rubriknya, lalu aktifkan.`,
+      bolehMemutuskan
+        ? `Draft jabatan target "${namaTarget}" dibuat. Lengkapi persyaratan & rubriknya, lalu aktifkan.`
+        : `Usulan jabatan target "${namaTarget}" dibuat sebagai draft. Lengkapi persyaratannya — Admin Talenta akan menyusun rubrik penilaian lalu mengaktifkannya.`,
     )
   } catch (e) {
     const pesan = pesanDariGalatDb(e, { unik: `Kode target "${kodeTarget}"` })
@@ -211,7 +327,7 @@ export async function ubahJabatanTarget(
   id: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<void>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(id)
@@ -225,7 +341,7 @@ export async function ubahJabatanTarget(
     await jalankanMutasi({
       entitas: 'jabatan_target',
       aksi: 'UBAH',
-      peranDiizinkan: PERAN_JABATAN_TARGET,
+      peranDiizinkan: PERAN_KELOLA_TARGET,
       sebelum: () => bacaTarget(idTarget.data),
       jalankan: async () => {
         // `kata_kunci_relevansi` SENGAJA tidak ada di sini — satu-satunya jalur
@@ -263,7 +379,7 @@ export async function ubahStatusJabatanTarget(
   id: unknown,
   status: unknown,
 ): Promise<HasilAksi<void>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(id)
@@ -281,7 +397,7 @@ export async function ubahStatusJabatanTarget(
   await jalankanMutasi({
     entitas: 'jabatan_target',
     aksi: 'UBAH_STATUS',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_KELOLA_TARGET,
     sebelum: () => bacaTarget(idTarget.data),
     jalankan: async () => {
       await eksekusi(`UPDATE jabatan_target SET status = ? WHERE id = ?`, [
@@ -293,6 +409,44 @@ export async function ubahStatusJabatanTarget(
   })
 
   segarkan(idTarget.data)
+
+  /*
+    Serah-terima balik: pengusulnya perlu tahu targetnya sudah aktif, sebab justru
+    sesudah itu ia bisa melanjutkan (skor terhitung → kandidat bisa dimasukkan ke
+    talent pool). Tanpa kabar ini ia harus menebak kapan harus kembali memeriksa.
+
+    Pengusulnya diambil dari JEJAK AUDIT, bukan dari kolom `dibuat_oleh` — kolom itu
+    tidak ada di `jabatan_target`, dan menambahkannya sekarang berarti kolom kosong
+    untuk seluruh baris yang sudah ada. `audit_log` sudah memuat jawabannya untuk
+    target yang dibuat lewat UI, dan `null` untuk yang dibuat skrip seed — yang
+    memang tidak punya pengusul, jadi tidak ada yang perlu dikabari.
+
+    Hanya saat AKTIF, dan hanya kalau pengusulnya BUKAN pelakunya sendiri.
+  */
+  if (statusBaru === 'AKTIF') {
+    const pengguna = await getCurrentUser()
+    const pengusul = await kueriSatu<{ user_id: number | null }>(
+      `SELECT user_id FROM audit_log
+        WHERE entitas = 'jabatan_target' AND entitas_id = ? AND aksi = 'BUAT'
+        ORDER BY id ASC LIMIT 1`,
+      [idTarget.data],
+    )
+    const idPengusul = pengusul?.user_id === null ? null : Number(pengusul?.user_id)
+    if (idPengusul !== null && idPengusul !== undefined && idPengusul !== pengguna?.id) {
+      const target = await kueriSatu<{ nama_target: string }>(
+        `SELECT nama_target FROM jabatan_target WHERE id = ?`,
+        [idTarget.data],
+      )
+      await beritahuTargetAktif({
+        jabatanTargetId: idTarget.data,
+        namaTarget: target?.nama_target ?? 'Jabatan target',
+        pengusulUserId: idPengusul,
+        namaPelaku: pengguna?.nama ?? 'Admin Talenta',
+        pelakuId: pengguna?.id ?? null,
+      })
+    }
+  }
+
   const pesan =
     statusBaru === 'AKTIF'
       ? 'Jabatan target diaktifkan. Rubriknya lolos seluruh pemeriksaan.'
@@ -300,31 +454,6 @@ export async function ubahStatusJabatanTarget(
         ? 'Jabatan target dinonaktifkan. Skor & talent pool yang sudah ada tetap tersimpan.'
         : 'Jabatan target dikembalikan ke draft.'
   return berhasil(undefined, pesan)
-}
-
-/** null = boleh diaktifkan. Selain itu: alasan penolakan yang bisa ditindak. */
-async function halanganAktivasi(jabatanTargetId: number): Promise<string | null> {
-  const [komponen, hitung] = await Promise.all([
-    ambilPohonRubrik(jabatanTargetId),
-    kueriSatu<{ anggota: number; syarat: number }>(
-      `SELECT
-         (SELECT COUNT(*) FROM jabatan_target_anggota WHERE jabatan_target_id = ?) AS anggota,
-         (SELECT COUNT(*) FROM jabatan_target_persyaratan WHERE jabatan_target_id = ?) AS syarat`,
-      [jabatanTargetId, jabatanTargetId],
-    ),
-  ])
-
-  if (Number(hitung?.anggota ?? 0) === 0) {
-    return 'Belum ada jabatan anggota. Tanpa itu, jabatan target ini tidak menunjuk posisi mana pun — tambahkan minimal satu jabatan di tab Jabatan Anggota.'
-  }
-
-  const hasil = validasiRubrik(komponen, { untukJabatanTarget: true })
-  if (!hasil.bisaDiaktifkan) {
-    const pertama = hasil.temuan.find((t) => t.tingkat === 'GALAT')
-    return `Rubrik masih punya ${hasil.jumlahGalat} galat sehingga skornya akan salah. Yang pertama: ${pertama?.nama} — ${pertama?.pesan} ${pertama?.saran}`
-  }
-
-  return null
 }
 
 /**
@@ -335,7 +464,7 @@ async function halanganAktivasi(jabatanTargetId: number): Promise<string | null>
  * jabatan target bisa menghapus rantai nominasi & approval tanpa peringatan.
  */
 export async function hapusJabatanTarget(id: unknown): Promise<HasilAksi<{ diarsipkan: boolean }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(id)
@@ -358,12 +487,28 @@ export async function hapusJabatanTarget(id: unknown): Promise<HasilAksi<{ diars
   await jalankanMutasi({
     entitas: 'jabatan_target',
     aksi: arsipkan ? 'UBAH_STATUS' : 'HAPUS',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_KELOLA_TARGET,
     sebelum: () => bacaTarget(idTarget.data),
     jalankan: async () => {
       if (arsipkan) {
         await eksekusi(`UPDATE jabatan_target SET status = 'NONAKTIF' WHERE id = ?`, [idTarget.data])
       } else {
+        /*
+          Notifikasinya ikut dihapus, dan ini harus DISENGAJA: `notifikasi.entitas_id`
+          bukan foreign key, jadi tidak ada cascade yang mengurusnya. Tanpa ini,
+          menghapus jabatan target meninggalkan kabar "Usulan jabatan target" di Inbox
+          orang lain yang menaut ke halaman yang sudah tidak ada — dan proyek ini sudah
+          punya 21 notifikasi yatim dari seed, jadi setiap tambahan menenggelamkan yang
+          asli. Terukur: 4 baris yatim lahir dari satu jalan smoke sebelum ini dipasang.
+
+          Dilakukan SEBELUM barisnya dihapus supaya keduanya dalam satu mutasi yang
+          sama; kalau dibalik, kegagalan di tengah meninggalkan notifikasi tanpa
+          targetnya — keadaan yang justru sedang dihapuskan.
+        */
+        await eksekusi(
+          `DELETE FROM notifikasi WHERE entitas = 'jabatan_target' AND entitas_id = ?`,
+          [idTarget.data],
+        )
         await eksekusi(`DELETE FROM jabatan_target WHERE id = ?`, [idTarget.data])
       }
       return {
@@ -390,7 +535,7 @@ export async function tambahAnggotaJabatan(
   jabatanTargetId: unknown,
   jabatanId: unknown,
 ): Promise<HasilAksi<void>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
@@ -412,7 +557,7 @@ export async function tambahAnggotaJabatan(
     await jalankanMutasi({
       entitas: 'jabatan_target_anggota',
       aksi: 'BUAT',
-      peranDiizinkan: PERAN_JABATAN_TARGET,
+      peranDiizinkan: PERAN_KELOLA_TARGET,
       jalankan: async () => {
         await eksekusi(
           `INSERT INTO jabatan_target_anggota (jabatan_target_id, jabatan_id) VALUES (?, ?)`,
@@ -433,11 +578,170 @@ export async function tambahAnggotaJabatan(
   }
 }
 
+/**
+ * Lepaskan SEMUA jabatan sejenis sekaligus dari daftar jabatan asal kandidat.
+ *
+ * Cermin `tambahAnggotaSekaligus()`, dan ada karena alasan yang sama: sejak
+ * daftarnya berisi puluhan kursi (59–67 per jabatan target), melepasnya satu per
+ * satu berarti menekan tombol 59 kali dan 59 permintaan.
+ *
+ * ## Id eksplisit, bukan nama jenisnya
+ *
+ * Alasan yang sama dengan penambahannya — dan di sini taruhannya lebih tinggi,
+ * sebab ini menghapus. Server yang memuai sendiri "semua Kepala Balai" bisa
+ * membuang baris yang tidak pernah dilihat penggunanya kalau daftarnya berubah
+ * sejak halaman dirender.
+ *
+ * ## Boleh mengosongkan daftar sampai NOL, dan itu disengaja
+ *
+ * Daftar kosong berarti "tidak menyaring" — keadaan sah yang jadi bawaan draft
+ * baru. Menolak penghapusan terakhir (seperti yang dilakukan `hapusAnggotaJabatan`
+ * selama daftar ini masih berarti KURSI) sekarang justru salah: ia akan mengunci
+ * jabatan target pada saringan yang tidak bisa dilepas pemiliknya.
+ */
+export async function hapusAnggotaSekaligus(
+  jabatanTargetId: unknown,
+  jabatanIds: unknown,
+): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
+  if (tolak) return tolak
+
+  const idTarget = idPositif.safeParse(jabatanTargetId)
+  if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
+
+  const uraiIds = z.array(idPositif).min(1).max(200).safeParse(jabatanIds)
+  if (!uraiIds.success) return gagal('Daftar jabatan tidak dikenali atau terlalu panjang.')
+  const ids = [...new Set(uraiIds.data)]
+
+  const sebelum = await kueriSatu<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?`,
+    [idTarget.data],
+  )
+
+  await jalankanMutasi({
+    entitas: 'jabatan_target_anggota',
+    aksi: 'HAPUS',
+    peranDiizinkan: PERAN_KELOLA_TARGET,
+    sebelum: () =>
+      kueri(
+        `SELECT jabatan_target_id, jabatan_id FROM jabatan_target_anggota
+          WHERE jabatan_target_id = ? AND jabatan_id IN (?)`,
+        [idTarget.data, ids],
+      ),
+    jalankan: async () => {
+      await eksekusi(
+        `DELETE FROM jabatan_target_anggota WHERE jabatan_target_id = ? AND jabatan_id IN (?)`,
+        [idTarget.data, ids],
+      )
+      return { entitasId: idTarget.data, sesudah: null }
+    },
+  })
+
+  const sesudah = await kueriSatu<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?`,
+    [idTarget.data],
+  )
+  const keluar = Number(sebelum?.n ?? 0) - Number(sesudah?.n ?? 0)
+
+  segarkan(idTarget.data)
+  return berhasil(
+    undefined,
+    Number(sesudah?.n ?? 0) === 0
+      ? `${keluar} jabatan dilepas. Daftar kosong — jabatan target ini tidak lagi menyaring kandidat menurut jabatan asalnya.`
+      : `${keluar} jabatan dilepas, tersisa ${Number(sesudah?.n ?? 0)}.`,
+  )
+}
+
+/**
+ * Tambahkan SEMUA jabatan sejenis sekaligus (mis. 63 kursi Kepala Balai).
+ *
+ * Permintaan pemilik proses 31 Agu 2026: daftar pilihan dibuat lebih general —
+ * "jabatan apa saja yang bisa dinominasikan", bukan 63 baris balai satu per satu.
+ * Begitu daftarnya berkelompok, menambahkan kelompok harus jadi satu tindakan;
+ * kalau tidak, pengguna menekan tombol 63 kali dan tiap tekan satu permintaan.
+ *
+ * ## Id yang dikirim klien, BUKAN nama jenisnya
+ *
+ * Menerima nama jenis lalu memuainya sendiri di server terlihat lebih rapi, tapi
+ * artinya server menambahkan baris yang **tidak pernah dilihat** penggunanya —
+ * daftar bisa saja sudah berubah sejak halaman dirender. Dengan id eksplisit, yang
+ * ditambahkan tepat yang tampil di layar saat ia menekan tombol.
+ *
+ * ## Satu transaksi, dan yang sudah ada DILEWATI bukan menggagalkan
+ *
+ * `jabatan_target_anggota` berkunci (target, jabatan), jadi INSERT biasa akan
+ * gagal di tengah begitu satu jabatan sudah jadi anggota — dan yang terjadi bukan
+ * "sebagian masuk" melainkan seluruh batch batal karena alasan yang sama sekali
+ * tidak penting. `INSERT IGNORE` melewatinya; jumlah yang benar-benar masuk
+ * dilaporkan apa adanya supaya "ditambahkan 40 dari 63" tidak terbaca sebagai 63.
+ */
+export async function tambahAnggotaSekaligus(
+  jabatanTargetId: unknown,
+  jabatanIds: unknown,
+): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
+  if (tolak) return tolak
+
+  const idTarget = idPositif.safeParse(jabatanTargetId)
+  if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
+
+  // Batas 200 bukan angka bulat yang dikarang: kelompok terbesar di master
+  // sekarang 63 kursi, jadi 200 memberi ruang tumbuh sambil tetap menolak
+  // kiriman yang jelas bukan berasal dari daftar di layar.
+  const uraiIds = z.array(idPositif).min(1).max(200).safeParse(jabatanIds)
+  if (!uraiIds.success) return gagal('Daftar jabatan tidak dikenali atau terlalu panjang.')
+  const ids = [...new Set(uraiIds.data)]
+
+  const sah = await kueri<{ id: number }>(
+    `SELECT id FROM jabatan WHERE id IN (?) AND status_jabatan <> 'DIHAPUS'`,
+    [ids],
+  )
+  if (sah.length === 0) {
+    return gagal('Tidak ada jabatan yang bisa ditambahkan. Muat ulang halaman lalu coba lagi.')
+  }
+
+  const sebelum = await kueriSatu<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?`,
+    [idTarget.data],
+  )
+
+  await jalankanMutasi({
+    entitas: 'jabatan_target_anggota',
+    aksi: 'BUAT',
+    peranDiizinkan: PERAN_KELOLA_TARGET,
+    jalankan: async () => {
+      await eksekusi(
+        `INSERT IGNORE INTO jabatan_target_anggota (jabatan_target_id, jabatan_id)
+         VALUES ${sah.map(() => '(?, ?)').join(', ')}`,
+        sah.flatMap((j) => [idTarget.data, j.id]),
+      )
+      return {
+        entitasId: idTarget.data,
+        sesudah: { jabatanTargetId: idTarget.data, jabatanId: sah.map((j) => j.id) },
+      }
+    },
+  })
+
+  const sesudah = await kueriSatu<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?`,
+    [idTarget.data],
+  )
+  const masuk = Number(sesudah?.n ?? 0) - Number(sebelum?.n ?? 0)
+
+  segarkan(idTarget.data)
+  return berhasil(
+    undefined,
+    masuk === sah.length
+      ? `${masuk} jabatan ditambahkan sebagai anggota.`
+      : `${masuk} jabatan ditambahkan · ${sah.length - masuk} sudah jadi anggota sebelumnya.`,
+  )
+}
+
 export async function hapusAnggotaJabatan(
   jabatanTargetId: unknown,
   jabatanId: unknown,
 ): Promise<HasilAksi<void>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
@@ -464,7 +768,7 @@ export async function hapusAnggotaJabatan(
   await jalankanMutasi({
     entitas: 'jabatan_target_anggota',
     aksi: 'HAPUS',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_KELOLA_TARGET,
     sebelum: () =>
       kueriSatu(
         `SELECT jabatan_target_id, jabatan_id FROM jabatan_target_anggota
@@ -488,7 +792,9 @@ export async function hapusAnggotaJabatan(
 // Tab 2 — Persyaratan
 // ---------------------------------------------------------------------------
 
-const JENIS_SYARAT = ['PENDIDIKAN_MIN', 'BIDANG_ILMU', 'PENGALAMAN_MIN', 'LAINNYA'] as const
+// DITURUNKAN dari mesin kelayakan, tidak diketik ulang — lihat catatan pada
+// `SEMUA_JENIS_SYARAT` di `lib/scoring/eligibility.ts`.
+const JENIS_SYARAT = SEMUA_JENIS_SYARAT
 
 const SkemaSyarat = z.object({
   jenisSyarat: z.enum(JENIS_SYARAT),
@@ -503,6 +809,21 @@ const SkemaSyarat = z.object({
    * lolos, bukan gagal (`lib/scoring/eligibility.ts`).
    */
   nilaiMinimal: z.string().trim().max(60, 'Nilai minimal maksimal 60 karakter').nullable(),
+  /**
+   * Lama minimal pada jenjang yang dipersyaratkan, dalam TAHUN (`doc/sql/019`).
+   *
+   * Hanya bermakna untuk `PENGALAMAN_MIN` berbentuk eselon — lembar Persyaratan
+   * Jabatan menulis "pengawas paling singkat 3 tahun". Dibatasi 60 tahun: masa
+   * kerja PNS tidak mungkin melampauinya, dan batas atas menahan salah ketik
+   * (mis. 30 menjadi 300) yang akan menggugurkan semua orang.
+   */
+  durasiTahunMin: z
+    .number()
+    .int('Durasi harus bilangan bulat tahun')
+    .min(1, 'Durasi minimal 1 tahun')
+    .max(60, 'Durasi maksimal 60 tahun')
+    .nullable()
+    .optional(),
 })
 
 export type MasukanSyarat = z.infer<typeof SkemaSyarat>
@@ -522,6 +843,21 @@ function periksaNilaiMinimal(d: MasukanSyarat): string | null {
     if (!eselon.includes(nilai.toUpperCase()) && Number.isNaN(Number(nilai))) {
       return `Untuk pengalaman minimal, isi eselon (${eselon.join(' · ')}) atau jumlah tahun berupa angka.`
     }
+    /*
+      Durasi hanya bermakna berdampingan dengan JENJANG. Kalau `nilaiMinimal`-nya
+      sendiri sudah berupa angka tahun, mengisi durasi berarti dua angka tahun untuk
+      satu syarat — dan tidak ada di UI maupun mesin yang menjelaskan mana yang
+      berlaku. Ditolak di sini, bukan dibiarkan lalu diabaikan diam-diam.
+    */
+    if ((d.durasiTahunMin ?? null) !== null && !Number.isNaN(Number(nilai))) {
+      return 'Durasi tidak bisa dipakai bersama nilai minimal berupa angka tahun. Isi jenjangnya (mis. IV) lalu durasinya, atau jumlah tahun saja.'
+    }
+  }
+  if (d.jenisSyarat === 'GOLONGAN_MIN' && bakukanGolongan(nilai) === null) {
+    return `Golongan "${nilai}" tidak dikenali. Isi seperti III/d atau IV/b (I/a sampai IV/e).`
+  }
+  if (d.jenisSyarat !== 'PENGALAMAN_MIN' && (d.durasiTahunMin ?? null) !== null) {
+    return 'Durasi hanya berlaku untuk syarat pengalaman.'
   }
   return null
 }
@@ -575,13 +911,26 @@ export async function simpanPersyaratan(
   persyaratanId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_USUL_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
   const idSyarat = persyaratanId === null ? null : idPositif.safeParse(persyaratanId)
   if (idSyarat !== null && !idSyarat.success) return gagal('Persyaratan tidak dikenali.')
+
+  /*
+    Pengelola Unit hanya boleh menyentuh target yang memuat kursi UNITNYA —
+    diperiksa `targetTerjangkau()` di dalam SQL, bukan dengan menyembunyikan tab.
+
+    Rubrik penilaian TIDAK ikut dibuka: ia formula 65/20/15 yang berlaku
+    se-organisasi, bukan per unit. Dua unit yang menyetel bobot berbeda untuk kursi
+    setara membuat skor lintas unit berhenti bisa dibandingkan — padahal
+    perbandingan itu seluruh gunanya Peta Talenta.
+  */
+  if ((await targetTerjangkau(idTarget.data)) === null) {
+    return gagal('Jabatan target itu tidak ada atau di luar lingkup unit Anda.')
+  }
 
   const urai = SkemaSyarat.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
@@ -597,13 +946,13 @@ export async function simpanPersyaratan(
   const hasil = await jalankanMutasi({
     entitas: 'jabatan_target_persyaratan',
     aksi: idSyarat === null ? 'BUAT' : 'UBAH',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_USUL_TARGET,
     sebelum:
       idSyarat === null
         ? undefined
         : () =>
             kueriSatu(
-              `SELECT p.id, p.jenis_syarat, p.deskripsi, p.nilai_minimal,
+              `SELECT p.id, p.jenis_syarat, p.deskripsi, p.nilai_minimal, p.durasi_tahun_min,
                       (SELECT t.kata_kunci_relevansi FROM jabatan_target t WHERE t.id = p.jabatan_target_id)
                         AS kata_kunci_relevansi
                  FROM jabatan_target_persyaratan p WHERE p.id = ?`,
@@ -622,16 +971,35 @@ export async function simpanPersyaratan(
 
       if (idSyarat === null) {
         const { insertId } = await eksekusi(
-          `INSERT INTO jabatan_target_persyaratan (jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal)
-           VALUES (?, ?, ?, ?)`,
-          [idTarget.data, d.jenisSyarat, d.deskripsi, d.nilaiMinimal || null],
+          `INSERT INTO jabatan_target_persyaratan
+             (jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal, durasi_tahun_min)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            idTarget.data,
+            d.jenisSyarat,
+            d.deskripsi,
+            d.nilaiMinimal || null,
+            d.durasiTahunMin ?? null,
+          ],
         )
         return { entitasId: insertId, sesudah: { id: insertId, ...d, kataKunciRelevansi: bidangIlmu } }
       }
       await eksekusi(
-        `UPDATE jabatan_target_persyaratan SET jenis_syarat = ?, deskripsi = ?, nilai_minimal = ?
-         WHERE id = ? AND jabatan_target_id = ?`,
-        [d.jenisSyarat, d.deskripsi, d.nilaiMinimal || null, idSyarat.data, idTarget.data],
+        `UPDATE jabatan_target_persyaratan
+            SET jenis_syarat = ?, deskripsi = ?, nilai_minimal = ?, durasi_tahun_min = ?
+          WHERE id = ? AND jabatan_target_id = ?`,
+        [
+          d.jenisSyarat,
+          d.deskripsi,
+          d.nilaiMinimal || null,
+          // Ditulis apa adanya, termasuk NULL: kalau jenisnya diubah dari
+          // pengalaman ke yang lain, durasi lama HARUS ikut hilang — kalau tidak,
+          // ia menempel pada syarat yang tidak memakainya dan muncul kembali begitu
+          // jenisnya dikembalikan.
+          d.durasiTahunMin ?? null,
+          idSyarat.data,
+          idTarget.data,
+        ],
       )
       return {
         entitasId: idSyarat.data,
@@ -671,11 +1039,24 @@ export async function simpanSyaratDiklat(
   jabatanTargetId: unknown,
   kategoriIds: unknown,
 ): Promise<HasilAksi<{ jumlah: number }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_USUL_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
   if (!idTarget.success) return gagal('Jabatan target tidak dikenali.')
+
+  /*
+    Pengelola Unit hanya boleh menyentuh target yang memuat kursi UNITNYA —
+    diperiksa `targetTerjangkau()` di dalam SQL, bukan dengan menyembunyikan tab.
+
+    Rubrik penilaian TIDAK ikut dibuka: ia formula 65/20/15 yang berlaku
+    se-organisasi, bukan per unit. Dua unit yang menyetel bobot berbeda untuk kursi
+    setara membuat skor lintas unit berhenti bisa dibandingkan — padahal
+    perbandingan itu seluruh gunanya Peta Talenta.
+  */
+  if ((await targetTerjangkau(idTarget.data)) === null) {
+    return gagal('Jabatan target itu tidak ada atau di luar lingkup unit Anda.')
+  }
 
   const uraiId = z.array(idPositif).max(50, 'Terlalu banyak kategori').safeParse(kategoriIds)
   if (!uraiId.success) return gagal('Pilihan kategori pelatihan tidak dikenali.')
@@ -701,7 +1082,7 @@ export async function simpanSyaratDiklat(
   await jalankanMutasi({
     entitas: 'jabatan_target_syarat_diklat',
     aksi: 'UBAH',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_USUL_TARGET,
     sebelum: async (): Promise<Record<string, unknown>> => {
       const baris = await kueri<{ kode: string }>(
         `SELECT k.kode FROM jabatan_target_syarat_diklat s
@@ -744,12 +1125,25 @@ export async function hapusPersyaratan(
   jabatanTargetId: unknown,
   persyaratanId: unknown,
 ): Promise<HasilAksi<void>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_USUL_TARGET)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idSyarat = idPositif.safeParse(persyaratanId)
   if (!idTarget.success || !idSyarat.success) return gagal('Persyaratan tidak dikenali.')
+
+  /*
+    Pengelola Unit hanya boleh menyentuh target yang memuat kursi UNITNYA —
+    diperiksa `targetTerjangkau()` di dalam SQL, bukan dengan menyembunyikan tab.
+
+    Rubrik penilaian TIDAK ikut dibuka: ia formula 65/20/15 yang berlaku
+    se-organisasi, bukan per unit. Dua unit yang menyetel bobot berbeda untuk kursi
+    setara membuat skor lintas unit berhenti bisa dibandingkan — padahal
+    perbandingan itu seluruh gunanya Peta Talenta.
+  */
+  if ((await targetTerjangkau(idTarget.data)) === null) {
+    return gagal('Jabatan target itu tidak ada atau di luar lingkup unit Anda.')
+  }
 
   const lama = await kueriSatu<{ jenis_syarat: string }>(
     `SELECT jenis_syarat FROM jabatan_target_persyaratan WHERE id = ? AND jabatan_target_id = ?`,
@@ -760,7 +1154,7 @@ export async function hapusPersyaratan(
   await jalankanMutasi({
     entitas: 'jabatan_target_persyaratan',
     aksi: 'HAPUS',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_USUL_TARGET,
     sebelum: () =>
       kueriSatu(
         `SELECT id, jenis_syarat, deskripsi, nilai_minimal FROM jabatan_target_persyaratan WHERE id = ?`,
@@ -813,7 +1207,7 @@ export async function duplikasiRubrik(
   jabatanTargetId: unknown,
   dariJabatanTargetId: unknown,
 ): Promise<HasilAksi<{ jumlahKomponen: number; jumlahIndikator: number; jumlahKategori: number }>> {
-  const tolak = await gerbangPeran(PERAN_JABATAN_TARGET)
+  const tolak = await gerbangPeran(PERAN_KELOLA_TARGET)
   if (tolak) return tolak
 
   const idTujuan = idPositif.safeParse(jabatanTargetId)
@@ -834,103 +1228,29 @@ export async function duplikasiRubrik(
   const sumber = await ambilPohonRubrik(idSumber.data)
   if (sumber.length === 0) return gagal('Jabatan target sumber belum punya rubrik untuk disalin.')
 
-  let jumlahIndikator = 0
-  let jumlahKategori = 0
+  let hasil = { jumlahKomponen: 0, jumlahIndikator: 0, jumlahKategori: 0 }
 
   await jalankanMutasi({
     entitas: 'rubrik_komponen',
     aksi: 'BUAT',
-    peranDiizinkan: PERAN_JABATAN_TARGET,
+    peranDiizinkan: PERAN_KELOLA_TARGET,
     jalankan: async () => {
-      for (const k of sumber) {
-        const { insertId: komponenId } = await eksekusi(
-          `INSERT INTO rubrik_komponen (jabatan_target_id, sumbu, nama_komponen, bobot_komponen, urutan)
-           VALUES (?, ?, ?, ?, ?)`,
-          [idTujuan.data, k.sumbu, k.namaKomponen, k.bobot, k.urutan],
-        )
-
-        // Sub-indikator butuh id induknya, jadi induk ditulis lebih dulu lalu
-        // anaknya menyusul — bukan satu INSERT berisi seluruh pohon.
-        for (const i of k.indikator) {
-          const indukId = await salinIndikator(komponenId, null, i)
-          jumlahIndikator++
-          jumlahKategori += i.kategori.length
-          for (const anak of i.anak) {
-            await salinIndikator(komponenId, indukId, anak)
-            jumlahIndikator++
-            jumlahKategori += anak.kategori.length
-          }
-        }
-      }
+      // Penyalinnya di `lib/rubrik-salin.ts` — dipakai bersama skrip
+      // `jabatan-target-balai.ts`, yang tidak punya sesi sehingga tidak bisa
+      // memanggil aksi ini. Dua penulis pohon rubrik dengan urutan berbeda
+      // menghasilkan bentuk yang berbeda tanpa satu pun galat.
+      hasil = await salinPohonRubrik(idTujuan.data, idSumber.data)
       return {
         entitasId: idTujuan.data,
-        sesudah: { disalinDari: idSumber.data, jumlahKomponen: sumber.length },
+        sesudah: { disalinDari: idSumber.data, jumlahKomponen: hasil.jumlahKomponen },
       }
     },
   })
 
   segarkan(idTujuan.data)
   return berhasil(
-    { jumlahKomponen: sumber.length, jumlahIndikator, jumlahKategori },
-    `Rubrik disalin: ${sumber.length} komponen · ${jumlahIndikator} indikator · ${jumlahKategori} kategori skor.`,
+    hasil,
+    `Rubrik disalin: ${hasil.jumlahKomponen} komponen · ${hasil.jumlahIndikator} indikator · ${hasil.jumlahKategori} kategori skor.`,
   )
 }
 
-async function salinIndikator(
-  komponenId: number,
-  parentId: number | null,
-  node: {
-    namaIndikator: string
-    kunci: string | null
-    bobot: number | null
-    modeSkor: string
-    kebutuhanData: string | null
-    sumberData: string | null
-    urutan: number
-    kategori: Array<{
-      namaKategori: string
-      nilaiSkor: number | null
-      ambangMin: number | null
-      ambangMax: number | null
-      urutan: number
-    }>
-  },
-): Promise<number> {
-  const { insertId } = await eksekusi(
-    `INSERT INTO rubrik_indikator
-       (rubrik_komponen_id, parent_indikator_id, nama_indikator, kunci_sistem, bobot_indikator,
-        mode_skor, kebutuhan_data, sumber_data, urutan)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      komponenId,
-      parentId,
-      node.namaIndikator,
-      node.kunci,
-      node.bobot,
-      node.modeSkor,
-      node.kebutuhanData,
-      node.sumberData,
-      node.urutan,
-    ],
-  )
-
-  if (node.kategori.length > 0) {
-    const nilai = node.kategori.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')
-    const params = node.kategori.flatMap((s) => [
-      insertId,
-      s.namaKategori,
-      s.nilaiSkor,
-      s.ambangMin,
-      s.ambangMax,
-      s.urutan,
-    ])
-    await eksekusi(
-      `INSERT INTO rubrik_kategori_skor
-         (rubrik_indikator_id, nama_kategori, nilai_skor, ambang_min, ambang_max, urutan)
-       VALUES ${nilai}`,
-      params,
-    )
-  }
-
-  return insertId
-}

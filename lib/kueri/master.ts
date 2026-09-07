@@ -93,6 +93,72 @@ export async function ambilPohonUnit(): Promise<NodeUnit[]> {
   }))
 }
 
+/** Satu jabatan sebagai DAUN di pohon unit organisasi. */
+export interface DaunJabatan {
+  id: number
+  unitId: number
+  kodeJabatan: string
+  namaJabatan: string
+  jenisJabatan: string
+  eselon: string
+  jenjang: string | null
+  statusJabatan: string
+  /** Pegawai aktif yang menempati jabatan ini. Ikut filter populasi. */
+  jumlahPegawai: number
+}
+
+/**
+ * Seluruh jabatan, dikelompokkan per unit, untuk dipajang sebagai DAUN pohon
+ * (permintaan pemilik proses 24 Agu 2026: *"nama jabatannya juga masukin tree ya"*).
+ *
+ * ## Kueri KEDUA, bukan JOIN ke `ambilPohonUnit()`
+ *
+ * Pohon unit memakai `WITH RECURSIVE` dan tiap barisnya sudah memuat tiga
+ * subkueri penghitung. Menempelkan jabatan lewat JOIN akan **melipatgandakan**
+ * baris unit sebanyak jabatannya, sehingga ketiga penghitung itu ikut terhitung
+ * berkali-kali — jenis kesalahan yang tidak menghasilkan galat, hanya angka yang
+ * terlalu besar. Dua kueri terpisah lalu dikelompokkan di TypeScript jauh lebih
+ * murah untuk dibaca dan tidak bisa salah begitu.
+ *
+ * ## Urutan sengaja ESELON dulu, baru nama
+ *
+ * Di dalam satu unit, pembaca mencari pimpinannya lebih dulu. Urutan alfabetis
+ * menaruh "Kepala Seksi …" di atas "Kepala Balai …" pada balai yang sama, yang
+ * membaca seperti struktur terbalik. `FIELD()` dipakai supaya I·II·III·IV·NON_ESELON
+ * berurutan sebagai JENJANG, bukan sebagai teks (alfabetis menaruh IV sebelum
+ * NON_ESELON tapi juga sebelum I…III salah urut).
+ *
+ * ## `DIHAPUS` dikeluarkan
+ *
+ * Sama dengan `jumlah_jabatan` di `ambilPohonUnit()` — kalau tidak, angka di baris
+ * unit tidak akan cocok dengan jumlah daun yang tampil di bawahnya, dan selisih
+ * tanpa penjelasan terbaca sebagai kerusakan.
+ */
+export async function ambilJabatanPohon(): Promise<DaunJabatan[]> {
+  const baris = await kueri<Record<string, unknown>>(`
+    SELECT j.id, j.unit_organisasi_id, j.kode_jabatan, j.nama_jabatan, j.jenis_jabatan,
+           j.eselon, j.jenjang, j.status_jabatan,
+           (SELECT COUNT(*) FROM pegawai pg
+             WHERE pg.jabatan_id = j.id AND pg.status_aktif = 'AKTIF'
+               ${filterSumber('pg')}) AS jumlah_pegawai
+      FROM jabatan j
+     WHERE j.status_jabatan <> 'DIHAPUS'
+     ORDER BY FIELD(j.eselon, 'I', 'II', 'III', 'IV', 'NON_ESELON'), j.nama_jabatan
+  `)
+
+  return baris.map((r) => ({
+    id: Number(r.id),
+    unitId: Number(r.unit_organisasi_id),
+    kodeJabatan: String(r.kode_jabatan),
+    namaJabatan: String(r.nama_jabatan),
+    jenisJabatan: String(r.jenis_jabatan),
+    eselon: String(r.eselon),
+    jenjang: r.jenjang === null ? null : String(r.jenjang),
+    statusJabatan: String(r.status_jabatan),
+    jumlahPegawai: Number(r.jumlah_pegawai),
+  }))
+}
+
 /**
  * Unit yang **tidak terjangkau dari akar mana pun** — punya `parent_id` yang
  * menunjuk baris tidak ada, atau tersangkut siklus.
@@ -227,8 +293,8 @@ export async function ambilDaftarJabatan(f: FilterJabatan): Promise<{
               j.jenis_jabatan, j.jenjang, j.eselon, j.status_jabatan,
               (SELECT COUNT(*) FROM pegawai p WHERE p.jabatan_id = j.id
                  AND p.status_aktif = 'AKTIF')                              AS penghuni,
-              EXISTS (SELECT 1 FROM jabatan_target_anggota a
-                        WHERE a.jabatan_id = j.id)                          AS ada_target
+              EXISTS (SELECT 1 FROM jabatan_target t_k
+                        WHERE t_k.jabatan_id = j.id)                        AS ada_target
        FROM jabatan j
        JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
        ${where}
@@ -325,34 +391,58 @@ export interface JabatanKosongRinci {
   jumlahKandidatSiap: number
 }
 
+/*
+  ── Kenapa `unitWajib` parameter WAJIB, bukan opsional bawaan `null` ─────────
+
+  Kedua daftar di bawah bukan sekadar bacaan: barisnya membawa tombol "Jadikan
+  draft", dan sejak 24 Agu 2026 Pengelola Unit boleh menekannya. Server menolak
+  kursi di luar unitnya (`jabatanTerjangkau()` di dalam SQL), jadi daftar yang
+  tidak tersaring akan memajang ratusan baris yang tombolnya PASTI ditolak — pola
+  kegagalan "halaman lebih longgar daripada aksinya" yang persis diperingatkan di
+  `lib/peran.ts`.
+
+  Dibuat wajib supaya pemanggil baru menjadi galat kompilasi, bukan kebocoran yang
+  diam. Bawaan opsional `= null` akan berarti "tampilkan semua" bagi siapa pun yang
+  lupa mengisinya, dan lupa itu tidak akan pernah terlihat sebagai kesalahan.
+  `null` sendiri sah dan berarti lingkup penuh — itu yang dipakai Super Admin,
+  Admin Talenta, dan Pimpinan.
+*/
+
 /**
  * Jabatan yang **sudah** kosong, diurutkan dengan yang paling menganggur di atas:
  * belum punya jabatan target dulu, karena tanpa profil target kandidatnya belum
  * bisa dinilai sama sekali — itu kekosongan yang paling jauh dari terisi.
  */
-export async function ambilJabatanKosongRinci(hanyaStrategis = false): Promise<{
+export async function ambilJabatanKosongRinci(
+  hanyaStrategis: boolean,
+  unitWajib: number | null,
+): Promise<{
   daftar: JabatanKosongRinci[]
   total: number
   tanpaTarget: number
 }> {
   const filterEselon = hanyaStrategis ? "AND j.eselon IN ('I','II','III')" : ''
+  const filterUnit = unitWajib === null ? '' : `AND u.id IN (${SUBKUERI_UNIT_TURUNAN})`
+  const paramUnit = unitWajib === null ? [] : [unitWajib]
 
   const daftar = await kueri<Record<string, unknown>>(`
     SELECT j.id, j.kode_jabatan, j.nama_jabatan, u.nama_unit, j.eselon, j.jenjang,
-           EXISTS (SELECT 1 FROM jabatan_target_anggota a WHERE a.jabatan_id = j.id) AS ada_target,
+           EXISTS (SELECT 1 FROM jabatan_target t_k WHERE t_k.jabatan_id = j.id) AS ada_target,
            (SELECT COUNT(*) FROM talent_pool tp
-              JOIN jabatan_target_anggota a ON a.jabatan_target_id = tp.jabatan_target_id
-              WHERE a.jabatan_id = j.id)                                     AS kandidat_pool,
+              JOIN jabatan_target t_k ON t_k.id = tp.jabatan_target_id
+              WHERE t_k.jabatan_id = j.id)                                     AS kandidat_pool,
            (SELECT COUNT(*) FROM talent_pool tp
-              JOIN jabatan_target_anggota a ON a.jabatan_target_id = tp.jabatan_target_id
-              WHERE a.jabatan_id = j.id AND tp.status IN ('DITETAPKAN','DIVERIFIKASI')) AS kandidat_siap
+              JOIN jabatan_target t_k ON t_k.id = tp.jabatan_target_id
+              WHERE t_k.jabatan_id = j.id AND tp.status IN ('DITETAPKAN','DIVERIFIKASI')) AS kandidat_siap
     FROM jabatan j
     JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
-    WHERE j.status_jabatan = 'KOSONG' ${filterEselon}
+    WHERE j.status_jabatan = 'KOSONG' ${filterEselon} ${filterUnit}
     ORDER BY ada_target ASC,
              FIELD(j.eselon,'I','II','III','IV','NON_ESELON'),
              j.nama_jabatan
-  `)
+  `,
+    paramUnit,
+  )
 
   const petakan = (r: Record<string, unknown>): JabatanKosongRinci => ({
     id: Number(r.id),
@@ -401,25 +491,34 @@ export interface PejabatBerisiko {
  * jenis jabatan (58/60/65). Yang diambil SQL hanya baris & angka pendampingnya;
  * proyeksi pensiunnya dihitung `lib/nip.ts` supaya aturan BUP tetap satu tempat.
  */
-export async function ambilPejabatBerisiko(ambangTahun = 3): Promise<{
+export async function ambilPejabatBerisiko(
+  ambangTahun: number,
+  unitWajib: number | null,
+): Promise<{
   daftar: PejabatBerisiko[]
   totalDiperiksa: number
   nipTidakTerbaca: number
 }> {
-  const baris = await kueri<Record<string, unknown>>(`
+  const filterUnit = unitWajib === null ? '' : `AND u.id IN (${SUBKUERI_UNIT_TURUNAN})`
+  const paramUnit = unitWajib === null ? [] : [unitWajib]
+
+  const baris = await kueri<Record<string, unknown>>(
+    `
     SELECT p.id, p.nip, p.nama_lengkap, p.tmt_jabatan,
            j.id AS jabatan_id, j.nama_jabatan, j.eselon, j.jenjang, j.jenis_jabatan,
            u.nama_unit,
-           EXISTS (SELECT 1 FROM jabatan_target_anggota a WHERE a.jabatan_id = j.id) AS ada_target,
+           EXISTS (SELECT 1 FROM jabatan_target t_k WHERE t_k.jabatan_id = j.id) AS ada_target,
            (SELECT COUNT(*) FROM talent_pool tp
-              JOIN jabatan_target_anggota a ON a.jabatan_target_id = tp.jabatan_target_id
-              WHERE a.jabatan_id = j.id AND tp.status IN ('DITETAPKAN','DIVERIFIKASI')) AS kandidat_siap
+              JOIN jabatan_target t_k ON t_k.id = tp.jabatan_target_id
+              WHERE t_k.jabatan_id = j.id AND tp.status IN ('DITETAPKAN','DIVERIFIKASI')) AS kandidat_siap
     FROM pegawai p
     JOIN jabatan j ON j.id = p.jabatan_id
     JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
     WHERE p.status_aktif = 'AKTIF' AND j.status_jabatan = 'TERISI'
-      ${filterSumber('p')}
-  `)
+      ${filterSumber('p')} ${filterUnit}
+  `,
+    paramUnit,
+  )
 
   const sekarang = new Date()
   let nipTidakTerbaca = 0

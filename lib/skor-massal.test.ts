@@ -28,6 +28,7 @@ const BERKUNCI: IndikatorBerkunci[] = [
 function rubrik(ubah: Partial<RubrikJabatanTarget> = {}): RubrikJabatanTarget {
   return {
     jabatanTargetId: 1,
+    jabatanAsal: [],
     kataKunciRelevansi: ['pengadaan', 'semua'],
     syaratKategoriDiklat: ['PBJ'],
     komponen: rubrikJabatanTarget(),
@@ -49,6 +50,8 @@ function kandidat(ubah: Partial<ProfilKandidat> = {}): ProfilKandidat {
     riwayatDiklat: ['Diklat Pengadaan Barang/Jasa'],
     kategoriDiklatTervalidasi: ['PBJ'],
     jenjangSaatIni: 'Administrator',
+    namaJabatanSaatIni: null,
+    jabatanIdSaatIni: null,
     eselonSaatIni: 'III',
     tmtJabatan: new Date(2019, 0, 1, 12),
     riwayatJabatan: [
@@ -61,10 +64,12 @@ function kandidat(ubah: Partial<ProfilKandidat> = {}): ProfilKandidat {
         tanggalMulai: new Date(2019, 0, 1, 12),
         tanggalAkhir: null,
         jenisPenugasan: 'DEFINITIF',
+        lamaBulan: null,
       },
     ],
     potkom: 85,
     hukumanDisiplin: [],
+    golongan: 'III/d',
     asesmen: { tahunAsesmen: 2025, statusAsesmen: 'Berlaku', nilaiKinerjaY: 100 },
     ...ubah,
   }

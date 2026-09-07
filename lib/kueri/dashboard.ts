@@ -2,6 +2,7 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import type { Kotak9 } from '../scoring'
+import { arahBawaanUrut } from '../urut'
 import {
   CTE_ASESMEN_TERBARU,
   filterSumber,
@@ -155,37 +156,89 @@ export async function ambilSebaranKotak9(): Promise<SebaranKotak9> {
 }
 
 /** Daftar pegawai pada satu sel Kotak 9 — untuk drill-down `?kotak=N`. */
+/**
+ * Satu baris drill-down Kotak 9 di dashboard.
+ *
+ * Bentuknya **sengaja identik** dengan `AnggotaSel` di `lib/kueri/peta-talenta.ts`
+ * — `eselon` & `nilaiTalenta` ditambahkan 24 Agu 2026 justru untuk menyamakannya.
+ * Keduanya dipajang komponen tabel yang SAMA (`TabelPegawaiKotak9`), jadi tipe yang
+ * berselisih akan langsung jadi galat kompilasi alih-alih dua tabel yang perlahan
+ * berbeda kolomnya — dan itu tepat yang sudah terjadi: tabel pegawai yang sama
+ * tampil dalam tiga bentuk di tiga halaman sampai pemilik proses memintanya
+ * disamakan.
+ */
 export interface AnggotaKotak {
   pegawaiId: number
   nip: string
   nama: string
   namaJabatan: string | null
   namaUnit: string | null
+  eselon: string | null
   nilaiKinerjaY: number
   nilaiPotensialX: number
+  nilaiTalenta: number
   predikat: string
   tahunAsesmen: number
   statusAsesmen: string
 }
 
+/** Baris per halaman drill-down dashboard. Lebih kecil dari Peta Talenta (20): panelnya di bawah grid, bukan halaman sendiri. */
+export const UKURAN_HALAMAN_KOTAK = 12
+
+/**
+ * Kunci kolom → ekspresi `ORDER BY`. Daftar PUTIH: `?urut=` datang dari URL, jadi
+ * ia tidak boleh pernah menyentuh SQL secara langsung.
+ *
+ * Kuncinya sama dengan `KUNCI_URUT_KOTAK9` di `lib/urut.ts` — di situ daftar
+ * kolom yang boleh diurutkan, di sini ekspresinya. Drill-down Peta Talenta punya
+ * peta serupa dengan ekspresi BERBEDA (di sana sumbu X & Nilai Talenta adalah
+ * alias terhitung yang berubah menurut `?target=`).
+ */
+const URUT_ANGGOTA: Record<string, string> = {
+  nama: 'p.nama_lengkap',
+  jabatan: 'j.nama_jabatan',
+  unit: 'u.nama_unit',
+  eselon: "FIELD(j.eselon,'I','II','III','IV','NON_ESELON')",
+  kinerja: 'a.nilai_kinerja_y',
+  predikat: "FIELD(a.rating_kinerja,'Sangat Baik','Baik','Butuh Perbaikan','Kurang','Sangat Kurang')",
+  potensial: 'a.nilai_potensial_x',
+  talenta: 'a.nilai_talenta',
+  asesmen: 'a.tahun_asesmen',
+}
+
 export async function ambilAnggotaKotak(
   kotak: number,
-  batas = 12,
+  halaman = 1,
+  urut?: string | null,
+  arah?: 'asc' | 'desc' | null,
 ): Promise<{ daftar: AnggotaKotak[]; total: number }> {
+  // Berpaginasi, bukan dipotong 12 lalu selesai. Versi lama hanya `LIMIT 12`
+  // sementara judul panelnya menyebut TOTAL sesungguhnya — jadi "Pegawai di
+  // Kotak 9 · 32 orang" di atas daftar berisi 12, tanpa apa pun yang menjelaskan
+  // ke-20 sisanya. Sekarang tabelnya memakai `DataTable` yang sama dengan Peta
+  // Talenta, dan paginasinya benar-benar bisa membuka sisanya.
+  const lompat = (Math.max(1, halaman) - 1) * UKURAN_HALAMAN_KOTAK
+  const kunci = urut && URUT_ANGGOTA[urut] ? urut : 'talenta'
+  const kolomUrut = URUT_ANGGOTA[kunci]!
+  const arahSql = (arah ?? arahBawaanUrut(kunci)) === 'asc' ? 'ASC' : 'DESC'
   const [daftar, hitung] = await Promise.all([
     kueri<Record<string, unknown>>(
       `${CTE_ASESMEN_TERBARU}
-       SELECT p.id, p.nip, p.nama_lengkap, j.nama_jabatan, u.nama_unit,
-              a.nilai_kinerja_y, a.nilai_potensial_x, a.rating_kinerja,
+       SELECT p.id, p.nip, p.nama_lengkap, j.nama_jabatan, j.eselon, u.nama_unit,
+              a.nilai_kinerja_y, a.nilai_potensial_x, a.nilai_talenta, a.rating_kinerja,
               a.tahun_asesmen, a.status_asesmen
        FROM asesmen_terbaru a
        JOIN pegawai p ON p.id = a.pegawai_id
        LEFT JOIN jabatan j ON j.id = p.jabatan_id
        LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
        WHERE a.kotak_9 = ?
-       ORDER BY a.nilai_potensial_x DESC, p.nama_lengkap
-       LIMIT ?`,
-      [kotak, batas],
+       -- p.nama_lengkap sebagai pemecah seri WAJIB, bukan kerapian: tanpa urutan
+       -- yang deterministik, dua baris berskor sama bisa bertukar posisi antar
+       -- permintaan, dan dengan LIMIT/OFFSET itu berarti baris yang sama muncul
+       -- dua kali di halaman berbeda sementara baris lain tidak pernah muncul.
+       ORDER BY ${kolomUrut} ${arahSql}, p.nama_lengkap
+       LIMIT ? OFFSET ?`,
+      [kotak, UKURAN_HALAMAN_KOTAK, lompat],
     ),
     kueriSatu<{ n: number }>(
       `${CTE_ASESMEN_TERBARU} SELECT COUNT(*) AS n FROM asesmen_terbaru WHERE kotak_9 = ?`,
@@ -199,9 +252,11 @@ export async function ambilAnggotaKotak(
       nip: String(r.nip),
       nama: String(r.nama_lengkap),
       namaJabatan: r.nama_jabatan === null ? null : String(r.nama_jabatan),
+      eselon: r.eselon === null ? null : String(r.eselon),
       namaUnit: r.nama_unit === null ? null : String(r.nama_unit),
       nilaiKinerjaY: angkaWajib(r.nilai_kinerja_y as string),
       nilaiPotensialX: angkaWajib(r.nilai_potensial_x as string),
+      nilaiTalenta: angkaWajib(r.nilai_talenta as string),
       predikat: String(r.rating_kinerja),
       tahunAsesmen: Number(r.tahun_asesmen),
       statusAsesmen: String(r.status_asesmen),
@@ -451,14 +506,14 @@ export async function ambilJabatanKosong(batas = 8): Promise<{
   const [daftar, ringkas] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT j.id, j.nama_jabatan, j.eselon, j.jenjang, u.nama_unit,
-              (SELECT COUNT(*) FROM jabatan_target_anggota a WHERE a.jabatan_id = j.id) AS jml_target,
-              (SELECT COUNT(*) FROM jabatan_target_anggota a
-                 JOIN talent_pool tp ON tp.jabatan_target_id = a.jabatan_target_id
+              (SELECT COUNT(*) FROM jabatan_target t_k WHERE t_k.jabatan_id = j.id) AS jml_target,
+              (SELECT COUNT(*) FROM jabatan_target t_k
+                 JOIN talent_pool tp ON tp.jabatan_target_id = t_k.id
                  JOIN match_score ms ON ms.id = tp.match_score_id
-                WHERE a.jabatan_id = j.id AND ms.eligible = 1)                          AS kandidat_siap,
-              (SELECT COUNT(*) FROM jabatan_target_anggota a
-                 JOIN talent_pool tp ON tp.jabatan_target_id = a.jabatan_target_id
-                WHERE a.jabatan_id = j.id AND tp.status = 'DITETAPKAN')                 AS suksesor
+                WHERE t_k.jabatan_id = j.id AND ms.eligible = 1)                        AS kandidat_siap,
+              (SELECT COUNT(*) FROM jabatan_target t_k
+                 JOIN talent_pool tp ON tp.jabatan_target_id = t_k.id
+                WHERE t_k.jabatan_id = j.id AND tp.status = 'DITETAPKAN')               AS suksesor
        FROM jabatan j
        LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
        WHERE j.status_jabatan = 'KOSONG' AND j.eselon IN ('I','II','III')
@@ -470,7 +525,7 @@ export async function ambilJabatanKosong(batas = 8): Promise<{
       SELECT
         COUNT(*) AS total,
         SUM(CASE WHEN NOT EXISTS (
-          SELECT 1 FROM jabatan_target_anggota a WHERE a.jabatan_id = j.id
+          SELECT 1 FROM jabatan_target t_k WHERE t_k.jabatan_id = j.id
         ) THEN 1 ELSE 0 END) AS tanpa_target
       FROM jabatan j
       WHERE j.status_jabatan = 'KOSONG' AND j.eselon IN ('I','II','III')

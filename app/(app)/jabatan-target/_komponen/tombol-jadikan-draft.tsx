@@ -20,6 +20,13 @@ import { buatTargetDariJabatan } from '@/lib/aksi/jabatan-target'
  * Berhasil → langsung ke editornya. Membuat draft lalu meninggalkan pengguna di
  * daftar kekosongan berarti ia harus mencari sendiri draft yang baru saja ia
  * buat, dan pekerjaan sebenarnya (persyaratan + rubrik) belum dimulai.
+ *
+ * Mendarat di tab **Persyaratan**, bukan tab bawaan (Rubrik). Dua alasan, dan
+ * keduanya menunjuk arah yang sama: persyaratan adalah langkah PERTAMA alur ini
+ * (rubrik menilai kandidat yang sudah lolos syarat), dan sejak 24 Agu 2026
+ * pengusulnya bisa berperan Pengelola Unit — yang tab Rubriknya hanya bisa dibaca.
+ * Mendaratkan pengusul di satu-satunya tab yang tidak bisa ia sentuh membuat
+ * tindakan yang baru saja berhasil terlihat seperti jalan buntu.
  */
 export function TombolJadikanDraft({
   jabatanId,
@@ -43,7 +50,7 @@ export function TombolJadikanDraft({
           const hasil = await buatTargetDariJabatan(jabatanId)
           if (hasil.ok) {
             tampilkan({ nada: 'sukses', judul: hasil.pesan ?? 'Draft jabatan target dibuat.' })
-            router.push(`/jabatan-target/${hasil.data.id}`)
+            router.push(`/jabatan-target/${hasil.data.id}?tab=syarat`)
           } else {
             tampilkan({ nada: 'bahaya', judul: hasil.pesan ?? 'Gagal membuat draft.' })
           }

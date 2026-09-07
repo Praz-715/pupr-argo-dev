@@ -168,11 +168,30 @@ type Nada = keyof typeof KELAS_NADA
  * Bentuk kartunya diporting dari v1 `StatCard`: bar warna di tepi kiri, angka
  * besar + chip ikon sebaris, label, lalu baris hint di bawah garis putus-putus.
  *
- * Tinggi kartu SERAGAM (`h-40` + label diklem 2 baris) karena kelimanya berdiri
- * berdampingan: label yang panjangnya berbeda membuat baris konteks tiap kartu
- * berhenti di ketinggian berbeda, dan mata membacanya sebagai empat kartu yang
- * tidak sejajar. Hint tetap menyisakan tingginya walau kosong — alasan yang
- * sama dengan `min-height: 1.4em` di v1.
+ * Tinggi kartu SERAGAM, tapi lewat **grid**, bukan lewat `h-40` yang dipatok.
+ *
+ * ## Kenapa patokan tingginya dilepas (24 Agu 2026)
+ *
+ * Versi sebelumnya `h-40` (160px) + `overflow-hidden`. Itu bekerja selama grid
+ * KPI-nya 4 kolom: baris konteks muat satu baris. Begitu kartunya jadi LIMA
+ * (butir 2 `PUR.pdf`), tiap kartu menyempit, konteksnya membungkus jadi dua baris
+ * — mis. "70,8% dari 89 jabatan eselon I–III" — dan isinya melewati 160px. Karena
+ * `overflow-hidden`, yang terjadi bukan kartu memanjang melainkan **baris terakhir
+ * terpotong**: tautan "Buka Direktori Pegawai" & "Buka Nominasi & Approval"
+ * terpangkas separuh. Dilaporkan pemilik proses lewat tangkapan layar.
+ *
+ * Patokan itu ternyata **tidak pernah dibutuhkan**: CSS Grid sudah membuat seluruh
+ * item satu baris setinggi item tertinggi (`align-items: stretch` bawaannya), dan
+ * `flex-1` pada blok label sudah mendorong hint ke dasar kartu. Jadi kesejajaran
+ * yang jadi alasan `h-40` didapat gratis — yang ditambahkan `h-40` cuma plafon yang
+ * memotong.
+ *
+ * Sekarang `h-full min-h-40`: `h-full` mengisi tinggi yang sudah disamakan grid
+ * (grid item-nya `<Link>`, jadi tanpa `h-full` kartunya berhenti di tinggi isinya
+ * sendiri dan yang tersamakan hanya pembungkusnya), `min-h-40` mempertahankan
+ * proporsi kartu saat isinya pendek. **Jangan mengembalikan tinggi tetap** — teks
+ * konteks lahir dari data (persentase, jumlah, nama tahap) dan panjangnya berubah
+ * bersama datanya, jadi angka tetap apa pun akan terpotong lagi suatu hari.
  */
 function Kartu({
   ikon,
@@ -193,7 +212,7 @@ function Kartu({
     <div
       className={cn(
         KELAS_NADA[nada],
-        'relative flex h-40 flex-col overflow-hidden rounded-lg border border-border bg-surface py-4 pr-4 pl-5 shadow-kartu',
+        'relative flex h-full min-h-40 flex-col overflow-hidden rounded-lg border border-border bg-surface py-4 pr-4 pl-5 shadow-kartu',
         // Angkat hanya kalau kartunya benar-benar bisa diklik.
         tautan ? 'kartu-naik' : '',
       )}
@@ -212,16 +231,51 @@ function Kartu({
         </span>
       </div>
 
-      {/* line-clamp-2 + flex-1: label memakai maksimal dua baris lalu mendorong
-          hint ke dasar kartu, jadi baris hint keempat kartu selalu sejajar. */}
-      <div className="mt-2.5 flex flex-1 items-start gap-1.5">
-        <span className="line-clamp-2 text-[13px] leading-snug font-semibold text-text">
+      {/*
+        Isi kartu dirata ATAS, bukan blok konteks yang ditambatkan ke bawah
+        (permintaan user 24 Agu 2026: *"penjelasan di atas tautan gak rapih,
+        ratainnya keatas aja"*).
+
+        Versi sebelumnya memberi `flex-1` pada blok LABEL, yang mendorong blok
+        konteks ke dasar kartu. Selama semua kartu punya konteks sepanjang sama itu
+        terlihat rapi; begitu panjangnya berbeda — "Semua yang dihitung di sini
+        berstatus aktif" dua baris vs "tersebar di 4 jabatan target aktif" satu
+        baris — blok yang lebih tinggi tumbuh KE ATAS, sehingga garis putus-putus
+        dan awal teks konteks tiap kartu berhenti di ketinggian berbeda. Yang
+        terbaca: lima kartu yang tidak sejajar.
+
+        Sekarang tidak ada `flex-1` di mana pun, jadi isinya mengalir dari atas dan
+        sisa ruang jatuh ke bawah. Supaya baris tautan tetap sejajar juga, LABEL dan
+        KONTEKS masing-masing mencadangkan tinggi dua baris (`min-h-*`): teks yang
+        hanya satu baris menyisakan baris kedua kosong alih-alih menggeser apa pun
+        di bawahnya. Ruang kosong itu harga kesejajaran, dan itu pilihan yang
+        disengaja — kartu KPI dibaca dengan disapu mata, bukan dibaca satu-satu.
+
+        Angka `min-h`-nya **kelipatan tinggi baris, bukan taksiran**: label memakai
+        `leading-snug` (1,375) → dua baris = `2.75em`, konteks memakai
+        `leading-relaxed` (1,625) → dua baris = `3.25em`. Percobaan pertama memakai
+        `2.6em`/`2.9em` yang dikira "cukup"; terukur, keduanya lebih PENDEK dari dua
+        baris sesungguhnya, jadi kartu yang teksnya benar-benar dua baris menggeser
+        isinya 2–4px dan kesejajarannya gagal justru pada lebar tempat teks mulai
+        membungkus (1280 & 1366px). Kalau `leading-*` di sini diubah, kedua angka ini
+        ikut diubah.
+      */}
+      <div className="mt-2.5 flex items-start gap-1.5">
+        {/*
+          `min-h`, TANPA `line-clamp`: label yang kebetulan tiga baris dulu terpotong
+          diam-diam di baris kedua (permintaan pemilik proses 26 Agu 2026 — jangan ada
+          teks yang terpotong). Kesejajaran yang jadi alasan clamp itu tidak hilang:
+          `min-h` tetap mencadangkan dua baris, dan CSS Grid sudah menyamakan tinggi
+          seluruh kartu pada barisnya, jadi kartu yang labelnya lebih panjang
+          meninggikan barisnya alih-alih menyembunyikan kata.
+        */}
+        <span className="min-h-[2.75em] text-[13px] leading-snug font-semibold break-words text-text">
           {label}
         </span>
       </div>
 
-      <div className="mt-2 min-h-[2.4em] border-t border-dashed border-border pt-2">
-        <p className="text-[11px] leading-relaxed text-text-subtle">{konteks}</p>
+      <div className="mt-2 border-t border-dashed border-border pt-2">
+        <p className="min-h-[3.25em] text-[11px] leading-relaxed text-text-subtle">{konteks}</p>
         {tautan ? (
           <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-accent group-hover:underline">
             {tautan.label}
@@ -240,7 +294,10 @@ function Kartu({
   // kartu yang terangkat saat hover tapi hanya bisa diklik di satu baris teks
   // adalah cara tercepat membuat orang mengira tautannya rusak.
   return tautan ? (
-    <Link href={tautan.href} className="group block focus-visible:outline-offset-4">
+    // `h-full` supaya grid item ini benar-benar diregangkan ke tinggi baris, dan
+    // kartu di dalamnya (`h-full`) ikut mengisinya. Tanpa itu `<Link>` setinggi
+    // isinya sendiri dan kartu-kartu jadi tidak sejajar lagi.
+    <Link href={tautan.href} className="group block h-full focus-visible:outline-offset-4">
       {isi}
     </Link>
   ) : (
@@ -255,9 +312,19 @@ export function KartuRingkasSkeleton() {
           akhirnya membuat barisnya melompat justru pada momen yang seharusnya
           ia tenangkan. */}
       {Array.from({ length: 5 }).map((_, i) => (
-        // h-40 menyamai tinggi kartu jadinya — tanpa itu kartunya melompat
-        // tingginya begitu data masuk (phase.md §5.3: skeleton meniru bentuk akhir).
-        <CardSkeleton key={i} className="h-40" />
+        /*
+          `h-52` (208px) — skeleton meniru bentuk AKHIR (phase.md §5.3). Kartu jadinya
+          TERUKUR **201px pada 1440–1920px dan 215px pada 1280–1366px** (di lebar
+          sempit teks konteks membungkus), jadi 208px adalah nilai tunggal terdekat ke
+          keduanya: selisihnya ±7px, cukup kecil untuk tidak terbaca sebagai lompatan.
+
+          Tinggi kartu tidak lagi dipatok, jadi tidak ada satu angka yang cocok di
+          semua lebar. Kalau jumlah kartu atau panjang teks konteksnya berubah, UKUR
+          ulang kartu jadinya lalu setel angka ini — jangan menebaknya. Skeleton yang
+          lebih pendek dari isi jadinya membuat baris melompat justru pada momen yang
+          seharusnya ia tenangkan.
+        */
+        <CardSkeleton key={i} className="h-52" />
       ))}
     </div>
   )

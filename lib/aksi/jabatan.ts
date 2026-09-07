@@ -229,8 +229,12 @@ export async function hapusJabatan(id: unknown): Promise<HasilAksi<void>> {
     `SELECT
        (SELECT COUNT(*) FROM pegawai WHERE jabatan_id = ?)                      AS pegawai,
        (SELECT COUNT(*) FROM riwayat_jabatan WHERE jabatan_id = ?)              AS riwayat,
-       (SELECT COUNT(*) FROM jabatan_target_anggota WHERE jabatan_id = ?)       AS anggota`,
-    [idJab.data, idJab.data, idJab.data],
+       -- Dua arah sejak doc/sql/032: jabatan ini bisa jadi KURSI sebuah target
+       -- (kolom jabatan_id) ATAU salah satu jabatan ASAL kandidatnya. Memeriksa
+       -- satu saja membiarkan penghapusan yang melubangi sisi yang lain.
+       (SELECT COUNT(*) FROM jabatan_target_anggota WHERE jabatan_id = ?)
+         + (SELECT COUNT(*) FROM jabatan_target WHERE jabatan_id = ?)          AS anggota`,
+    [idJab.data, idJab.data, idJab.data, idJab.data],
   )
   const pegawai = Number(pakai?.pegawai ?? 0)
   const riwayat = Number(pakai?.riwayat ?? 0)

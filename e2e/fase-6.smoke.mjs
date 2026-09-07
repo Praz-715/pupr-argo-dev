@@ -183,6 +183,32 @@ async function jalankanAksi(page, label, catatan) {
 
 const kandidat = await pilihKandidatUji()
 
+/**
+ * Prasyarat yang hilang harus DILAPORKAN, bukan meruntuhkan harness.
+ *
+ * Seluruh bagian "perjalanan penuh lintas peran" butuh satu entri `talent_pool`
+ * berstatus KANDIDAT tanpa nominasi. Ketika 10 pegawai eNominasi dikeluarkan
+ * (24 Agu 2026), `talent_pool` jadi KOSONG — dan fase ini mati dengan
+ * `TypeError: Cannot read properties of null (reading 'nama')` **tanpa satu pun
+ * baris ringkasan**, sebab `kandidat.nama` dipakai di LABEL langkah, yang
+ * dievaluasi sebelum `langkah()` dipanggil sehingga tidak tertangkap try/catch-nya.
+ *
+ * Uji yang runtuh tanpa laporan lebih buruk daripada uji yang gagal: yang gagal
+ * memberi tahu apa yang kurang, yang runtuh hanya memberi jejak tumpukan yang
+ * tidak menyebut sebabnya. `NAMA_KANDIDAT` menjaga label tetap bisa dirender, dan
+ * `butuhKandidat()` membuat tiap langkah yang bergantung padanya gagal dengan
+ * alasan yang bisa ditindak.
+ */
+const NAMA_KANDIDAT = kandidat?.nama ?? '(tidak ada kandidat di talent pool)'
+function butuhKandidat() {
+  tegaskan(
+    kandidat !== null,
+    'PRASYARAT TIDAK ADA: butuh satu entri talent_pool berstatus KANDIDAT tanpa nominasi. ' +
+      'Talent pool sedang kosong — isi dulu dari halaman Kandidat (Tambah ke talent pool), ' +
+      'atau pulihkan data demo dari doc/sql/cadangan-sebelum-hapus-enom-24agu.sql.',
+  )
+}
+
 try {
   // -------------------------------------------------------------------------
   // 0. Bersihkan sisa uji sebelumnya (idempoten)
@@ -314,12 +340,50 @@ try {
     return 'tombol penetapan tidak tampil untuk Admin Talenta'
   })
 
-  await langkah('Pimpinan melihat tombol penetapan pada kandidat Diverifikasi', async () => {
+  await langkah('tombol penetapan mengikuti STATUS entri, bukan sekadar peran', async () => {
+    /*
+      Versi lama langkah ini menembak `?target=1` lalu menunggu teks "Tetapkan
+      sebagai suksesor" — benar selama data demo memuat satu entri DIVERIFIKASI di
+      target 1. Sejak 10 pegawai eNominasi dikeluarkan (24 Agu 2026), seluruh isi
+      pool berstatus KANDIDAT, jadi langkah itu menunggu 20 detik lalu gagal atas
+      sesuatu yang memang TIDAK BOLEH ada — tombol penetapan pada entri yang belum
+      diverifikasi.
+
+      Sekarang subjeknya diambil dari DB, dan yang diuji dua arah:
+        - ada entri DIVERIFIKASI → tombolnya HARUS tampil untuk Pimpinan;
+        - tidak ada             → tombolnya HARUS TIDAK tampil pada entri KANDIDAT.
+      Arah kedua bukan pelarian dari uji: ia justru penjaga yang lebih ketat, sebab
+      tombol penetapan yang muncul terlalu awal melompati verifikasi kepegawaian.
+      Sisi positifnya tetap dijalani "perjalanan penuh lintas peran" di bawah, yang
+      membuat entri DIVERIFIKASI-nya sendiri lalu menetapkannya sebagai suksesor.
+    */
+    const subjek = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT tp.jabatan_target_id AS target, p.nama_lengkap AS nama, tp.status
+           FROM talent_pool tp JOIN pegawai p ON p.id = tp.pegawai_id
+          ORDER BY FIELD(tp.status,'DIVERIFIKASI','KANDIDAT','DITETAPKAN'), tp.id
+          LIMIT 1`,
+      )
+      return r[0] ?? null
+    })
+    tegaskan(subjek !== null, 'talent pool kosong — tidak ada entri untuk diuji')
+
     const { ctx, page } = await konteksSebagai(USER.pimpinan)
-    await page.goto(`${BASE}/talent-pool?target=1`, { waitUntil: 'networkidle' })
-    await tungguTeks(page, 'Tetapkan sebagai suksesor')
+    await page.goto(`${BASE}/talent-pool?target=${subjek.target}`, { waitUntil: 'networkidle' })
+    await tungguTeks(page, subjek.nama)
+    const baris = await page.locator('tr', { hasText: subjek.nama }).first().innerText()
     await ctx.close()
-    return 'tombol penetapan tampil untuk Pimpinan'
+
+    const adaTombol = baris.includes('Tetapkan sebagai suksesor')
+    if (subjek.status === 'DIVERIFIKASI') {
+      tegaskan(adaTombol, `entri DIVERIFIKASI ${subjek.nama} tanpa tombol penetapan`)
+      return `entri DIVERIFIKASI → tombol penetapan tampil untuk Pimpinan`
+    }
+    tegaskan(
+      !adaTombol,
+      `entri berstatus ${subjek.status} sudah menawarkan penetapan — melompati verifikasi`,
+    )
+    return `entri ${subjek.status} → penetapan belum ditawarkan (benar); sisi positifnya diuji perjalanan penuh di bawah`
   })
 
   await langkah('Viewer tidak punya aksi apa pun', async () => {
@@ -339,7 +403,8 @@ try {
   // -------------------------------------------------------------------------
   let nominasiUrl = null
 
-  await langkah(`Pengelola Unit mengajukan nominasi ${kandidat.nama}`, async () => {
+  await langkah(`Pengelola Unit mengajukan nominasi ${NAMA_KANDIDAT}`, async () => {
+    butuhKandidat()
     const { ctx, page } = await konteksSebagai(USER.pengelolaUnit)
     await page.goto(`${BASE}/talent-pool?target=${kandidat.jabatan_target_id}`, {
       waitUntil: 'networkidle',

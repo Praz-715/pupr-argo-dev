@@ -3,7 +3,7 @@ import { Download } from 'lucide-react'
 import { gayaTombol } from '@/components/ui/button-style'
 
 /**
- * Tombol unduh CSV — **Server Component**, tanpa JavaScript sama sekali.
+ * Tombol unduh .xlsx — **Server Component**, tanpa JavaScript sama sekali.
  *
  * Dua hal yang membuatnya tidak perlu jadi Client Component:
  *
@@ -25,7 +25,7 @@ import { gayaTombol } from '@/components/ui/button-style'
 export function TombolEkspor({
   jenis,
   params,
-  label = 'Unduh CSV',
+  label = 'Unduh Excel',
 }: {
   jenis: string
   params: Record<string, string | undefined>

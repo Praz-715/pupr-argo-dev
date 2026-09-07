@@ -29,6 +29,8 @@ const LABEL_JENIS: Record<string, string> = {
   MENUNGGU_PENETAPAN: 'Menunggu penetapan',
   SUKSESOR_DITETAPKAN: 'Suksesor ditetapkan',
   PENETAPAN_DIBATALKAN: 'Penetapan dibatalkan',
+  TARGET_DIUSULKAN: 'Usulan jabatan target',
+  TARGET_DIAKTIFKAN: 'Jabatan target aktif',
 }
 
 const NADA_JENIS: Record<string, 'netral' | 'aksen' | 'sukses' | 'peringatan' | 'bahaya'> = {
@@ -39,6 +41,11 @@ const NADA_JENIS: Record<string, 'netral' | 'aksen' | 'sukses' | 'peringatan' | 
   MENUNGGU_PENETAPAN: 'peringatan',
   SUKSESOR_DITETAPKAN: 'sukses',
   PENETAPAN_DIBATALKAN: 'bahaya',
+  // Usulan menunggu keputusan → 'peringatan' (ada yang harus dikerjakan);
+  // aktivasi adalah kabar selesai → 'sukses'. Nadanya mengikuti "apakah saya
+  // masih harus bertindak", bukan seberapa penting kabarnya.
+  TARGET_DIUSULKAN: 'peringatan',
+  TARGET_DIAKTIFKAN: 'sukses',
 }
 
 export function DaftarNotifikasi({

@@ -98,6 +98,29 @@ async function main() {
     'doc/sql/012_auth.sql',
     'doc/sql/014_kategori_riwayat.sql',
     'doc/sql/015_syarat_diklat_target.sql',
+    /*
+      016–029 masuk 1 Sep 2026 — sebelumnya daftar ini berhenti di 015 sementara
+      tujuh berkas sesudahnya mengubah SKEMA, jadi `pupr_dev_volume` dibangun
+      tanpa `pegawai.hukdis_diverifikasi_*`, `riwayat_jabatan.lama_bulan`,
+      `asesmen_dipakai`, `rubrik_indikator.skala_maks`, dan kolom pegawai di
+      `rencana_pengembangan`. Akibatnya bukan galat saat membangun melainkan
+      pengukuran atas bentuk tabel yang sudah tidak dipakai lagi.
+
+      YANG SENGAJA TIDAK MASUK: `016`/`017` (isi `pengaturan_sistem` — nilainya
+      ikut lewat salinan tabel master, dan menjalankannya di sini akan menimpa
+      pengaturan yang sudah tersalin) dan `024`–`028`, yang bukan skema melainkan
+      perbaikan data khusus `pupr_dev_v2` (rename BJKW, hapus 7 duplikat). Yang
+      terakhir itu akan menghapus baris di DB yang isinya sama sekali berbeda.
+    */
+    'doc/sql/018_notifikasi_usulan_target.sql',
+    'doc/sql/019_syarat_golongan_durasi.sql',
+    'doc/sql/020_verifikasi_hukdis.sql',
+    'doc/sql/021_lama_jabatan.sql',
+    'doc/sql/022_jenjang_asesmen.sql',
+    'doc/sql/023_skala_potkom.sql',
+    'doc/sql/029_rencana_semua_pegawai.sql',
+    'doc/sql/030_syarat_rumpun_jabatan.sql',
+    'doc/sql/031_nilai_minimal_lebih_panjang.sql',
   ]
 
   await langkah(`pasang skema (${BERKAS_SKEMA.length} berkas)`, async () => {

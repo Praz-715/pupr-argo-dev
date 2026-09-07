@@ -35,7 +35,21 @@ import type { Peran } from './peran'
  */
 
 export type StatusPool = 'KANDIDAT' | 'DINOMINASIKAN' | 'DIVERIFIKASI' | 'DITETAPKAN' | 'DITOLAK'
-export type StatusNominasi = 'DIAJUKAN' | 'MENUNGGU_VERIFIKASI' | 'DISETUJUI' | 'DITOLAK'
+export type StatusNominasi =
+  | 'DIAJUKAN'
+  | 'MENUNGGU_VERIFIKASI'
+  | 'DISETUJUI'
+  | 'DITOLAK'
+  /**
+   * Pengajuannya DIBATALKAN, bukan orangnya ditolak (`doc/sql/033`).
+   *
+   * Dipakai `BATALKAN_NOMINASI`. Sebelum nilai ini ada, aksi itu menutup barisnya
+   * dengan `DITOLAK` — satu-satunya nilai yang tersedia — sehingga salah pencet
+   * yang sudah dibatalkan tetap meninggalkan catatan bahwa orangnya PERNAH
+   * DITOLAK, dan ia muncul di penyaring "Ditolak". Itu kebalikan dari yang diminta
+   * butir 3 PDF: *"diatas datanya klir"*.
+   */
+  | 'DITARIK'
 export type StatusApproval = 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK' | 'REVISI'
 
 /** Nama tahap pada `approval_log.tahap` — bukan enum di DB, jadi dikunci di sini. */
@@ -54,7 +68,8 @@ export type AksiWorkflow =
   | 'TETAPKAN'
   | 'TOLAK_PIMPINAN'
   | 'BATALKAN_PENETAPAN'
-  | 'TOLAK_KANDIDAT'
+  | 'BATALKAN_VERIFIKASI'
+  | 'BATALKAN_NOMINASI'
   | 'PULIHKAN_KANDIDAT'
 
 /** Siapa yang harus bertindak berikutnya. */
@@ -98,7 +113,21 @@ export const AKSI: Record<AksiWorkflow, DefinisiAksi> = {
       'Kandidat masuk antrian Verifikasi Kepegawaian dan statusnya menjadi Dinominasikan. Unit pengaju tercatat pada nominasi.',
     peranDiizinkan: ['Pengelola Unit', 'Admin Talenta', 'Super Admin'],
     poolDari: ['KANDIDAT'],
-    nominasiDari: [null],
+    /*
+      `DITOLAK` ikut diterima, dan itu MEMPERBAIKI JALAN BUNTU.
+
+      `entri.statusNominasi` adalah status nominasi TERAKHIR (ORDER BY id DESC).
+      Sebelum ini `AJUKAN` hanya menerima `null`, sehingga siapa pun yang pernah
+      dinominasikan lalu turun lagi — lewat `PULIHKAN_KANDIDAT` atau
+      `BATALKAN_NOMINASI` — punya baris nominasi lama yang statusnya bukan null,
+      dan tombol Ajukan tidak pernah muncul lagi untuknya. Kandidatnya kembali ke
+      pool tapi mentok di sana selamanya, tanpa satu pun pesan yang menjelaskan.
+
+      Baris lamanya TIDAK dihapus: `AJUKAN` membuat baris nominasi BARU, jadi
+      riwayat siapa mengajukan & siapa menolak tetap utuh dan yang terbaca sebagai
+      "keadaan sekarang" adalah baris terbaru.
+    */
+    nominasiDari: [null, 'DITOLAK', 'DITARIK'],
     poolKe: 'DINOMINASIKAN',
     nominasiKe: 'MENUNGGU_VERIFIKASI',
     jejak: { tahap: TAHAP_VERIFIKASI, status: 'MENUNGGU' },
@@ -203,17 +232,45 @@ export const AKSI: Record<AksiWorkflow, DefinisiAksi> = {
     butuhCatatan: true,
     destruktif: true,
   },
-  TOLAK_KANDIDAT: {
-    aksi: 'TOLAK_KANDIDAT',
-    label: 'Keluarkan dari pool',
+  /*
+    ── DUA LANGKAH MUNDUR DI TENGAH ────────────────────────────────────────────
+    Permintaan pemilik proses (`Detail Revisi PUPR 1_9_2026.pdf`, butir 3):
+    *"Mundurin status / pindah data dari atas yang sudah dinominasi/gagal/ditolak
+    ke bawah lagi, user ada kemungkinan salah pencet … perlu disediain dia turun
+    kebawah ke nominasi lg dan diatas datanya klir."*
+
+    Sebelum ini alur suksesi hanya punya dua langkah mundur, dan keduanya di UJUNG:
+    `BATALKAN_PENETAPAN` (dari puncak) dan `PULIHKAN_KANDIDAT` (dari yang ditolak).
+    Bagian TENGAHNYA tidak punya jalan turun sama sekali — begitu verifikasi
+    disetujui, satu-satunya cara membatalkannya adalah menolak orangnya, yang
+    mencatat penolakan yang tidak pernah benar-benar terjadi.
+  */
+  BATALKAN_VERIFIKASI: {
+    aksi: 'BATALKAN_VERIFIKASI',
+    label: 'Batalkan hasil verifikasi',
     akibat:
-      'Kandidat ditandai Ditolak tanpa melalui nominasi — dipakai ketika sudah jelas tidak akan diusulkan. Skornya tetap tersimpan dan bisa dipulihkan.',
+      'Kandidat kembali ke antrian Verifikasi Kepegawaian dan statusnya kembali Dinominasikan. Keputusan verifikasi sebelumnya tetap tercatat di riwayat sebagai jejak, bukan dihapus.',
     peranDiizinkan: ['Admin Talenta', 'Super Admin'],
-    poolDari: ['KANDIDAT'],
-    nominasiDari: [null],
-    poolKe: 'DITOLAK',
-    nominasiKe: null,
-    jejak: null,
+    poolDari: ['DIVERIFIKASI'],
+    nominasiDari: ['DISETUJUI'],
+    poolKe: 'DINOMINASIKAN',
+    nominasiKe: 'MENUNGGU_VERIFIKASI',
+    jejak: { tahap: TAHAP_VERIFIKASI, status: 'REVISI' },
+    butuhCatatan: true,
+    destruktif: true,
+  },
+  BATALKAN_NOMINASI: {
+    aksi: 'BATALKAN_NOMINASI',
+    label: 'Tarik nominasi',
+    akibat:
+      'Nominasi ditarik dan kandidat kembali berstatus Kandidat di pool, sehingga bisa dinominasikan lagi dari awal. Baris nominasinya ditutup, bukan dihapus — pengajuan berikutnya membuat baris baru dan riwayatnya tetap utuh.',
+    peranDiizinkan: ['Pengelola Unit', 'Admin Talenta', 'Super Admin'],
+    poolDari: ['DINOMINASIKAN'],
+    nominasiDari: ['MENUNGGU_VERIFIKASI', 'DIAJUKAN'],
+    poolKe: 'KANDIDAT',
+    // DITARIK, bukan DITOLAK — lihat catatan pada `StatusNominasi`.
+    nominasiKe: 'DITARIK',
+    jejak: { tahap: TAHAP_VERIFIKASI, status: 'REVISI' },
     butuhCatatan: true,
     destruktif: true,
   },
@@ -224,7 +281,7 @@ export const AKSI: Record<AksiWorkflow, DefinisiAksi> = {
       'Kandidat kembali berstatus Kandidat sehingga bisa dinominasikan lagi. Riwayat nominasi & penolakan sebelumnya tetap tersimpan sebagai jejak.',
     peranDiizinkan: ['Admin Talenta', 'Super Admin'],
     poolDari: ['DITOLAK'],
-    nominasiDari: [null, 'DITOLAK', 'DIAJUKAN', 'MENUNGGU_VERIFIKASI', 'DISETUJUI'],
+    nominasiDari: [null, 'DITOLAK', 'DITARIK', 'DIAJUKAN', 'MENUNGGU_VERIFIKASI', 'DISETUJUI'],
     poolKe: 'KANDIDAT',
     nominasiKe: null,
     jejak: null,
@@ -346,6 +403,18 @@ export function giliranSiapa(keadaan: KeadaanWorkflow): Giliran {
       return 'PIMPINAN'
     case 'DITOLAK':
       return 'SELESAI'
+    /*
+      DITARIK bukan keadaan akhir. Pengajuannya dibatalkan tapi orangnya kembali
+      jadi kandidat dan BISA diajukan lagi — jadi yang menunggu tindakan adalah
+      unit pengaju, sama dengan nominasi yang dikembalikan untuk revisi.
+
+      Jatuh ke `SELESAI` lewat `default` membuat kolom Giliran berbunyi "Tidak
+      menunggu siapa pun" untuk orang yang justru sedang menunggu diajukan ulang —
+      dan itu menyembunyikan pekerjaan yang belum selesai, kebalikan dari yang
+      diminta butir 3 PDF.
+    */
+    case 'DITARIK':
+      return 'UNIT'
     default:
       return 'SELESAI'
   }
@@ -379,6 +448,7 @@ export const LABEL_NOMINASI: Record<StatusNominasi, string> = {
   MENUNGGU_VERIFIKASI: 'Menunggu verifikasi',
   DISETUJUI: 'Lolos verifikasi',
   DITOLAK: 'Ditolak',
+  DITARIK: 'Ditarik kembali',
 }
 
 /**
@@ -398,7 +468,13 @@ export const LABEL_NOMINASI: Record<StatusNominasi, string> = {
  * **saling meniadakan dan menutup semua kemungkinan** — tidak ada baris yang bisa
  * jatuh ke dua tahap atau ke tidak satu pun.
  */
-export type TahapNominasi = 'REVISI' | 'VERIFIKASI' | 'APPROVAL' | 'DITETAPKAN' | 'DITOLAK'
+export type TahapNominasi =
+  | 'REVISI'
+  | 'VERIFIKASI'
+  | 'APPROVAL'
+  | 'DITETAPKAN'
+  | 'DITARIK'
+  | 'DITOLAK'
 
 /** Urutan alur, dipakai apa adanya sebagai urutan opsi penyaring. */
 export const TAHAP_NOMINASI: TahapNominasi[] = [
@@ -406,6 +482,7 @@ export const TAHAP_NOMINASI: TahapNominasi[] = [
   'VERIFIKASI',
   'APPROVAL',
   'DITETAPKAN',
+  'DITARIK',
   'DITOLAK',
 ]
 
@@ -414,6 +491,7 @@ export const LABEL_TAHAP: Record<TahapNominasi, string> = {
   VERIFIKASI: 'Menunggu verifikasi kepegawaian',
   APPROVAL: 'Menunggu approval Pimpinan',
   DITETAPKAN: 'Ditetapkan sebagai suksesor',
+  DITARIK: 'Ditarik kembali',
   DITOLAK: 'Ditolak',
 }
 
@@ -423,6 +501,9 @@ export const PELAKU_TAHAP: Record<TahapNominasi, string> = {
   VERIFIKASI: 'Admin Talenta',
   APPROVAL: 'Pimpinan',
   DITETAPKAN: 'selesai — tidak menunggu siapa pun',
+  // Bukan keadaan akhir: orangnya kembali jadi kandidat dan bisa diajukan lagi,
+  // jadi yang harus bertindak adalah unit pengaju — sama dengan REVISI.
+  DITARIK: 'unit pengaju',
   DITOLAK: 'selesai — tidak menunggu siapa pun',
 }
 
@@ -434,6 +515,14 @@ export function tahapNominasi(keadaan: {
   // pengajuannya ditolak, tahapnya tidak lagi ditentukan status nominasinya.
   if (keadaan.statusNominasi === 'DITOLAK' || keadaan.statusPool === 'DITOLAK') return 'DITOLAK'
   if (keadaan.statusPool === 'DITETAPKAN') return 'DITETAPKAN'
+  /*
+    Nominasi yang DITARIK bukan keadaan akhir: orangnya kembali jadi kandidat biasa
+    dan bisa diajukan lagi. Tahapnya karena itu ditentukan status POOL-nya, bukan
+    baris nominasi yang sudah ditutup — memasukkannya ke 'DITOLAK' akan membuat
+    salah pencet yang sudah dibatalkan tetap tampil di penyaring Ditolak, yaitu
+    persis yang butir 3 PDF minta dibersihkan.
+  */
+  if (keadaan.statusNominasi === 'DITARIK') return 'DITARIK'
   switch (keadaan.statusNominasi) {
     case 'DIAJUKAN':
       return 'REVISI'
@@ -514,6 +603,9 @@ export function periksaKonsistensi(keadaan: KeadaanWorkflow): string | null {
     MENUNGGU_VERIFIKASI: ['DINOMINASIKAN'],
     DISETUJUI: ['DIVERIFIKASI', 'DITETAPKAN'],
     DITOLAK: ['DITOLAK', 'KANDIDAT'],
+    // Ditarik → orangnya kembali jadi kandidat. 'DITOLAK' ikut sah karena ia bisa
+    // dikeluarkan dari pool sesudahnya tanpa mengajukan ulang.
+    DITARIK: ['KANDIDAT', 'DITOLAK'],
   }
 
   const sah = diharapkan[statusNominasi]

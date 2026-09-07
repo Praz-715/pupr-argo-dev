@@ -193,7 +193,7 @@ async function IsiRiwayat() {
                 >
                   <td className="px-3 py-2">
                     <span className="block font-medium text-text">{r.sumber}</span>
-                    <span className="block max-w-[18rem] truncate text-[11px] text-text-subtle">
+                    <span className="block max-w-[18rem] text-[11px] text-text-subtle break-words">
                       {r.jenisData}
                     </span>
                   </td>

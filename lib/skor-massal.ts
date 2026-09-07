@@ -12,6 +12,7 @@ import {
   hitungRanking,
   ratakanDetail,
   type BarisDetailSkor,
+  type JabatanAsal,
   type KomponenNode,
   type NilaiMentah,
   type Persyaratan,
@@ -55,6 +56,11 @@ export interface RubrikJabatanTarget {
   /** Indikator daun + kunci sumber datanya (`rubrik_indikator.kunci_sistem`). */
   indikatorBerkunci: IndikatorBerkunci[]
   persyaratan: Persyaratan[]
+  /**
+   * Jabatan asal kandidat (`jabatan_target_anggota` sejak `doc/sql/033`) — gerbang
+   * "jabatan mana yang boleh dinominasikan". Larik kosong = tidak menyaring.
+   */
+  jabatanAsal: JabatanAsal[]
 }
 
 export interface OpsiSkorMassal {
@@ -131,6 +137,8 @@ export function hitungSkorMassal(
         bidangStudi: profil.bidangStudi,
         eselonTertinggi: eselonTertinggi(profil.riwayatJabatan) ?? profil.eselonSaatIni,
         totalPengalamanTahun: totalPengalamanTahun(profil.riwayatJabatan, sekarang),
+        golongan: profil.golongan,
+        jabatanIdSekarang: profil.jabatanIdSaatIni,
         asesmen: profil.asesmen
           ? {
               tahunAsesmen: profil.asesmen.tahunAsesmen,
@@ -138,7 +146,7 @@ export function hitungSkorMassal(
             }
           : null,
       },
-      opsiMasaBerlaku,
+      { ...opsiMasaBerlaku, jabatanAsal: rubrik.jabatanAsal },
     )
 
     return {

@@ -259,10 +259,15 @@ stateDiagram-v2
     DIVERIFIKASI --> DITOLAK: TOLAK_PIMPINAN
     DITETAPKAN --> DIVERIFIKASI: BATALKAN_PENETAPAN
     DITOLAK --> KANDIDAT: PULIHKAN_KANDIDAT
-    KANDIDAT --> DITOLAK: TOLAK_KANDIDAT
+    KANDIDAT --> [*]: keluarkanDariPool() — barisnya DIHAPUS
 ```
 
-**10 aksi · 5 status pool · 2 tahap approval · 4 giliran.** Fungsi `giliranSiapa()` menurunkan "siapa yang harus bertindak" dari tabel yang sama — ia **tidak pernah** ditulis sebagai kondisi SQL, karena itu akan jadi definisi kedua. Isi & tujuan notifikasi (`lib/notifikasi.ts`) juga mengambil peran tujuannya dari `PERAN_GILIRAN` di tabel yang sama, sehingga menambah tahap approval tidak menuntut menyunting dua tempat.
+**9 aksi · 5 status pool · 2 tahap approval · 4 giliran.** Mengeluarkan seseorang
+dari pool **bukan** transisi status dan karena itu tidak ada di tabel ini: ia
+menghapus barisnya, sesuatu yang `terapkanAksi()` tidak bisa ungkapkan (ia
+mengembalikan status baru, bukan "baris hilang"). Aksi `TOLAK_KANDIDAT` yang dulu
+menempati tempat itu dihapus 2 Sep 2026 — labelnya "Keluarkan dari pool"
+sementara akibatnya menyetel status DITOLAK, dan yang dibaca pengguna labelnya. Fungsi `giliranSiapa()` menurunkan "siapa yang harus bertindak" dari tabel yang sama — ia **tidak pernah** ditulis sebagai kondisi SQL, karena itu akan jadi definisi kedua. Isi & tujuan notifikasi (`lib/notifikasi.ts`) juga mengambil peran tujuannya dari `PERAN_GILIRAN` di tabel yang sama, sehingga menambah tahap approval tidak menuntut menyunting dua tempat.
 
 ---
 

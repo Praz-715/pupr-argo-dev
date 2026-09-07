@@ -1,9 +1,11 @@
 import type {
   AmbangSumbu,
+  BobotTalenta,
   KategoriSumbuX,
   KategoriSumbuY,
   Kotak9,
-  Predikat,
+  ParameterSkoring,
+  SkalaPredikat,
   TingkatHukuman,
 } from './types'
 
@@ -19,8 +21,20 @@ import type {
 export const SKOR_MIN = 0
 export const SKOR_MAKS = 100
 
-/** KERANGKA §A — Komponen Kinerja Utama, indikator Penilaian Kinerja. */
-export const SKOR_PREDIKAT: Record<Predikat, number> = {
+/**
+ * KERANGKA §A — Komponen Kinerja Utama, indikator Penilaian Kinerja — **BAWAAN.**
+ *
+ * Sejak 24 Agu 2026 skor tiap predikat bisa diubah Super Admin lewat
+ * `pengaturan_sistem` (`skor_predikat_*`). `skorPredikat()` **tidak membacanya**
+ * — ia menerima skalanya sebagai argumen wajib, alasan yang sama dengan
+ * `AMBANG_SUMBU` di bawah.
+ *
+ * Kelima kuncinya TIDAK bisa ditambah dari UI, dan itu bukan kelalaian: nama
+ * predikat datang dari sumber (e-Kinerja / Excel), jadi predikat keenam yang
+ * dibuat di halaman pengaturan tidak akan pernah dikirim siapa pun — yang ada
+ * hanya baris pengaturan yang tak pernah terpakai.
+ */
+export const SKOR_PREDIKAT: SkalaPredikat = {
   'Sangat Baik': 100,
   Baik: 80,
   'Butuh Perbaikan': 60,
@@ -47,6 +61,14 @@ export const AMBANG_SUMBU: AmbangSumbu = {
   tengah: 60,
 }
 
+/**
+ * Ketiga parameter skoring pada nilai BAWAAN, sebagai satu objek.
+ *
+ * Dipakai `PENGATURAN_BAWAAN`, generator seed, dan seluruh uji — supaya "apa
+ * nilai bawaannya" punya satu jawaban. Kode aplikasi TIDAK memakainya: jalur
+ * baca & tulis mengambil `parameterSkoringDari(ambilPengaturan())`, dan yang
+ * lupa gagal kompilasi.
+ */
 /** KERANGKA §B.3 — Verifikasi Rekam Jejak Disiplin. */
 export const SKOR_INTEGRITAS: Record<TingkatHukuman, number> = {
   'Tidak Pernah': 100,
@@ -79,8 +101,20 @@ export const MATRIKS_KOTAK_9: Record<KategoriSumbuY, Record<KategoriSumbuX, Kota
   'Di Bawah Ekspektasi': { Rendah: 1, Menengah: 3, Tinggi: 6 },
 }
 
-/** Bobot Formula A (Lampiran B): Nilai Talenta = 50% Y + 50% X. */
-export const BOBOT_FORMULA_A = { kinerja: 0.5, potensial: 0.5 } as const
+/**
+ * Bobot Formula A (Lampiran B): Nilai Talenta = 50% Y + 50% X — **BAWAAN.**
+ *
+ * Bisa diubah lewat `pengaturan_sistem` (`bobot_talenta_kinerja` /
+ * `bobot_talenta_potensial`, disimpan sebagai persen bulat). `hitungNilaiTalenta()`
+ * & `hitungKotak9()` menerimanya sebagai argumen wajib.
+ */
+export const BOBOT_FORMULA_A: BobotTalenta = { kinerja: 0.5, potensial: 0.5 }
+
+export const PARAMETER_SKORING_BAWAAN: ParameterSkoring = {
+  ambang: AMBANG_SUMBU,
+  skalaPredikat: SKOR_PREDIKAT,
+  bobotTalenta: BOBOT_FORMULA_A,
+}
 
 /**
  * Masa berlaku asesmen dalam tahun. Doc sumber tidak menetapkannya (Blueprint

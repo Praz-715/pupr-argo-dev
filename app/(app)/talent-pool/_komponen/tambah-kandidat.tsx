@@ -23,10 +23,17 @@ import type { KandidatLuarPool } from '@/lib/kueri/suksesi'
 export function TambahKandidat({
   jabatanTargetId,
   kandidat,
+  totalKandidat,
   namaTarget,
 }: {
   jabatanTargetId: number
   kandidat: KandidatLuarPool[]
+  /**
+   * Berapa yang lolos syarat & belum di pool. Sejak 2 Sep 2026 seluruhnya dikirim,
+   * jadi ia sama dengan `kandidat.length` — dan tetap dilewatkan terpisah supaya
+   * pemotongan diam-diam tidak bisa kembali tanpa terlihat di judul.
+   */
+  totalKandidat: number
   namaTarget: string
 }) {
   const { tampilkan } = useToast()
@@ -48,7 +55,7 @@ export function TambahKandidat({
     <Panel padat>
       <div className="border-b border-border px-3.5 py-3">
         <PanelHeader
-          judul={`Kandidat lolos syarat di luar daftar suksesi (${kandidat.length})`}
+          judul={`Kandidat lolos syarat di luar daftar suksesi (${totalKandidat})`}
           deskripsi={`Sudah dinilai untuk ${namaTarget} dan memenuhi syarat minimal, tapi belum dimasukkan ke pool. Menambahkan seseorang akan menghitung ulang peringkat seluruh anggota.`}
           aksi={
             <Button size="sm" variant="sekunder" onClick={() => setBuka(!buka)} aria-expanded={buka}>

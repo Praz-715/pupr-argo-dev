@@ -80,6 +80,50 @@ try {
     }
 
     if (tema === 'light') {
+      await langkah('pembersihan: klik kartu temuan MELUNCUR ke daftarnya', async () => {
+        /*
+          Yang dijaga perilakunya, bukan keberadaan panelnya: kartu memakai
+          `scroll={false}` supaya barisan kartu tidak melompat saat pilihan
+          berganti, jadi tanpa gulir otomatis daftar 670 baris muncul di BAWAH
+          layar dan satu-satunya perubahan yang terlihat cuma kartu berubah warna
+          (permintaan pemilik proses 26 Agu 2026).
+
+          Diukur dari `main.scrollTop`, BUKAN `window.scrollY` — yang menggulir di
+          aplikasi ini `<main>`, dan `window.scrollY` selalu 0 (tercatat di
+          CLAUDE.md). Salah satu itu membuat langkah ini hijau selamanya.
+        */
+        await page.goto(`${BASE}/data/pembersihan`, { waitUntil: 'domcontentloaded' })
+        await page.getByText(/baris perlu ditinjau|Antrian bersih/).first().waitFor({ timeout: 30000 })
+        const kartu = page.locator('main a[href*="?temuan="]')
+        if ((await kartu.count()) === 0) {
+          return 'DILEWATI — antrian sedang bersih, tidak ada kartu temuan untuk diklik'
+        }
+        const awal = await page.evaluate(() => Math.round(document.querySelector('main').scrollTop))
+        await kartu.first().click()
+        // Tunggu KEADAAN (panelnya terpasang), bukan sekadar jeda.
+        await page.locator('#rinci-temuan').waitFor({ timeout: 30000 })
+        await page.waitForTimeout(1500) // gulir halus perlu selesai sebelum diukur
+
+        const ukur = await page.evaluate(() => {
+          const main = document.querySelector('main')
+          const panel = document.querySelector('#rinci-temuan')
+          const rm = main.getBoundingClientRect()
+          const rp = panel.getBoundingClientRect()
+          return {
+            scrollTop: Math.round(main.scrollTop),
+            y: Math.round(rp.top - rm.top),
+            tampak: rp.top < rm.bottom && rp.bottom > rm.top,
+          }
+        })
+        tegaskan(ukur.scrollTop > awal, `halaman tidak menggulir (scrollTop tetap ${ukur.scrollTop})`)
+        tegaskan(ukur.tampak, 'panel daftar tidak berada di dalam pandangan sesudah diklik')
+        tegaskan(
+          ukur.y < 200,
+          `panel berhenti ${ukur.y}px dari atas — terlalu jauh untuk disebut "meluncur ke daftarnya"`,
+        )
+        return `scrollTop ${awal} → ${ukur.scrollTop} · panel di y=${ukur.y}px`
+      })
+
       await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
       await page.screenshot({ path: `${OUT}/f4-risiko-light.png`, fullPage: true })
       await page.goto(`${BASE}/data/kelengkapan`, { waitUntil: 'networkidle' })
@@ -325,8 +369,32 @@ try {
     })
 
     await langkah('mutasi: hapus unit terpakai DITOLAK dengan sebab & angkanya', async () => {
-      const baris = page.locator('li', { hasText: 'Bagian Kepegawaian dan Umum' }).first()
-      await baris.locator('button[aria-label*="Hapus"]').click()
+      // Subjeknya DITURUNKAN dari pohon yang sedang tampil, tidak dipaku.
+      //
+      // Versi lama memaku 'Bagian Kepegawaian dan Umum' — unit yang lenyap pada
+      // 24 Agu 2026 ketika pohon unit disamakan dengan daftar jabatan struktural
+      // resmi. Sesudah itu `locator.click` timeout 30 detik, dan gejalanya
+      // terbaca seperti tombol Hapus yang rusak. Ini kali KEEMPAT konstanta data
+      // di harness meledak setelah datanya berubah dengan sengaja; aturannya
+      // sudah tertulis di CLAUDE.md dan tetap dilanggar di berkas ini.
+      //
+      // Yang benar-benar dibutuhkan langkah ini cuma "sebuah unit yang masih
+      // dipakai jabatan", dan pohon menuliskan jumlah jabatan tiap unit di
+      // layar — jadi syaratnya bisa dibaca, bukan diingat.
+      const kandidat = page.locator('li').filter({ hasText: /\d+ jabatan/ })
+      const jml = await kandidat.count()
+      let baris = null
+      for (let i = 0; i < jml; i++) {
+        const li = kandidat.nth(i)
+        const teks = await li.innerText()
+        const cocok = /(\d+) jabatan/.exec(teks)
+        if (!cocok || Number(cocok[1]) < 1) continue
+        if ((await li.locator('button[aria-label*="Hapus"]').count()) === 0) continue
+        baris = li
+        break
+      }
+      tegaskan(baris !== null, 'tidak ada unit ber-jabatan di pohon — prasyarat langkah ini tidak ada, ini BUKAN temuan tentang tombol Hapus')
+      await baris.locator('button[aria-label*="Hapus"]').first().click()
       await page.waitForSelector('dialog[open]')
       await page.locator('dialog[open]').getByRole('button', { name: 'Hapus unit', exact: true }).click()
       await page.waitForTimeout(2500)

@@ -45,7 +45,10 @@ export function Breadcrumb() {
 
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">
-      <ol className="flex items-center gap-1 text-[13px]">
+      {/* `flex-wrap`: jejaknya boleh turun ke baris kedua daripada dipotong.
+          Tanpa itu, melepas `truncate` hanya memindahkan masalahnya — jejaknya
+          meluber keluar bilah, mendorong kotak pencarian & menu pengguna. */}
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[13px]">
         {jejak.map((titik, i) => {
           const terakhir = i === jejak.length - 1
           return (
@@ -56,16 +59,14 @@ export function Breadcrumb() {
               {terakhir || !titik.href ? (
                 <span
                   aria-current={terakhir ? 'page' : undefined}
-                  className={
-                    terakhir ? 'truncate font-medium text-text' : 'truncate text-text-subtle'
-                  }
+                  className={terakhir ? 'font-medium text-text' : 'text-text-subtle'}
                 >
                   {titik.label}
                 </span>
               ) : (
                 <Link
                   href={titik.href}
-                  className="truncate text-text-muted transition-colors hover:text-text"
+                  className="text-text-muted transition-colors hover:text-text"
                 >
                   {titik.label}
                 </Link>

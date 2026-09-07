@@ -53,6 +53,11 @@ export default async function PetaTalentaPage({ searchParams }: { searchParams: 
   const filter = { ...bacaFilterPeta(params), unitWajib: unitWajib(lingkup) }
   const kotak = bacaKotak(params.kotak)
   const halaman = nomorHalaman(params.hal)
+  // Tidak divalidasi di sini: `ambilAnggotaSel` memakai daftar putih dan jatuh ke
+  // `talenta` untuk kunci tak dikenal, jadi memvalidasi dua kali berarti dua tempat
+  // yang harus sepakat. Yang divalidasi hanya ARAH, karena ia bukan daftar putih.
+  const urut = params.urut ?? null
+  const arah = dariDaftar(params.arah, ['asc', 'desc'] as const) ?? null
 
   return (
     <div className="space-y-5">
@@ -65,7 +70,7 @@ export default async function PetaTalentaPage({ searchParams }: { searchParams: 
 
       {tanpaAkses(lingkup) ? null : (
         <Suspense key={JSON.stringify(filter)} fallback={<PetaSkeleton />}>
-          <IsiPeta filter={filter} kotak={kotak} halaman={halaman} />
+          <IsiPeta filter={filter} kotak={kotak} halaman={halaman} urut={urut} arah={arah} />
         </Suspense>
       )}
     </div>
@@ -76,10 +81,14 @@ async function IsiPeta({
   filter,
   kotak,
   halaman,
+  urut,
+  arah,
 }: {
   filter: TipeFilterPeta
   kotak: number | null
   halaman: number
+  urut: string | null
+  arah: 'asc' | 'desc' | null
 }) {
   const [sebaran, opsi, peta, pengaturan] = await Promise.all([
     ambilPetaSebaran(filter),
@@ -199,7 +208,25 @@ async function IsiPeta({
               </>
             }
           />
-          <div className="mt-3">
+          {/*
+            Tinggi & bentuk sel DISAMAKAN dengan dashboard (permintaan pemilik proses
+            24 Agu 2026: *"format tampilan kotak 9 juga samain yang di dashboard sama
+            peta talenta"*).
+
+            Sebelumnya berbeda dan terukur begitu di 1440px: dashboard memakai sel
+            **151×151 (rasio 1,00)** dalam grid 533px karena panelnya dipatok 39rem dan
+            grid-nya `isiTinggi`, sementara halaman ini memakai rasio 4:3 sehingga selnya
+            **135×101** dalam grid 357px. Dua bentuk untuk satu grid yang sama membuat
+            pembaca mengira ia melihat dua hal berbeda.
+
+            `533px` di sini memang angka dari dashboard, dan ditulis eksplisit alih-alih
+            diturunkan: panel dashboard tingginya dipatok oleh barisnya (39rem, sejajar
+            dengan panel di sebelahnya), sedangkan halaman ini tidak punya baris pasangan
+            — jadi tidak ada apa pun yang bisa diturunkan darinya. Kalau tinggi baris
+            dashboard diubah, angka ini ikut diubah; komentar ini yang menghubungkan
+            keduanya.
+          */}
+          <div className="mt-3 h-[533px]">
             <Kotak9Grid
               perKotak={sebaran.perKotak}
               total={sebaran.totalDinilai}
@@ -207,17 +234,18 @@ async function IsiPeta({
               hrefSel={hrefSel}
               gulirKeSel
               labelX={labelX}
+              isiTinggi
             />
           </div>
-          <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-text-subtle">
-            <strong className="font-medium text-text-muted">Warna</strong> menyatakan band
-            kualitas kotak — merah di kiri-bawah (perlu perhatian) sampai hijau tua di kanan-atas
-            (siap peran strategis). <strong className="font-medium text-text-muted">Pekatnya</strong>{' '}
-            menyatakan jumlah pegawai, <strong className="font-medium text-text-muted">relatif</strong>{' '}
-            terhadap sel terpadat — bukan skala absolut. Baris atas hampir selalu berat karena
-            predikat &quot;Baik&quot; sudah bernilai 80 dan ambang &quot;Di Atas Ekspektasi&quot;
-            adalah ≥80 inklusif — itu sifat rubrik, bukan keunggulan organisasi.
-          </p>
+          {/*
+            Paragraf keterangan warna DILEPAS supaya sama dengan dashboard, tempat
+            paragraf yang sama sudah dilepas atas permintaan user pada 18 Agu 2026.
+            Keterangannya tidak hilang dari aplikasi: tiap sel membawa maknanya sendiri
+            di `title` & `aria-label` (nomor kotak, posisinya pada kedua sumbu, plus
+            `DESKRIPSI_KOTAK_9`).
+
+            JANGAN dikembalikan sebagai "perbaikan" — ini keputusan user, dua kali.
+          */}
         </Panel>
 
         <Panel>
@@ -245,13 +273,15 @@ async function IsiPeta({
 
       {kotak !== null ? (
         <Suspense
-          key={`${kotak}-${halaman}-${qsFilter.toString()}`}
+          key={`${kotak}-${halaman}-${urut}-${arah}-${qsFilter.toString()}`}
           fallback={<SelSkeleton />}
         >
           <IsiSel
             kotak={kotak}
             filter={filter}
             halaman={halaman}
+            urut={urut}
+            arah={arah}
             qsFilter={qsFilter.toString()}
             labelX={labelX}
             target={terpilih}
@@ -273,6 +303,8 @@ async function IsiSel({
   kotak,
   filter,
   halaman,
+  urut,
+  arah,
   qsFilter,
   labelX,
   target,
@@ -280,11 +312,13 @@ async function IsiSel({
   kotak: number
   filter: TipeFilterPeta
   halaman: number
+  urut: string | null
+  arah: 'asc' | 'desc' | null
   qsFilter: string
   labelX: string
   target: OpsiJabatanTarget | null
 }) {
-  const hasil = await ambilAnggotaSel(kotak, filter, halaman)
+  const hasil = await ambilAnggotaSel(kotak, filter, halaman, urut, arah)
   const kategori = kategoriDariKotak9(kotak)
 
   return (
@@ -304,7 +338,8 @@ async function IsiSel({
           }
           deskripsi={
             <>
-              {formatAngka(hasil.total)} pegawai · diurutkan menurut Nilai Talenta (tertinggi dulu)
+              {formatAngka(hasil.total)} pegawai · klik judul kolom untuk mengurutkan
+              {urut === null ? ' (bawaannya Nilai Talenta, tertinggi dulu)' : ''}
               {target !== null
                 ? ' · Nilai Talenta dihitung dari match score jabatan ini, bukan dari Potkom'
                 : ''}
@@ -337,6 +372,7 @@ async function IsiSel({
             halaman={hasil.halaman}
             ukuranHalaman={hasil.ukuranHalaman}
             labelX={labelX}
+            jabatanTargetId={target?.id ?? null}
           />
         )}
       </div>
@@ -352,7 +388,7 @@ async function IsiSel({
       <p className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-[11px] text-text-subtle">
         {target === null ? (
           <>
-            Butuh menyaring lebih jauh atau mengurutkan menurut kolom lain?
+            Butuh menyaring lebih jauh — menurut pangkat, jenjang, atau kelengkapan data?
             <Link
               href={`/talenta?kotak=${kotak}`}
               className="inline-flex items-center gap-1 text-accent hover:underline"
@@ -447,6 +483,7 @@ function bacaFilterPeta(params: Record<string, string | undefined>): TipeFilterP
     unitId: angkaPositif(params.unit),
     eselon: dariDaftar(params.eselon, ESELON),
     jenjang: params.jenjang?.slice(0, 60),
+    rumpun: params.rumpun?.slice(0, 80),
     // Rentang tahun dibatasi supaya `?tahun=99999999` tidak dikirim ke SQL.
     tahun: tahun !== undefined && tahun >= 1990 && tahun <= 2100 ? tahun : undefined,
     hanyaBerlaku: params.berlaku === '1',

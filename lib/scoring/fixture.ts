@@ -28,7 +28,7 @@ function indikator(
   kategori: KategoriSkor[] = [],
   anak: IndikatorNode[] = [],
 ): IndikatorNode {
-  return { id, namaIndikator: nama, bobot, modeSkor, urutan, kategori, anak }
+  return { id, namaIndikator: nama, bobot, modeSkor, skalaMaks: null, urutan, kategori, anak }
 }
 
 /** KERANGKA §B.1 — kategori Potkom (batas atas eksklusif disimpan sbg ambang_max). */

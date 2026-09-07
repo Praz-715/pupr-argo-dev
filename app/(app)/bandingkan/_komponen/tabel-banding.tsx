@@ -196,7 +196,7 @@ export function TabelBanding({
                   <span className="min-w-0">
                     <Link
                       href={`/talenta/${k.nip}`}
-                      className="block truncate font-semibold text-text hover:text-accent hover:underline"
+                      className="block font-semibold text-text hover:text-accent hover:underline break-words"
                     >
                       {k.nama}
                     </Link>
@@ -364,7 +364,7 @@ export function TabelBanding({
                 {k.hukumanAktifTerberat === null ? (
                   <span
                     className="text-text-subtle"
-                    title="Tidak ada catatan aktif. Sistem memperlakukannya sebagai skor integritas 100 — itu asumsi, bukan fakta terverifikasi."
+                    title="Tidak ada catatan hukuman disiplin yang aktif, jadi skor integritasnya 100."
                   >
                     Tidak ada catatan
                   </span>

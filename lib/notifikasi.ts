@@ -28,6 +28,8 @@ export type JenisNotifikasi =
   | 'MENUNGGU_PENETAPAN'
   | 'SUKSESOR_DITETAPKAN'
   | 'PENETAPAN_DIBATALKAN'
+  | 'TARGET_DIUSULKAN'
+  | 'TARGET_DIAKTIFKAN'
 
 export interface IsiNotifikasi {
   jenis: JenisNotifikasi
@@ -38,11 +40,20 @@ export interface IsiNotifikasi {
   entitasId: number | null
 }
 
-/** Kirim ke setiap pemegang peran tertentu. Mengembalikan jumlah baris terkirim. */
+/**
+ * Kirim ke setiap pemegang peran tertentu. Mengembalikan jumlah baris terkirim.
+ *
+ * `kecualikan` menghilangkan satu pengguna dari daftar penerima — dipakai untuk
+ * PELAKUNYA sendiri. Tanpa itu, Admin Talenta yang membuat draft dari kursi kosong
+ * akan mengabari dirinya sendiri, dan inbox yang penuh kabar tentang tindakan
+ * sendiri adalah inbox yang berhenti dibaca. Dibuat opsional supaya pemanggil lama
+ * (jalur nominasi, yang pelakunya memang bukan penerima) tidak berubah.
+ */
 export async function kirimKePeran(
   peran: readonly Peran[],
   isi: IsiNotifikasi,
   dibuatOleh: number | null,
+  kecualikan: number | null = null,
 ): Promise<number> {
   if (peran.length === 0) return 0
   try {
@@ -53,6 +64,7 @@ export async function kirimKePeran(
     )
     let terkirim = 0
     for (const p of penerima) {
+      if (kecualikan !== null && Number(p.id) === kecualikan) continue
       terkirim += await simpanSatu(Number(p.id), String(p.nama_role), isi, dibuatOleh)
     }
     return terkirim
@@ -274,8 +286,46 @@ export function kirimanUntukAksi(
         },
       ]
 
+    /*
+      Membatalkan verifikasi MENGEMBALIKAN pekerjaan ke antrian, jadi yang perlu
+      dikabari adalah pengaju aslinya — bukan Admin Talenta, yang justru pelakunya.
+      Tanpa kabar ini, unit pengaju melihat nominasinya "mundur sendiri".
+    */
+    case 'BATALKAN_VERIFIKASI':
+      return [
+        {
+          peran: [],
+          userId: k.pengajuUserId,
+          isi: {
+            ...dasar,
+            jenis: 'NOMINASI_REVISI',
+            judul: `Verifikasi dibatalkan: ${k.namaKandidat}`,
+            pesan: `${k.namaPelaku} membatalkan hasil verifikasi ${k.namaKandidat} untuk ${k.namaTarget}, jadi nominasinya kembali ke antrian Verifikasi Kepegawaian. Alasan: ${k.catatan ?? 'tidak dicantumkan'}.`,
+            tautan: tautanPool,
+          },
+        },
+      ]
+
+    /*
+      Nominasi ditarik: yang menunggu di antrian verifikasi perlu tahu bahwa
+      pekerjaan itu tidak lagi menunggu mereka.
+    */
+    case 'BATALKAN_NOMINASI':
+      return [
+        {
+          peran: ['Admin Talenta'],
+          userId: null,
+          isi: {
+            ...dasar,
+            jenis: 'NOMINASI_REVISI',
+            judul: `Nominasi ditarik: ${k.namaKandidat}`,
+            pesan: `${k.namaPelaku} menarik nominasi ${k.namaKandidat} untuk ${k.namaTarget}. Kandidatnya kembali ke pool dan bisa dinominasikan lagi. Alasan: ${k.catatan ?? 'tidak dicantumkan'}.`,
+            tautan: tautanPool,
+          },
+        },
+      ]
+
     // Aksi khusus talent pool tidak melibatkan pihak lain yang perlu dikabari.
-    case 'TOLAK_KANDIDAT':
     case 'PULIHKAN_KANDIDAT':
       return []
   }
@@ -293,4 +343,74 @@ export async function kirimSemua(
         : await kirimKePeran(k.peran, k.isi, dibuatOleh)
   }
   return total
+}
+
+// ---------------------------------------------------------------------------
+// Alur USULAN jabatan target (24 Agu 2026)
+// ---------------------------------------------------------------------------
+
+/*
+  Dua serah-terima yang lahir dari pembagian "unit mengusulkan, Admin Talenta
+  memutuskan" (`lib/peran.ts`). Keduanya ditulis sebagai fungsi tersendiri, BUKAN
+  ditambahkan ke `kirimanUntukAksi()`: yang di atas itu memetakan `AksiWorkflow`
+  milik nominasi/talent pool, dan menyelipkan jabatan target ke dalamnya akan
+  memaksa `AksiWorkflow` memuat aksi yang tidak pernah dilewati satu pun entri
+  pool. Dua alur berbeda, dua peta berbeda.
+
+  Keduanya juga TIDAK melempar galat. Alasannya sama dengan jejak audit di modul
+  ini: usulan yang sudah tersimpan tidak boleh dibatalkan hanya karena kabarnya
+  gagal terkirim. Kegagalannya dicatat ke konsol, tidak ditelan diam-diam.
+*/
+
+/** Draft jabatan target baru diusulkan → kabari yang memutuskan (Admin Talenta). */
+export async function beritahuUsulanTarget(arg: {
+  jabatanTargetId: number
+  namaTarget: string
+  namaJabatan: string
+  namaUnit: string | null
+  namaPengusul: string
+  pelakuId: number | null
+}): Promise<number> {
+  const diUnit = arg.namaUnit ? ` di ${arg.namaUnit}` : ''
+  return kirimKePeran(
+    ['Admin Talenta'],
+    {
+      jenis: 'TARGET_DIUSULKAN',
+      judul: `Usulan jabatan target: ${arg.namaTarget}`,
+      pesan:
+        `${arg.namaPengusul} mengusulkan kursi kosong "${arg.namaJabatan}"${diUnit} sebagai jabatan target. ` +
+        'Statusnya DRAFT — ia belum dihitung dan belum muncul di pemilih Peta Talenta. ' +
+        'Tinjau persyaratannya, susun rubrik penilaian, lalu aktifkan.',
+      tautan: `/jabatan-target/${arg.jabatanTargetId}?tab=syarat`,
+      entitas: 'jabatan_target',
+      entitasId: arg.jabatanTargetId,
+    },
+    arg.pelakuId,
+    arg.pelakuId,
+  )
+}
+
+/** Jabatan target diaktifkan → kabari pengusulnya supaya ia bisa melanjutkan. */
+export async function beritahuTargetAktif(arg: {
+  jabatanTargetId: number
+  namaTarget: string
+  pengusulUserId: number
+  namaPelaku: string
+  pelakuId: number | null
+}): Promise<number> {
+  return kirimKePengguna(
+    arg.pengusulUserId,
+    'Pengelola Unit',
+    {
+      jenis: 'TARGET_DIAKTIFKAN',
+      judul: `Jabatan target aktif: ${arg.namaTarget}`,
+      pesan:
+        `${arg.namaPelaku} mengaktifkan jabatan target "${arg.namaTarget}" yang Anda usulkan. ` +
+        'Skor kandidat sudah bisa dihitung — buka Talent Pool untuk memasukkan kandidat dari unit Anda.',
+      tautan: `/talent-pool?target=${arg.jabatanTargetId}`,
+      entitas: 'jabatan_target',
+      entitasId: arg.jabatanTargetId,
+    },
+    arg.pelakuId,
+  )
 }

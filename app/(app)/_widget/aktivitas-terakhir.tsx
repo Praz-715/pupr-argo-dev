@@ -76,7 +76,7 @@ export async function AktivitasTerakhir() {
                   <Badge tone={NADA_SYNC[a.status] ?? 'netral'}>{a.status}</Badge>
                 ) : null}
               </span>
-              <span className="mt-0.5 block truncate text-[11px] text-text-subtle">
+              <span className="mt-0.5 block text-[11px] text-text-subtle break-words">
                 {a.keterangan ?? '—'}
                 {a.aktor ? ` · ${a.aktor}` : ''}
               </span>

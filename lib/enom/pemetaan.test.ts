@@ -1,4 +1,4 @@
-import { AMBANG_SUMBU } from '../scoring'
+import { PARAMETER_SKORING_BAWAAN } from '../scoring'
 import { describe, expect, it } from 'vitest'
 
 import { petakanRekaman, petakanSemua } from './pemetaan'
@@ -30,7 +30,7 @@ const REKAMAN_NYATA = {
   waktu_ambil: '10-08-2026 11:15:05',
 }
 
-const OPSI = { tahunSekarang: 2026, ambang: AMBANG_SUMBU }
+const OPSI = { tahunSekarang: 2026, ...PARAMETER_SKORING_BAWAAN }
 
 describe('SkemaRekamanEnom', () => {
   it('menerima angka yang datang sebagai string', () => {

@@ -39,6 +39,10 @@ const NADA_TAHAP: Record<TahapNominasi, 'netral' | 'aksen' | 'sukses' | 'peringa
   VERIFIKASI: 'aksen',
   APPROVAL: 'netral',
   DITETAPKAN: 'sukses',
+  // Netral, BUKAN 'bahaya'. Ditarik berarti pengajuannya dibatalkan — bukan
+  // orangnya gagal; mewarnainya merah membuatnya terbaca sebagai penolakan,
+  // yang persis dihindari `doc/sql/033`.
+  DITARIK: 'netral',
   DITOLAK: 'bahaya',
 }
 
@@ -235,13 +239,31 @@ async function IsiNominasi({
                         {formatNip(n.nip)}
                       </span>
                     </td>
+                    {/*
+                      Nama jabatan target & unit MEMBUNGKUS, tidak lagi dipotong
+                      (permintaan pemilik proses 25 Agu 2026: *"jabatannya jangan sampe
+                      kepotong gitu"*).
+
+                      `truncate` di sini menyembunyikan justru bagian yang membedakan:
+                      "Kepala Balai Jasa Konstruksi Wilayah V Ban…" — yang terpotong
+                      adalah NAMA WILAYAHNYA, satu-satunya hal yang membedakan satu
+                      balai dari sepuluh balai lain di daftar yang sama. Tooltip tidak
+                      menutupi itu: ia menuntut arahkan-dan-tunggu per baris, dan tidak
+                      ada sama sekali di layar sentuh.
+
+                      Lebar maksimalnya DIPERTAHANKAN supaya kolom ini tidak menelan
+                      lebar tabel; yang berubah hanya luberannya jadi baris kedua. Baris
+                      tabel ini memang sudah bertinggi variabel (nama kandidat bergelar
+                      panjang sudah memakai tiga baris), jadi tidak ada tata letak yang
+                      dipatok oleh tinggi barisnya.
+                    */}
                     <td className="px-3 py-2.5 text-text-muted">
-                      <span className="block max-w-[16rem] truncate" title={n.namaTarget}>
+                      <span className="block max-w-[16rem] leading-snug break-words">
                         {n.namaTarget}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-[11px] text-text-subtle">
-                      <span className="block max-w-[14rem] truncate" title={n.namaUnitPengaju}>
+                      <span className="block max-w-[14rem] leading-snug break-words">
                         {n.namaUnitPengaju}
                       </span>
                       {n.namaPengaju !== null ? <span className="block">{n.namaPengaju}</span> : null}

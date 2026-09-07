@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/cn'
 import { formatBobot, formatSkor } from '@/lib/format'
 import type { RincianIndikator } from '@/lib/kueri/pegawai'
+import { SATUAN_MENTAH } from '@/lib/penilaian'
+import type { RingkasJenjang } from '@/lib/pengalaman-jenjang'
+import { PilihLamaJabatan } from './pilih-lama-jabatan'
 import { TombolNilaiManual } from './tombol-nilai-manual'
 
 /**
@@ -26,10 +29,19 @@ export function RincianSkor({
   pegawaiId,
   jabatanTargetId,
   bolehIsiManual,
+  pengalaman,
 }: {
   rincian: RincianIndikator[]
   pegawaiId: number
   jabatanTargetId: number
+  /**
+   * Lama pengalaman per jenjang, dari riwayat jabatannya — dipakai pemilih
+   * "Isi manual: Lama Jabatan" (`2 sept- masukan sistem informasi.pdf` butir 3).
+   * Dibaca SEKALI di halaman lalu diteruskan ke seluruh jabatan target: isinya
+   * sama untuk semuanya, jadi membacanya per baris berarti 13 kali kueri yang
+   * sama.
+   */
+  pengalaman: RingkasJenjang[]
   /**
    * Hanya Super Admin & Admin Talenta yang boleh mengisi nilai manual
    * (`PERAN_HITUNG`). Diputuskan di server dan diteruskan sebagai prop, bukan
@@ -90,7 +102,21 @@ export function RincianSkor({
     if (r.nilaiMentah === null) return { teks: '—', judul: '' }
     const mentah = r.nilaiMentah.trim()
     const angka = Number(mentah)
-    if (mentah !== '' && !Number.isNaN(angka)) return { teks: formatSkor(angka), judul: mentah }
+    if (mentah !== '' && !Number.isNaN(angka)) {
+      /*
+        Satuan ikut ditulis kalau indikatornya punya (lihat `SATUAN_MENTAH`).
+        Tanpa itu "0,89" duduk sebaris dengan "95,49" (skor Potkom) dan "100"
+        (nilai kategori) — tiga besaran berbeda yang berbentuk sama persis.
+      */
+      const satuan = r.kunciSistem === null ? undefined : SATUAN_MENTAH[r.kunciSistem]
+      if (satuan) {
+        return {
+          teks: `${formatSkor(angka)} ${satuan.satuan}`,
+          judul: satuan.jelaskan(angka),
+        }
+      }
+      return { teks: formatSkor(angka), judul: mentah }
+    }
 
     const cocok = r.kategori.find((k) => samakan(k.nama) === samakan(mentah))
     return cocok?.nilai !== null && cocok?.nilai !== undefined
@@ -173,6 +199,27 @@ export function RincianSkor({
                           <Badge tone="aksen" title="Diisi manusia, bukan hasil hitung otomatis">
                             manual
                           </Badge>
+                        ) : r.kunciSistem === 'LAMA_JABATAN' ? (
+                          /*
+                            Permintaan pemilik proses 2 Sep 2026: baris ini butuh
+                            peringatan verifikasi tersendiri. Alasannya kasus Maul
+                            yang nyata — nilai otomatisnya jatuh ke `tmt_jabatan`
+                            (tanggal SK terakhir) begitu riwayatnya belum terpetakan
+                            ke master, dan itu diam-diam salah (0,89 tahun padahal
+                            9,17). Ditampilkan untuk SEMUA baris Lama Jabatan
+                            otomatis, bukan hanya yang `perluReview` — mesin rubrik
+                            tidak tahu sumbernya `tmt_jabatan` atau riwayat asli,
+                            jadi ia tidak bisa membedakan "benar" dari "kebetulan
+                            masuk akal". Hilang begitu nilainya MANUAL — pilihan
+                            manusia tidak perlu diverifikasi ulang oleh dirinya
+                            sendiri.
+                          */
+                          <Badge
+                            tone="peringatan"
+                            title="Dihitung otomatis dari riwayat jabatan — kalau riwayatnya belum lengkap di sistem, angka ini bisa jatuh ke tanggal SK terakhir dan meleset jauh. Cek lewat 'Isi manual' di sebelah kanan."
+                          >
+                            perlu verifikasi
+                          </Badge>
                         ) : null}
                       </span>
                     </td>
@@ -198,7 +245,7 @@ export function RincianSkor({
                     <td className="px-3 py-1.5 text-text-subtle">
                       {agregator ? null : (
                         <span
-                          className="block max-w-[16rem] truncate"
+                          className="block max-w-[16rem] break-words"
                           title={r.kategoriTerpilih ?? ''}
                         >
                           {r.kategoriTerpilih ?? '—'}
@@ -210,7 +257,23 @@ export function RincianSkor({
                     </td>
                     {bolehIsiManual ? (
                       <td className="py-1.5 pl-3 text-right whitespace-nowrap">
-                        {agregator ? null : (
+                        {agregator ? null : r.kunciSistem === 'LAMA_JABATAN' ? (
+                          /*
+                            Lama Jabatan punya dialognya sendiri: yang dipilih
+                            bukan kategori rubrik (ambangnya angka, bukan nama)
+                            melainkan JENJANG mana yang dipakai, dan tiap pilihan
+                            perlu membawa angkanya beserta riwayat yang
+                            membentuknya. Permintaan pemilik proses 2 Sep 2026.
+                          */
+                          <PilihLamaJabatan
+                            namaIndikator={r.namaIndikator}
+                            nilaiSekarang={r.nilaiMentah}
+                            pegawaiId={pegawaiId}
+                            jabatanTargetId={jabatanTargetId}
+                            rubrikIndikatorId={r.rubrikIndikatorId}
+                            pengalaman={pengalaman}
+                          />
+                        ) : (
                           <TombolNilaiManual
                             rincian={r}
                             pegawaiId={pegawaiId}

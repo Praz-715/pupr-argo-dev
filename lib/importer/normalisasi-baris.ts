@@ -4,7 +4,7 @@ import {
   clampSkor,
   evaluasiMasaBerlaku,
   hitungKotak9,
-  type AmbangSumbu,
+  type ParameterSkoring,
   type StatusAsesmen,
 } from '../scoring'
 import {
@@ -372,7 +372,7 @@ export function normalisasiAsesmen(
    * `pengaturan_sistem` — dan selisihnya tidak terlihat sebagai galat, hanya
    * sebagai orang yang duduk di kotak yang salah.
    */
-  opsi: { tahunSekarang: number; ambang: AmbangSumbu },
+  opsi: { tahunSekarang: number } & ParameterSkoring,
 ): HasilImpor<AsesmenBersih> {
   const temuan: Temuan[] = []
 
@@ -402,7 +402,7 @@ export function normalisasiAsesmen(
   // pembanding — sama perlakuannya dengan kotak_9.
   const y = kinerja.nilai ?? 0
   const x = potkom.nilai ?? 0
-  const hasilKotak = hitungKotak9(y, x, opsi.ambang)
+  const hasilKotak = hitungKotak9(y, x, opsi.ambang, opsi.bobotTalenta)
 
   const banding = bandingkanKotak9(hasilKotak, m.kotak9Sumber)
   if (banding.perluReview) {

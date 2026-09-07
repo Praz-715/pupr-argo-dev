@@ -1,9 +1,12 @@
 import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
-import { ambangSumbuDari, ambilPengaturan } from '../pengaturan'
-import { BOBOT_FORMULA_A, ekspresiSqlKotak9, type AmbangSumbu, type Kotak9 } from '../scoring'
+import { ambilPengaturan, parameterSkoringDari } from '../pengaturan'
+import { ekspresiSqlKotak9, type Kotak9, type ParameterSkoring } from '../scoring'
+import { arahBawaanUrut } from '../urut'
+import { ambilOpsiRumpun, klausaRumpun, type KlausaRumpun, type OpsiRumpun } from './rumpun'
 import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
+import { labelTargetDenganTempat } from '../jenis-jabatan'
 
 /**
  * Kueri Peta Talenta (Fase 3, U-1) — grid 3×3, bubble Kinerja × Potensial, dan
@@ -39,6 +42,11 @@ export interface FilterPeta {
   unitWajib?: number | null
   eselon?: string
   jenjang?: string
+  /**
+   * Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4) — penyaring awal
+   * yang sama dengan Direktori & halaman Kandidat. Bawaannya tidak menyaring.
+   */
+  rumpun?: string
   tahun?: number
   /** Hanya asesmen yang masih berlaku (buang yang kedaluwarsa). */
   hanyaBerlaku?: boolean
@@ -78,7 +86,24 @@ interface SumbuX {
   syaratDinilai: string | null
 }
 
-function sumbuX(f: FilterPeta, ambang: AmbangSumbu): SumbuX {
+/**
+ * Bobot → literal SQL yang aman disisipkan.
+ *
+ * Nilainya berasal dari kolom `VARCHAR` yang bisa diubah Super Admin, dan
+ * bobotnya disisipkan sebagai LITERAL (bukan placeholder) karena ia bagian
+ * ekspresi `SELECT`, bukan nilai baris. Tanpa penjagaan ini, satu baris
+ * pengaturan berisi teks menjadi injeksi SQL lewat pintu administrasi — penjagaan
+ * yang sama sudah dipasang di `ekspresiSqlKotak9()` untuk alasan yang sama.
+ */
+function bobotSql(v: number): string {
+  if (!Number.isFinite(v) || v < 0 || v > 1) {
+    throw new Error(`Bobot Nilai Talenta tidak sah: ${v}`)
+  }
+  return v.toFixed(6)
+}
+
+function sumbuX(f: FilterPeta, par: ParameterSkoring): SumbuX {
+  const { ambang } = par
   if (f.jabatanTargetId === undefined) {
     return {
       join: '',
@@ -96,16 +121,31 @@ function sumbuX(f: FilterPeta, ambang: AmbangSumbu): SumbuX {
     paramJoin: [f.jabatanTargetId],
     x,
     kotak: ekspresiSqlKotak9('a.nilai_kinerja_y', x, ambang),
-    // Bobot diambil dari konstanta Formula A, bukan ditulis `0.5` — kalau
-    // bobotnya berubah, tidak ada angka 50/50 kedua yang tertinggal di SQL.
-    talenta: `(a.nilai_kinerja_y * ${BOBOT_FORMULA_A.kinerja} + ${x} * ${BOBOT_FORMULA_A.potensial})`,
+    // Bobot dari `pengaturan_sistem`, bukan ditulis `0.5` — kalau bobotnya
+    // diubah dari UI, tidak ada angka 50/50 kedua yang tertinggal di SQL.
+    talenta: `(a.nilai_kinerja_y * ${bobotSql(par.bobotTalenta.kinerja)} + ${x} * ${bobotSql(par.bobotTalenta.potensial)})`,
     syaratDinilai: `${x} IS NOT NULL`,
   }
 }
 
-function syaratFilter(f: FilterPeta): { syarat: string[]; params: unknown[] } {
+function syaratFilter(
+  f: FilterPeta,
+  rumpun: KlausaRumpun,
+): { syarat: string[]; params: unknown[] } {
   const syarat: string[] = []
   const params: unknown[] = []
+
+  /*
+    Rumpunnya diselesaikan pemanggil (butuh kueri master jabatan) lalu dititipkan
+    ke SINI — bukan ke tiap kueri satu per satu. Halaman ini memajang EMPAT angka
+    yang harus saling menjumlah (sebaran + tanpa asesmen + belum dinilai), dan
+    penyaring yang berbeda sedikit saja di salah satunya menghasilkan angka yang
+    tidak menjumlah tanpa satu pun galat.
+  */
+  if (rumpun.sql !== '') {
+    syarat.push(rumpun.sql.replace(/^ AND /, ''))
+    params.push(...rumpun.params)
+  }
 
   if (f.unitId !== undefined) {
     syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
@@ -163,9 +203,13 @@ interface BentukKueri {
  * id unit dan hasilnya nol baris **tanpa galat apa pun**, yang di halaman terbaca
  * sebagai "tidak ada pegawai di jabatan target ini".
  */
-function bangunKueriPeta(f: FilterPeta, ambang: AmbangSumbu): BentukKueri {
-  const sx = sumbuX(f, ambang)
-  const { syarat, params } = syaratFilter(f)
+function bangunKueriPeta(
+  f: FilterPeta,
+  par: ParameterSkoring,
+  rumpun: KlausaRumpun,
+): BentukKueri {
+  const sx = sumbuX(f, par)
+  const { syarat, params } = syaratFilter(f, rumpun)
   if (sx.syaratDinilai !== null) syarat.push(sx.syaratDinilai)
 
   return {
@@ -198,7 +242,11 @@ export interface PetaSebaran {
 }
 
 export async function ambilPetaSebaran(f: FilterPeta): Promise<PetaSebaran> {
-  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
+  const { dari, where, params, sx } = bangunKueriPeta(
+    f,
+    parameterSkoringDari(await ambilPengaturan()),
+    await klausaRumpun('j.nama_jabatan', f.rumpun),
+  )
 
   const [sebaran, ringkas, tanpa, belum] = await Promise.all([
     kueri<{ kotak: number; jml: number }>(
@@ -250,8 +298,8 @@ export async function ambilPetaSebaran(f: FilterPeta): Promise<PetaSebaran> {
 async function hitungBelumDinilaiTarget(f: FilterPeta): Promise<number> {
   if (f.jabatanTargetId === undefined) return 0
 
-  const sx = sumbuX(f, ambangSumbuDari(await ambilPengaturan()))
-  const { syarat, params } = syaratFilter(f)
+  const sx = sumbuX(f, parameterSkoringDari(await ambilPengaturan()))
+  const { syarat, params } = syaratFilter(f, await klausaRumpun('j.nama_jabatan', f.rumpun))
   syarat.push(`${sx.x} IS NULL`)
 
   const r = await kueriSatu<{ n: number }>(
@@ -283,6 +331,11 @@ async function hitungTanpaAsesmen(f: FilterPeta): Promise<number> {
     syarat.push('j.jenjang = ?')
     params.push(f.jenjang)
   }
+  const rumpun = await klausaRumpun('j.nama_jabatan', f.rumpun)
+  if (rumpun.sql !== '') {
+    syarat.push(rumpun.sql.replace(/^ AND /, ''))
+    params.push(...rumpun.params)
+  }
 
   const r = await kueriSatu<{ n: number }>(
     `SELECT COUNT(*) AS n
@@ -312,7 +365,11 @@ export async function ambilTitikPeta(f: FilterPeta): Promise<{
   titik: TitikPeta[]
   totalPegawai: number
 }> {
-  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
+  const { dari, where, params, sx } = bangunKueriPeta(
+    f,
+    parameterSkoringDari(await ambilPengaturan()),
+    await klausaRumpun('j.nama_jabatan', f.rumpun),
+  )
 
   const baris = await kueri<Record<string, unknown>>(
     `${CTE_ASESMEN_TERBARU}
@@ -368,15 +425,45 @@ export const UKURAN_HALAMAN_SEL = 20
  * dibaca sebagai daftar bernilai asli, bukan sebagai titik yang digeser ke
  * koordinat yang bukan miliknya (phase.md §7 Fase 3).
  */
+/**
+ * Kunci kolom → ekspresi ORDER BY. Daftar PUTIH: `?urut=` datang dari URL.
+ *
+ * Kuncinya sama dengan `KUNCI_URUT_KOTAK9` di `lib/urut.ts`; ekspresinya BERBEDA
+ * dari padanannya di `lib/kueri/dashboard.ts` dan memang harus berbeda —
+ * `nilai_potensial_x` & `nilai_talenta` di sini adalah alias TERHITUNG yang
+ * definisinya berubah menurut `?target=` (sumbu X bisa potkom atau match score),
+ * jadi yang diurutkan adalah aliasnya, bukan kolom tersimpan.
+ */
+const URUT_SEL: Record<string, string> = {
+  nama: 'p.nama_lengkap',
+  jabatan: 'j.nama_jabatan',
+  unit: 'u.nama_unit',
+  eselon: "FIELD(j.eselon,'I','II','III','IV','NON_ESELON')",
+  kinerja: 'a.nilai_kinerja_y',
+  predikat: "FIELD(a.rating_kinerja,'Sangat Baik','Baik','Butuh Perbaikan','Kurang','Sangat Kurang')",
+  potensial: 'nilai_potensial_x',
+  talenta: 'nilai_talenta',
+  asesmen: 'a.tahun_asesmen',
+}
+
 export async function ambilAnggotaSel(
   kotak: number,
   f: FilterPeta,
   halaman = 1,
+  urut?: string | null,
+  arah?: 'asc' | 'desc' | null,
 ): Promise<{ daftar: AnggotaSel[]; total: number; halaman: number; ukuranHalaman: number }> {
-  const { dari, where, params, sx } = bangunKueriPeta(f, ambangSumbuDari(await ambilPengaturan()))
+  const { dari, where, params, sx } = bangunKueriPeta(
+    f,
+    parameterSkoringDari(await ambilPengaturan()),
+    await klausaRumpun('j.nama_jabatan', f.rumpun),
+  )
   const gabung = where === '' ? `WHERE ${sx.kotak} = ?` : `${where} AND ${sx.kotak} = ?`
   const hal = Math.max(1, halaman)
   const offset = (hal - 1) * UKURAN_HALAMAN_SEL
+  const kunci = urut && URUT_SEL[urut] ? urut : 'talenta'
+  const kolomUrut = URUT_SEL[kunci]!
+  const arahSql = (arah ?? arahBawaanUrut(kunci)) === 'asc' ? 'ASC' : 'DESC'
 
   const [daftar, hitung] = await Promise.all([
     kueri<Record<string, unknown>>(
@@ -385,7 +472,10 @@ export async function ambilAnggotaSel(
               a.nilai_kinerja_y, ${sx.x} AS nilai_potensial_x, ${sx.talenta} AS nilai_talenta,
               a.rating_kinerja, a.tahun_asesmen, a.status_asesmen
        ${dari} ${gabung}
-       ORDER BY nilai_talenta DESC, p.nama_lengkap
+       -- Pemecah seri p.nama_lengkap WAJIB: tanpa urutan deterministik, dua baris
+       -- berskor sama bisa bertukar posisi antar permintaan, dan dengan LIMIT/OFFSET
+       -- itu berarti satu baris muncul di dua halaman sementara baris lain hilang.
+       ORDER BY ${kolomUrut} ${arahSql}, p.nama_lengkap
        LIMIT ? OFFSET ?`,
       [...params, kotak, UKURAN_HALAMAN_SEL, offset],
     ),
@@ -446,10 +536,12 @@ export interface OpsiPeta {
   jenjang: string[]
   tahun: number[]
   jabatanTarget: OpsiJabatanTarget[]
+  /** Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4). */
+  rumpun: OpsiRumpun[]
 }
 
 export async function ambilOpsiPeta(): Promise<OpsiPeta> {
-  const [unit, eselon, jenjang, tahun, target] = await Promise.all([
+  const [unit, eselon, jenjang, tahun, target, rumpun] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT u.id, u.nama_unit,
               CASE WHEN u.parent_id IS NULL THEN 0
@@ -485,6 +577,12 @@ export async function ambilOpsiPeta(): Promise<OpsiPeta> {
     // menyembunyikannya sampai pengguna bertanya-tanya di mana targetnya.
     kueri<Record<string, unknown>>(
       `SELECT t.id, t.kode_target, t.nama_target,
+              /* Kursi tunggal sejak doc/sql/032 — lihat SUBKUERI_UNIT_TARGET. */
+              (SELECT COUNT(*) FROM jabatan j_k WHERE j_k.id = t.jabatan_id) AS jumlah_unit,
+              (SELECT u.nama_unit
+                 FROM jabatan j_k
+                 JOIN unit_organisasi u ON u.id = j_k.unit_organisasi_id
+                WHERE j_k.id = t.jabatan_id) AS nama_unit,
               COUNT(m.id) AS dinilai,
               COALESCE(SUM(EXISTS(
                 SELECT 1 FROM match_score_detail d
@@ -496,6 +594,7 @@ export async function ambilOpsiPeta(): Promise<OpsiPeta> {
        GROUP BY t.id, t.kode_target, t.nama_target
        ORDER BY t.nama_target`,
     ),
+    ambilOpsiRumpun(null),
   ])
 
   return {
@@ -510,9 +609,14 @@ export async function ambilOpsiPeta(): Promise<OpsiPeta> {
     jabatanTarget: target.map((r) => ({
       id: Number(r.id),
       kode: String(r.kode_target),
-      nama: String(r.nama_target),
+      nama: labelTargetDenganTempat(
+        String(r.nama_target),
+        r.nama_unit === null ? null : String(r.nama_unit),
+        Number(r.jumlah_unit ?? 0),
+      ),
       dinilai: Number(r.dinilai),
       perluReview: Number(r.perlu_review),
     })),
+    rumpun,
   }
 }

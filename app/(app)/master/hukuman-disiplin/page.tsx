@@ -113,7 +113,8 @@ async function IsiRingkas() {
           {formatAngka(r.pegawaiTerdampak)}
         </p>
         <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
-          pegawai punya minimal satu catatan (aktif maupun tidak)
+          pegawai punya minimal satu catatan hukuman (aktif maupun tidak). Catatan
+          bertingkat &ldquo;Tidak Pernah&rdquo; tidak dihitung — ia menyatakan sebaliknya.
         </p>
       </Panel>
       <Panel>
@@ -123,9 +124,25 @@ async function IsiRingkas() {
         <p className="tabular mt-1.5 text-2xl leading-none font-semibold text-text">
           {formatAngka(r.tanpaCatatan)}
         </p>
-        <p className="mt-1.5 text-[11px] leading-relaxed text-warning">
-          Diperlakukan sebagai skor integritas 100 — itu <strong>asumsi</strong>, bukan fakta
-          terverifikasi.
+        {/*
+          Pernyataan NETRAL, bukan peringatan (permintaan pemilik proses 25 Agu 2026:
+          *"jangan masuk ke asumsi pegawainya, taro dulu semua tidak memiliki
+          catatan"*).
+
+          Keadaan bawaannya memang "tidak punya catatan hukuman", dan bagi hampir
+          seluruh pegawai itu keadaan yang BENAR. Menyebutnya "asumsi, bukan fakta
+          terverifikasi" pada angka yang mencakup 78 dari 79 orang membuat data yang
+          wajar terbaca seperti data yang bermasalah — dan peringatan yang muncul di
+          hampir semua keadaan berhenti dibaca, termasuk saat ia benar-benar perlu.
+
+          Yang membedakan "belum diperiksa" dari "diperiksa, hasilnya bersih" bukan
+          kalimat di kartu ini, melainkan ceklis verifikasi di panel Integritas pada
+          profil pegawai (`doc/sql/020`) — dan di situ tempatnya, sebab keputusannya
+          per orang.
+        */}
+        <p className="mt-1.5 text-[11px] leading-relaxed text-text-subtle">
+          Tidak ada catatan hukuman → skor Integritas &amp; Moralitas 100. Tandai
+          &ldquo;sudah diperiksa&rdquo; per pegawai di panel Integritas pada profilnya.
         </p>
       </Panel>
       <Panel>

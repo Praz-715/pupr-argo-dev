@@ -1,9 +1,9 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { formatAngka } from '@/lib/format'
 import { TombolEditor } from './tombol-editor'
 
@@ -20,10 +20,20 @@ const BATAS_AWAL = 8
 export function DaftarDiklat({
   diklat,
   pegawaiId,
+  bolehUbah,
 }: {
   diklat: string[]
   /** Dibutuhkan tombol ubah per entri. */
   pegawaiId: number
+  /**
+   * Diteruskan ke `TombolEditor`, yang mewajibkannya.
+   *
+   * Komponen INILAH yang terlewat saat gerbang peran profil dipasang 22 Agu 2026:
+   * 11 pemakaian di `page.tsx` digerbangi, yang ke-12 di sini tidak, dan Viewer
+   * masih bisa membuka editor Riwayat Diklat. Sejak `TombolEditor.boleh` dibuat
+   * WAJIB, kelalaian yang sama akan berhenti di kompilator.
+   */
+  bolehUbah: boolean
 }) {
   const [cari, setCari] = useState('')
   const [semua, setSemua] = useState(false)
@@ -61,16 +71,13 @@ export function DaftarDiklat({
   return (
     <div className="mt-3">
       {diklat.length > BATAS_AWAL ? (
-        <div className="relative mb-2">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-          <input
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
-            placeholder={`Cari di ${formatAngka(diklat.length)} riwayat diklat…`}
-            aria-label="Cari riwayat diklat"
-            className="h-8 w-full rounded-md border border-border bg-surface pl-8 text-[13px] text-text outline-none placeholder:text-text-subtle focus:border-accent"
-          />
-        </div>
+        <KotakCari
+          nilaiAwal={cari}
+          onCari={setCari}
+          placeholder={`Cari di ${formatAngka(diklat.length)} riwayat diklat…`}
+          label="Cari riwayat diklat"
+          className="mb-2"
+        />
       ) : null}
 
       {cocok.length === 0 ? (
@@ -93,7 +100,8 @@ export function DaftarDiklat({
                   jenis="diklat"
                   pegawaiId={pegawaiId}
                   baris={{ indeks: d.indeks, nama: d.nama }}
-                />
+                boleh={bolehUbah}
+                  />
               </span>
             </li>
           ))}

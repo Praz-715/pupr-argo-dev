@@ -129,7 +129,14 @@ export interface SnapshotRubrik {
     nama: string
     sumbu: string
     bobot: number
-    indikator: Array<{ id: number; nama: string; bobot: number | null; modeSkor: string }>
+    indikator: Array<{
+      id: number
+      nama: string
+      bobot: number | null
+      modeSkor: string
+      /** Skala nilai mentah saat skor ini dihitung — bagian dari ATURAN, jadi ikut dipotret. */
+      skalaMaks: number | null
+    }>
   }>
   dihitungPada: string
 }
@@ -145,12 +152,19 @@ export function buatSnapshotRubrik(
       sumbu: k.sumbu,
       bobot: k.bobot,
       indikator: k.indikator.flatMap((i) => [
-        { id: i.id, nama: i.namaIndikator, bobot: i.bobot, modeSkor: i.modeSkor },
+        {
+          id: i.id,
+          nama: i.namaIndikator,
+          bobot: i.bobot,
+          modeSkor: i.modeSkor,
+          skalaMaks: i.skalaMaks,
+        },
         ...i.anak.map((a) => ({
           id: a.id,
           nama: a.namaIndikator,
           bobot: a.bobot,
           modeSkor: a.modeSkor,
+          skalaMaks: a.skalaMaks,
         })),
       ]),
     })),

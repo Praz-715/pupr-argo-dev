@@ -77,11 +77,11 @@ export function TabelAudit({ baris }: { baris: BarisAuditTampil[] }) {
                   {formatTanggalWaktu(b.createdAt)}
                 </span>
                 <span className="min-w-0 px-3 py-2.5">
-                  <span className="block truncate text-text">
+                  <span className="block break-words text-text">
                     {b.namaPengguna ?? <span className="text-text-subtle">sistem</span>}
                   </span>
                   {b.peranPengguna ? (
-                    <span className="block truncate text-[11px] text-text-subtle">
+                    <span className="block break-words text-[11px] text-text-subtle">
                       {b.peranPengguna}
                     </span>
                   ) : null}
@@ -89,17 +89,17 @@ export function TabelAudit({ baris }: { baris: BarisAuditTampil[] }) {
                 <span className="px-3 py-2.5">
                   <Badge tone={nadaAksi(b.aksi)}>{b.aksi}</Badge>
                 </span>
-                <span className="min-w-0 truncate px-3 py-2.5 font-mono text-[12px] text-text-muted">
+                <span className="min-w-0 px-3 py-2.5 font-mono text-[12px] break-all text-text-muted">
                   {b.entitas}
                   {b.entitasId !== null ? `#${b.entitasId}` : ''}
                 </span>
-                <span className="min-w-0 truncate px-3 py-2.5 text-[12px] text-text-muted">
+                <span className="min-w-0 px-3 py-2.5 text-[12px] break-words text-text-muted">
                   {ringkasPerubahan(
                     d.berubah.map((x) => x.field),
                     d.satuSisi,
                   )}
                 </span>
-                <span className="truncate px-3 py-2.5 font-mono text-[11px] text-text-subtle">
+                <span className="px-3 py-2.5 font-mono text-[11px] break-all text-text-subtle">
                   {b.ipAddress ?? '—'}
                 </span>
               </button>

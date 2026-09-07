@@ -50,7 +50,7 @@ export function FilterPeta({
     mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
   }
 
-  const kunciFilter = ['unit', 'eselon', 'jenjang', 'tahun', 'berlaku']
+  const kunciFilter = ['unit', 'rumpun', 'eselon', 'jenjang', 'tahun', 'berlaku']
   const filterAktif = kunciFilter.filter((k) => searchParams.get(k))
 
   // Checkbox ditampilkan optimistis: kalau nilainya dibaca langsung dari URL,
@@ -80,6 +80,26 @@ export function FilterPeta({
             })),
           ]}
           lebar="w-56"
+        />
+
+        {/*
+          Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4) — penyaring
+          awal yang sama dengan Direktori & halaman Kandidat, bawaannya tidak
+          menyaring. Ia menyaring KEEMPAT angka halaman ini sekaligus (sebaran,
+          titik, tanpa asesmen, belum dinilai), jadi jumlahnya tetap menjumlah.
+        */}
+        <Pilih
+          label="Rumpun jabatan"
+          nilai={searchParams.get('rumpun') ?? ''}
+          onUbah={(v) => terapkan({ rumpun: v })}
+          opsi={[
+            { nilai: '', label: 'Semua rumpun jabatan' },
+            ...opsi.rumpun.map((r) => ({
+              nilai: r.kunci,
+              label: `${r.label} (${r.jumlahPegawai})`,
+            })),
+          ]}
+          lebar="w-52"
         />
 
         <Pilih

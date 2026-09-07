@@ -1,7 +1,9 @@
-rbac 2026-08-01T08:15:50.455Z http://localhost:3000
+rbac 2026-08-24T03:02:25.964Z http://localhost:5000
+NIP contoh (diturunkan dari direktori): 198411242010121003
+
 OK   Super Admin     /                                  prd=boleh nyata=terbaca
 OK   Super Admin     /talenta                           prd=boleh nyata=terbaca
-OK   Super Admin     /talenta/196912241998032005        prd=boleh nyata=terbaca
+OK   Super Admin     /talenta/198411242010121003        prd=boleh nyata=terbaca
 OK   Super Admin     /peta-talenta                      prd=boleh nyata=terbaca
 OK   Super Admin     /bandingkan                        prd=boleh nyata=terbaca
 OK   Super Admin     /jabatan-target                    prd=boleh nyata=terbaca
@@ -10,7 +12,6 @@ OK   Super Admin     /jabatan-target/1/simulasi         prd=boleh nyata=terbaca
 OK   Super Admin     /jabatan-target/1/kandidat         prd=boleh nyata=terbaca
 OK   Super Admin     /master/unit                       prd=boleh nyata=terbaca
 OK   Super Admin     /master/jabatan                    prd=boleh nyata=terbaca
-OK   Super Admin     /master/jabatan-kosong             prd=boleh nyata=terbaca
 OK   Super Admin     /master/hukuman-disiplin           prd=boleh nyata=terbaca
 OK   Super Admin     /talent-pool                       prd=boleh nyata=terbaca
 OK   Super Admin     /nominasi                          prd=boleh nyata=terbaca
@@ -25,7 +26,7 @@ OK   Super Admin     /admin/audit-log                   prd=boleh nyata=terbaca
 OK   Super Admin     /admin/pengaturan                  prd=boleh nyata=terbaca
 OK   Admin Talenta   /                                  prd=boleh nyata=terbaca
 OK   Admin Talenta   /talenta                           prd=boleh nyata=terbaca
-OK   Admin Talenta   /talenta/196912241998032005        prd=boleh nyata=terbaca
+OK   Admin Talenta   /talenta/198411242010121003        prd=boleh nyata=terbaca
 OK   Admin Talenta   /peta-talenta                      prd=boleh nyata=terbaca
 OK   Admin Talenta   /bandingkan                        prd=boleh nyata=terbaca
 OK   Admin Talenta   /jabatan-target                    prd=boleh nyata=terbaca
@@ -34,7 +35,6 @@ OK   Admin Talenta   /jabatan-target/1/simulasi         prd=boleh nyata=terbaca
 OK   Admin Talenta   /jabatan-target/1/kandidat         prd=boleh nyata=terbaca
 LEBIH  Admin Talenta   /master/unit                       prd=tolak nyata=terbaca
 OK   Admin Talenta   /master/jabatan                    prd=boleh nyata=terbaca
-OK   Admin Talenta   /master/jabatan-kosong             prd=boleh nyata=terbaca
 OK   Admin Talenta   /master/hukuman-disiplin           prd=boleh nyata=terbaca
 OK   Admin Talenta   /talent-pool                       prd=boleh nyata=terbaca
 OK   Admin Talenta   /nominasi                          prd=boleh nyata=terbaca
@@ -49,7 +49,7 @@ OK   Admin Talenta   /admin/audit-log                   prd=tolak nyata=ditolak
 OK   Admin Talenta   /admin/pengaturan                  prd=tolak nyata=ditolak
 OK   Pengelola Unit  /                                  prd=boleh nyata=terbaca
 OK   Pengelola Unit  /talenta                           prd=boleh nyata=terbaca
-OK   Pengelola Unit  /talenta/196912241998032005        prd=boleh nyata=terbaca
+OK   Pengelola Unit  /talenta/198411242010121003        prd=boleh nyata=terbaca
 LEBIH  Pengelola Unit  /peta-talenta                      prd=tolak nyata=terbaca
 OK   Pengelola Unit  /bandingkan                        prd=tolak nyata=ditolak
 LEBIH  Pengelola Unit  /jabatan-target                    prd=tolak nyata=terbaca
@@ -58,7 +58,6 @@ LEBIH  Pengelola Unit  /jabatan-target/1/simulasi         prd=tolak nyata=terbac
 LEBIH  Pengelola Unit  /jabatan-target/1/kandidat         prd=tolak nyata=terbaca
 LEBIH  Pengelola Unit  /master/unit                       prd=tolak nyata=terbaca
 LEBIH  Pengelola Unit  /master/jabatan                    prd=tolak nyata=terbaca
-LEBIH  Pengelola Unit  /master/jabatan-kosong             prd=tolak nyata=terbaca
 OK   Pengelola Unit  /master/hukuman-disiplin           prd=tolak nyata=ditolak
 OK   Pengelola Unit  /talent-pool                       prd=boleh nyata=terbaca
 OK   Pengelola Unit  /nominasi                          prd=boleh nyata=terbaca
@@ -73,7 +72,7 @@ OK   Pengelola Unit  /admin/audit-log                   prd=tolak nyata=ditolak
 OK   Pengelola Unit  /admin/pengaturan                  prd=tolak nyata=ditolak
 OK   Pimpinan        /                                  prd=boleh nyata=terbaca
 OK   Pimpinan        /talenta                           prd=boleh nyata=terbaca
-OK   Pimpinan        /talenta/196912241998032005        prd=boleh nyata=terbaca
+OK   Pimpinan        /talenta/198411242010121003        prd=boleh nyata=terbaca
 OK   Pimpinan        /peta-talenta                      prd=boleh nyata=terbaca
 OK   Pimpinan        /bandingkan                        prd=boleh nyata=terbaca
 LEBIH  Pimpinan        /jabatan-target                    prd=tolak nyata=terbaca
@@ -82,7 +81,6 @@ LEBIH  Pimpinan        /jabatan-target/1/simulasi         prd=tolak nyata=terbac
 OK   Pimpinan        /jabatan-target/1/kandidat         prd=boleh nyata=terbaca
 LEBIH  Pimpinan        /master/unit                       prd=tolak nyata=terbaca
 LEBIH  Pimpinan        /master/jabatan                    prd=tolak nyata=terbaca
-OK   Pimpinan        /master/jabatan-kosong             prd=boleh nyata=terbaca
 OK   Pimpinan        /master/hukuman-disiplin           prd=tolak nyata=ditolak
 OK   Pimpinan        /talent-pool                       prd=boleh nyata=terbaca
 OK   Pimpinan        /nominasi                          prd=boleh nyata=terbaca
@@ -97,7 +95,7 @@ OK   Pimpinan        /admin/audit-log                   prd=tolak nyata=ditolak
 OK   Pimpinan        /admin/pengaturan                  prd=tolak nyata=ditolak
 OK   Viewer          /                                  prd=boleh nyata=terbaca
 OK   Viewer          /talenta                           prd=boleh nyata=terbaca
-OK   Viewer          /talenta/196912241998032005        prd=boleh nyata=terbaca
+OK   Viewer          /talenta/198411242010121003        prd=boleh nyata=terbaca
 OK   Viewer          /peta-talenta                      prd=boleh nyata=terbaca
 OK   Viewer          /bandingkan                        prd=tolak nyata=ditolak
 LEBIH  Viewer          /jabatan-target                    prd=tolak nyata=terbaca
@@ -106,7 +104,6 @@ LEBIH  Viewer          /jabatan-target/1/simulasi         prd=tolak nyata=terbac
 LEBIH  Viewer          /jabatan-target/1/kandidat         prd=tolak nyata=terbaca
 LEBIH  Viewer          /master/unit                       prd=tolak nyata=terbaca
 LEBIH  Viewer          /master/jabatan                    prd=tolak nyata=terbaca
-LEBIH  Viewer          /master/jabatan-kosong             prd=tolak nyata=terbaca
 OK   Viewer          /master/hukuman-disiplin           prd=tolak nyata=ditolak
 LEBIH  Viewer          /talent-pool                       prd=tolak nyata=terbaca
 LEBIH  Viewer          /nominasi                          prd=tolak nyata=terbaca
@@ -130,7 +127,6 @@ LEBIH Pengelola Unit → /jabatan-target/1/simulasi  (PRD §6.5 Simulasi & Diff:
 LEBIH Pengelola Unit → /jabatan-target/1/kandidat  (PRD §6.5 Kandidat: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Pengelola Unit → /master/unit  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Pengelola Unit → /master/jabatan  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
-LEBIH Pengelola Unit → /master/jabatan-kosong  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Pengelola Unit → /rencana-pengembangan  (PRD §6.6: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Pengelola Unit → /data/konsolidasi  (PRD §6.7: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Pengelola Unit → /data/pembersihan  (PRD §6.7: TIDAK terdaftar; kenyataan: bisa baca)
@@ -148,7 +144,6 @@ LEBIH Viewer → /jabatan-target/1/simulasi  (PRD §6.5 Simulasi & Diff: TIDAK t
 LEBIH Viewer → /jabatan-target/1/kandidat  (PRD §6.5 Kandidat: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /master/unit  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /master/jabatan  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
-LEBIH Viewer → /master/jabatan-kosong  (PRD §6.4: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /talent-pool  (PRD §6.6: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /nominasi  (PRD §6.6 antrian + timeline: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /rencana-pengembangan  (PRD §6.6: TIDAK terdaftar; kenyataan: bisa baca)
@@ -156,4 +151,4 @@ LEBIH Viewer → /data/konsolidasi  (PRD §6.7: TIDAK terdaftar; kenyataan: bisa
 LEBIH Viewer → /data/pembersihan  (PRD §6.7: TIDAK terdaftar; kenyataan: bisa baca)
 LEBIH Viewer → /data/kelengkapan  (PRD §6.7: TIDAK terdaftar; kenyataan: bisa baca)
 
-Total selisih: 34 dari 120 kombinasi
+Total selisih: 32 dari 115 kombinasi

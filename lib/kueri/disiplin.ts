@@ -95,8 +95,21 @@ export async function ambilDaftarDisiplin(opsi: {
 export interface RingkasDisiplin {
   totalCatatan: number
   catatanAktif: number
+  /**
+   * Pegawai yang punya catatan HUKUMAN — tingkat `Tidak Pernah` TIDAK dihitung.
+   *
+   * Baris ber-tingkat `Tidak Pernah` menyatakan justru sebaliknya: orang itu
+   * **tidak pernah** dijatuhi hukuman. Menghitungnya sebagai "terdampak" membuat
+   * pegawai yang rekam jejaknya bersih tampil di angka yang dibaca sebagai jumlah
+   * pelanggar — dan itu tuduhan yang lahir dari cara menghitung, bukan dari data.
+   * Panel Integritas di profil sudah mengecualikannya sejak awal; di sini belum,
+   * sehingga dua halaman menghitung hal yang sama dengan hasil berbeda.
+   */
   pegawaiTerdampak: number
-  /** Pegawai aktif yang tidak punya catatan sama sekali. */
+  /**
+   * Pegawai aktif yang tidak punya catatan hukuman — termasuk yang catatannya
+   * bertingkat `Tidak Pernah`, dengan alasan yang sama seperti di atas.
+   */
   tanpaCatatan: number
   perTingkat: Array<{ tingkat: string; jumlah: number; aktif: number }>
 }
@@ -106,12 +119,14 @@ export async function ambilRingkasDisiplin(): Promise<RingkasDisiplin> {
     kueriSatu<Record<string, unknown>>(`
       SELECT COUNT(*)                                   AS total,
              SUM(h.status_aktif = 1)                    AS aktif,
-             COUNT(DISTINCT h.pegawai_id)               AS pegawai,
+             COUNT(DISTINCT CASE WHEN h.tingkat_hukuman <> 'Tidak Pernah'
+                                 THEN h.pegawai_id END) AS pegawai,
              (SELECT COUNT(*) FROM pegawai p
                 WHERE p.status_aktif = 'AKTIF'
                   ${filterSumber('p')}
                   AND NOT EXISTS (SELECT 1 FROM hukuman_disiplin x
-                                    WHERE x.pegawai_id = p.id)) AS tanpa
+                                    WHERE x.pegawai_id = p.id
+                                      AND x.tingkat_hukuman <> 'Tidak Pernah')) AS tanpa
       FROM hukuman_disiplin h
       WHERE 1 = 1 ${filterSumberPegawaiId('h.pegawai_id')}
     `),

@@ -64,11 +64,24 @@ export const approvalLog = mysqlTable("approval_log", {
 	primaryKey({ columns: [table.id], name: "approval_log_id"}),
 ]);
 
+export const asesmenDipakai = mysqlTable("asesmen_dipakai", {
+	pegawaiId: bigint("pegawai_id", { mode: "number", unsigned: true }).notNull().references(() => pegawai.id, { onDelete: "cascade" } ),
+	asesmenId: bigint("asesmen_id", { mode: "number", unsigned: true }).notNull().references(() => asesmenTalenta.id, { onDelete: "cascade" } ),
+	ditetapkanOleh: bigint("ditetapkan_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	ditetapkanPada: datetime("ditetapkan_pada", { mode: 'string'}).default(sql`(now())`).notNull(),
+	catatan: varchar({ length: 255 }),
+},
+(table) => [
+	primaryKey({ columns: [table.pegawaiId], name: "asesmen_dipakai_pegawai_id"}),
+	unique("uk_asesmen_dipakai_asesmen").on(table.asesmenId),
+]);
+
 export const asesmenTalenta = mysqlTable("asesmen_talenta", {
 	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
 	pegawaiId: bigint("pegawai_id", { mode: "number", unsigned: true }).notNull().references(() => pegawai.id, { onDelete: "cascade" } ),
 	tahunAsesmen: year("tahun_asesmen").notNull(),
 	jenisAsesmen: varchar("jenis_asesmen", { length: 60 }).notNull(),
+	jenjangAsesmen: varchar("jenjang_asesmen", { length: 40 }),
 	statusAsesmen: mysqlEnum("status_asesmen", ['Berlaku','Expired','Draft']).default('Berlaku').notNull(),
 	nilaiKinerjaY: decimal("nilai_kinerja_y", { precision: 6, scale: 2 }).notNull(),
 	nilaiPotensialX: decimal("nilai_potensial_x", { precision: 6, scale: 2 }).notNull(),
@@ -170,13 +183,28 @@ export const jabatanTargetAnggota = mysqlTable("jabatan_target_anggota", {
 export const jabatanTargetPersyaratan = mysqlTable("jabatan_target_persyaratan", {
 	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
 	jabatanTargetId: bigint("jabatan_target_id", { mode: "number", unsigned: true }).notNull().references(() => jabatanTarget.id, { onDelete: "cascade" } ),
-	jenisSyarat: mysqlEnum("jenis_syarat", ['PENDIDIKAN_MIN','BIDANG_ILMU','PENGALAMAN_MIN','LAINNYA']).notNull(),
+	jenisSyarat: mysqlEnum("jenis_syarat", ['PENDIDIKAN_MIN','BIDANG_ILMU','PENGALAMAN_MIN','LAINNYA','GOLONGAN_MIN','RUMPUN_JABATAN']).notNull(),
 	deskripsi: text().notNull(),
-	nilaiMinimal: varchar("nilai_minimal", { length: 60 }),
+	nilaiMinimal: varchar("nilai_minimal", { length: 500 }),
+	durasiTahunMin: tinyint("durasi_tahun_min", { unsigned: true }),
 },
 (table) => [
 	index("idx_jtp_target").on(table.jabatanTargetId),
 	primaryKey({ columns: [table.id], name: "jabatan_target_persyaratan_id"}),
+]);
+
+export const jabatanTargetSyaratDiklat = mysqlTable("jabatan_target_syarat_diklat", {
+	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
+	jabatanTargetId: bigint("jabatan_target_id", { mode: "number", unsigned: true }).notNull().references(() => jabatanTarget.id, { onDelete: "cascade" } ),
+	kategoriId: bigint("kategori_id", { mode: "number", unsigned: true }).notNull().references(() => masterKategoriRiwayatDiklat.id, { onDelete: "cascade" } ),
+	wajib: tinyint().default(1).notNull(),
+	keterangan: varchar({ length: 300 }),
+	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+},
+(table) => [
+	index("idx_jtsd_kategori").on(table.kategoriId),
+	primaryKey({ columns: [table.id], name: "jabatan_target_syarat_diklat_id"}),
+	unique("uk_jtsd_target_kategori").on(table.jabatanTargetId, table.kategoriId),
 ]);
 
 export const kinerjaPeriode = mysqlTable("kinerja_periode", {
@@ -284,7 +312,7 @@ export const notifikasi = mysqlTable("notifikasi", {
 	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
 	userId: bigint("user_id", { mode: "number", unsigned: true }).notNull().references(() => users.id, { onDelete: "cascade" } ),
 	peranTujuan: varchar("peran_tujuan", { length: 40 }),
-	jenis: mysqlEnum(['NOMINASI_MASUK','NOMINASI_REVISI','NOMINASI_DISETUJUI','NOMINASI_DITOLAK','MENUNGGU_PENETAPAN','SUKSESOR_DITETAPKAN','PENETAPAN_DIBATALKAN']).notNull(),
+	jenis: mysqlEnum(['NOMINASI_MASUK','NOMINASI_REVISI','NOMINASI_DISETUJUI','NOMINASI_DITOLAK','MENUNGGU_PENETAPAN','SUKSESOR_DITETAPKAN','PENETAPAN_DIBATALKAN','TARGET_DIUSULKAN','TARGET_DIAKTIFKAN']).notNull(),
 	judul: varchar({ length: 200 }).notNull(),
 	pesan: text().notNull(),
 	tautan: varchar({ length: 300 }),
@@ -321,6 +349,9 @@ export const pegawai = mysqlTable("pegawai", {
 	riwayatDivalidasiOleh: bigint("riwayat_divalidasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
 	riwayatDivalidasiPada: datetime("riwayat_divalidasi_pada", { mode: 'string'}),
 	riwayatCatatanValidasi: varchar("riwayat_catatan_validasi", { length: 500 }),
+	hukdisDiverifikasiOleh: bigint("hukdis_diverifikasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
+	hukdisDiverifikasiPada: datetime("hukdis_diverifikasi_pada", { mode: 'string'}),
+	hukdisCatatanVerifikasi: varchar("hukdis_catatan_verifikasi", { length: 500 }),
 	createdAt: datetime("created_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 	updatedAt: datetime("updated_at", { mode: 'string'}).default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 },
@@ -383,7 +414,9 @@ export const permintaanResetPassword = mysqlTable("permintaan_reset_password", {
 
 export const rencanaPengembangan = mysqlTable("rencana_pengembangan", {
 	id: bigint({ mode: "number", unsigned: true }).autoincrement().notNull(),
-	talentPoolId: bigint("talent_pool_id", { mode: "number", unsigned: true }).notNull().references(() => talentPool.id, { onDelete: "cascade" } ),
+	pegawaiId: bigint("pegawai_id", { mode: "number", unsigned: true }).notNull().references(() => pegawai.id, { onDelete: "cascade" } ),
+	talentPoolId: bigint("talent_pool_id", { mode: "number", unsigned: true }).references(() => talentPool.id, { onDelete: "cascade" } ),
+	dicontohDariPegawaiId: bigint("dicontoh_dari_pegawai_id", { mode: "number", unsigned: true }).references(() => pegawai.id, { onDelete: "set null" } ),
 	jenisPengembangan: mysqlEnum("jenis_pengembangan", ['DIKLAT','ROTASI','MENTORING','PENUGASAN']).notNull(),
 	deskripsi: text().notNull(),
 	// you can use { mode: 'date' }, if you want to have Date as type for this column
@@ -394,6 +427,7 @@ export const rencanaPengembangan = mysqlTable("rencana_pengembangan", {
 },
 (table) => [
 	index("idx_rp_pool").on(table.talentPoolId),
+	index("idx_rp_pegawai").on(table.pegawaiId, table.status),
 	primaryKey({ columns: [table.id], name: "rencana_pengembangan_id"}),
 ]);
 
@@ -410,6 +444,7 @@ export const riwayatJabatan = mysqlTable("riwayat_jabatan", {
 	tanggalMulai: date("tanggal_mulai", { mode: 'string' }),
 	// you can use { mode: 'date' }, if you want to have Date as type for this column
 	tanggalAkhir: date("tanggal_akhir", { mode: 'string' }),
+	lamaBulan: smallint("lama_bulan", { unsigned: true }),
 	noSk: varchar("no_sk", { length: 80 }),
 	urlArsipDigital: varchar("url_arsip_digital", { length: 500 }),
 	divalidasiOleh: bigint("divalidasi_oleh", { mode: "number", unsigned: true }).references(() => users.id, { onDelete: "set null" } ),
@@ -458,6 +493,7 @@ export const rubrikIndikator = mysqlTable("rubrik_indikator", {
 	kunciSistem: mysqlEnum("kunci_sistem", ['PREDIKAT_KINERJA','POTKOM','TINGKAT_PENDIDIKAN','KESESUAIAN_BIDANG_ILMU','PENGEMBANGAN_KOMPETENSI','LAMA_JABATAN','KERAGAMAN_JABATAN','SUBSTANSI_JABATAN','INTEGRITAS']),
 	bobotIndikator: decimal("bobot_indikator", { precision: 5, scale: 4 }),
 	modeSkor: mysqlEnum("mode_skor", ['KATEGORI_TETAP','NILAI_LANGSUNG']).default('KATEGORI_TETAP').notNull(),
+	skalaMaks: decimal("skala_maks", { precision: 6, scale: 2 }),
 	kebutuhanData: text("kebutuhan_data"),
 	sumberData: varchar("sumber_data", { length: 200 }),
 	urutan: smallint({ unsigned: true }).default(1).notNull(),

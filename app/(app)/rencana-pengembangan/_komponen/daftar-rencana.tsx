@@ -2,17 +2,26 @@
 
 import { Pencil, Plus, Sprout, Trash2, TriangleAlert } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogKonfirmasi } from '@/components/ui/dialog'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { useToast } from '@/components/ui/toast'
 import { hapusRencana, simpanRencana } from '@/lib/aksi/suksesi'
 import { cn } from '@/lib/cn'
 import { formatNip, formatTanggal } from '@/lib/format'
-import type { BarisPool, BarisRencana, JenisPengembangan, StatusRencana } from '@/lib/kueri/suksesi'
+import type { SasaranRencana } from '@/lib/aksi/suksesi'
+import type {
+  BarisPool,
+  BarisRencana,
+  JenisPengembangan,
+  PegawaiRencana,
+  StatusRencana,
+} from '@/lib/kueri/suksesi'
 
 /**
  * Daftar rencana pengembangan, dikelompokkan per suksesor.
@@ -39,23 +48,36 @@ export function DaftarRencana({
   suksesor,
   rencana,
   rencanaYatim,
+  rencanaUmum,
+  hasilCariPegawai,
+  cariPegawai,
   poolTerpilih,
   bolehUbah,
 }: {
   suksesor: BarisPool[]
   rencana: BarisRencana[]
   rencanaYatim: BarisRencana[]
+  /** Rencana yang tidak terikat entri talent pool mana pun (`doc/sql/029`). */
+  rencanaUmum: BarisRencana[]
+  hasilCariPegawai: PegawaiRencana[]
+  cariPegawai: string
   poolTerpilih: number | null
   bolehUbah: boolean
 }) {
   const [form, setForm] = useState<{
-    talentPoolId: number
+    sasaran: SasaranRencana
     nama: string
     rencana: BarisRencana | null
+    /** Rencana suksesor yang bisa dijadikan contoh — hanya untuk rencana umum baru. */
+    contoh: BarisRencana[]
   } | null>(null)
   const [hapus, setHapus] = useState<BarisRencana | null>(null)
   const { tampilkan } = useToast()
   const [pending, mulaiTransisi] = useTransition()
+  const [mencari, transisiCari] = useTransition()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   function jalankanHapus() {
     if (hapus === null) return
@@ -69,6 +91,47 @@ export function DaftarRencana({
       )
     })
   }
+
+  /*
+    Rencana umum dikelompokkan per PEGAWAI, di klien: barisnya sudah di sini dan
+    jumlahnya kecil (satu halaman rencana, bukan tabel pegawai). Mengelompokkannya
+    di SQL berarti dua kueri yang harus sepakat soal "rencana umum itu yang mana".
+  */
+  const pegawaiUmum = (() => {
+    const peta = new Map<
+      number,
+      { pegawaiId: number; nip: string; nama: string; rencana: BarisRencana[] }
+    >()
+    for (const r of rencanaUmum) {
+      const ada = peta.get(r.pegawaiId)
+      if (ada) ada.rencana.push(r)
+      else peta.set(r.pegawaiId, { pegawaiId: r.pegawaiId, nip: r.nip, nama: r.nama, rencana: [r] })
+    }
+    return [...peta.values()].sort((a, b) => a.nama.localeCompare(b.nama))
+  })()
+
+  /*
+    Pencarian pegawai dijalankan saat ENTER, bukan sambil mengetik.
+
+    Permintaan pemilik proses 2 Sep 2026: *"buat search pake trigger enter aja,
+    jangan langsung cari."* Versi sebelumnya menembak setelah jeda 300 ms tiap
+    ketikan, jadi mengetik "ahmad" berarti beberapa kali `router.replace` — tiap
+    satunya kueri ke server dan satu entri di riwayat navigasi — dan hasilnya
+    berganti-ganti di bawah jari saat kata belum selesai diketik.
+
+    Bentuknya `<form onSubmit>`, BUKAN `onKeyDown === 'Enter'`: dengan form,
+    Enter datang gratis dari peramban, tombol cari punya arti (`type="submit"`),
+    dan pembaca layar mengumumkan wilayahnya sebagai pencarian. Menangkap tombol
+    sendiri berarti menulis ulang perilaku yang sudah baku, dan biasanya kurang
+    satu jalur — mis. Enter dari papan ketik layar ponsel.
+  */
+  function jalankanCari(nilai: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (nilai.trim() === '') params.delete('cariPegawai')
+    else params.set('cariPegawai', nilai.trim())
+    transisiCari(() => router.replace(`${pathname}?${params.toString()}`, { scroll: false }))
+  }
+
 
   return (
     <div className={cn('space-y-4', pending && 'opacity-70')}>
@@ -108,7 +171,12 @@ export function DaftarRencana({
                       size="sm"
                       variant="sekunder"
                       onClick={() =>
-                        setForm({ talentPoolId: s.talentPoolId, nama: s.nama, rencana: null })
+                        setForm({
+                          sasaran: { talentPoolId: s.talentPoolId },
+                          nama: s.nama,
+                          rencana: null,
+                          contoh: [],
+                        })
                       }
                       ikon={<Plus className="size-3.5" />}
                     >
@@ -133,7 +201,12 @@ export function DaftarRencana({
                     r={r}
                     bolehUbah={bolehUbah}
                     onUbah={() =>
-                      setForm({ talentPoolId: s.talentPoolId, nama: s.nama, rencana: r })
+                      setForm({
+                        sasaran: { talentPoolId: s.talentPoolId },
+                        nama: s.nama,
+                        rencana: r,
+                        contoh: [],
+                      })
                     }
                     onHapus={() => setHapus(r)}
                   />
@@ -165,7 +238,12 @@ export function DaftarRencana({
                 bolehUbah={bolehUbah}
                 tampilkanNama
                 onUbah={() =>
-                  setForm({ talentPoolId: r.talentPoolId, nama: r.nama, rencana: r })
+                  setForm({
+                    sasaran: { talentPoolId: r.talentPoolId, pegawaiId: r.pegawaiId },
+                    nama: r.nama,
+                    rencana: r,
+                    contoh: [],
+                  })
                 }
                 onHapus={() => setHapus(r)}
               />
@@ -174,11 +252,151 @@ export function DaftarRencana({
         </Panel>
       ) : null}
 
+      {/*
+        Bagian bawah: SEMUA pegawai (`Detail Revisi PUPR 1_9_2026.pdf`, butir 5).
+
+        Dipisah dari bagian suksesor, bukan dilebur jadi satu daftar panjang: yang
+        di atas menjanjikan sebuah KURSI kepada orang yang pencalonannya sudah
+        diputuskan, yang di sini tidak menjanjikan kursi apa pun. Meleburnya
+        membuat kedua janji itu terbaca sama, dan itu janji yang salah pada
+        separuh barisnya.
+      */}
+      <Panel padat>
+        <div className="space-y-2.5 border-b border-border px-3.5 py-3">
+          <PanelHeader
+            judul={
+              <span className="flex flex-wrap items-center gap-2">
+                Rencana pengembangan umum
+                <Badge tone="netral">{pegawaiUmum.length} pegawai</Badge>
+              </span>
+            }
+            deskripsi="Untuk pegawai mana pun, tanpa menunggu ia dicalonkan ke sebuah jabatan target. Rencana di sini tidak menjanjikan kursi — ia rekomendasi pengembangan."
+          />
+          {bolehUbah ? (
+            <KotakCari
+              nilaiAwal={cariPegawai}
+              onCari={jalankanCari}
+              pending={mencari}
+              placeholder="Cari nama atau NIP pegawai, lalu tekan Enter…"
+              label="Cari pegawai untuk diberi rencana pengembangan"
+            />
+          ) : null}
+        </div>
+
+        {cariPegawai.trim().length >= 2 ? (
+          <ul className="divide-y divide-border border-b border-border bg-surface-inset">
+            {hasilCariPegawai.length === 0 ? (
+              <li className="px-3.5 py-4 text-center text-[12px] text-text-subtle">
+                Tidak ada pegawai aktif yang cocok dengan &quot;{cariPegawai}&quot;.
+              </li>
+            ) : (
+              hasilCariPegawai.map((o) => (
+                <li key={o.pegawaiId} className="flex items-start justify-between gap-3 px-3.5 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-text">{o.nama}</p>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-text-subtle">
+                      <span className="tabular">{formatNip(o.nip)}</span>
+                      {o.namaJabatan === null ? '' : ` · ${o.namaJabatan}`}
+                      {o.namaUnit === null ? '' : ` · ${o.namaUnit}`}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {o.sudahSuksesor ? <Badge tone="sukses">sudah suksesor</Badge> : null}
+                      {o.jumlahRencana > 0 ? (
+                        <Badge tone="netral">{o.jumlahRencana} rencana</Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                  {bolehUbah ? (
+                    <Button
+                      size="sm"
+                      variant="sekunder"
+                      onClick={() =>
+                        setForm({
+                          sasaran: { pegawaiId: o.pegawaiId },
+                          nama: o.nama,
+                          rencana: null,
+                          contoh: rencana.filter((r) => r.talentPoolId !== null),
+                        })
+                      }
+                      ikon={<Plus className="size-3.5" />}
+                    >
+                      Tambah rencana
+                    </Button>
+                  ) : null}
+                </li>
+              ))
+            )}
+          </ul>
+        ) : null}
+
+        {pegawaiUmum.length === 0 ? (
+          <p className="px-3.5 py-5 text-center text-[12px] leading-relaxed text-text-subtle">
+            Belum ada rencana pengembangan umum. Cari pegawainya di kotak di atas untuk membuat yang
+            pertama.
+          </p>
+        ) : (
+          pegawaiUmum.map((g) => (
+            <div key={g.pegawaiId} className="border-t border-border first:border-t-0">
+              <div className="flex items-start justify-between gap-3 px-3.5 py-2.5">
+                <div className="min-w-0">
+                  <Link
+                    href={`/talenta/${g.nip}`}
+                    className="text-[13px] font-medium text-text hover:text-accent"
+                  >
+                    {g.nama}
+                  </Link>
+                  <p className="mt-0.5 text-[11px] text-text-subtle">
+                    <span className="tabular">{formatNip(g.nip)}</span> · {g.rencana.length} rencana
+                    umum
+                  </p>
+                </div>
+                {bolehUbah ? (
+                  <Button
+                    size="sm"
+                    variant="sekunder"
+                    onClick={() =>
+                      setForm({
+                        sasaran: { pegawaiId: g.pegawaiId },
+                        nama: g.nama,
+                        rencana: null,
+                        contoh: rencana.filter((r) => r.talentPoolId !== null),
+                      })
+                    }
+                    ikon={<Plus className="size-3.5" />}
+                  >
+                    Tambah rencana
+                  </Button>
+                ) : null}
+              </div>
+              <ul className="divide-y divide-border">
+                {g.rencana.map((r) => (
+                  <BarisRencanaItem
+                    key={r.id}
+                    r={r}
+                    bolehUbah={bolehUbah}
+                    onUbah={() =>
+                      setForm({
+                        sasaran: { pegawaiId: r.pegawaiId },
+                        nama: r.nama,
+                        rencana: r,
+                        contoh: [],
+                      })
+                    }
+                    onHapus={() => setHapus(r)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
+      </Panel>
+
       {form !== null ? (
         <FormRencana
-          talentPoolId={form.talentPoolId}
+          sasaran={form.sasaran}
           nama={form.nama}
           rencana={form.rencana}
+          contoh={form.contoh}
           onTutup={() => setForm(null)}
         />
       ) : null}
@@ -271,14 +489,16 @@ function BarisRencanaItem({
 }
 
 function FormRencana({
-  talentPoolId,
+  sasaran,
   nama,
   rencana,
+  contoh,
   onTutup,
 }: {
-  talentPoolId: number
+  sasaran: SasaranRencana
   nama: string
   rencana: BarisRencana | null
+  contoh: BarisRencana[]
   onTutup: () => void
 }) {
   const { tampilkan } = useToast()
@@ -287,18 +507,34 @@ function FormRencana({
 
   const [jenis, setJenis] = useState<JenisPengembangan>(rencana?.jenisPengembangan ?? 'DIKLAT')
   const [deskripsi, setDeskripsi] = useState(rencana?.deskripsi ?? '')
+  /*
+    "kaya persis si suksesor tertentu" (`Detail Revisi PUPR 1_9_2026.pdf`, butir 5)
+    dijalankan sebagai MENYALIN rencana suksesor jadi templat yang masih bisa
+    disunting — bukan rencana yang diturunkan mesin dari selisih skor. Yang kedua
+    lebih berguna dan datanya sudah ada di `match_score_detail`, tapi ia
+    menghasilkan kalimat rencana yang tidak pernah ditulis siapa pun; itu keputusan
+    pemilik proses, bukan keputusan halaman ini.
+
+    Asalnya tetap DICATAT (`dicontoh_dari_pegawai_id`), jadi pilihan itu bisa
+    dibalik nanti tanpa menebak baris mana yang salinan.
+  */
+  const [dicontohDari, setDicontohDari] = useState<number | null>(null)
   const [targetSelesai, setTargetSelesai] = useState(rencana?.targetSelesai?.slice(0, 10) ?? '')
   const [status, setStatus] = useState<StatusRencana>(rencana?.status ?? 'DIRENCANAKAN')
 
   function simpan() {
     setGalat({})
     mulaiTransisi(async () => {
-      const hasil = await simpanRencana(talentPoolId, rencana?.id ?? null, {
-        jenisPengembangan: jenis,
-        deskripsi,
-        targetSelesai: targetSelesai === '' ? null : targetSelesai,
-        status,
-      })
+      const hasil = await simpanRencana(
+        { ...sasaran, dicontohDariPegawaiId: dicontohDari },
+        rencana?.id ?? null,
+        {
+          jenisPengembangan: jenis,
+          deskripsi,
+          targetSelesai: targetSelesai === '' ? null : targetSelesai,
+          status,
+        },
+      )
       if (hasil.ok) {
         tampilkan({ nada: 'sukses', judul: hasil.pesan ?? 'Disimpan.' })
         onTutup()
@@ -309,6 +545,20 @@ function FormRencana({
         }
       }
     })
+  }
+
+  function pakaiContoh(idRencanaContoh: string) {
+    const c = contoh.find((x) => String(x.id) === idRencanaContoh)
+    if (c === undefined) {
+      setDicontohDari(null)
+      return
+    }
+    // Isian DIISI, bukan dikunci: yang disalin templat, dan rencana yang tidak
+    // boleh disunting akan memaksa orang menulis ulang dari nol begitu satu kata
+    // pun perlu berbeda.
+    setJenis(c.jenisPengembangan)
+    setDeskripsi(c.deskripsi)
+    setDicontohDari(c.pegawaiId)
   }
 
   const jenisTerpilih = JENIS.find((j) => j.nilai === jenis)!
@@ -331,6 +581,32 @@ function FormRencana({
       }
     >
       <div className="space-y-3.5">
+        {rencana === null && contoh.length > 0 ? (
+          <label className="block rounded-md border border-border bg-surface-inset px-2.5 py-2">
+            <span className="mb-1 flex flex-wrap items-baseline gap-1.5">
+              <span className="text-[12px] font-medium text-text">Contoh dari suksesor</span>
+              <span className="text-[10px] text-text-subtle">
+                opsional — isian di bawah terisi otomatis dan tetap bisa diubah
+              </span>
+            </span>
+            <select
+              defaultValue=""
+              onChange={(e) => pakaiContoh(e.target.value)}
+              disabled={pending}
+              className="h-9 w-full rounded-md border border-border bg-surface px-2.5 text-[13px] text-text outline-none focus:border-accent disabled:opacity-60"
+            >
+              <option value="">— tulis sendiri —</option>
+              {contoh.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.nama} · {JENIS.find((j) => j.nilai === c.jenisPengembangan)?.label} ·{' '}
+                  {c.deskripsi.slice(0, 60)}
+                  {c.deskripsi.length > 60 ? '…' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
         <label className="block">
           <span className="mb-1 flex flex-wrap items-baseline gap-1.5">
             <span className="text-[12px] font-medium text-text">Jenis pengembangan</span>

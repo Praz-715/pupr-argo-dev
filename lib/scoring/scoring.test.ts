@@ -1,4 +1,4 @@
-import { AMBANG_SUMBU } from './konstanta'
+import { AMBANG_SUMBU, BOBOT_FORMULA_A, SKOR_PREDIKAT } from './konstanta'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -19,6 +19,8 @@ import {
   klasifikasiSumbuX,
   klasifikasiSumbuY,
   koordinatKotak9,
+  bulatkan2,
+  keSkala100,
   pilihKategori,
   ratakanDetail,
   skorPredikat,
@@ -68,28 +70,28 @@ describe('§2.2 skor predikat kinerja', () => {
     ['Kurang', 40],
     ['Sangat Kurang', 20],
   ] as Array<[Predikat, number]>)('%s → %i', (predikat, harapan) => {
-    expect(skorPredikat(predikat)).toBe(harapan)
+    expect(skorPredikat(predikat, SKOR_PREDIKAT)).toBe(harapan)
   })
 
   it('toleran terhadap kapitalisasi & spasi ganda dari sumber', () => {
-    expect(skorPredikat('SANGAT BAIK')).toBe(100)
-    expect(skorPredikat('  baik  ')).toBe(80)
-    expect(skorPredikat('Butuh   Perbaikan')).toBe(60)
+    expect(skorPredikat('SANGAT BAIK', SKOR_PREDIKAT)).toBe(100)
+    expect(skorPredikat('  baik  ', SKOR_PREDIKAT)).toBe(80)
+    expect(skorPredikat('Butuh   Perbaikan', SKOR_PREDIKAT)).toBe(60)
   })
 
   it('mengembalikan null untuk predikat tak dikenal, bukan 0 senyap', () => {
-    expect(skorPredikat('Luar Biasa')).toBeNull()
-    expect(skorPredikat(null)).toBeNull()
-    expect(skorPredikat('')).toBeNull()
+    expect(skorPredikat('Luar Biasa', SKOR_PREDIKAT)).toBeNull()
+    expect(skorPredikat(null, SKOR_PREDIKAT)).toBeNull()
+    expect(skorPredikat('', SKOR_PREDIKAT)).toBeNull()
   })
 
   it('Nilai Talenta = 50% Y + 50% X (contoh Lampiran B: 80 & 70 → 75)', () => {
-    expect(hitungNilaiTalenta(80, 70)).toBe(75)
-    expect(hitungNilaiTalenta(100, 90)).toBe(95)
+    expect(hitungNilaiTalenta(80, 70, BOBOT_FORMULA_A)).toBe(75)
+    expect(hitungNilaiTalenta(100, 90, BOBOT_FORMULA_A)).toBe(95)
   })
 
   it('tidak pernah menghasilkan Nilai Talenta di atas 100', () => {
-    expect(hitungNilaiTalenta(100, 115.1)).toBe(100)
+    expect(hitungNilaiTalenta(100, 115.1, BOBOT_FORMULA_A)).toBe(100)
   })
 })
 
@@ -129,11 +131,11 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
     [40, 70, 3],
     [40, 40, 1],
   ] as Array<[number, number, Kotak9]>)('Y=%i X=%i → kotak %i', (y, x, kotak) => {
-    expect(hitungKotak9(y, x, AMBANG_SUMBU).kotak).toBe(kotak)
+    expect(hitungKotak9(y, x, AMBANG_SUMBU, BOBOT_FORMULA_A).kotak).toBe(kotak)
   })
 
   it('predikat "Baik" (80) + potkom tinggi → kotak 9 (bukti K-2)', () => {
-    const hasil = hitungKotak9(skorPredikat('Baik')!, 93.47, AMBANG_SUMBU)
+    const hasil = hitungKotak9(skorPredikat('Baik', SKOR_PREDIKAT)!, 93.47, AMBANG_SUMBU, BOBOT_FORMULA_A)
     expect(hasil.kategoriY).toBe('Di Atas Ekspektasi')
     expect(hasil.kotak).toBe(9)
   })
@@ -148,7 +150,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
   })
 
   it('menghitung nilai talenta sekaligus', () => {
-    expect(hitungKotak9(80, 70, AMBANG_SUMBU).nilaiTalenta).toBe(75)
+    expect(hitungKotak9(80, 70, AMBANG_SUMBU, BOBOT_FORMULA_A).nilaiTalenta).toBe(75)
   })
 
   // Dipakai judul drill-down Peta Talenta & baris Kotak 9 di Perbandingan
@@ -161,7 +163,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
       // Ambil satu nilai wakil dari tiap band lalu hitung ulang kotaknya.
       const y = kat!.y === 'Di Atas Ekspektasi' ? 100 : kat!.y === 'Sesuai Ekspektasi' ? 70 : 40
       const x = kat!.x === 'Tinggi' ? 90 : kat!.x === 'Menengah' ? 70 : 40
-      expect(hitungKotak9(y, x, AMBANG_SUMBU).kotak).toBe(kotak)
+      expect(hitungKotak9(y, x, AMBANG_SUMBU, BOBOT_FORMULA_A).kotak).toBe(kotak)
     }
   })
 
@@ -183,7 +185,7 @@ describe('§2.3 matriks Kotak 9 — kesembilan sel', () => {
 describe('§2.3 pembanding Kotak 9 terhadap nilai sumber', () => {
   it('menandai selisih, bukan menyembunyikannya', () => {
     // Kasus nyata di data contoh: Y=100, X=69.58 → hitung 7, sumber bilang 4
-    const hasil = hitungKotak9(100, 69.58, AMBANG_SUMBU)
+    const hasil = hitungKotak9(100, 69.58, AMBANG_SUMBU, BOBOT_FORMULA_A)
     expect(hasil.kotak).toBe(7)
 
     const banding = bandingkanKotak9(hasil, 4)
@@ -193,19 +195,72 @@ describe('§2.3 pembanding Kotak 9 terhadap nilai sumber', () => {
   })
 
   it('tidak mengeluh kalau nilai sumber cocok', () => {
-    const banding = bandingkanKotak9(hitungKotak9(100, 76.04, AMBANG_SUMBU), 7)
+    const banding = bandingkanKotak9(hitungKotak9(100, 76.04, AMBANG_SUMBU, BOBOT_FORMULA_A), 7)
     expect(banding.cocok).toBe(true)
     expect(banding.perluReview).toBe(false)
   })
 
   it('tidak mengeluh kalau sumber tidak mengirim kotak_9', () => {
-    expect(bandingkanKotak9(hitungKotak9(80, 80, AMBANG_SUMBU), null).perluReview).toBe(false)
+    expect(bandingkanKotak9(hitungKotak9(80, 80, AMBANG_SUMBU, BOBOT_FORMULA_A), null).perluReview).toBe(false)
   })
 })
 
 // =============================================================================
 // §2.6 Dua mode skor + §2.8 fallback ambang
 // =============================================================================
+
+describe('skala nilai mentah — Potkom 0–150 (koreksi sistem informasi.pdf butir 3)', () => {
+  it('skor = nilai / skala x 100; kasus dari PDF pemilik proses', () => {
+    // 130,73 pada skala 150 → 87,15. Sebelum skala ada, jawabannya 100,00.
+    const hasil = pilihKategori(130.73, KATEGORI_POTKOM, 'NILAI_LANGSUNG', 150)
+    expect(bulatkan2(hasil.skor)).toBe(87.15)
+  })
+
+  it('nilai di atas 100 BERHENTI seri — inilah cacat yang ditutupnya', () => {
+    // Kontrol negatif: tanpa skala, ketiganya di-clamp ke 100 dan tak terbedakan.
+    const tanpa = [147.92, 130.73, 101.25].map(
+      (n) => pilihKategori(n, KATEGORI_POTKOM, 'NILAI_LANGSUNG').skor,
+    )
+    expect(new Set(tanpa).size).toBe(1)
+
+    const dengan = [147.92, 130.73, 101.25].map(
+      (n) => pilihKategori(n, KATEGORI_POTKOM, 'NILAI_LANGSUNG', 150).skor,
+    )
+    expect(new Set(dengan).size).toBe(3)
+  })
+
+  it('65% TIDAK ikut dikalikan di sini — itu bobot, bukan bagian rumus skor', () => {
+    // Dikonfirmasi pemilik proses 31 Agu 2026. Kalau suatu saat skor ini keluar
+    // 56,65, berarti 0,65 tersisip dua kali dan bobot efektifnya jadi 42,25%.
+    expect(bulatkan2(pilihKategori(130.73, KATEGORI_POTKOM, 'NILAI_LANGSUNG', 150).skor)).not.toBe(
+      56.65,
+    )
+  })
+
+  it('label kategori tetap dibaca dari nilai MENTAH, bukan skor terskala', () => {
+    // 120 → skor 80, tapi kategorinya harus tetap band teratas (ambang ≥80 pada
+    // skala sumbernya). Membacanya dari skor akan menurunkan kategori semua orang.
+    const hasil = pilihKategori(120, KATEGORI_POTKOM, 'NILAI_LANGSUNG', 150)
+    expect(hasil.kategoriTerpilih).toBe(
+      pilihKategori(120, KATEGORI_POTKOM, 'NILAI_LANGSUNG').kategoriTerpilih,
+    )
+  })
+
+  it('tanpa skala, hasilnya IDENTIK dengan jalur lama', () => {
+    for (const n of [0, 55, 79.99, 80, 100]) {
+      expect(pilihKategori(n, KATEGORI_POTKOM, 'NILAI_LANGSUNG', null)).toEqual(
+        pilihKategori(n, KATEGORI_POTKOM, 'NILAI_LANGSUNG'),
+      )
+    }
+  })
+
+  it('skala tidak masuk akal dikembalikan apa adanya, bukan dianggap 100', () => {
+    expect(keSkala100(50, 0)).toBe(50)
+    expect(keSkala100(50, -10)).toBe(50)
+    expect(keSkala100(50, null)).toBe(50)
+    expect(keSkala100(75, 150)).toBe(50)
+  })
+})
 
 describe('§2.6 mode KATEGORI_TETAP', () => {
   it('mencocokkan nilai berupa teks ke nama kategori', () => {
@@ -643,6 +698,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: ['Teknik Sipil'],
         eselonTertinggi: 'III',
         totalPengalamanTahun: 8,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: asesmenBerlaku,
       },
       { tahunSekarang: 2026 },
@@ -660,6 +717,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: [],
         eselonTertinggi: 'III',
         totalPengalamanTahun: 8,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: asesmenBerlaku,
       },
       { tahunSekarang: 2026 },
@@ -680,6 +739,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: ['Teknik Sipil'],
         eselonTertinggi: 'IV',
         totalPengalamanTahun: 5,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: asesmenBerlaku,
       },
       { tahunSekarang: 2026 },
@@ -696,6 +757,8 @@ describe('seleksi kelayakan', () => {
       bidangStudi: ['Teknik Sipil'],
       eselonTertinggi: 'IV' as const,
       totalPengalamanTahun: 5,
+      golongan: null,
+      jabatanIdSekarang: null,
       asesmen: asesmenBerlaku,
     }
 
@@ -729,6 +792,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: [],
         eselonTertinggi: 'IV',
         totalPengalamanTahun: 9,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: asesmenBerlaku,
       },
       { tahunSekarang: 2026 },
@@ -745,6 +810,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: [],
         eselonTertinggi: null,
         totalPengalamanTahun: null,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: asesmenBerlaku,
       },
       { tahunSekarang: 2026 },
@@ -761,6 +828,8 @@ describe('seleksi kelayakan', () => {
         bidangStudi: [],
         eselonTertinggi: 'III',
         totalPengalamanTahun: 10,
+        golongan: 'III/d',
+        jabatanIdSekarang: null,
         asesmen: { tahunAsesmen: 2021, statusAsesmen: 'Expired' },
       },
       { tahunSekarang: 2026 },
@@ -775,8 +844,322 @@ describe('seleksi kelayakan', () => {
       bidangStudi: [],
       eselonTertinggi: 'III',
       totalPengalamanTahun: 10,
+      golongan: null,
+      jabatanIdSekarang: null,
       asesmen: null,
     })
     expect(hasil.eligible).toBe(false)
+  })
+})
+
+/*
+  Syarat GOLONGAN & DURASI pengalaman — keduanya dari lembar "Persyaratan Jabatan"
+  (PP 11/2017) dan masuk aplikasi 25 Agu 2026.
+
+  Golongan sengaja MENGGUGURKAN (keputusan pemilik proses), jadi ujinya harus
+  membuktikan tiga hal yang berbeda perlakuannya: memenuhi, di bawah syarat, dan
+  tidak diketahui. Yang ketiga paling mudah salah — data yang belum ada bukan bukti
+  bahwa syaratnya tidak dipenuhi, dan menggugurkan atasnya berarti menghilangkan
+  kandidat karena kolom yang belum diisi.
+*/
+describe('seleksi kelayakan — golongan & durasi pengalaman', () => {
+  const asesmenBerlaku = { tahunAsesmen: 2025, statusAsesmen: 'Berlaku' as const }
+  const profil = (ubah: Partial<Parameters<typeof evaluasiKelayakan>[1]> = {}) => ({
+    tingkatPendidikan: 'S1_D4' as const,
+    bidangStudi: ['teknik'],
+    eselonTertinggi: 'IV' as const,
+    totalPengalamanTahun: 12,
+    golongan: 'III/d',
+    jabatanIdSekarang: null,
+    asesmen: asesmenBerlaku,
+    ...ubah,
+  })
+  const syaratGolongan = (min: string | null) => [
+    { id: 1, jenisSyarat: 'GOLONGAN_MIN' as const, deskripsi: 'Golongan minimal', nilaiMinimal: min },
+  ]
+
+  it('golongan yang memenuhi syarat meloloskan', () => {
+    const h = evaluasiKelayakan(syaratGolongan('III/d'), profil(), { tahunSekarang: 2026 })
+    expect(h.eligible).toBe(true)
+    expect(h.perluVerifikasiManual).toBe(false)
+    expect(h.rincian[0]!.keterangan).toContain('memenuhi syarat minimal III/d')
+  })
+
+  it('golongan di bawah syarat MENGGUGURKAN, dan menyebut alasannya', () => {
+    const h = evaluasiKelayakan(syaratGolongan('IV/b'), profil({ golongan: 'III/d' }), {
+      tahunSekarang: 2026,
+    })
+    expect(h.eligible).toBe(false)
+    expect(h.rincian[0]!.status).toBe('TIDAK_TERPENUHI')
+    expect(h.rincian[0]!.keterangan).toContain('III/d di bawah syarat minimal IV/b')
+  })
+
+  it('golongan lebih tinggi tetap memenuhi (bukan harus sama)', () => {
+    const h = evaluasiKelayakan(syaratGolongan('III/b'), profil({ golongan: 'IV/a' }), {
+      tahunSekarang: 2026,
+    })
+    expect(h.eligible).toBe(true)
+  })
+
+  it('penulisan tanpa garis miring dianggap sama — "IIId" = "III/d"', () => {
+    // Lembar Excel-nya menulis "IIId"; DB menulis "III/d". Kalau keduanya tidak
+    // dinormalkan, syarat yang benar akan menggugurkan orang yang memenuhinya.
+    const h = evaluasiKelayakan(syaratGolongan('IIId'), profil({ golongan: 'iii/D' }), {
+      tahunSekarang: 2026,
+    })
+    expect(h.eligible).toBe(true)
+  })
+
+  it('golongan pegawai kosong → verifikasi manual, BUKAN gugur', () => {
+    const h = evaluasiKelayakan(syaratGolongan('III/d'), profil({ golongan: null }), {
+      tahunSekarang: 2026,
+    })
+    expect(h.eligible).toBe(true)
+    expect(h.perluVerifikasiManual).toBe(true)
+    expect(h.rincian[0]!.keterangan).toContain('belum terisi')
+  })
+
+  it('syarat golongan yang tidak dikenali → verifikasi manual, dan menyebut tulisannya', () => {
+    const h = evaluasiKelayakan(syaratGolongan('V/z'), profil(), { tahunSekarang: 2026 })
+    expect(h.eligible).toBe(true)
+    expect(h.perluVerifikasiManual).toBe(true)
+    expect(h.rincian[0]!.keterangan).toContain('V/z')
+  })
+
+  it('jenjang terpenuhi TAPI durasi dipersyaratkan → verifikasi manual beserta angkanya', () => {
+    /*
+      Ini yang paling penting: mesin TIDAK boleh menyatakan TERPENUHI hanya karena
+      jenjangnya cocok. "Pengawas paling singkat 3 tahun" belum terjawab sampai lama
+      menjabatnya diperiksa, dan `totalPengalamanTahun` (12 tahun di sini) bukan
+      jawabannya — itu total seluruh jabatan, bukan lama di jenjang IV.
+    */
+    const h = evaluasiKelayakan(
+      [
+        {
+          id: 1,
+          jenisSyarat: 'PENGALAMAN_MIN',
+          deskripsi: 'Pengawas paling singkat 3 tahun',
+          nilaiMinimal: 'IV',
+          durasiTahunMin: 3,
+        },
+      ],
+      profil(),
+      { tahunSekarang: 2026 },
+    )
+    expect(h.eligible).toBe(true)
+    expect(h.perluVerifikasiManual).toBe(true)
+    expect(h.rincian[0]!.status).toBe('PERLU_VERIFIKASI_MANUAL')
+    expect(h.rincian[0]!.keterangan).toContain('minimal 3 tahun')
+  })
+
+  it('durasi TIDAK menyelamatkan jenjang yang tidak terpenuhi', () => {
+    // Kalau jenjangnya saja sudah gagal, durasi tidak mengubah apa pun — dan
+    // urutannya harus begitu: gugur lebih dulu, bukan jadi "perlu verifikasi".
+    const h = evaluasiKelayakan(
+      [
+        {
+          id: 1,
+          jenisSyarat: 'PENGALAMAN_MIN',
+          deskripsi: '',
+          nilaiMinimal: 'II',
+          durasiTahunMin: 3,
+        },
+      ],
+      profil({ eselonTertinggi: 'IV' }),
+      { tahunSekarang: 2026 },
+    )
+    expect(h.eligible).toBe(false)
+    expect(h.rincian[0]!.status).toBe('TIDAK_TERPENUHI')
+  })
+
+  it('tanpa durasi, jenjang yang terpenuhi tetap TERPENUHI (tidak jadi lebih ketat)', () => {
+    const h = evaluasiKelayakan(
+      [{ id: 1, jenisSyarat: 'PENGALAMAN_MIN', deskripsi: '', nilaiMinimal: 'IV' }],
+      profil(),
+      { tahunSekarang: 2026 },
+    )
+    expect(h.eligible).toBe(true)
+    expect(h.perluVerifikasiManual).toBe(false)
+  })
+})
+
+// =============================================================================
+// Kesesuaian dengan CONTOH PERHITUNGAN di doc/doc_tambahan_2/sample(1).xlsx
+// =============================================================================
+
+/**
+ * Lembar **"Sample"** di `doc/doc_tambahan_2/sample(1).xlsx` memuat perhitungan
+ * lengkap untuk DUA kandidat bernama (Iwan & Mardi) — nilai mentah tiap indikator
+ * BESERTA kontribusi berbobotnya, sampai Nilai Talenta. Itu aritmetika yang ditulis
+ * pemilik proses sendiri, jadi ia acuan paling kuat yang tersedia untuk Formula B.
+ *
+ * ## Kenapa uji ini penting melebihi uji angka biasa
+ *
+ * Ia **menjawab satu pertanyaan yang sampai sekarang berstatus ASUMSI** di
+ * `doc/ERD.md` §5 dan `doc/PRD.md` §10: bagaimana sub-indikator "Nilai Pengalaman
+ * Jabatan" diagregasi. Lembar itu menunjukkan angkanya:
+ *
+ *   Iwan  — Lama 100 · Keragaman 100 · Substansi 0 → kontribusi **3,3333**
+ *   Mardi — Lama  80 · Keragaman  80 · Substansi 0 → kontribusi **2,6667**
+ *
+ * dan 3,3333 = (100+100+0)/3 × 0,05, 2,6667 = (80+80+0)/3 × 0,05. Jadi agregasinya
+ * **rata-rata sederhana ketiga sub-indikator**, lalu dikalikan bobot induknya —
+ * persis yang diimplementasikan `hitungSumbu()`. Asumsi itu kini punya bukti, dan
+ * uji ini yang menjaganya: kalau seseorang mengubah agregasinya jadi jumlah atau
+ * rata-rata terbobot, angka di bawah ini yang merah.
+ *
+ * ## Catatan label sumbu yang membingungkan kalau tidak disebut
+ *
+ * Lembar itu menamai komposit 65/20/15 sebagai **"Total Y"** dan nilai kinerja
+ * sebagai **"Total X"** — TERBALIK dari `KERANGKA TALENT POOL.xlsx` (yang jadi
+ * acuan implementasi) dan dari `lib/scoring`. Yang dibandingkan di sini ANGKANYA,
+ * bukan namanya; penamaannya sengaja tidak diikuti supaya tidak ada dua konvensi
+ * sumbu di dalam kode.
+ */
+describe('kesesuaian dengan contoh perhitungan sample(1).xlsx lembar "Sample"', () => {
+  const rubrik = rubrikJabatanTarget()
+
+  it('Iwan — komposit 93,59 & Nilai Talenta 86,79', () => {
+    const hasil = hitungMatchScore(rubrik, {
+      [ID_INDIKATOR.potkom]: 93.47,
+      [ID_INDIKATOR.tingkatPendidikan]: 'Magister', // 90 → 4,5
+      [ID_INDIKATOR.kesesuaianBidangIlmu]: 100, // → 5
+      [ID_INDIKATOR.pengembanganKompetensi]: 100, // → 5
+      [ID_INDIKATOR.lamaJabatan]: 6, // ≥5 tahun → 100
+      [ID_INDIKATOR.keragamanJabatan]: 100,
+      [ID_INDIKATOR.substansiJabatan]: 0, // "tidak memiliki riwayat non-definitif"
+      [ID_INDIKATOR.integritas]: 'Tidak Pernah', // 100 → 15
+    })
+
+    // 93,47×0,65 = 60,7555 — potkom TIDAK diplafon di jalur ini, dan lembar itu
+    // memakai angka yang sama apa adanya.
+    expect(hasil.skorPotensiKompetensi).toBeCloseTo(93.47, 2)
+    // (100+100+0)/3 = 66,6667 → inilah bukti agregasi rata-rata sederhana.
+    expect(hasil.skorTotal).toBeCloseTo(93.5888, 2)
+
+    // Nilai Talenta = 50% kinerja + 50% komposit; kinerja Iwan predikat "Baik".
+    const y = skorPredikat('Baik', SKOR_PREDIKAT)!
+    expect(y).toBe(80)
+    /*
+      Toleransi 0,01, bukan 0,005 — dan alasannya PERBEDAAN NYATA yang perlu
+      diketahui, bukan uji yang dilonggarkan supaya hijau.
+
+      Mesin kita membulatkan komposit ke DUA DESIMAL (93,59) sebelum menyuapkannya
+      ke Formula A, sedangkan spreadsheet membawa presisi penuh (93,588833…). Jadi
+      Nilai Talenta kita 86,80 sementara lembar itu 86,794417 — **terukur selisih
+      0,0056**. Rumusnya sama; yang berbeda letak pembulatannya.
+
+      Dibiarkan begitu dengan sadar: kolom `match_score.skor_total` bertipe
+      DECIMAL(5,2), jadi angka yang TERSIMPAN memang dua desimal, dan menghitung
+      Nilai Talenta dari nilai berpresisi penuh yang tidak pernah tersimpan akan
+      membuat angka di layar tidak bisa direproduksi dari isi DB. Selisih 0,0056
+      juga jauh di bawah ambang keputusan mana pun (ambang sumbu bulat: 60 & 80).
+    */
+    expect(hitungNilaiTalenta(y, hasil.skorTotal, BOBOT_FORMULA_A)).toBeCloseTo(86.7944, 1)
+  })
+
+  it('Mardi — komposit 74,09 & Nilai Talenta 87,05', () => {
+    const hasil = hitungMatchScore(rubrik, {
+      [ID_INDIKATOR.potkom]: 76.04,
+      [ID_INDIKATOR.tingkatPendidikan]: 'Magister', // 90 → 4,5
+      [ID_INDIKATOR.kesesuaianBidangIlmu]: 100, // → 5
+      [ID_INDIKATOR.pengembanganKompetensi]: 100, // → 5
+      [ID_INDIKATOR.lamaJabatan]: 3, // ≥2–<5 tahun → 80
+      [ID_INDIKATOR.keragamanJabatan]: 80,
+      [ID_INDIKATOR.substansiJabatan]: 0,
+      [ID_INDIKATOR.integritas]: 'Sedang', // 50 → 7,5
+    })
+
+    expect(hasil.skorPotensiKompetensi).toBeCloseTo(76.04, 2)
+    expect(hasil.skorTotal).toBeCloseTo(74.0927, 2)
+
+    const y = skorPredikat('Sangat Baik', SKOR_PREDIKAT)!
+    expect(y).toBe(100)
+    expect(hitungNilaiTalenta(y, hasil.skorTotal, BOBOT_FORMULA_A)).toBeCloseTo(87.0463, 1)
+  })
+
+  it('kontribusi "Nilai Pengalaman Jabatan" = RATA-RATA sub-indikator × bobot induk', () => {
+    // Diuji langsung, bukan hanya lewat total: kalau agregasinya diubah jadi jumlah
+    // (0,05 × 200 = 10) atau hanya sub pertama (0,05 × 100 = 5), total tetap
+    // "masuk akal" dan hanya uji ini yang menyebut sebabnya.
+    const iwan = hitungMatchScore(rubrik, {
+      [ID_INDIKATOR.potkom]: 0,
+      [ID_INDIKATOR.tingkatPendidikan]: 'SLTA',
+      [ID_INDIKATOR.kesesuaianBidangIlmu]: 50,
+      [ID_INDIKATOR.pengembanganKompetensi]: 50,
+      [ID_INDIKATOR.lamaJabatan]: 6, // 100
+      [ID_INDIKATOR.keragamanJabatan]: 100,
+      [ID_INDIKATOR.substansiJabatan]: 0,
+      [ID_INDIKATOR.integritas]: 'Sedang Menjalani',
+    })
+    const pengalaman = iwan.detail.komponen
+      .flatMap((k) => k.indikator)
+      .find((i) => i.namaIndikator.toLowerCase().includes('pengalaman'))
+    expect(pengalaman).toBeDefined()
+    // (100 + 100 + 0) / 3
+    expect(pengalaman!.skor).toBeCloseTo(66.67, 1)
+  })
+})
+
+/*
+  Gerbang JABATAN ASAL KANDIDAT (`doc/sql/033`).
+
+  Diuji terpisah dari persyaratan karena sumbernya berbeda — daftar jabatan milik
+  jabatan target, bukan baris `jabatan_target_persyaratan`. Yang paling mudah salah
+  di sini bukan pencocokannya melainkan KETIADAAN datanya: pegawai yang belum
+  tertaut jabatan bukan pegawai yang jabatannya di luar daftar, dan menggugurkan
+  atasnya berarti menghilangkan kandidat karena kolom yang belum diisi.
+*/
+describe('seleksi kelayakan — jabatan asal kandidat', () => {
+  const asesmenBerlaku = { tahunAsesmen: 2025, statusAsesmen: 'Berlaku' as const }
+  const profilJ = (jabatanIdSekarang: number | null) => ({
+    tingkatPendidikan: 'S1_D4' as const,
+    bidangStudi: ['teknik'],
+    eselonTertinggi: 'IV' as const,
+    totalPengalamanTahun: 12,
+    golongan: 'III/d',
+    jabatanIdSekarang,
+    asesmen: asesmenBerlaku,
+  })
+  const asal = [
+    { id: 11, nama: 'Kepala Sub Bagian Umum dan Tata Usaha' },
+    { id: 12, nama: 'Kepala Seksi Pelaksanaan' },
+  ]
+  const jalankan = (jabatanId: number | null, daftar = asal) =>
+    evaluasiKelayakan([], profilJ(jabatanId), { tahunSekarang: 2026, jabatanAsal: daftar })
+  /*
+    Diambil menurut JENIS, bukan menurut posisi/jumlah. `evaluasiKelayakan()` selalu
+    menambahkan satu rincian masa berlaku asesmen, jadi asersi atas `rincian.length`
+    akan merah karena hal yang sama sekali tidak diuji di sini — dan lebih buruk,
+    ia akan berubah lagi setiap kali ada gerbang bawaan baru.
+  */
+  const asalRincian = (h: ReturnType<typeof evaluasiKelayakan>) =>
+    h.rincian.filter((r) => r.jenisSyarat === 'JABATAN_ASAL')
+
+  it('jabatan yang ada di daftar → lolos, dan alasannya menyebut namanya', () => {
+    const r = asalRincian(jalankan(11))
+    expect(r).toHaveLength(1)
+    expect(r[0]!.status).toBe('TERPENUHI')
+    expect(r[0]!.keterangan).toContain('Kepala Sub Bagian Umum dan Tata Usaha')
+  })
+
+  it('jabatan di luar daftar → gugur', () => {
+    expect(asalRincian(jalankan(99))[0]!.status).toBe('TIDAK_TERPENUHI')
+    expect(jalankan(99).eligible).toBe(false)
+  })
+
+  it('belum punya jabatan → PERLU VERIFIKASI, bukan gugur', () => {
+    // Kontrol atas kekeliruan yang paling mahal di sini: menghukum kolom kosong.
+    expect(asalRincian(jalankan(null))[0]!.status).toBe('PERLU_VERIFIKASI_MANUAL')
+  })
+
+  it('daftar KOSONG → gerbangnya tidak dipasang sama sekali', () => {
+    // Bukan "meloloskan semua": baris rincian yang selalu hijau hanya menambah
+    // kebisingan di panel kelayakan tanpa menjelaskan apa pun. Draft baru lahir
+    // dengan daftar kosong, dan itu keadaan yang wajar.
+    expect(asalRincian(jalankan(99, []))).toHaveLength(0)
+    expect(
+      asalRincian(evaluasiKelayakan([], profilJ(99), { tahunSekarang: 2026 })),
+    ).toHaveLength(0)
   })
 })

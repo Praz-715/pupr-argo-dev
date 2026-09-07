@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { gayaTombol } from '@/components/ui/button-style'
 import { PageHeader, Panel } from '@/components/ui/panel'
 import { ListSkeleton, Skeleton } from '@/components/ui/skeleton'
+import { targetTerjangkau } from '@/lib/aksi/lingkup-data'
 import { getCurrentUser } from '@/lib/auth'
 import { cn } from '@/lib/cn'
-import { formatAngka, formatTanggalWaktu } from '@/lib/format'
+import { formatAngka, formatTanggal, formatTanggalWaktu } from '@/lib/format'
 import {
   ambilAnggotaJabatan,
   ambilJabatanTarget,
@@ -21,7 +22,7 @@ import {
   cariJabatanUntukTarget,
 } from '@/lib/kueri/rubrik'
 import { angkaPositif } from '@/lib/param'
-import { punyaPeran } from '@/lib/peran'
+import { PERAN_KELOLA_TARGET, PERAN_USUL_TARGET, punyaPeran } from '@/lib/peran'
 import { validasiRubrik } from '@/lib/scoring'
 import { AksiStatus } from './_komponen/aksi-status'
 import { PanelValidasi } from './_komponen/panel-validasi'
@@ -33,10 +34,16 @@ import { TabSyarat } from './_komponen/tab-syarat'
 type Params = Promise<{ id: string }>
 type Cari = Promise<Record<string, string | undefined>>
 
-const PERAN_UBAH = ['Super Admin', 'Admin Talenta'] as const
+/*
+  `bolehUsul` (unit ikut) hanya untuk tab Persyaratan & Syarat Diklat — unit tahu
+  syarat apa yang dibutuhkan kursinya. Tab Rubrik, Jabatan Asal Kandidat, dan tombol
+  status tetap `bolehUbah`: bobot 65/20/15 berlaku se-organisasi dan aktivasi adalah
+  titik verifikasinya. Kedua daftar diimpor dari `lib/peran.ts` — sama dengan yang
+  dipakai server action untuk menolak.
+*/
 
 const TAB = [
-  { kunci: 'anggota', label: 'Jabatan Anggota', ikon: Users },
+  { kunci: 'anggota', label: 'Jabatan Asal Kandidat', ikon: Users },
   { kunci: 'syarat', label: 'Persyaratan', ikon: ListChecks },
   { kunci: 'rubrik', label: 'Rubrik Penilaian', ikon: SlidersHorizontal },
 ] as const
@@ -79,8 +86,23 @@ export default async function EditorJabatanTargetPage({
 
   const p = await searchParams
   const tab: KunciTab = TAB.some((t) => t.kunci === p.tab) ? (p.tab as KunciTab) : 'rubrik'
-  const bolehUbah = punyaPeran(pengguna, PERAN_UBAH)
+  const bolehUbah = punyaPeran(pengguna, PERAN_KELOLA_TARGET)
+  /*
+    Perannya SAJA tidak cukup: Pengelola Unit hanya boleh mengisi persyaratan target
+    yang salah satu jabatan anggotanya ada di unitnya. Predikatnya diambil dari
+    `targetTerjangkau()` — fungsi yang SAMA dengan yang dipakai
+    `simpanPersyaratan`/`simpanSyaratDiklat` untuk menolak, jadi form yang tampil dan
+    aksi yang menerima tidak bisa berselisih. Untuk peran berlingkup penuh ia selalu
+    mengembalikan barisnya, jadi tidak ada biaya perilaku bagi Admin Talenta.
+  */
+  const bolehUsul =
+    punyaPeran(pengguna, PERAN_USUL_TARGET) && (await targetTerjangkau(idTarget)) !== null
   const cariJabatan = (p.cariJabatan ?? '').slice(0, 80)
+  // Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4); kosong = tidak menyaring.
+  const rumpunJabatanTerpilih = (p.rumpun ?? '').slice(0, 80).toLowerCase()
+  // Daftar jabatan anggota bawaannya disaring ke jenjang target ini; ini jalan
+  // keluarnya untuk target yang memang lintas jenjang (lihat cariJabatanUntukTarget).
+  const semuaJenjang = p.semuaJenjang === '1'
 
   return (
     <div className="space-y-5">
@@ -136,7 +158,7 @@ export default async function EditorJabatanTargetPage({
 
       <div className="grid gap-3 sm:grid-cols-4">
         <RingkasKecil
-          label="Jabatan anggota"
+          label="Jabatan asal kandidat"
           nilai={formatAngka(target.jumlahAnggota)}
           catatan={target.jumlahAnggota === 0 ? 'wajib minimal 1 untuk aktivasi' : 'posisi yang dituju'}
           peringatan={target.jumlahAnggota === 0}
@@ -159,8 +181,23 @@ export default async function EditorJabatanTargetPage({
         />
         <RingkasKecil
           label="Skor terakhir dihitung"
-          nilai={
-            target.dihitungPada === null ? 'belum' : formatTanggalWaktu(target.dihitungPada).slice(0, 10)
+          /*
+            `formatTanggal()`, BUKAN `formatTanggalWaktu().slice(0, 10)`. Potongan
+            10 karakter itu mengandaikan tanggal berlebar tetap seperti ISO
+            (`2026-08-26`), sementara formatnya berbulan singkat berbahasa
+            Indonesia — jadi "26 Agu 2026, 17.30" terpotong jadi **"26 Agu 202"**,
+            tahun yang salah dan terbaca seperti angka rusak. Panjangnya berubah
+            menurut nama bulan (3–4 huruf) dan tanggalnya (1–2 angka), jadi tidak
+            ada satu pun angka potong yang benar untuk semua tanggal.
+          */
+          nilai={target.dihitungPada === null ? 'belum' : formatTanggal(target.dihitungPada)}
+          // Jam-nya pindah ke tooltip, tidak dibuang: penanda "skor ini dihitung
+          // sebelum catatan disiplin terbaru" membandingkan sampai ke menitnya,
+          // dan pada hari perhitungan ulang, tanggal saja tidak bisa membedakannya.
+          judul={
+            target.dihitungPada === null
+              ? undefined
+              : `Dihitung ${formatTanggalWaktu(target.dihitungPada)}`
           }
           catatan={
             target.dihitungPada === null
@@ -199,11 +236,20 @@ export default async function EditorJabatanTargetPage({
         })}
       </div>
 
-      <Suspense key={`${tab}|${cariJabatan}`} fallback={<ListSkeleton rows={5} />}>
+      <Suspense
+        key={`${tab}|${cariJabatan}|${rumpunJabatanTerpilih}|${semuaJenjang}`}
+        fallback={<ListSkeleton rows={5} />}
+      >
         {tab === 'anggota' ? (
-          <IsiTabAnggota idTarget={idTarget} bolehUbah={bolehUbah} cariJabatan={cariJabatan} />
+          <IsiTabAnggota
+            idTarget={idTarget}
+            bolehUbah={bolehUbah}
+            cariJabatan={cariJabatan}
+            rumpun={rumpunJabatanTerpilih}
+            semuaJenjang={semuaJenjang}
+          />
         ) : tab === 'syarat' ? (
-          <IsiTabSyarat idTarget={idTarget} bolehUbah={bolehUbah} />
+          <IsiTabSyarat idTarget={idTarget} bolehUbah={bolehUsul} />
         ) : (
           <IsiTabRubrik idTarget={idTarget} bolehUbah={bolehUbah} />
         )}
@@ -217,16 +263,21 @@ function RingkasKecil({
   nilai,
   catatan,
   peringatan,
+  judul,
 }: {
   label: string
   nilai: string
   catatan: string
   peringatan?: boolean
+  /** Tooltip pada angkanya — untuk keterangan yang lebih presisi dari yang tampil. */
+  judul?: string
 }) {
   return (
     <Panel>
       <p className="text-[11px] font-medium tracking-wide text-text-subtle uppercase">{label}</p>
-      <p className="tabular mt-1.5 text-lg leading-none font-semibold text-text">{nilai}</p>
+      <p className="tabular mt-1.5 text-lg leading-none font-semibold text-text" title={judul}>
+        {nilai}
+      </p>
       <p
         className={cn(
           'mt-1.5 text-[11px] leading-relaxed',
@@ -255,14 +306,21 @@ async function IsiTabAnggota({
   idTarget,
   bolehUbah,
   cariJabatan,
+  rumpun,
+  semuaJenjang,
 }: {
   idTarget: number
   bolehUbah: boolean
   cariJabatan: string
+  rumpun: string
+  semuaJenjang: boolean
 }) {
   const [anggota, tersedia] = await Promise.all([
     ambilAnggotaJabatan(idTarget),
-    cariJabatanUntukTarget(idTarget, cariJabatan),
+    // Batas dinaikkan dari 20 karena daftarnya kini DIKELOMPOKKAN: dengan 20,
+    // kelompok berisi 63 kursi balai akan tampil sebagai "20 jabatan" — angka yang
+    // salah, dan tombol "Tambah semua" yang menambahkan sebagian tanpa mengatakannya.
+    cariJabatanUntukTarget(idTarget, cariJabatan, 400, semuaJenjang),
   ])
   return (
     <TabAnggota
@@ -270,6 +328,8 @@ async function IsiTabAnggota({
       anggota={anggota}
       tersedia={tersedia}
       cari={cariJabatan}
+      rumpun={rumpun}
+      semuaJenjang={semuaJenjang}
       bolehUbah={bolehUbah}
     />
   )

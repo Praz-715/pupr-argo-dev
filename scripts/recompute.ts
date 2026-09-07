@@ -46,7 +46,7 @@ const num = (n: number | null): string => (n === null ? 'NULL' : n.toFixed(2))
 
 async function main() {
   const { kueri } = await import('../lib/db')
-  const { ambangSumbuDari, ambilPengaturan } = await import('../lib/pengaturan')
+  const { ambilPengaturan, parameterSkoringDari } = await import('../lib/pengaturan')
 
   /**
    * Parameter yang bisa diubah operator DIBACA dari `pengaturan_sistem`, tidak
@@ -66,9 +66,11 @@ async function main() {
    */
   const pengaturan = await ambilPengaturan()
   const MASA_BERLAKU = pengaturan.masaBerlakuAsesmenTahun
-  const AMBANG = ambangSumbuDari(pengaturan)
+  const PAR = parameterSkoringDari(pengaturan)
   console.log(
-    `pengaturan: masa berlaku ${MASA_BERLAKU} tahun · ambang ${AMBANG.tengah}/${AMBANG.atas}`,
+    `pengaturan: masa berlaku ${MASA_BERLAKU} tahun · ambang ${PAR.ambang.tengah}/${PAR.ambang.atas}` +
+      ` · bobot talenta ${(PAR.bobotTalenta.kinerja * 100).toFixed(0)}/${(PAR.bobotTalenta.potensial * 100).toFixed(0)}` +
+      ` · skala predikat ${Object.values(PAR.skalaPredikat).join('/')}`,
   )
   const { ambilPohonRubrik, ambilProfilKandidat, ambilRubrikUntukHitung, indikatorBerkunciDari } =
     await import('../lib/kueri/rubrik')
@@ -130,7 +132,7 @@ async function main() {
     const potkom = Number(a.potkom ?? 0)
     const predikat = String(a.rating_kinerja) as Predikat
 
-    const y = skorPredikat(predikat)
+    const y = skorPredikat(predikat, PAR.skalaPredikat)
     if (y === null) {
       catatanAsesmen.push(`asesmen ${a.id}: predikat "${predikat}" tidak dikenal`)
       continue
@@ -142,7 +144,7 @@ async function main() {
       ...(idPotkomGenerik !== undefined ? { [idPotkomGenerik]: potkom } : {}),
     })
 
-    const kotak = hitungKotak9(y, hasilX.skor, AMBANG)
+    const kotak = hitungKotak9(y, hasilX.skor, PAR.ambang, PAR.bobotTalenta)
     const banding = bandingkanKotak9(
       kotak,
       a.kotak_9_sumber === null || a.kotak_9_sumber === undefined

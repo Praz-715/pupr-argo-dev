@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
+import { GulirKeSini } from '@/components/ui/gulir-ke-sini'
 import { PageHeader, Panel, PanelHeader } from '@/components/ui/panel'
 import { Skeleton, TableSkeleton } from '@/components/ui/skeleton'
 import { formatAngka, formatNip } from '@/lib/format'
@@ -155,6 +156,17 @@ async function IsiRinci({ kode }: { kode: KodeTemuan }) {
 
   return (
     <Panel padat id="rinci-temuan">
+      {/*
+        Klik kartu → langsung meluncur ke daftarnya (permintaan pemilik proses
+        26 Agu 2026). Kartunya `scroll={false}` supaya barisan kartu di atas tidak
+        melompat saat pilihan berganti, jadi tanpa ini daftar 670 baris muncul di
+        BAWAH layar tanpa tanda apa pun — pada layar pendek, satu-satunya perubahan
+        yang terlihat cuma kartu yang berubah warna.
+
+        `kunci={kode}` membuatnya mengulang saat pindah kartu, bukan hanya saat
+        panelnya pertama muncul.
+      */}
+      <GulirKeSini kunci={kode} id="rinci-temuan" />
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3.5 py-3">
         <PanelHeader
           judul={

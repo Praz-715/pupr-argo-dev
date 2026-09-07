@@ -353,7 +353,7 @@ function HasilPencarian({
             <li key={h.nip}>
               <div className="flex items-center justify-between gap-3 rounded-md border border-border px-2.5 py-1.5">
                 <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-medium text-text">
+                  <span className="block text-[13px] font-medium text-text break-words">
                     {h.nama}
                     {h.kotak9 !== null ? (
                       <span className="ml-1.5 text-[11px] font-normal text-text-subtle">
@@ -361,7 +361,7 @@ function HasilPencarian({
                       </span>
                     ) : null}
                   </span>
-                  <span className="block truncate text-[11px] text-text-subtle">
+                  <span className="block text-[11px] text-text-subtle break-words">
                     <span className="tabular">{formatNip(h.nip)}</span>
                     {h.namaJabatan ? ` · ${h.namaJabatan}` : ''}
                   </span>

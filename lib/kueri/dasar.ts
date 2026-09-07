@@ -11,17 +11,61 @@ import 'server-only'
  */
 
 /**
+ * Urutan "asesmen mana yang berlaku" untuk seorang pegawai — SATU definisi.
+ *
+ * Tiga tingkat, berurutan:
+ *   1. **Pilihan verifikator** (`asesmen_dipakai`, doc/sql/022). Sejak satu
+ *      pegawai bisa diases pada beberapa JENJANG sekaligus — terukur 31 dari 32
+ *      pegawai di berkas Fungsional 2026 — "yang terbaru" tidak lagi menjawab
+ *      pertanyaannya: kedua barisnya bertahun sama, jadi pemenangnya ditentukan
+ *      `id DESC`, yaitu urutan impor. Sewenang-wenang, dan tidak terlihat.
+ *   2. **Yang masih berlaku lebih dulu.** Asesmen `Expired` tidak dipakai selama
+ *      masih ada yang berlaku — tapi ia tetap boleh menang kalau SEMUA asesmen
+ *      orang itu kedaluwarsa. Membuangnya sama sekali berarti pegawai yang
+ *      asesmennya lewat masa berlaku kehilangan potkom sepenuhnya dan jatuh ke
+ *      "belum diases", yang menghukumnya jauh lebih keras daripada memakai angka
+ *      lama yang sudah ditandai kedaluwarsa di layar.
+ *   3. **Potkom TERTINGGI.** Permintaan pemilik proses 1 Sep 2026: *"bikin
+ *      defaultnya yang nilainya paling tinggi tapi pastiin ambil yang masih aktif
+ *      kecuali emang udah gak ada yang aktif."* Sebelum ini bawaannya tahun
+ *      terbaru — dan itu keliru untuk data yang ada: 31 pegawai punya dua asesmen
+ *      pada TAHUN YANG SAMA dengan jenjang berbeda (AHLI MUDA vs PENGAWAS),
+ *      sehingga pemenangnya jatuh ke `id DESC`, yaitu urutan impor. Sewenang-wenang,
+ *      dan tidak terlihat.
+ *   4. Tahun asesmen terbaru, lalu `id DESC` — pemecah seri yang deterministik.
+ *      Tanpa keduanya, dua baris yang setara di semua kunci di atas bisa bertukar
+ *      posisi antar permintaan.
+ *
+ * `potkom DESC` menaruh NULL di belakang (perilaku MySQL), jadi asesmen tanpa
+ * potkom tidak pernah menang atas yang punya.
+ *
+ * `EXISTS` dipakai, bukan `a.id = (SELECT ...)`: yang kedua menghasilkan NULL
+ * untuk pegawai yang belum punya pilihan, dan NULL di dalam `ORDER BY ... DESC`
+ * berperilaku berbeda dari 0 di MySQL. `EXISTS` selalu 0 atau 1.
+ *
+ * **Kalau aturan ini disalin ke berkas lain, salinannya akan berselisih** —
+ * dan bentuk selisihnya bukan galat, melainkan dashboard, direktori, dan peta
+ * talenta yang memakai asesmen berbeda untuk orang yang sama. Empat salinan
+ * seperti itu memang pernah ada dan disatukan ke sini pada 31 Agu 2026.
+ */
+export function urutAsesmenBerlaku(alias: string): string {
+  return `EXISTS (SELECT 1 FROM asesmen_dipakai d WHERE d.asesmen_id = ${alias}.id) DESC,
+          (${alias}.status_asesmen <> 'Expired') DESC,
+          ${alias}.potkom DESC,
+          ${alias}.tahun_asesmen DESC, ${alias}.id DESC`
+}
+
+/**
  * Asesmen terbaru per pegawai.
  *
  * `ROW_NUMBER` (bukan `MAX(tahun)` + JOIN) supaya pegawai dengan dua asesmen
- * pada tahun yang sama tidak terhitung ganda; `id DESC` jadi pemecah serinya —
- * baris yang dimasukkan terakhir dianggap paling mutakhir.
+ * pada tahun yang sama tidak terhitung ganda. Urutannya di `urutAsesmenBerlaku()`.
  */
 export const CTE_ASESMEN_TERBARU = `
   WITH asesmen_terbaru AS (
     SELECT * FROM (
       SELECT a.*, ROW_NUMBER() OVER (
-        PARTITION BY a.pegawai_id ORDER BY a.tahun_asesmen DESC, a.id DESC
+        PARTITION BY a.pegawai_id ORDER BY ${urutAsesmenBerlaku('a')}
       ) AS rn
       FROM asesmen_talenta a
     ) x WHERE x.rn = 1

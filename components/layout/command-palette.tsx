@@ -91,7 +91,7 @@ export function CommandPalette({ navigasi }: { navigasi: GrupNav[] }) {
         className="flex h-8 w-full max-w-xs items-center gap-2 rounded-md border border-border bg-surface-2 px-2.5 text-left text-[13px] text-text-subtle transition-colors hover:border-border-strong hover:text-text-muted"
       >
         <Search className="size-3.5 shrink-0" />
-        <span className="min-w-0 flex-1 truncate">Cari halaman, pegawai, jabatan…</span>
+        <span className="min-w-0 flex-1">Cari halaman, pegawai, jabatan…</span>
         <kbd className="shrink-0 rounded border border-border bg-surface px-1 py-px font-sans text-[10px] text-text-subtle">
           Ctrl K
         </kbd>
@@ -136,7 +136,7 @@ export function CommandPalette({ navigasi }: { navigasi: GrupNav[] }) {
                   const isi = (
                     <>
                       <IkonNav nama={item.ikon} className="size-4 shrink-0 text-text-subtle" />
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      <span className="min-w-0 flex-1 break-words">{item.label}</span>
                       {grup ? (
                         <span className="shrink-0 text-[11px] text-text-subtle">{grup}</span>
                       ) : null}
@@ -149,7 +149,7 @@ export function CommandPalette({ navigasi }: { navigasi: GrupNav[] }) {
                   )
 
                   const kelas = cn(
-                    'flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px]',
+                    'flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-1 text-[13px]',
                     i === terpilih ? 'bg-surface-3 text-text' : 'text-text-muted',
                     !tersedia && 'cursor-not-allowed opacity-60',
                   )

@@ -210,7 +210,7 @@ async function IsiPerUnit() {
                 <td className="px-3 py-2">
                   <Link
                     href={`/talenta?unit=${u.unitId}`}
-                    className="block max-w-[20rem] truncate text-text hover:text-accent hover:underline"
+                    className="block max-w-[20rem] text-text hover:text-accent hover:underline break-words"
                     title={u.namaUnit}
                   >
                     {u.namaUnit}

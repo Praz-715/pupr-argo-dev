@@ -8,11 +8,13 @@ import { Fragment, useState, useTransition } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
+import { GulirKeSini } from '@/components/ui/gulir-ke-sini'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { useToast } from '@/components/ui/toast'
 import { simpanNilaiManual } from '@/lib/aksi/skoring'
 import { cn } from '@/lib/cn'
 import { formatBobot, formatNip, formatSkor } from '@/lib/format'
+import { SATUAN_MENTAH } from '@/lib/penilaian'
 import type {
   BarisKandidat,
   BarisRincianSkor,
@@ -67,6 +69,15 @@ export function PanelRincian({
     perKomponen.set(r.namaKomponen, [...(perKomponen.get(r.namaKomponen) ?? []), r])
   }
 
+  /*
+    Baris INDUK — indikator yang punya sub-indikator. Nilainya rata-rata anaknya,
+    jadi ia memang tidak punya sumber data sendiri, dan lencana "tanpa sumber
+    otomatis" di sana menyatakan kekurangan yang sebenarnya bukan kekurangan.
+  */
+  const punyaAnak = new Set(
+    rincian.map((r) => r.parentIndikatorId).filter((id): id is number => id !== null),
+  )
+
   const semuaIndikator = new Map<number, IndikatorRubrik>()
   for (const k of komponen) {
     for (const i of k.indikator) {
@@ -77,6 +88,7 @@ export function PanelRincian({
 
   return (
     <Panel padat id="rincian">
+      <GulirKeSini kunci={kandidat.nip} id="rincian" />
       <div className="border-b border-border px-3.5 py-3">
         <PanelHeader
           judul={
@@ -177,9 +189,34 @@ export function PanelRincian({
                                 <TriangleAlert className="size-3 shrink-0 text-warning" />
                               </span>
                             ) : null}
-                            {r.kunci === null ? (
-                              <Badge tone="peringatan" title="Tidak punya sumber data otomatis">
-                                manual
+                            {/*
+                              Dulu berbunyi "manual" — kata yang di halaman profil
+                              berarti "diisi manusia", sementara di sini artinya
+                              "tidak punya sumber data otomatis". Dua arti untuk
+                              satu kata pada tabel yang sama isinya, dan kolom
+                              Sumber di kanan sudah memakai kata itu dalam arti
+                              yang pertama.
+                            */}
+                            {r.kunci === null && !punyaAnak.has(r.rubrikIndikatorId) ? (
+                              <Badge
+                                tone="peringatan"
+                                title="Indikator ini tidak punya sumber data otomatis — nilainya harus diisi manusia"
+                              >
+                                tanpa sumber otomatis
+                              </Badge>
+                            ) : r.kunci === 'LAMA_JABATAN' && r.sumberNilai !== 'MANUAL' ? (
+                              /*
+                                Sama dengan yang di halaman profil (`rincian-skor.tsx`)
+                                — kasus Maul, riwayat belum terpetakan → jatuh ke
+                                `tmt_jabatan` → meleset diam-diam. Ditampilkan untuk
+                                SEMUA baris Lama Jabatan otomatis, bukan hanya yang
+                                `perluReview`.
+                              */
+                              <Badge
+                                tone="peringatan"
+                                title="Dihitung otomatis dari riwayat jabatan — kalau riwayatnya belum lengkap di sistem, angka ini bisa jatuh ke tanggal SK terakhir dan meleset jauh. Verifikasi lewat profil pegawainya."
+                              >
+                                perlu verifikasi
                               </Badge>
                             ) : null}
                           </span>
@@ -191,10 +228,23 @@ export function PanelRincian({
                             formatBobot(r.bobot)
                           )}
                         </td>
-                        <td className="tabular px-3 py-2 text-text-muted">{r.nilaiMentah ?? '—'}</td>
+                        <td className="tabular px-3 py-2 text-text-muted">
+                          {(() => {
+                            if (r.nilaiMentah === null) return '—'
+                            const n = Number(r.nilaiMentah)
+                            const satuan = r.kunci === null ? undefined : SATUAN_MENTAH[r.kunci]
+                            if (satuan === undefined || r.nilaiMentah.trim() === '' || Number.isNaN(n))
+                              return r.nilaiMentah
+                            return (
+                              <span title={satuan.jelaskan(n)}>
+                                {formatSkor(n)} {satuan.satuan}
+                              </span>
+                            )
+                          })()}
+                        </td>
                         <td className="px-3 py-2 text-text-subtle">
                           <span
-                            className="block max-w-[18rem] truncate"
+                            className="block max-w-[18rem] break-words"
                             title={r.kategoriTerpilih ?? ''}
                           >
                             {r.kategoriTerpilih ?? '—'}

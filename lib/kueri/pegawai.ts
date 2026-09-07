@@ -2,12 +2,23 @@ import 'server-only'
 
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
 import { hitungKelengkapan, type HasilKelengkapan } from '../kelengkapan'
+import { adalahKategoriCatatan, type KategoriCatatan } from '../catatan-pegawai'
+import { bulanKeTahun } from '../masa-kerja'
+import { ringkasPengalamanJenjang, type RingkasJenjang } from '../pengalaman-jenjang'
+import { adalahKunciIndikator, type KunciIndikator } from '../penilaian'
 import { normalisasiGolongan, type TingkatPendidikan } from '../normalisasi'
 import { hitungUsia, parseNip, proyeksiPensiun, selisihTahun } from '../nip'
 import type { Eselon } from '../scoring/eligibility'
 import type { Kotak9 } from '../scoring'
 import { arahBawaanUrut } from '../urut'
-import { CTE_ASESMEN_TERBARU, SUBKUERI_UNIT_TURUNAN, filterSumber } from './dasar'
+import {
+  CTE_ASESMEN_TERBARU,
+  SUBKUERI_UNIT_TURUNAN,
+  filterSumber,
+  urutAsesmenBerlaku,
+} from './dasar'
+import { ambilOpsiRumpun, klausaRumpun, type OpsiRumpun } from './rumpun'
+import { sqlFaktaButir } from './kelengkapan-sql'
 
 /**
  * Kueri Direktori Pegawai & Profil Talenta.
@@ -48,6 +59,17 @@ export interface FilterDirektori {
   cari?: string
   unitId?: number
   /**
+   * Satu jabatan tertentu — dipakai tautan dari pohon organisasi
+   * (`/master/unit`), yang memajang jumlah penghuni per jabatan.
+   *
+   * Tidak punya kontrol di toolbar penyaring, dan itu disengaja: ia bukan
+   * penyaring yang dipilih orang dari daftar melainkan tujuan sebuah tautan.
+   * Tombol Reset melakukan `router.push(pathname)` sehingga membersihkan seluruh
+   * parameter termasuk yang ini — tanpa itu, penyaring tanpa kontrol akan jadi
+   * keadaan yang tidak bisa dikeluarkan pengguna.
+   */
+  jabatanId?: number
+  /**
    * Batas unit yang WAJIB, dari peran pengguna (`lib/lingkup.ts`) — bukan
    * pilihan yang bisa dihapus dari URL.
    *
@@ -60,6 +82,15 @@ export interface FilterDirektori {
   unitWajib?: number | null
   eselon?: string
   jenjang?: string
+  /**
+   * Rumpun jabatan — penyaring KASAR "kepala balai", bukan "kepala balai apa".
+   *
+   * Permintaan pemilik proses (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4):
+   * penyaring yang sama tersedia di setiap modul yang memajang kandidat, dan
+   * **bawaannya tidak menyaring**. Aturannya di `lib/kueri/rumpun.ts`; rumpun
+   * yang tidak dikenali diabaikan, bukan menghasilkan nol baris.
+   */
+  rumpun?: string
   tingkatPendidikan?: string
   kotak9?: number
   statusAsesmen?: string
@@ -87,12 +118,31 @@ export interface BarisDirektori {
   tahunAsesmen: number | null
   statusAsesmen: string | null
   usia: number | null
+  /**
+   * Kode catatan (HDS/HDB/TBTL/TBS) — dipakai MENANDAI barisnya, bukan menilai.
+   *
+   * `keterangan` ikut supaya penandanya bisa dijawab dari `title` baris tanpa
+   * membuka profilnya; warna sendirian tidak terbaca pembaca layar maupun pengguna
+   * CVD.
+   */
+  catatanKategori: KategoriCatatan | null
+  catatanKeterangan: string | null
 }
 
 /** Susun klausa WHERE + parameternya dari filter. */
-function bangunFilter(f: FilterDirektori): { where: string; params: unknown[] } {
+function bangunFilter(
+  f: FilterDirektori,
+  rumpun: { sql: string; params: string[] },
+): { where: string; params: unknown[] } {
   const syarat: string[] = []
   const params: unknown[] = []
+
+  // Diselesaikan pemanggilnya (butuh kueri master jabatan), disisipkan di sini
+  // supaya daftar dan penghitung halamannya tidak bisa memakai penyaring berbeda.
+  if (rumpun.sql !== '') {
+    syarat.push(rumpun.sql.replace(/^ AND /, ''))
+    params.push(...rumpun.params)
+  }
 
   if (f.cari && f.cari.trim() !== '') {
     // Cari di nama ATAU NIP. NIP dibersihkan dari spasi supaya "19780525 1998"
@@ -111,6 +161,10 @@ function bangunFilter(f: FilterDirektori): { where: string; params: unknown[] } 
   if (f.unitWajib !== undefined && f.unitWajib !== null) {
     syarat.push(`u.id IN (${SUBKUERI_UNIT_TURUNAN})`)
     params.push(f.unitWajib)
+  }
+  if (f.jabatanId !== undefined) {
+    syarat.push('j.id = ?')
+    params.push(f.jabatanId)
   }
   if (f.eselon) {
     syarat.push('j.eselon = ?')
@@ -151,7 +205,7 @@ export async function ambilDirektori(f: FilterDirektori): Promise<{
   halaman: number
   ukuranHalaman: number
 }> {
-  const { where, params } = bangunFilter(f)
+  const { where, params } = bangunFilter(f, await klausaRumpun('j.nama_jabatan', f.rumpun))
 
   const kunciUrut = f.urut && KOLOM_URUT[f.urut] ? f.urut : 'nama'
   const kolomUrut = KOLOM_URUT[kunciUrut]!
@@ -165,7 +219,8 @@ export async function ambilDirektori(f: FilterDirektori): Promise<{
     SELECT p.id, p.nip, p.nama_lengkap, p.golongan, p.pangkat,
            j.nama_jabatan, j.eselon, j.jenjang, u.nama_unit,
            a.jenis_asesmen, a.potkom, a.nilai_integritas, a.rating_kinerja,
-           a.kotak_9, a.tahun_asesmen, a.status_asesmen, a.id AS asesmen_id
+           a.kotak_9, a.tahun_asesmen, a.status_asesmen, a.id AS asesmen_id,
+           p.catatan_kategori, p.catatan_keterangan
     FROM pegawai p
     LEFT JOIN jabatan j ON j.id = p.jabatan_id
     LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
@@ -217,6 +272,12 @@ export async function ambilDirektori(f: FilterDirektori): Promise<{
         tahunAsesmen: angka(r.tahun_asesmen as number),
         statusAsesmen: r.status_asesmen === null ? null : String(r.status_asesmen),
         usia: hitungUsia(terurai.tanggalLahir, sekarang),
+        catatanKategori:
+          r.catatan_kategori !== null && adalahKategoriCatatan(String(r.catatan_kategori))
+            ? (String(r.catatan_kategori) as KategoriCatatan)
+            : null,
+        catatanKeterangan:
+          r.catatan_keterangan === null ? null : String(r.catatan_keterangan),
       }
     }),
     total: angkaWajib(hitung?.n),
@@ -258,10 +319,15 @@ export interface OpsiFilter {
    * pasti menjawab nol baris.
    */
   statusAsesmen: string[]
+  /**
+   * Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4) — penyaring kasar
+   * yang bawaannya TIDAK menyaring. Aturannya di `lib/kueri/rumpun.ts`.
+   */
+  rumpun: OpsiRumpun[]
 }
 
 export async function ambilOpsiFilter(): Promise<OpsiFilter> {
-  const [unit, eselon, jenjang, pendidikan, kotak, status] = await Promise.all([
+  const [unit, eselon, jenjang, pendidikan, kotak, status, rumpun] = await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT u.id, u.nama_unit,
               CASE WHEN u.parent_id IS NULL THEN 0
@@ -307,6 +373,7 @@ export async function ambilOpsiFilter(): Promise<OpsiFilter> {
           ${filterSumber('p')}
         LIMIT 5`,
     ),
+    ambilOpsiRumpun(null),
   ])
 
   return {
@@ -320,6 +387,7 @@ export async function ambilOpsiFilter(): Promise<OpsiFilter> {
     tingkatPendidikan: pendidikan.map((p) => String(p.tingkat_pendidikan)),
     kotak9: kotak.map((k) => Number(k.kotak_9)),
     statusAsesmen: status.map((r) => String(r.status)),
+    rumpun,
   }
 }
 
@@ -369,6 +437,31 @@ export interface ProfilPegawai {
   tahunKePensiun: number | null
   segeraPensiun: boolean
   lamaMenjabatTahun: number | null
+  /**
+   * Jejak pemeriksaan rekam jejak disiplin (`doc/sql/020`). `null` = **belum pernah
+   * diperiksa**, yang berbeda dari "diperiksa dan hasilnya bersih".
+   *
+   * Pembedaan itu seluruh gunanya kolom ini: mesin skor sudah memberi 100 untuk
+   * ketiadaan catatan, jadi tanpa jejak ini profil tidak bisa menyatakan apakah
+   * angka itu pernah diperiksa siapa pun — padahal 15% match score bergantung
+   * padanya.
+   */
+  hukdisVerifikasi: { olehNama: string | null; pada: Date | null; catatan: string | null } | null
+
+  /**
+   * Kotak CATATAN berkategori (`2 sept- masukan sistem informasi.pdf` butir 1).
+   *
+   * Terpisah dari `hukdisVerifikasi` walau keduanya duduk di panel yang sama:
+   * yang satu menyatakan sebuah pemeriksaan pernah dilakukan, yang ini menandai
+   * sesuatu yang perlu dilihat lagi. Digabung, mengisi salah satunya akan terbaca
+   * seperti menjawab yang lain.
+   */
+  catatan: {
+    kategori: KategoriCatatan
+    keterangan: string | null
+    olehNama: string | null
+    pada: Date | null
+  } | null
 }
 
 /**
@@ -405,11 +498,14 @@ export async function ambilProfil(
       : ''
   const r = await kueriSatu<Record<string, unknown>>(
     `SELECT p.*, j.nama_jabatan, j.jenis_jabatan, j.jenjang, j.eselon,
-            u.nama_unit, ui.nama_unit AS unit_induk
+            u.nama_unit, ui.nama_unit AS unit_induk,
+            vhd.nama AS hukdis_verifikator, vct.nama AS catatan_penulis
      FROM pegawai p
      LEFT JOIN jabatan j ON j.id = p.jabatan_id
      LEFT JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      LEFT JOIN unit_organisasi ui ON ui.id = u.parent_id
+     LEFT JOIN users vhd ON vhd.id = p.hukdis_diverifikasi_oleh
+     LEFT JOIN users vct ON vct.id = p.catatan_oleh
      WHERE p.nip = ?${batasUnit}${filterSumber('p')}`,
     batasUnit === '' ? [nip] : [nip, unitWajib],
   )
@@ -471,6 +567,39 @@ export async function ambilProfil(
     tahunKePensiun: pensiun.tahunTersisa,
     segeraPensiun: pensiun.segeraPensiun,
     lamaMenjabatTahun: selisihTahun(tmtJabatan, sekarang),
+    /*
+      `pada` yang jadi penanda "sudah diperiksa", bukan `oleh`: FK-nya
+      `ON DELETE SET NULL`, jadi pengguna yang dihapus akan mengosongkan `oleh`
+      sementara pemeriksaannya memang pernah terjadi. Membaca `oleh` sebagai
+      penanda berarti verifikasi hilang begitu akun pemeriksanya ditutup.
+    */
+    hukdisVerifikasi:
+      r.hukdis_diverifikasi_pada === null || r.hukdis_diverifikasi_pada === undefined
+        ? null
+        : {
+            olehNama: r.hukdis_verifikator === null ? null : String(r.hukdis_verifikator),
+            pada: new Date(String(r.hukdis_diverifikasi_pada)),
+            catatan:
+              r.hukdis_catatan_verifikasi === null ? null : String(r.hukdis_catatan_verifikasi),
+          },
+
+    /*
+      Penandanya `catatan_kategori`, BUKAN `catatan_pada` seperti pada verifikasi
+      hukdis — dan bedanya beralasan: di sana yang dicatat peristiwa "pernah
+      diperiksa" sehingga waktunya yang menentukan, di sini yang dicatat KODENYA.
+      Kode kosong berarti tidak ada catatan, apa pun isi kolom waktunya.
+    */
+    catatan:
+      r.catatan_kategori === null ||
+      r.catatan_kategori === undefined ||
+      !adalahKategoriCatatan(String(r.catatan_kategori))
+        ? null
+        : {
+            kategori: String(r.catatan_kategori) as KategoriCatatan,
+            keterangan: r.catatan_keterangan === null ? null : String(r.catatan_keterangan),
+            olehNama: r.catatan_penulis === null ? null : String(r.catatan_penulis),
+            pada: r.catatan_pada === null ? null : new Date(String(r.catatan_pada)),
+          },
   }
 }
 
@@ -497,6 +626,21 @@ export interface RiwayatJabatanProfil {
   tanggalMulai: string | null
   tanggalAkhir: string | null
   lamaTahun: number | null
+  /**
+   * Isi kolom `lama_bulan` APA ADANYA — nilai awal bidang "Lama menjabat (bulan)"
+   * di dialog ubah. `lamaTahun` bukan penggantinya: ia sudah dibulatkan ke tahun
+   * dan bisa berasal dari tanggal, jadi memakainya sebagai nilai awal akan
+   * menuliskan ulang durasi yang tidak pernah diisi siapa pun.
+   */
+  lamaBulan: number | null
+  /**
+   * Dari mana `lamaTahun` datang. Dibedakan supaya profil tidak memajang angka
+   * turunan tanggal dan angka isian sumber sebagai hal yang sama: yang pertama
+   * bisa diperiksa terhadap SK-nya, yang kedua hanya bisa dipercayai.
+   *
+   * `null` = lamanya tidak diketahui.
+   */
+  sumberLama: 'TANGGAL' | 'DURASI' | null
   noSk: string | null
   /** Penugasan non-definitif (Plt/Plh) — input sub-indikator Substansi. */
   nonDefinitif: 'Plt' | 'Plh' | null
@@ -505,7 +649,7 @@ export interface RiwayatJabatanProfil {
 export async function ambilRiwayatJabatan(pegawaiId: number): Promise<RiwayatJabatanProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
     `SELECT r.id, r.urutan, r.jabatan_nama_mentah, r.jabatan_id, r.jenis_penugasan,
-            r.unit_kerja_mentah, r.tanggal_mulai, r.tanggal_akhir,
+            r.unit_kerja_mentah, r.tanggal_mulai, r.tanggal_akhir, r.lama_bulan,
             r.no_sk, j.nama_jabatan, j.jenjang, j.eselon, u.nama_unit
      FROM riwayat_jabatan r
      LEFT JOIN jabatan j ON j.id = r.jabatan_id
@@ -537,7 +681,21 @@ export async function ambilRiwayatJabatan(pegawaiId: number): Promise<RiwayatJab
       namaUnit: r.nama_unit === null ? null : String(r.nama_unit),
       tanggalMulai: r.tanggal_mulai ? String(r.tanggal_mulai) : null,
       tanggalAkhir: r.tanggal_akhir ? String(r.tanggal_akhir) : null,
-      lamaTahun: selisihTahun(mulai, akhir ?? sekarang),
+      /*
+        Tanggal lebih dulu, durasi sebagai cadangan — urutan yang sama dengan
+        `nilaiLamaJabatan()`. Terbalik, profil dan skor bisa menyebut lama yang
+        berbeda untuk baris yang sama, dan selisihnya tidak akan pernah dijelaskan
+        halaman mana pun (terukur ada: sumber menyebut 2 tahun 7 bulan sementara
+        tanggalnya menyiratkan 1,1 tahun).
+      */
+      lamaBulan: r.lama_bulan === null ? null : Number(r.lama_bulan),
+      lamaTahun: selisihTahun(mulai, akhir ?? sekarang) ?? bulanKeTahun(r.lama_bulan as number | null),
+      sumberLama:
+        selisihTahun(mulai, akhir ?? sekarang) !== null
+          ? 'TANGGAL'
+          : r.lama_bulan === null
+            ? null
+            : 'DURASI',
       noSk: r.no_sk === null ? null : String(r.no_sk),
       nonDefinitif: /\b(plt|pelaksana tugas)\b/i.test(teks)
         ? 'Plt'
@@ -596,6 +754,14 @@ export interface AsesmenProfil {
   id: number
   tahunAsesmen: number
   jenisAsesmen: string
+  /**
+   * Jenjang tempat asesmen ini dinilai (doc/sql/022). `null` untuk baris yang
+   * masuk sebelum kolomnya ada — bukan "tidak berjenjang", melainkan tidak
+   * tercatat, dan UI menuliskannya begitu.
+   */
+  jenjangAsesmen: string | null
+  /** Baris inilah yang dipakai menilai pegawai ini (`asesmen_dipakai`). */
+  dipakai: boolean
   statusAsesmen: string
   nilaiKinerjaY: number
   nilaiPotensialX: number
@@ -610,10 +776,19 @@ export interface AsesmenProfil {
 
 export async function ambilRiwayatAsesmen(pegawaiId: number): Promise<AsesmenProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT id, tahun_asesmen, jenis_asesmen, status_asesmen, nilai_kinerja_y, nilai_potensial_x,
-            potkom, nilai_integritas, nilai_talenta, kotak_9, tahun_kinerja, rating_kinerja
-     FROM asesmen_talenta WHERE pegawai_id = ?
-     ORDER BY tahun_asesmen DESC`,
+    /*
+      Diurutkan dengan aturan yang SAMA dengan `urutAsesmenBerlaku()`, jadi baris
+      yang benar-benar dipakai selalu di puncak. `terbaru = asesmen[0]` di
+      halaman profil bergantung pada itu: kalau daftarnya diurut berbeda, ringkasan
+      di kepala panel akan menyebut asesmen yang BUKAN yang dipakai menilai — dua
+      angka berbeda di satu halaman, tanpa ada yang menjelaskan selisihnya.
+    */
+    `SELECT a.id, a.tahun_asesmen, a.jenis_asesmen, a.jenjang_asesmen, a.status_asesmen,
+            a.nilai_kinerja_y, a.nilai_potensial_x, a.potkom, a.nilai_integritas,
+            a.nilai_talenta, a.kotak_9, a.tahun_kinerja, a.rating_kinerja,
+            EXISTS (SELECT 1 FROM asesmen_dipakai d WHERE d.asesmen_id = a.id) AS dipakai
+     FROM asesmen_talenta a WHERE a.pegawai_id = ?
+     ORDER BY ${urutAsesmenBerlaku('a')}`,
     [pegawaiId],
   )
 
@@ -621,6 +796,8 @@ export async function ambilRiwayatAsesmen(pegawaiId: number): Promise<AsesmenPro
     id: Number(r.id),
     tahunAsesmen: Number(r.tahun_asesmen),
     jenisAsesmen: String(r.jenis_asesmen),
+    jenjangAsesmen: r.jenjang_asesmen === null ? null : String(r.jenjang_asesmen),
+    dipakai: Number(r.dipakai) === 1,
     statusAsesmen: String(r.status_asesmen),
     nilaiKinerjaY: angkaWajib(r.nilai_kinerja_y as string),
     nilaiPotensialX: angkaWajib(r.nilai_potensial_x as string),
@@ -644,11 +821,22 @@ export interface KinerjaProfil {
   nilaiKinerja: number | null
   nilaiPerilaku: number | null
   predikat: string
+  /**
+   * Asal baris ini — dipakai panel profil untuk MENYEBUT sumbernya dengan benar.
+   *
+   * Sebelumnya panel itu memaku kalimat "nilai granular dari e-Kinerja". Sejak
+   * baris TAHUNAN diisi dari predikat Excel (24 Agu 2026) kalimat itu jadi tidak
+   * benar: angkanya skor predikat, bukan pengukuran granular, dan sumbernya
+   * bukan e-Kinerja. Deskripsi yang salah menyebut sumber lebih berbahaya
+   * daripada tidak menyebut apa pun — ia membuat orang percaya integrasi yang
+   * belum ada.
+   */
+  sumberSync: string
 }
 
 export async function ambilKinerja(pegawaiId: number): Promise<KinerjaProfil[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT id, tahun, periode_skp, nilai_kinerja, nilai_perilaku, predikat
+    `SELECT id, tahun, periode_skp, nilai_kinerja, nilai_perilaku, predikat, sumber_sync
      FROM kinerja_periode WHERE pegawai_id = ?
      ORDER BY tahun DESC, FIELD(periode_skp,'TW1','TW2','TW3','TAHUNAN')`,
     [pegawaiId],
@@ -660,6 +848,7 @@ export async function ambilKinerja(pegawaiId: number): Promise<KinerjaProfil[]> 
     nilaiKinerja: angka(r.nilai_kinerja as string),
     nilaiPerilaku: angka(r.nilai_perilaku as string),
     predikat: String(r.predikat),
+    sumberSync: String(r.sumber_sync ?? ''),
   }))
 }
 
@@ -709,6 +898,14 @@ export interface RincianIndikator {
    */
   kategori: KategoriRubrik[]
   namaIndikator: string
+  /**
+   * Sumber data otomatis indikator ini (`rubrik_indikator.kunci_sistem`).
+   *
+   * Dipakai tampilan untuk memberi SATUAN pada nilai mentah — "0,89" tidak berarti
+   * apa-apa sampai ia dibaca sebagai "0,89 tahun" (lihat `SATUAN_MENTAH`). `null`
+   * berarti indikatornya memang tidak punya sumber otomatis.
+   */
+  kunciSistem: KunciIndikator | null
   indukNama: string | null
   bobot: number | null
   nilaiMentah: string | null
@@ -731,6 +928,43 @@ export interface MatchScoreProfil {
   statusTalentPool: string | null
   ranking: number | null
   rincian: RincianIndikator[]
+  /**
+   * `true` bila skor ini dihitung **sebelum** perubahan terakhir pada rekam jejak
+   * disiplin pegawainya — jadi angka Integritas & Moralitas di baris ini BELUM
+   * memperhitungkannya.
+   *
+   * ## Kenapa penanda ini perlu ada
+   *
+   * `match_score` kolom TERSIMPAN; ia hanya berubah saat Hitung Ulang dijalankan.
+   * Akibatnya profil bisa memajang dua panel yang saling bertentangan di satu
+   * halaman: "1 hukuman aktif · Berat" di panel Integritas, dan "Verifikasi Rekam
+   * Jejak Disiplin 100 · Tidak Pernah" di panel Kecocokan. Itu benar-benar terjadi
+   * 25 Agu 2026 dan dilaporkan pemilik proses sebagai "nilai disiplinnya masih 100"
+   * — kesimpulan wajarnya "fiturnya tidak berfungsi", padahal yang kurang cuma satu
+   * kali hitung ulang.
+   *
+   * ## Kenapa dibandingkan dengan `audit_log`, bukan `hukuman_disiplin.created_at`
+   *
+   * Tabel itu tidak punya `updated_at`, jadi menonaktifkan catatan (yang justru
+   * menaikkan skor kembali) tidak menggeser `created_at` sama sekali — penanda yang
+   * membacanya akan bilang "sudah mutakhir" atas skor yang masih memakai hukuman
+   * yang sudah dicabut. `audit_log` mencatat BUAT, UBAH, dan UBAH_STATUS-nya
+   * berikut waktunya, jadi ia satu-satunya sumber yang tahu kapan terakhir kali
+   * rekam jejak itu berubah.
+   */
+  disiplinLebihBaru: boolean
+  /**
+   * Status jabatan targetnya (`AKTIF` · `DRAFT` · `NONAKTIF`).
+   *
+   * Wajib ditampilkan, dan alasannya bukan kelengkapan: panel ini mengurutkan
+   * menurut skor MENURUN, sementara target DRAFT & NONAKTIF **tidak pernah dihitung
+   * ulang**. Jadi baris yang skornya paling basi justru cenderung paling TINGGI dan
+   * duduk di puncak daftar — terukur pada satu pegawai: 96,67 (draft, dihitung
+   * sebelum catatan disiplinnya masuk) di atas 85,42 (aktif, sudah
+   * memperhitungkannya). Tanpa penanda status, angka teratas itu dibaca sebagai
+   * skor yang berlaku.
+   */
+  statusTarget: string
 }
 
 /**
@@ -741,23 +975,54 @@ export interface MatchScoreProfil {
 export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProfil[]> {
   const [skor, rincian, kategori] = await Promise.all([
     kueri<Record<string, unknown>>(
-      `SELECT ms.id, ms.jabatan_target_id, jt.kode_target, jt.nama_target,
+      `WITH ubahan_disiplin AS (
+         /*
+           Kapan rekam jejak disiplin pegawai ini terakhir berubah — mencakup baris
+           yang dibuat DAN status yang dialihkan. Diambil dari dua sisi lalu
+           di-GREATEST: created_at barisnya sendiri (untuk baris yang jejak
+           auditnya belum ada, mis. hasil seed) dan waktu jejak audit terakhir yang
+           menyentuh baris itu.
+         */
+         SELECT GREATEST(
+                  COALESCE(MAX(h.created_at), '1000-01-01'),
+                  COALESCE((SELECT MAX(a.created_at) FROM audit_log a
+                             WHERE a.entitas = 'hukuman_disiplin'
+                               AND a.entitas_id IN (SELECT id FROM hukuman_disiplin
+                                                     WHERE pegawai_id = ?)), '1000-01-01')
+                ) AS terakhir,
+                COUNT(*) AS jumlah
+           FROM hukuman_disiplin h
+          WHERE h.pegawai_id = ?
+       )
+       SELECT ms.id, ms.jabatan_target_id, jt.kode_target, jt.nama_target, jt.status,
               ms.skor_potensi_kompetensi, ms.skor_kualifikasi_jabatan,
               ms.skor_integritas_moralitas, ms.skor_total, ms.eligible,
-              ms.catatan_eligibility, tp.status AS status_pool, tp.ranking
+              ms.catatan_eligibility, tp.status AS status_pool, tp.ranking,
+              /*
+                Hanya untuk jabatan target AKTIF. Draft & nonaktif memang tidak
+                pernah dihitung ulang — mereka inert, tidak masuk peringkat, tidak
+                muncul di pemilih Peta Talenta — jadi menandainya "perlu Hitung
+                Ulang" memunculkan puluhan peringatan atas baris yang tidak dipakai
+                memutuskan apa pun. Terukur pada satu pegawai: 8 baris aktif vs 45
+                baris draft/nonaktif. Peringatan yang muncul di 45 dari 53 baris
+                akan berhenti dibaca, dan yang 8 itu ikut terabaikan bersamanya.
+              */
+              (ud.jumlah > 0 AND jt.status = 'AKTIF' AND ms.computed_at < ud.terakhir)
+                AS disiplin_lebih_baru
        FROM match_score ms
        JOIN jabatan_target jt ON jt.id = ms.jabatan_target_id
+       CROSS JOIN ubahan_disiplin ud
        LEFT JOIN talent_pool tp ON tp.pegawai_id = ms.pegawai_id
                                AND tp.jabatan_target_id = ms.jabatan_target_id
        WHERE ms.pegawai_id = ?
        ORDER BY ms.skor_total DESC`,
-      [pegawaiId],
+      [pegawaiId, pegawaiId, pegawaiId],
     ),
     kueri<Record<string, unknown>>(
       `SELECT ms.jabatan_target_id, i.nama_indikator, ind.nama_indikator AS induk_nama,
               d.bobot_indikator, d.nilai_mentah, d.kategori_terpilih, d.skor,
               d.perlu_review, d.sumber_nilai, d.id,
-              d.rubrik_indikator_id, i.mode_skor
+              d.rubrik_indikator_id, i.mode_skor, i.kunci_sistem
        FROM match_score_detail d
        JOIN match_score ms ON ms.id = d.match_score_id
        JOIN rubrik_indikator i ON i.id = d.rubrik_indikator_id
@@ -805,6 +1070,10 @@ export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProf
       modeSkor: String(r.mode_skor) === 'NILAI_LANGSUNG' ? 'NILAI_LANGSUNG' : 'KATEGORI_TETAP',
       kategori: kategoriPerIndikator.get(idIndikator) ?? [],
       namaIndikator: String(r.nama_indikator),
+      kunciSistem:
+        r.kunci_sistem === null || !adalahKunciIndikator(String(r.kunci_sistem))
+          ? null
+          : (String(r.kunci_sistem) as KunciIndikator),
       indukNama: r.induk_nama === null ? null : String(r.induk_nama),
       bobot: angka(r.bobot_indikator as string),
       nilaiMentah: r.nilai_mentah === null ? null : String(r.nilai_mentah),
@@ -829,6 +1098,8 @@ export async function ambilMatchScore(pegawaiId: number): Promise<MatchScoreProf
     statusTalentPool: r.status_pool === null ? null : String(r.status_pool),
     ranking: angka(r.ranking as number),
     rincian: perTarget.get(Number(r.jabatan_target_id)) ?? [],
+    disiplinLebihBaru: Number(r.disiplin_lebih_baru ?? 0) === 1,
+    statusTarget: String(r.status ?? 'DRAFT'),
   }))
 }
 
@@ -858,7 +1129,19 @@ export async function ambilKelengkapan(
        (EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id)
          AND NOT EXISTS (SELECT 1 FROM riwayat_jabatan rj WHERE rj.pegawai_id = p.id
                            AND rj.jabatan_id IS NULL))                 AS riwayat_terpetakan,
-       EXISTS (SELECT 1 FROM hukuman_disiplin h WHERE h.pegawai_id = p.id) AS disiplin_ada
+       /*
+         Ekspresinya DIIMPOR, tidak disalin. Sebelum ini berkas ini menuliskan
+         EXISTS(... hukuman_disiplin ...) sendiri sementara definisi resminya ada di
+         lib/kueri/kelengkapan-sql.ts -- dua salinan atas satu aturan, dan begitu
+         salah satunya berubah (persis yang terjadi 25 Agu 2026 saat ceklis
+         verifikasi ikut dihitung) badge di profil dan rollup per unit menyatakan
+         angka berbeda untuk orang yang sama, tanpa satu pun galat.
+
+         (Tanpa backtick: ini komentar SQL DI DALAM template literal — backtick di
+         sini mengakhiri stringnya, dan galatnya muncul belasan baris jauhnya.
+         Jebakan yang sudah tercatat di CLAUDE.md dan kena tiga kali hari ini.)
+       */
+       ${sqlFaktaButir('disiplinTerverifikasi')} AS disiplin_ada
      FROM pegawai p WHERE p.id = ?`,
     [pegawaiId],
   )
@@ -880,4 +1163,36 @@ export async function ambilKelengkapan(
     riwayatJabatanTerpetakan: b('riwayat_terpetakan'),
     disiplinTerverifikasi: b('disiplin_ada'),
   })
+}
+
+/**
+ * Ringkasan lama pengalaman per JENJANG untuk pemilih "Isi manual: Lama Jabatan".
+ *
+ * Permintaan pemilik proses (`2 sept- masukan sistem informasi.pdf`, butir 3):
+ * verifikator memilih jenjang mana yang dipakai, bukan mengetik angkanya.
+ *
+ * Dibaca dari `riwayat_jabatan` APA ADANYA — termasuk baris yang belum dipetakan
+ * ke master, yang di data nyata adalah **1.369 dari 1.405 baris**. Justru baris
+ * itulah yang selama ini hilang dari perhitungan: `nilaiLamaJabatan()` hanya
+ * memakai baris yang jenjangnya sudah diketahui, sehingga hampir semua orang
+ * jatuh ke `tmt_jabatan`. Penjumlahan & klasifikasinya di `lib/pengalaman-jenjang.ts`
+ * (murni & teruji); di sini hanya pembacaannya.
+ */
+export async function ambilPengalamanJenjang(pegawaiId: number): Promise<RingkasJenjang[]> {
+  const baris = await kueri<Record<string, unknown>>(
+    `SELECT jabatan_nama_mentah, unit_kerja_mentah, tanggal_mulai, tanggal_akhir, lama_bulan
+       FROM riwayat_jabatan
+      WHERE pegawai_id = ?
+      ORDER BY urutan`,
+    [pegawaiId],
+  )
+  return ringkasPengalamanJenjang(
+    baris.map((r) => ({
+      namaMentah: String(r.jabatan_nama_mentah),
+      namaUnit: r.unit_kerja_mentah === null ? null : String(r.unit_kerja_mentah),
+      tanggalMulai: r.tanggal_mulai === null ? null : new Date(String(r.tanggal_mulai)),
+      tanggalAkhir: r.tanggal_akhir === null ? null : new Date(String(r.tanggal_akhir)),
+      lamaBulan: r.lama_bulan === null ? null : Number(r.lama_bulan),
+    })),
+  )
 }

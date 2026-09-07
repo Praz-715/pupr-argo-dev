@@ -1,10 +1,7 @@
-'use client'
-
-import Link from 'next/link'
-
-import { Badge } from '@/components/ui/badge'
-import { DataTable, type KolomTabel } from '@/components/ui/data-table'
-import { formatNip, formatSkor, formatSkorRingkas } from '@/lib/format'
+import {
+  TabelPegawaiKotak9,
+  type BarisPegawaiKotak9,
+} from '@/app/(app)/_komponen/tabel-pegawai-kotak9'
 import type { AnggotaSel } from '@/lib/kueri/peta-talenta'
 
 /**
@@ -14,10 +11,15 @@ import type { AnggotaSel } from '@/lib/kueri/peta-talenta'
  * Potensial, Nilai Talenta apa adanya), bukan sebagai titik yang digeser ke
  * koordinat bukan miliknya (phase.md §7 Fase 3).
  *
- * Seluruh kolom **tidak bisa diurutkan** dengan sengaja: kuerinya mengurutkan
- * tetap menurut Nilai Talenta menurun. Menampilkan tombol urut yang tidak
- * mengubah apa pun berarti membuat klik mati (phase.md §5.2), jadi urutannya
- * dijelaskan di deskripsi panel dan tombolnya tidak dipasang.
+ * Tabelnya sendiri ada di `TabelPegawaiKotak9`, dipakai bersama drill-down
+ * dashboard (24 Agu 2026) — alasan lengkapnya di docblock komponen itu. Berkas ini
+ * tinggal pembungkus supaya pemanggilnya di `peta-talenta/page.tsx` tidak berubah
+ * dan nama panelnya tetap terbaca dari halamannya.
+ *
+ * `AnggotaSel` sengaja **tidak** di-alias ke `BarisPegawaiKotak9`: pemeriksaan
+ * struktural di baris `daftar` di bawah yang menegakkan keduanya tetap identik,
+ * dan kalau salah satu kueri kehilangan satu field, yang muncul galat kompilasi di
+ * sini — bukan kolom kosong di layar.
  */
 export function DaftarSel({
   daftar,
@@ -25,6 +27,7 @@ export function DaftarSel({
   halaman,
   ukuranHalaman,
   labelX = 'Potensial',
+  jabatanTargetId,
 }: {
   daftar: AnggotaSel[]
   total: number
@@ -32,137 +35,19 @@ export function DaftarSel({
   ukuranHalaman: number
   /** Nama sumbu X yang sedang dipakai — lihat catatan di `TampilanPeta`. */
   labelX?: string
+  /** `?target=` yang sedang aktif — diteruskan ke tautan profil. */
+  jabatanTargetId?: number | null
 }) {
-  const kolom: Array<KolomTabel<AnggotaSel>> = [
-    {
-      kunci: 'nama',
-      judul: 'NIP & Nama Lengkap',
-      sticky: true,
-      wajib: true,
-      bisaDiurutkan: false,
-      lebarMin: '14rem',
-      /**
-       * Nama menaut ke profil pegawai — permintaan user butir 1 ("ketika diklik
-       * di peta 9, pilih nama, maka bisa muncul profil pegawai").
-       *
-       * Widget Kotak 9 di dashboard sudah menaut sejak awal; daftar drill-down
-       * di halaman ini belum, sehingga perilakunya berbeda di dua tempat yang
-       * terlihat sama — pengguna yang sudah belajar bahwa nama bisa diklik akan
-       * mengklik di sini dan tidak terjadi apa-apa. Bentuk tautannya disamakan
-       * dengan widget itu (`/talenta/<nip>`, NIP ikut di dalam tautan) supaya
-       * seluruh baris nama+NIP jadi satu sasaran klik, bukan hanya barisnya.
-       */
-      render: (a) => (
-        <Link href={`/talenta/${a.nip}`} className="block hover:text-accent">
-          <span className="block font-medium text-text">{a.nama}</span>
-          <span className="tabular block text-[11px] text-text-subtle">{formatNip(a.nip)}</span>
-        </Link>
-      ),
-    },
-    {
-      kunci: 'jabatan',
-      judul: 'Jabatan',
-      bisaDiurutkan: false,
-      lebarMin: '15rem',
-      render: (a) => (
-        <span className="block max-w-[20rem] truncate text-text-muted" title={a.namaJabatan ?? ''}>
-          {a.namaJabatan ?? <span className="text-text-subtle">Belum tertaut jabatan</span>}
-        </span>
-      ),
-    },
-    {
-      kunci: 'unit',
-      judul: 'Unit Organisasi',
-      bisaDiurutkan: false,
-      lebarMin: '14rem',
-      render: (a) => (
-        <span className="block max-w-[18rem] truncate text-text-muted" title={a.namaUnit ?? ''}>
-          {a.namaUnit ?? '—'}
-        </span>
-      ),
-    },
-    {
-      kunci: 'eselon',
-      judul: 'Eselon',
-      bisaDiurutkan: false,
-      render: (a) =>
-        a.eselon === null ? (
-          <span className="text-text-subtle">—</span>
-        ) : a.eselon === 'NON_ESELON' ? (
-          <span className="whitespace-nowrap text-text-subtle">Non-eselon</span>
-        ) : (
-          <span className="text-text-muted">{a.eselon}</span>
-        ),
-    },
-    {
-      kunci: 'kinerja',
-      judul: 'Kinerja',
-      subjudul: 'sumbu Y · 0–100',
-      rataKanan: true,
-      bisaDiurutkan: false,
-      render: (a) => (
-        <span className="tabular font-medium text-text">{formatSkorRingkas(a.nilaiKinerjaY)}</span>
-      ),
-    },
-    {
-      kunci: 'predikat',
-      judul: 'Predikat Kinerja',
-      bisaDiurutkan: false,
-      lebarMin: '9rem',
-      // K-3: predikat dan kategori sumbu adalah dua taksonomi berbeda dan tidak
-      // pernah digabung — "Butuh Perbaikan" justru berkategori "Sesuai Ekspektasi".
-      render: (a) => <span className="text-text-muted">{a.predikat}</span>,
-    },
-    {
-      kunci: 'potensial',
-      judul: labelX,
-      // Sumbu X bisa >100 (potkom tidak diplafon); sumbu Y tidak, karena ia
-      // turunan predikat yang berskala tetap — jadi hanya X yang kehilangan
-      // batasnya di subjudul.
-      subjudul: 'sumbu X',
-      rataKanan: true,
-      bisaDiurutkan: false,
-      render: (a) => (
-        <span className="tabular font-medium text-text">{formatSkorRingkas(a.nilaiPotensialX)}</span>
-      ),
-    },
-    {
-      kunci: 'talenta',
-      judul: 'Nilai Talenta',
-      subjudul: '50% Y + 50% X',
-      rataKanan: true,
-      bisaDiurutkan: false,
-      render: (a) => (
-        <span className="tabular font-semibold text-text">{formatSkor(a.nilaiTalenta)}</span>
-      ),
-    },
-    {
-      kunci: 'asesmen',
-      judul: 'Asesmen',
-      bisaDiurutkan: false,
-      render: (a) => (
-        <>
-          <span className="tabular block text-text-muted">{a.tahunAsesmen}</span>
-          {a.statusAsesmen !== 'Berlaku' ? (
-            <Badge tone="peringatan" title="Asesmen kedaluwarsa — tidak eligible untuk talent pool">
-              {a.statusAsesmen === 'Expired' ? 'Kedaluwarsa' : a.statusAsesmen}
-            </Badge>
-          ) : null}
-        </>
-      ),
-    },
-  ]
-
+  const baris: BarisPegawaiKotak9[] = daftar
   return (
-    <DataTable
+    <TabelPegawaiKotak9
       id="anggota-sel-kotak9"
-      kolom={kolom}
-      baris={daftar}
-      kunciBaris={(a) => a.pegawaiId}
-      tautanBaris={(a) => `/talenta/${a.nip}`}
+      daftar={baris}
       total={total}
       halaman={halaman}
       ukuranHalaman={ukuranHalaman}
+      labelX={labelX}
+      jabatanTargetId={jabatanTargetId}
     />
   )
 }

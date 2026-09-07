@@ -90,7 +90,7 @@ export function TabelJabatan({
       bisaDiurutkan: false,
       lebarMin: '15rem',
       render: (j) => (
-        <span className="block max-w-[18rem] truncate text-text-muted" title={j.namaUnit}>
+        <span className="block max-w-[18rem] text-text-muted break-words" title={j.namaUnit}>
           {j.namaUnit}
         </span>
       ),

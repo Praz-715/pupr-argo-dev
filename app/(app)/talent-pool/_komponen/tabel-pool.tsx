@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { NoResultState } from '@/components/ui/states'
 import { AksiWorkflowTombol, type OpsiAksi } from '@/components/suksesi/aksi-workflow'
+import { TombolKeluarPool } from './tombol-keluar-pool'
 import { cn } from '@/lib/cn'
 import { formatNip, formatSkor, formatTanggal } from '@/lib/format'
 import type { BarisPool } from '@/lib/kueri/suksesi'
@@ -23,10 +24,13 @@ export function TabelPool({
   baris,
   opsiUnit,
   unitPenggunaId,
+  jabatanTargetId,
 }: {
-  baris: Array<{ baris: BarisPool; opsiAksi: OpsiAksi[] }>
+  baris: Array<{ baris: BarisPool; opsiAksi: OpsiAksi[]; bolehKeluar: boolean }>
   opsiUnit: Array<{ id: number; nama: string }>
   unitPenggunaId: number | null
+  /** Jabatan target yang sedang dilihat — dibawa ke profil sebagai konteks. */
+  jabatanTargetId: number
 }) {
   if (baris.length === 0) {
     return <NoResultState className="m-3.5 border-0" />
@@ -59,15 +63,22 @@ export function TabelPool({
           </tr>
         </thead>
         <tbody>
-          {baris.map(({ baris: b, opsiAksi }) => (
+          {baris.map(({ baris: b, opsiAksi, bolehKeluar }) => (
             <tr key={b.talentPoolId} className="border-b border-border last:border-b-0 hover:bg-surface-2">
               {/* Nama · NIP · Jabatan jadi TIGA kolom (permintaan user).
                   Peringatan konsistensi tetap menempel di kolom nama: ia soal
                   barisnya secara keseluruhan (status pool vs nominasi yang
                   bertentangan), bukan soal NIP maupun jabatannya. */}
               <td className="px-3 py-2.5 pl-3.5">
+                {/*
+                  `?target=` membawa KONTEKS: profil yang dibuka dari sini
+                  mendahulukan jabatan target yang sedang dibicarakan, alih-alih
+                  memajang seluruh target yang pernah menghitung orang ini —
+                  daftarnya sekarang bisa 8 baris, dan yang dicari pembacanya justru
+                  satu. Permintaan pemilik proses 25 Agu 2026.
+                */}
                 <Link
-                  href={`/talenta/${b.nip}`}
+                  href={`/talenta/${b.nip}?target=${jabatanTargetId}`}
                   className="block font-medium text-text hover:text-accent"
                 >
                   {b.nama}
@@ -153,17 +164,27 @@ export function TabelPool({
               </td>
 
               <td className="px-3.5 py-2.5">
-                {opsiAksi.length === 0 ? (
-                  <span className="text-[11px] text-text-subtle">—</span>
-                ) : (
-                  <AksiWorkflowTombol
-                    talentPoolId={b.talentPoolId}
-                    namaKandidat={b.nama}
-                    opsi={opsiAksi}
-                    opsiUnit={opsiUnit}
-                    unitBawaanId={unitPenggunaId}
-                  />
-                )}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {opsiAksi.length === 0 && !bolehKeluar ? (
+                    <span className="text-[11px] text-text-subtle">—</span>
+                  ) : null}
+                  {opsiAksi.length > 0 ? (
+                    <AksiWorkflowTombol
+                      talentPoolId={b.talentPoolId}
+                      namaKandidat={b.nama}
+                      opsi={opsiAksi}
+                      opsiUnit={opsiUnit}
+                      unitBawaanId={unitPenggunaId}
+                    />
+                  ) : null}
+                  {bolehKeluar ? (
+                    <TombolKeluarPool
+                      talentPoolId={b.talentPoolId}
+                      nama={b.nama}
+                      punyaNominasi={b.statusNominasi !== null}
+                    />
+                  ) : null}
+                </div>
               </td>
             </tr>
           ))}

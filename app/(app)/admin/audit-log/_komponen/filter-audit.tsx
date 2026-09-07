@@ -1,11 +1,12 @@
 'use client'
 
-import { RotateCcw, Search } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
 import { kelasInput } from '@/components/ui/bidang'
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { cn } from '@/lib/cn'
 import type { OpsiAudit } from '@/lib/kueri/admin'
 
@@ -35,14 +36,10 @@ export function FilterAudit({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [pending, mulaiTransisi] = useTransition()
-  const [teks, setTeks] = useState(nilai.cari)
-
-  useEffect(() => {
-    if (teks === nilai.cari) return
-    const t = setTimeout(() => ganti({ cari: teks }), 300)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teks])
+  /*
+    Pencarian dijalankan saat ENTER (permintaan pemilik proses 2 Sep 2026).
+    Debounce-nya pindah ke `KotakCari` — satu tempat untuk semua kotak pencarian.
+  */
 
   function ganti(perubahan: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -61,16 +58,14 @@ export function FilterAudit({
 
   return (
     <div className={cn('flex flex-wrap items-end gap-2', pending && 'opacity-60')}>
-      <span className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-subtle" />
-        <input
-          value={teks}
-          onChange={(e) => setTeks(e.target.value)}
-          placeholder="Cari isi perubahan…"
-          aria-label="Cari isi perubahan"
-          className={`${kelasInput()} w-56 pl-8`}
-        />
-      </span>
+      <KotakCari
+        nilaiAwal={nilai.cari}
+        onCari={(q: string) => ganti({ cari: q })}
+        placeholder="Cari isi perubahan…"
+        label="Cari isi perubahan"
+        pending={pending}
+        className="w-56"
+      />
 
       <Pilih
         label="Pengguna"
@@ -126,10 +121,9 @@ export function FilterAudit({
         <Button
           variant="halus"
           size="sm"
-          onClick={() => {
-            setTeks('')
-            mulaiTransisi(() => router.replace(pathname, { scroll: false }))
-          }}
+          // Kotak pencariannya ikut kosong sendiri: `KotakCari` menyesuaikan
+          // isinya ketika `nilaiAwal` berubah, dan Reset membuang seluruh param.
+          onClick={() => mulaiTransisi(() => router.replace(pathname, { scroll: false }))}
           ikon={<RotateCcw className="size-3.5" />}
         >
           Reset

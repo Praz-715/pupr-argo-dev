@@ -5,6 +5,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import type { HasilAksi } from '@/lib/aksi/hasil'
+import { JENJANG_ASESMEN, labelJenjang } from '@/lib/jenjang-asesmen'
 import {
   simpanAsesmen,
   simpanDiklat,
@@ -62,12 +63,28 @@ function teks(v: unknown): string {
 export function TombolEditor({
   jenis,
   pegawaiId,
+  boleh,
   baris = null,
   pilihanJabatan = [],
   label,
 }: {
   jenis: JenisEditor
   pegawaiId: number
+  /**
+   * Bolehkah pengguna ini menyunting? **WAJIB, tanpa nilai bawaan.**
+   *
+   * Tanpa `?` dan tanpa default: call site yang lupa memutuskan jadi **galat
+   * kompilasi**, bukan tombol yang tampil untuk semua peran. Itu bukan
+   * kehati-hatian berlebihan — 22 Agu 2026 saya menggerbangi 11 pemakaian di
+   * `page.tsx` lalu MENGUMUMKAN masalahnya beres, sementara pemakaian ke-12 di
+   * `daftar-diklat.tsx` terlewat, dan Viewer masih bisa membuka editor Riwayat
+   * Diklat. Yang menemukannya user, bukan uji saya.
+   *
+   * Gerbang server (`gerbangPeran(PERAN_PROFIL)`) tetap yang menegakkan; prop ini
+   * supaya yang TAMPIL sama dengan yang bisa dilakukan — tombol yang menolak
+   * setelah form diisi penuh adalah kerja pengguna yang terbuang.
+   */
+  boleh: boolean
   /** Baris yang diubah; `null` = tambah baru. */
   baris?: Record<string, unknown> | null
   /** Hanya untuk `identitas` & `riwayatJabatan`. */
@@ -77,6 +94,7 @@ export function TombolEditor({
 }) {
   const [buka, setBuka] = useState(false)
   const menambah = baris === null
+  if (!boleh) return null
 
   const opsiJabatan = pilihanJabatan.map((j) => ({ nilai: String(j.id), label: j.label }))
 
@@ -157,6 +175,15 @@ export function TombolEditor({
         { jenis: 'teks', kunci: 'unitKerjaMentah', label: 'Unit kerja' },
         { jenis: 'tanggal', kunci: 'tanggalMulai', label: 'Tanggal mulai' },
         { jenis: 'tanggal', kunci: 'tanggalAkhir', label: 'Tanggal akhir' },
+        {
+          jenis: 'angka',
+          kunci: 'lamaBulan',
+          label: 'Lama menjabat (bulan)',
+          // Menyebut kapan bidang ini dipakai, sebab isi dua bidang di atasnya
+          // membuatnya tidak berpengaruh apa pun — dan bidang yang diisi tanpa
+          // efek terbaca sebagai simpan yang gagal.
+          petunjuk: 'Hanya dipakai bila tanggalnya tidak ada. Kalau tanggal mulai terisi, lama menjabat dihitung dari tanggal.',
+        },
         { jenis: 'teks', kunci: 'noSk', label: 'Nomor SK' },
       ],
     },
@@ -183,6 +210,18 @@ export function TombolEditor({
       bidang: [
         { jenis: 'angka', kunci: 'tahunAsesmen', label: 'Tahun asesmen', wajib: true },
         { jenis: 'teks', kunci: 'jenisAsesmen', label: 'Jenis asesmen', wajib: true },
+        {
+          jenis: 'pilih',
+          kunci: 'jenjangAsesmen',
+          label: 'Jenjang asesmen',
+          // TIDAK wajib: baris lama tidak punya jenjang, dan memaksanya di sini
+          // membuat penyuntingan baris lama menuntut orang mengarang.
+          opsi: [
+            { nilai: '', label: 'Tidak tercatat' },
+            ...JENJANG_ASESMEN.map((j) => ({ nilai: j.nilai, label: labelJenjang(j.nilai) })),
+          ],
+          petunjuk: 'satu pegawai boleh punya beberapa, lalu dipilih mana yang dipakai',
+        },
         {
           jenis: 'pilih',
           kunci: 'statusAsesmen',

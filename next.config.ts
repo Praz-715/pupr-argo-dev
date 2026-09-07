@@ -6,6 +6,64 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['mysql2'],
 
   /**
+   * Batas ukuran body untuk **server action** — dinaikkan dari 1 MB bawaan.
+   *
+   * ## Kenapa perlu, dan kenapa angkanya sebesar ini
+   *
+   * Impor pegawai dari `.xlsx` (`imporPegawaiDariXlsx`) menerima berkas Talent
+   * Pool. Terukur: `TALENT POOL PENGAWAS#2 fix.xlsx` berukuran **17,13 MB** —
+   * bukan karena barisnya banyak (653 baris, 28 kolom) melainkan karena ia
+   * membawa **53 foto pegawai tertanam**. Dengan batas bawaan 1 MB, framework
+   * menolak permintaannya SEBELUM kode aksi berjalan, sehingga pemeriksaan ukuran
+   * dan pesan galat yang informatif di dalam aksi tidak pernah terpakai; yang
+   * terlihat pengguna hanyalah tombol yang menggantung. Gejalanya hanya terbaca
+   * dari log server (`Body exceeded 1 MB limit`, HTTP 413).
+   *
+   * ## Harganya, dinyatakan terus terang
+   *
+   * Body sebesar ini **dibuffer di memori server**, dan pembacaan ZIP-nya
+   * (`zlib.inflateRawSync`) **sinkron** — jadi satu unggahan besar menahan event
+   * loop selama ia diurai. Itu bisa diterima di sini karena jalur ini: (a) hanya
+   * untuk tiga peran (`PERAN_PROFIL`), bukan permukaan publik; (b) dipakai
+   * sesekali, bukan per permintaan halaman; dan (c) menolak berkas >20 MB di
+   * dalam aksinya sendiri. Kalau nanti ia jadi jalur yang sering dipakai
+   * bersamaan, yang benar bukan menaikkan angka ini lagi melainkan memindahkan
+   * penguraiannya ke luar siklus permintaan.
+   *
+   * 25 MB, bukan 20: batas di aksinya 20 MB, dan framework harus mengizinkan
+   * SEDIKIT LEBIH agar berkas 20 MB benar-benar sampai ke pemeriksaan itu —
+   * pembungkus multipart menambah ukuran. Kalau angka framework disamakan 20 MB,
+   * berkas tepat di batas ditolak 413 tanpa pesan yang bisa dibaca pengguna.
+   */
+  /*
+    DUA batas ukuran body, dan yang kedua tidak terlihat sampai yang pertama
+    dinaikkan.
+
+    Setelah `serverActions.bodySizeLimit` naik, Next mencatat: *"Request body
+    exceeded 10MB for /talenta. **Only the first 10MB will be available** unless
+    configured"* — middleware berjalan untuk `/talenta` (server action mem-POST ke
+    route halamannya). Untuk berkas 17,13 MB itu berarti body yang **terpotong**,
+    dan ZIP yang terpotong bukan "sebagian data" melainkan berkas rusak: `bacaZip`
+    tidak menemukan central directory lalu melapor "bukan berkas .xlsx yang sah"
+    atas berkas yang sebenarnya sah. Salah satu gejala paling menyesatkan yang bisa
+    dihasilkan sebuah batas.
+  */
+  experimental: {
+    serverActions: { bodySizeLimit: '25mb' },
+    /**
+     * Batas body yang boleh DILIHAT middleware — dinaikkan dari 10 MB bawaan.
+     *
+     * `proxyClientMaxBodySize`, bukan `middlewareClientMaxBodySize`: yang kedua
+     * masih ada tapi sudah **deprecated** di Next 16 (bersama penggantian nama
+     * "middleware" → "proxy" yang juga muncul sebagai peringatan saat build), dan
+     * ia tidak dikenali di tingkat atas `NextConfig` — memakainya di sana gagal
+     * typecheck DAN membuat Next mencetak "Unrecognized key(s)".
+     */
+    proxyClientMaxBodySize: '25mb',
+  },
+
+
+  /**
    * Folder keluaran build, bisa ditimpa lewat `NEXT_DIST_DIR`.
    *
    * **Ini yang membuat build pratinjau tidak merusak dev server.** `next build`

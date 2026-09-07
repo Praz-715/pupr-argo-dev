@@ -18,8 +18,10 @@ import {
   formatTanggalPanjang,
   formatTingkatPendidikan,
   inisial,
+  formatTanggalWaktu,
 } from '@/lib/format'
 import { getCurrentUser } from '@/lib/auth'
+import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { LABEL_TINGKAT, tingkatKelengkapan } from '@/lib/kelengkapan'
 import {
@@ -27,6 +29,7 @@ import {
   ambilKelengkapan,
   ambilKinerja,
   ambilMatchScore,
+  ambilPengalamanJenjang,
   ambilProfil,
   ambilRiwayatAsesmen,
   ambilRiwayatJabatan,
@@ -39,12 +42,40 @@ import { lingkupData, unitWajib } from '@/lib/lingkup'
 import { DESKRIPSI_KOTAK_9, klasifikasiSumbuX, klasifikasiSumbuY } from '@/lib/scoring'
 import { DaftarDiklat } from './_komponen/daftar-diklat'
 import { ambilPilihanJabatan } from '@/lib/kueri/master'
+import { CentangVerifikasiHukdis } from './_komponen/centang-verifikasi-hukdis'
+import { KotakCatatan } from './_komponen/kotak-catatan'
 import { RincianSkor } from './_komponen/rincian-skor'
+import { labelJenjang } from '@/lib/jenjang-asesmen'
+import { PilihAsesmenDipakai } from './_komponen/pilih-asesmen-dipakai'
 import { TombolEditor } from './_komponen/tombol-editor'
 
 /** Batas unit pengguna yang sedang masuk — dipakai judul halaman & isinya. */
 async function batasUnitSaya(): Promise<number | null> {
   return unitWajib(lingkupData(await getCurrentUser()))
+}
+
+/**
+ * Bolehkah pengguna ini MENYUNTING profil? Harus sama dengan `PERAN_PROFIL` di
+ * `lib/aksi/profil.ts`.
+ *
+ * Tanpa ini, tombol "Ubah" di seluruh bagian profil dirender untuk SEMUA peran —
+ * terukur pada audit RBAC 22 Agu 2026: Pimpinan dan Viewer masing-masing melihat
+ * **7 tombol** yang, begitu ditekan dan formnya diisi penuh, ditolak server oleh
+ * `gerbangPeran(PERAN_PROFIL)`. Itu klik mati (phase.md §5.2): kerja pengguna
+ * terbuang dan pesan penolakannya terbaca seperti aplikasi rusak, bukan seperti
+ * wewenang yang memang tidak dimiliki.
+ *
+ * Menariknya berkas ini SUDAH melakukannya dengan benar untuk satu hal —
+ * `bolehIsiManual` menggerbangi tombol nilai manual terhadap `PERAN_HITUNG` —
+ * jadi yang salah bukan polanya, melainkan bahwa pola itu tidak dipakai untuk
+ * `TombolEditor`. `getCurrentUser()` ber-`cache()` per permintaan, jadi
+ * memanggilnya di tiap bagian tidak menambah kueri.
+ *
+ * Gerbang server tetap yang menegakkan; ini hanya supaya yang tampil sama dengan
+ * yang bisa dilakukan.
+ */
+async function bolehUbahProfil(): Promise<boolean> {
+  return punyaPeran(await getCurrentUser(), ['Super Admin', 'Admin Talenta', 'Pengelola Unit'])
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ nip: string }> }) {
@@ -64,10 +95,30 @@ export async function generateMetadata({ params }: { params: Promise<{ nip: stri
  * tapi Anda tidak boleh melihatnya" tetap mengonfirmasi keberadaannya kepada
  * yang tidak berhak tahu — dan NIP bisa ditebak dari pola tanggal lahir.
  */
-export default async function ProfilPage({ params }: { params: Promise<{ nip: string }> }) {
+export default async function ProfilPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ nip: string }>
+  searchParams: Promise<Record<string, string | undefined>>
+}) {
   const { nip } = await params
   const profil = await ambilProfil(nip, await batasUnitSaya())
   if (!profil) notFound()
+
+  /*
+    Konteks jabatan target — dibawa tautan dari Talent Pool & Nominasi
+    (`?target=`). Permintaan pemilik proses 25 Agu 2026: profil yang dibuka dari
+    bagian Suksesi cukup menampilkan jabatan target yang orang itu dinominasikan
+    padanya, bukan seluruh target yang pernah menghitungnya.
+
+    `?semuaTarget=1` membuka kembali daftar penuhnya. Menyaring TANPA jalan kembali
+    berarti menghilangkan informasi: satu orang bisa jadi kandidat beberapa kursi,
+    dan itu justru yang perlu terlihat saat menimbang penetapan.
+  */
+  const p = await searchParams
+  const targetKonteks = angkaPositif(p.target)
+  const semuaTarget = p.semuaTarget === '1'
 
   return (
     <div className="space-y-5">
@@ -95,7 +146,20 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
           lebih pendek dari isinya, sehingga `overflow-y-auto` tak pernah aktif).
           Hanya di `xl`: di layar sempit panel-panel ini bertumpuk satu kolom,
           dan memaksa tinggi di sana menghasilkan gulir bersarang. */}
-      <div className="grid gap-5 xl:h-[27rem] xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:grid-rows-[minmax(0,1fr)]">
+      {/*
+        Tinggi panel dipatok DAN dibatasi tinggi layar: `min(27rem, 58dvh)`.
+
+        Patokan `rem`-nya yang membuat panel bersebelahan sejajar (alasan aslinya,
+        12 Agu 2026) — itu tidak berubah di layar normal, sebab 27rem = 432px masih
+        lebih kecil dari 58dvh pada jendela ≥745px.
+
+        Yang ditambahkan batas atasnya. Breakpoint `xl` menilai LEBAR, jadi pada
+        jendela lebar-tapi-pendek (mis. 1920×570) panel 36rem = 576px lebih tinggi
+        daripada seluruh area isinya: halaman jadi ±5 layar dan tiap panel punya
+        gulirannya sendiri di dalam halaman yang juga menggulir. Dilaporkan pemilik
+        proses 26 Agu 2026 sebagai *"scroll downnya kelebihan jadi luber"*.
+      */}
+      <div className="grid gap-5 xl:h-[min(27rem,58dvh)] xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:grid-rows-[minmax(0,1fr)]">
         <Suspense
           fallback={
             <PanelMemuat judul="Posisi Kotak 9 & riwayat asesmen" baris={4} className="xl:h-full" />
@@ -109,10 +173,14 @@ export default async function ProfilPage({ params }: { params: Promise<{ nip: st
       </div>
 
       <Suspense fallback={<PanelMemuat judul="Kecocokan dengan jabatan target" baris={6} />}>
-        <BagianMatchScore profil={profil} />
+        <BagianMatchScore
+          profil={profil}
+          targetKonteks={semuaTarget ? undefined : targetKonteks}
+          semuaTarget={semuaTarget}
+        />
       </Suspense>
 
-      <div className="grid gap-5 xl:h-[36rem] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
+      <div className="grid gap-5 xl:h-[min(36rem,72dvh)] xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
         <Suspense
           fallback={<PanelMemuat judul="Riwayat jabatan" baris={5} className="xl:h-full" />}
         >
@@ -158,6 +226,7 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
     ambilPilihanJabatan(),
     adaFotoPegawai(profil.nip),
   ])
+  const bolehUbah = await bolehUbahProfil()
   const bio: Array<{ label: string; nilai: string; catatan?: string }> = [
     {
       label: 'Pangkat / Golongan',
@@ -299,23 +368,24 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
               menyuntingnya — nilai yang diisi tangan tidak akan tertimpa
               sinkronisasi berikutnya tanpa disadari. */}
               <TombolEditor
-                jenis="identitas"
-                pegawaiId={profil.pegawaiId}
-                pilihanJabatan={pilihanJabatan}
-                label="Ubah data"
-                baris={{
-                  namaLengkap: profil.nama,
-                  golongan: profil.golongan,
-                  pangkat: profil.pangkat,
-                  tmtGolongan: profil.tmtGolongan,
-                  tmtJabatan: profil.tmtJabatan,
-                  jabatanId: profil.jabatanId,
-                  tingkatPendidikan: profil.tingkatPendidikan,
-                  sekolahTerakhir: profil.sekolahTerakhir,
-                  bidangStudiTerakhir: profil.bidangStudiTerakhir,
-                  statusAktif: profil.statusAktif,
-                }}
-              />
+                  jenis="identitas"
+                  pegawaiId={profil.pegawaiId}
+                  pilihanJabatan={pilihanJabatan}
+                  label="Ubah data"
+                  baris={{
+                    namaLengkap: profil.nama,
+                    golongan: profil.golongan,
+                    pangkat: profil.pangkat,
+                    tmtGolongan: profil.tmtGolongan,
+                    tmtJabatan: profil.tmtJabatan,
+                    jabatanId: profil.jabatanId,
+                    tingkatPendidikan: profil.tingkatPendidikan,
+                    sekolahTerakhir: profil.sekolahTerakhir,
+                    bidangStudiTerakhir: profil.bidangStudiTerakhir,
+                    statusAktif: profil.statusAktif,
+                  }}
+                boleh={bolehUbah}
+/>
             </div>
           </div>
 
@@ -342,11 +412,11 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
                 <dt className="text-[10px] font-medium tracking-wide text-text-subtle uppercase">
                   {b.label}
                 </dt>
-                <dd className="mt-0.5 truncate text-[13px] font-medium text-text" title={b.nilai}>
+                <dd className="mt-0.5 text-[13px] font-medium text-text break-words" title={b.nilai}>
                   {b.nilai}
                 </dd>
                 {b.catatan ? (
-                  <dd className="truncate text-[11px] text-text-subtle" title={b.catatan}>
+                  <dd className="text-[11px] text-text-subtle break-words" title={b.catatan}>
                     {b.catatan}
                   </dd>
                 ) : null}
@@ -416,6 +486,7 @@ async function BagianKelengkapan({ profil }: { profil: ProfilPegawai }) {
 }
 
 async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
+  const bolehUbah = await bolehUbahProfil()
   const ambang = ambangSumbuDari(await ambilPengaturan())
   const asesmen = await ambilRiwayatAsesmen(profil.pegawaiId)
   const terbaru = asesmen[0]
@@ -425,12 +496,29 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
       <div className="shrink-0 border-b border-border p-4">
         <PanelHeader
           judul="Posisi Kotak 9 & riwayat asesmen"
+          /*
+            Deskripsi WAJIB menyebut asal predikatnya.
+
+            Ada DUA "kinerja" di halaman ini, dari dua tabel berbeda: predikat di
+            tabel ini datang dari rekaman ASESMEN (`asesmen_talenta.rating_kinerja`,
+            kolom RATING KINERJA di berkas sumber) dan itulah yang menurunkan sumbu
+            Y Kotak 9 — sementara panel "Tren kinerja" di sebelah membaca
+            `kinerja_periode`, rekap SKP triwulanan dari e-Kinerja.
+            
+            Keduanya bisa berbeda keadaannya: per 24 Agu 2026 predikat terisi
+            79/79 sementara `kinerja_periode` KOSONG, sehingga pembaca melihat
+            "Predikat: Sangat Baik" di sini dan "belum ada data" di sebelahnya —
+            dan wajar menyimpulkan ada yang rusak. Panel Tren kinerja sudah
+            menyebut sumbernya ("nilai granular dari e-Kinerja"); yang ini belum,
+            jadi penjelasannya sepihak. Ini aturan K-7a: dua angka berbeda tidak
+            boleh tampil dengan nama yang sama tanpa penanda asalnya.
+          */
           deskripsi={
             asesmen.length === 0
               ? undefined
-              : `${formatAngka(asesmen.length)} asesmen tercatat · posisi terbaru dari tahun ${terbaru!.tahunAsesmen}`
+              : `${formatAngka(asesmen.length)} asesmen tercatat · posisi terbaru dari tahun ${terbaru!.tahunAsesmen} · predikat di sini dari rekaman asesmen (dasar sumbu Y Kotak 9), bukan dari rekap SKP triwulanan e-Kinerja`
           }
-          aksi={<TombolEditor jenis="asesmen" pegawaiId={profil.pegawaiId} />}
+          aksi={<TombolEditor jenis="asesmen" pegawaiId={profil.pegawaiId} boleh={bolehUbah} />}
         />
       </div>
 
@@ -477,6 +565,9 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
                   <tr className="border-b border-border text-left text-[10px] tracking-wide text-text-subtle uppercase">
                     <th className="px-4 py-1.5 font-medium">Tahun</th>
                     <th className="px-4 py-1.5 font-medium">Jenis</th>
+                    <th className="px-4 py-1.5 font-medium">Jenjang</th>
+                    <th className="px-4 py-1.5 text-right font-medium">Potkom</th>
+                    <th className="px-4 py-1.5 font-medium">Dipakai</th>
                     <th className="px-4 py-1.5 text-right font-medium">Kinerja</th>
                     <th className="px-4 py-1.5 text-right font-medium">Potensial</th>
                     <th className="px-4 py-1.5 text-right font-medium">Kotak</th>
@@ -493,6 +584,27 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
                         {a.tahunAsesmen}
                       </td>
                       <td className="px-4 py-1.5 text-text-muted">{a.jenisAsesmen}</td>
+                      <td className="px-4 py-1.5 text-text-muted">
+                        {/* Kosong untuk baris yang masuk sebelum doc/sql/022 —
+                          "tidak tercatat", bukan "tidak berjenjang". */}
+                        {a.jenjangAsesmen === null ? (
+                          <span className="text-text-subtle">tidak tercatat</span>
+                        ) : (
+                          labelJenjang(a.jenjangAsesmen)
+                        )}
+                      </td>
+                      <td className="tabular px-4 py-1.5 text-right text-text-muted">
+                        {formatSkorRingkas(a.potkom)}
+                      </td>
+                      <td className="px-4 py-1.5">
+                        <PilihAsesmenDipakai
+                          pegawaiId={profil.pegawaiId}
+                          asesmenId={a.id}
+                          dipakai={a.dipakai}
+                          label={`${a.jenjangAsesmen ?? a.jenisAsesmen} ${a.tahunAsesmen}`}
+                          boleh={bolehUbah}
+                        />
+                      </td>
                       <td className="tabular px-4 py-1.5 text-right">
                         <span className="block text-text-muted">
                           {formatSkorRingkas(a.nilaiKinerjaY)}
@@ -524,20 +636,26 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
                           `rating_kinerja`, dan antarmuka profil menamainya lain.
                           Salah satu dari keduanya harus diterjemahkan di sini. */}
                         <TombolEditor
-                          jenis="asesmen"
-                          pegawaiId={profil.pegawaiId}
-                          baris={{
-                            id: a.id,
-                            tahunAsesmen: a.tahunAsesmen,
-                            jenisAsesmen: a.jenisAsesmen,
-                            statusAsesmen: a.statusAsesmen,
-                            nilaiKinerjaY: a.nilaiKinerjaY,
-                            potkom: a.potkom,
-                            nilaiIntegritas: a.nilaiIntegritas,
-                            tahunKinerja: a.tahunKinerja,
-                            ratingKinerja: a.predikatKinerja,
-                          }}
-                        />
+                            jenis="asesmen"
+                            pegawaiId={profil.pegawaiId}
+                            baris={{
+                              id: a.id,
+                              tahunAsesmen: a.tahunAsesmen,
+                              jenisAsesmen: a.jenisAsesmen,
+                              // WAJIB ada di sini. Bidang form tanpa nilai awal dari
+                              // kueri bacanya akan tersimpan NULL begitu barisnya
+                              // disunting untuk alasan lain — kelas cacat yang sudah
+                              // tiga kali terjadi di editor profil (CLAUDE.md).
+                              jenjangAsesmen: a.jenjangAsesmen ?? '',
+                              statusAsesmen: a.statusAsesmen,
+                              nilaiKinerjaY: a.nilaiKinerjaY,
+                              potkom: a.potkom,
+                              nilaiIntegritas: a.nilaiIntegritas,
+                              tahunKinerja: a.tahunKinerja,
+                              ratingKinerja: a.predikatKinerja,
+                            }}
+                          boleh={bolehUbah}
+/>
                       </td>
                     </tr>
                   ))}
@@ -552,6 +670,7 @@ async function BagianAsesmen({ profil }: { profil: ProfilPegawai }) {
 }
 
 async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
+  const bolehUbah = await bolehUbahProfil()
   const kinerja = await ambilKinerja(profil.pegawaiId)
 
   if (kinerja.length === 0) {
@@ -559,7 +678,7 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
       <Panel className="flex flex-col xl:h-full xl:min-h-0">
         <PanelHeader
           judul="Tren kinerja"
-          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
+          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} boleh={bolehUbah} />}
         />
         <p className="mt-3 text-[13px] text-text-muted">
           Belum ada rekap kinerja periodik dari e-Kinerja.
@@ -574,7 +693,11 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
     .map((k) => ({
       periode: k.periode,
       nilaiKinerja: k.nilaiKinerja!,
-      nilaiPerilaku: k.nilaiPerilaku ?? k.nilaiKinerja!,
+      // JANGAN menambal dengan nilai kinerja. `null` di sini berarti perilaku
+      // belum diukur, dan grafik sudah tahu cara menampilkannya begitu —
+      // menambalnya menghasilkan dua garis identik yang terbaca sebagai dua
+      // pengukuran berbeda yang saling mengonfirmasi.
+      nilaiPerilaku: k.nilaiPerilaku,
     }))
     .sort(
       (a, b) =>
@@ -587,8 +710,22 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
       <div className="shrink-0">
         <PanelHeader
           judul={`Tren kinerja ${tahunTerbaru}`}
-          deskripsi={`${formatAngka(tahunIni.length)} periode SKP tercatat · nilai granular dari e-Kinerja, bukan skor sumbu Kotak 9`}
-          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} />}
+          /*
+            Deskripsi mengikuti SUMBER DATANYA, tidak dipaku.
+
+            Kalimat lama selalu berkata "nilai granular dari e-Kinerja". Sejak
+            baris TAHUNAN diisi dari predikat Excel (24 Agu 2026) itu tidak benar:
+            angkanya skor predikat (Sangat Baik 100 · Baik 80), bukan pengukuran
+            granular, dan sumbernya bukan e-Kinerja. Deskripsi yang salah menyebut
+            sumber lebih berbahaya daripada tidak menyebut apa pun — ia membuat
+            pembaca percaya integrasi yang belum ada.
+          */
+          deskripsi={
+            kinerja.some((k) => k.sumberSync.toLowerCase().includes('kinerja'))
+              ? `${formatAngka(tahunIni.length)} periode SKP tercatat · nilai granular dari e-Kinerja, bukan skor sumbu Kotak 9`
+              : `${formatAngka(tahunIni.length)} periode tercatat · nilai = skor predikat dari rekaman asesmen (Sangat Baik 100 · Baik 80), bukan nilai SKP terukur dari e-Kinerja`
+          }
+          aksi={<TombolEditor jenis="kinerja" pegawaiId={profil.pegawaiId} boleh={bolehUbah} />}
         />
       </div>
 
@@ -622,17 +759,18 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
                 {k.predikat}
               </span>
               <TombolEditor
-                jenis="kinerja"
-                pegawaiId={profil.pegawaiId}
-                baris={{
-                  id: k.id,
-                  tahun: k.tahun,
-                  periodeSkp: k.periode,
-                  nilaiKinerja: k.nilaiKinerja,
-                  nilaiPerilaku: k.nilaiPerilaku,
-                  predikat: k.predikat,
-                }}
-              />
+                  jenis="kinerja"
+                  pegawaiId={profil.pegawaiId}
+                  baris={{
+                    id: k.id,
+                    tahun: k.tahun,
+                    periodeSkp: k.periode,
+                    nilaiKinerja: k.nilaiKinerja,
+                    nilaiPerilaku: k.nilaiPerilaku,
+                    predikat: k.predikat,
+                  }}
+                boleh={bolehUbah}
+/>
             </li>
           ))}
         </ul>
@@ -641,22 +779,108 @@ async function BagianKinerja({ profil }: { profil: ProfilPegawai }) {
   )
 }
 
-async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
-  const [daftar, pengguna] = await Promise.all([
+async function BagianMatchScore({
+  profil,
+  targetKonteks,
+  semuaTarget,
+}: {
+  profil: ProfilPegawai
+  /** Kalau ada, hanya jabatan target ini yang ditampilkan. */
+  targetKonteks: number | undefined
+  /** `?semuaTarget=1` — buka juga jabatan target draft & nonaktif. */
+  semuaTarget: boolean
+}) {
+  const [semua, pengguna, pengalaman] = await Promise.all([
     ambilMatchScore(profil.pegawaiId),
     getCurrentUser(),
+    /*
+      Dibaca SEKALI untuk seluruh jabatan target: lama pengalaman per jenjang milik
+      seorang pegawai sama untuk semua target, jadi membacanya per baris berarti 13
+      kali kueri yang isinya identik.
+    */
+    ambilPengalamanJenjang(profil.pegawaiId),
   ])
+
+  /*
+    Disaring di sini, BUKAN di kuerinya. Alasannya butir kedua: panel harus bisa
+    mengatakan "ada N jabatan target lain" — dan itu tidak mungkin diketahui kalau
+    yang lain tidak pernah diambil. Biayanya nol dalam praktik: satu pegawai
+    dihitung untuk paling banyak beberapa puluh target, bukan ribuan.
+
+    Konteks yang TIDAK ADA di daftar (mis. skornya belum dihitung) tidak
+    menghasilkan panel kosong: `terpilih` jatuh kembali ke seluruh daftar, dan
+    keterangannya menyebutkan bahwa targetnya belum punya baris skor.
+  */
+  const konteksAda =
+    targetKonteks !== undefined && semua.some((s) => s.jabatanTargetId === targetKonteks)
+
+  /*
+    Bawaan panel: **hanya jabatan target AKTIF**.
+
+    Ini bukan kerapian, ia membetulkan salah baca yang benar-benar terjadi dua kali
+    pada 25 Agu 2026. Panelnya mengurutkan skor MENURUN, sementara target DRAFT &
+    NONAKTIF **tidak pernah dihitung ulang** — jadi baris yang paling BASI justru
+    paling TINGGI dan duduk di puncak. Terukur pada satu pegawai berhukuman disiplin
+    Berat: 45 baris draft memajang Integritas 100 (skor 96,67) di atas 8 baris aktif
+    yang sudah benar memajang 25 (skor 85,42). Yang dibaca pemilik proses adalah
+    baris teratas, dan kesimpulannya "hukuman disiplinnya tidak berpengaruh" —
+    padahal yang ia lihat skor untuk kursi yang tidak dipakai menilai siapa pun.
+
+    Lencana "Draft — tidak dipakai peringkat" saja tidak cukup: ia menjelaskan baris
+    yang sudah dibaca, tapi tidak menghentikan angka yang salah dari duduk di paling
+    atas.
+
+    `?semuaTarget=1` tetap membuka semuanya — informasinya tidak dihilangkan, hanya
+    tidak lagi memimpin. Kalau TIDAK ADA baris aktif, seluruh daftar ditampilkan:
+    panel kosong akan terbaca sebagai "belum pernah dihitung", yang beda artinya.
+  */
+  const aktifSaja = semua.filter((s) => s.statusTarget === 'AKTIF')
+  const daftar = konteksAda
+    ? semua.filter((s) => s.jabatanTargetId === targetKonteks)
+    : semuaTarget || aktifSaja.length === 0
+      ? semua
+      : aktifSaja
+  const disembunyikan = semua.length - daftar.length
   // Sama dengan `PERAN_HITUNG` di `lib/aksi/skoring.ts` — aksinya tetap penegak
   // terakhirnya; ini hanya menyembunyikan tombol yang pasti akan ditolak.
   const bolehIsiManual = punyaPeran(pengguna, ['Super Admin', 'Admin Talenta'])
 
   return (
-    <Panel padat className="flex flex-col xl:h-[32rem] xl:min-h-0">
+    <Panel padat className="flex flex-col xl:h-[min(32rem,64dvh)] xl:min-h-0">
       <div className="shrink-0 border-b border-border p-4">
         <PanelHeader
-          judul="Kecocokan dengan jabatan target"
+          judul={
+            konteksAda
+              ? `Kecocokan dengan ${daftar[0]?.namaTarget ?? 'jabatan target'}`
+              : 'Kecocokan dengan jabatan target'
+          }
           deskripsi="Formula B: 65% Potensi & Kompetensi + 20% Kualifikasi Jabatan + 15% Integritas & Moralitas. Ketiganya komponen sumbu Potensial — skor ini TIDAK memuat unsur kinerja, jadi baca berdampingan dengan Kotak 9 di atas."
         />
+        {/*
+          Penyaringan konteks WAJIB dinyatakan, beserta jalan kembalinya. Daftar yang
+          disaring diam-diam adalah daftar yang akan dibaca sebagai daftar lengkap —
+          dan di sini kesimpulan salahnya berbahaya: "orang ini hanya kandidat satu
+          kursi" bisa jadi dasar keputusan penetapan.
+        */}
+        {disembunyikan > 0 ? (
+          <p className="mt-2 text-[11px] leading-relaxed text-text-muted">
+            {/*
+              Tidak lagi menyebut "dari Suksesi": konteks `?target=` sekarang juga
+              datang dari drill-down **Peta Talenta** per jabatan target (25 Agu
+              2026). Keterangan yang menyebut asal yang salah membuat pembacanya
+              mencari-cari halaman yang tidak ia buka.
+            */}
+            {konteksAda
+              ? 'Dibuka dengan konteks satu jabatan target, jadi hanya itu yang ditampilkan.'
+              : `Hanya jabatan target AKTIF yang ditampilkan. ${formatAngka(disembunyikan)} target draft/nonaktif disembunyikan — skornya tidak dihitung ulang, jadi angkanya bisa lebih tinggi sekaligus lebih basi.`}{' '}
+            <Link
+              href={`/talenta/${profil.nip}?semuaTarget=1`}
+              className="text-accent hover:underline"
+            >
+              Tampilkan semua {formatAngka(semua.length)} jabatan target
+            </Link>
+          </p>
+        ) : null}
       </div>
 
       {/* Panel ini paling panjang di halaman (terukur 794px dengan 3 jabatan
@@ -683,6 +907,25 @@ async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
                       ) : (
                         <Badge tone="bahaya">Tidak lolos syarat</Badge>
                       )}
+                      {/*
+                        Status jabatan targetnya ditandai untuk yang BUKAN aktif.
+                        Panel ini mengurutkan menurut skor menurun, sementara draft &
+                        nonaktif tidak pernah dihitung ulang — jadi barisnya bisa
+                        memajang angka LEBIH TINGGI yang justru lebih basi, dan duduk
+                        di puncak daftar. Terukur pada satu pegawai: draft 96,67 di
+                        atas aktif 85,42, dan yang 96,67 itu dihitung sebelum catatan
+                        disiplinnya masuk. Tanpa penanda ini, angka teratas dibaca
+                        sebagai skor yang berlaku.
+                      */}
+                      {s.statusTarget !== 'AKTIF' ? (
+                        <Badge
+                          tone="peringatan"
+                          title="Jabatan target ini tidak aktif, jadi skornya tidak dihitung ulang dan tidak dipakai peringkat talent pool."
+                        >
+                          {s.statusTarget === 'DRAFT' ? 'Draft' : 'Nonaktif'} — tidak dipakai
+                          peringkat
+                        </Badge>
+                      ) : null}
                       {s.statusTalentPool ? (
                         <Badge tone="aksen">
                           Talent pool: {s.statusTalentPool}
@@ -698,6 +941,38 @@ async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
                     <span className="text-[10px] text-text-subtle">skor total</span>
                   </span>
                 </div>
+
+                {/*
+                  Penanda skor BASI terhadap rekam jejak disiplin. Tanpa ini, satu
+                  halaman memajang "1 hukuman aktif · Berat" di panel Integritas dan
+                  "Verifikasi Rekam Jejak Disiplin 100 · Tidak Pernah" di sini —
+                  bertentangan, tanpa satu pun keterangan. Dilaporkan pemilik proses
+                  25 Agu 2026, dan kesimpulan wajarnya "fiturnya tidak berfungsi".
+
+                  Yang benar bukan menyembunyikan angkanya (ia memang angka yang
+                  dipakai peringkat sekarang), melainkan menyatakan bahwa ia belum
+                  memperhitungkan catatan terbaru — dan menyebut tindakan yang
+                  membereskannya.
+                */}
+                {s.disiplinLebihBaru ? (
+                  <p className="mt-2 flex items-start gap-1.5 rounded-md border border-warning-border bg-warning-subtle px-2.5 py-2 text-[11px] leading-relaxed text-text-muted">
+                    <TriangleAlert className="mt-px size-3.5 shrink-0 text-warning" />
+                    <span>
+                      <strong className="font-medium text-text">
+                        Skor ini dihitung sebelum catatan disiplin terbaru
+                      </strong>{' '}
+                      — komponen Integritas &amp; Moralitas di baris ini belum
+                      memperhitungkannya. Jalankan{' '}
+                      <Link
+                        href={`/jabatan-target/${s.jabatanTargetId}`}
+                        className="text-accent hover:underline"
+                      >
+                        Hitung Ulang
+                      </Link>{' '}
+                      pada jabatan target itu.
+                    </span>
+                  </p>
+                ) : null}
 
                 {s.catatanEligibility ? (
                   <p className="mt-2 text-[11px] leading-relaxed text-text-subtle">
@@ -728,6 +1003,7 @@ async function BagianMatchScore({ profil }: { profil: ProfilPegawai }) {
                   pegawaiId={profil.pegawaiId}
                   jabatanTargetId={s.jabatanTargetId}
                   bolehIsiManual={bolehIsiManual}
+                  pengalaman={pengalaman}
                 />
               </li>
             ))}
@@ -742,7 +1018,7 @@ function Komponen({ label, bobot, skor }: { label: string; bobot: number; skor: 
   return (
     <div className="rounded-md border border-border bg-surface-2 p-2.5">
       <p className="flex items-center justify-between text-[10px] text-text-subtle">
-        <span className="min-w-0 truncate">{label}</span>
+        <span className="min-w-0 break-words">{label}</span>
         <span className="tabular ml-1 shrink-0">{formatBobot(bobot)}</span>
       </p>
       <p className="tabular mt-1 text-sm font-semibold text-text">{formatSkor(skor)}</p>
@@ -754,6 +1030,7 @@ function Komponen({ label, bobot, skor }: { label: string; bobot: number; skor: 
 }
 
 async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
+  const bolehUbah = await bolehUbahProfil()
   const [riwayat, pilihanJabatan] = await Promise.all([
     ambilRiwayatJabatan(profil.pegawaiId),
     ambilPilihanJabatan(),
@@ -781,10 +1058,11 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
                 </Badge>
               ) : null}
               <TombolEditor
-                jenis="riwayatJabatan"
-                pegawaiId={profil.pegawaiId}
-                pilihanJabatan={pilihanJabatan}
-              />
+                  jenis="riwayatJabatan"
+                  pegawaiId={profil.pegawaiId}
+                  pilihanJabatan={pilihanJabatan}
+                boleh={bolehUbah}
+/>
             </>
           }
         />
@@ -812,20 +1090,22 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
                 <div className="min-w-0 flex-1">
                   <span className="float-right ml-2">
                     <TombolEditor
-                      jenis="riwayatJabatan"
-                      pegawaiId={profil.pegawaiId}
-                      pilihanJabatan={pilihanJabatan}
-                      baris={{
-                        id: r.id,
-                        jabatanNamaMentah: r.namaMentah,
-                        jabatanId: r.jabatanId,
-                        jenisPenugasan: r.jenisPenugasan,
-                        unitKerjaMentah: r.unitKerjaMentah,
-                        tanggalMulai: r.tanggalMulai,
-                        tanggalAkhir: r.tanggalAkhir,
-                        noSk: r.noSk,
-                      }}
-                    />
+                        jenis="riwayatJabatan"
+                        pegawaiId={profil.pegawaiId}
+                        pilihanJabatan={pilihanJabatan}
+                        baris={{
+                          id: r.id,
+                          jabatanNamaMentah: r.namaMentah,
+                          jabatanId: r.jabatanId,
+                          jenisPenugasan: r.jenisPenugasan,
+                          unitKerjaMentah: r.unitKerjaMentah,
+                          tanggalMulai: r.tanggalMulai,
+                          tanggalAkhir: r.tanggalAkhir,
+                          lamaBulan: r.lamaBulan,
+                          noSk: r.noSk,
+                        }}
+                      boleh={bolehUbah}
+/>
                   </span>
                   <p className="text-[13px] leading-snug font-medium text-text">
                     {r.namaJabatan ?? r.namaMentah}
@@ -840,11 +1120,26 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
                       Teks sumber: {r.namaMentah}
                     </p>
                   ) : null}
+                  {/*
+                    Baris berdurasi-tanpa-tanggal TIDAK ditulis sebagai rentang.
+                    "tanggal belum ada – sekarang" menyatakan jabatan yang masih
+                    berjalan, dan itu salah untuk 229 baris riwayat yang sumbernya
+                    (berkas Talent Pool ES 2 & 3) memang hanya memberi lamanya.
+                  */}
                   <p className="tabular mt-0.5 text-[11px] text-text-subtle">
-                    {r.tanggalMulai ? formatTanggal(r.tanggalMulai) : 'tanggal belum ada'}
-                    {' – '}
-                    {r.tanggalAkhir ? formatTanggal(r.tanggalAkhir) : 'sekarang'}
-                    {r.lamaTahun !== null ? ` · ${formatDurasiTahun(r.lamaTahun)}` : ''}
+                    {r.sumberLama === 'DURASI' ? (
+                      <>
+                        Lama {formatDurasiTahun(r.lamaTahun)}
+                        <span className="text-text-muted"> · tanggal tidak ada di sumbernya</span>
+                      </>
+                    ) : (
+                      <>
+                        {r.tanggalMulai ? formatTanggal(r.tanggalMulai) : 'tanggal belum ada'}
+                        {' – '}
+                        {r.tanggalAkhir ? formatTanggal(r.tanggalAkhir) : 'sekarang'}
+                        {r.lamaTahun !== null ? ` · ${formatDurasiTahun(r.lamaTahun)}` : ''}
+                      </>
+                    )}
                   </p>
                   <p className="mt-0.5 text-[11px] text-text-subtle">
                     {r.namaUnit ?? (r.terpetakan ? '—' : 'Di luar master jabatan DJBK')}
@@ -862,6 +1157,7 @@ async function BagianRiwayatJabatan({ profil }: { profil: ProfilPegawai }) {
 }
 
 async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
+  const bolehUbah = await bolehUbahProfil()
   const riwayat = await ambilRiwayatPendidikan(profil.pegawaiId)
 
   // Kolom arsip disembunyikan kalau SELURUH baris kosong — menampilkan tiga
@@ -883,7 +1179,7 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
           deskripsi={
             riwayat.length === 0 ? undefined : `${formatAngka(riwayat.length)} jenjang tercatat`
           }
-          aksi={<TombolEditor jenis="pendidikan" pegawaiId={profil.pegawaiId} />}
+          aksi={<TombolEditor jenis="pendidikan" pegawaiId={profil.pegawaiId} boleh={bolehUbah} />}
         />
       </div>
 
@@ -915,17 +1211,18 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
                         jadi pemilihnya terbuka pada pilihan pertama dan menyimpan
                         akan MENGUBAH jenjang yang tidak disentuh siapa pun. */}
                       <TombolEditor
-                        jenis="pendidikan"
-                        pegawaiId={profil.pegawaiId}
-                        baris={{
-                          id: r.id,
-                          jenjangPendidikan: r.jenjang,
-                          bidangStudi: r.bidangStudi,
-                          namaSekolah: r.namaSekolah,
-                          tahunLulus: r.tahunLulus,
-                          noPertekBkn: r.noPertekBkn,
-                        }}
-                      />
+                          jenis="pendidikan"
+                          pegawaiId={profil.pegawaiId}
+                          baris={{
+                            id: r.id,
+                            jenjangPendidikan: r.jenjang,
+                            bidangStudi: r.bidangStudi,
+                            namaSekolah: r.namaSekolah,
+                            tahunLulus: r.tahunLulus,
+                            noPertekBkn: r.noPertekBkn,
+                          }}
+                        boleh={bolehUbah}
+/>
                       {adaIjazah ? (
                         r.urlIjazah ? (
                           <Badge tone="sukses">Ijazah</Badge>
@@ -958,6 +1255,7 @@ async function BagianPendidikan({ profil }: { profil: ProfilPegawai }) {
 }
 
 async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
+  const bolehUbah = await bolehUbahProfil()
   return (
     <Panel className="flex flex-col xl:min-h-0 xl:flex-1">
       <div className="shrink-0">
@@ -973,20 +1271,28 @@ async function BagianDiklat({ profil }: { profil: ProfilPegawai }) {
                 // dikategorikan — dan itu justru keadaan yang paling sering terjadi.
                 `${formatAngka(profil.riwayatDiklat.length)} entri dari eHRM · indikator Pengembangan Kompetensi memakai kategori hasil validasi, bukan daftar ini`
           }
-          aksi={<TombolEditor jenis="diklat" pegawaiId={profil.pegawaiId} />}
+          aksi={<TombolEditor jenis="diklat" pegawaiId={profil.pegawaiId} boleh={bolehUbah} />}
         />
       </div>
       <div className="min-h-0 flex-1 xl:overflow-y-auto">
-        <DaftarDiklat diklat={profil.riwayatDiklat} pegawaiId={profil.pegawaiId} />
+        <DaftarDiklat
+          diklat={profil.riwayatDiklat}
+          pegawaiId={profil.pegawaiId}
+          bolehUbah={bolehUbah}
+        />
       </div>
     </Panel>
   )
 }
 
 async function BagianIntegritas({ profil }: { profil: ProfilPegawai }) {
-  const hukuman = await ambilHukumanDisiplin(profil.pegawaiId)
+  const [hukuman, bolehUbah] = await Promise.all([
+    ambilHukumanDisiplin(profil.pegawaiId),
+    bolehUbahProfil(),
+  ])
   const aktif = hukuman.filter((h) => h.statusAktif && h.tingkatHukuman !== 'Tidak Pernah')
   const nonaktif = hukuman.filter((h) => !h.statusAktif && h.tingkatHukuman !== 'Tidak Pernah')
+  const diverifikasi = profil.hukdisVerifikasi !== null
 
   return (
     <Panel>
@@ -998,22 +1304,62 @@ async function BagianIntegritas({ profil }: { profil: ProfilPegawai }) {
             <Badge tone="bahaya">{formatAngka(aktif.length)} hukuman aktif</Badge>
           ) : hukuman.length > 0 ? (
             <Badge tone="sukses">Tidak ada hukuman aktif</Badge>
+          ) : diverifikasi ? (
+            <Badge tone="sukses">Diperiksa · tanpa catatan</Badge>
           ) : (
-            <Badge tone="peringatan">Belum diverifikasi</Badge>
+            <Badge>Tanpa catatan</Badge>
           )
         }
       />
 
       {hukuman.length === 0 ? (
-        <div className="mt-3 flex items-start gap-2 rounded-md border border-warning-border bg-warning-subtle p-2.5">
-          <TriangleAlert className="mt-px size-4 shrink-0 text-warning" />
-          <p className="text-[11px] leading-relaxed text-text-muted">
-            <span className="font-medium text-text">Belum ada catatan rekam jejak disiplin.</span>{' '}
-            Sistem memperlakukan ketiadaan catatan sebagai &ldquo;tidak pernah dijatuhi hukuman
-            disiplin&rdquo; (skor 100) — itu <strong className="font-medium">asumsi</strong>, bukan
-            fakta yang sudah diverifikasi. Verifikasi manual dilakukan di halaman Data Hukuman
-            Disiplin
+        /*
+          Keadaan bawaan NETRAL, bukan kotak peringatan (permintaan pemilik proses
+          25 Agu 2026). Sebelumnya setiap pegawai tanpa catatan tampil seperti
+          datanya bermasalah — padahal bagi mayoritas yang memang tidak pernah
+          dijatuhi hukuman itu keadaan yang benar, dan peringatan yang muncul di
+          hampir semua profil berhenti dibaca.
+
+          Yang membedakan "belum diperiksa" dari "diperiksa, hasilnya bersih"
+          sekarang ceklisnya, bukan warna kotaknya.
+        */
+        <div className="mt-3">
+          <p className="text-[12px] leading-relaxed text-text-muted">
+            <strong className="font-medium text-text">Tanpa catatan hukuman disiplin.</strong> Skor
+            Integritas &amp; Moralitas dihitung 100 untuk keadaan ini.{' '}
+            {/*
+              Dua jalan melengkapi butir kesiapan datanya, dan keduanya disebut di
+              sini (permintaan pemilik proses 25 Agu 2026). Kalau hanya ceklisnya
+              yang disebut, orang yang MEMANG punya catatan akan mencentangnya
+              alih-alih mencatat hukumannya — dan itu justru menghapus informasi
+              yang paling perlu ada.
+            */}
+            Kalau pegawai ini sebenarnya <strong className="font-medium text-text">punya</strong>{' '}
+            hukuman disiplin, catat di{' '}
+            <Link href="/master/hukuman-disiplin" className="text-accent hover:underline">
+              Master Data › Hukuman Disiplin
+            </Link>{' '}
+            — jangan dicentang di bawah.
           </p>
+          {bolehUbah ? (
+            <CentangVerifikasiHukdis
+              pegawaiId={profil.pegawaiId}
+              verifikasi={profil.hukdisVerifikasi}
+            />
+          ) : diverifikasi ? (
+            <p className="mt-2 text-[11px] leading-relaxed text-text-subtle">
+              Sudah diperiksa{' '}
+              {profil.hukdisVerifikasi?.olehNama ?? 'pengguna yang sudah dihapus'}
+              {profil.hukdisVerifikasi?.pada
+                ? ` · ${formatTanggalWaktu(profil.hukdisVerifikasi.pada)}`
+                : ''}
+              .
+            </p>
+          ) : (
+            <p className="mt-2 text-[11px] leading-relaxed text-text-subtle">
+              Belum ada yang menandainya sudah diperiksa.
+            </p>
+          )}
         </div>
       ) : (
         <ul className="mt-3 divide-y divide-border">
@@ -1042,6 +1388,24 @@ async function BagianIntegritas({ profil }: { profil: ProfilPegawai }) {
           ))}
         </ul>
       )}
+
+      {/*
+        Kotak CATATAN (`2 sept- masukan sistem informasi.pdf` butir 1) duduk di
+        panel INI, bukan panel sendiri — pemilik proses menggambarnya "di dekat
+        integritas/moralitas", dan panel terpisah untuk satu kode akan menambah
+        satu kotak setinggi judulnya sendiri di halaman yang sudah padat.
+
+        Ia dirender di LUAR percabangan di atas supaya muncul baik untuk pegawai
+        yang punya catatan hukuman maupun yang tidak: kodenya tidak menggambarkan
+        hukuman disiplin saja, dan menyembunyikannya pada salah satu cabang berarti
+        sebagian pegawai tidak bisa diberi catatan sama sekali.
+      */}
+      <KotakCatatan
+        pegawaiId={profil.pegawaiId}
+        nama={profil.nama}
+        catatan={profil.catatan}
+        bolehUbah={bolehUbah}
+      />
     </Panel>
   )
 }

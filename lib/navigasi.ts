@@ -90,7 +90,11 @@ export const NAVIGASI: GrupNav[] = [
         href: '/jabatan-target',
         ikon: 'Target',
         fase: 5,
-        peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+        // Pengelola Unit ditambahkan 24 Agu 2026: ia yang MENGUSULKAN kursi kosong
+        // jadi draft & mengisi persyaratannya (`PERAN_USUL_TARGET`). Selama entri
+        // ini menutupnya, kemampuannya ada tapi tidak ada jalan menuju halamannya —
+        // dan itu terbaca sebagai fitur yang tidak jadi, bukan sebagai izin kurang.
+        peran: ['Super Admin', 'Admin Talenta', 'Pimpinan', 'Pengelola Unit'],
         kataKunci: ['rubrik', 'rule engine', 'bobot', 'match score'],
       },
       {
@@ -185,7 +189,10 @@ export const NAVIGASI: GrupNav[] = [
         href: '/jabatan-target#jabatan-kosong',
         ikon: 'TriangleAlert',
         fase: 4,
-        peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+        // Sama seperti entri 'Jabatan Target' di atas — ini justru pintu masuk yang
+        // dipakai Pengelola Unit: daftar kursi kosong unitnya, tempat tombol
+        // "Jadikan draft" berada.
+        peran: ['Super Admin', 'Admin Talenta', 'Pimpinan', 'Pengelola Unit'],
         kataKunci: ['lowong', 'bup', 'pensiun', 'kekosongan', 'risiko'],
         luarSidebar: true,
       },
@@ -224,6 +231,14 @@ export const NAVIGASI: GrupNav[] = [
         ikon: 'FileText',
         fase: 8,
         peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+      },
+      {
+        label: 'Rekap Suksesi',
+        href: '/laporan/rekap-suksesi',
+        ikon: 'Printer',
+        fase: 8,
+        peran: ['Super Admin', 'Admin Talenta', 'Pimpinan'],
+        kataKunci: ['cetak', 'print', 'rapat', 'calon utama', 'cadangan'],
       },
       {
         label: 'Pusat Ekspor',

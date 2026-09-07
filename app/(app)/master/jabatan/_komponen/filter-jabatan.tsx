@@ -1,12 +1,12 @@
 'use client'
 
-import { RotateCcw, Search } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { Pilih } from '@/components/ui/pilih'
-import { Spinner } from '@/components/ui/spinner'
 import { formatAngka } from '@/lib/format'
 
 const LABEL_ESELON: Record<string, string> = {
@@ -38,21 +38,6 @@ export function FilterMasterJabatan({
   const [pending, mulaiTransisi] = useTransition()
 
   const cariAwal = searchParams.get('cari') ?? ''
-  const [cari, setCari] = useState(cariAwal)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const [cariUrlTerakhir, setCariUrlTerakhir] = useState(cariAwal)
-  if (cariAwal !== cariUrlTerakhir) {
-    setCariUrlTerakhir(cariAwal)
-    setCari(cariAwal)
-  }
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    [],
-  )
 
   function terapkan(perubahan: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -64,12 +49,6 @@ export function FilterMasterJabatan({
     mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
   }
 
-  function onCariBerubah(nilai: string) {
-    setCari(nilai)
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => terapkan({ cari: nilai }), 300)
-  }
-
   const filterAktif = ['cari', 'unit', 'eselon', 'jenis', 'status'].filter((k) =>
     searchParams.get(k),
   )
@@ -77,22 +56,15 @@ export function FilterMasterJabatan({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-56 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-          <input
-            value={cari}
-            onChange={(e) => onCariBerubah(e.target.value)}
-            placeholder="Cari nama atau kode jabatan…"
-            aria-label="Cari nama atau kode jabatan"
-            className="h-8 w-full rounded-md border border-border bg-surface pr-16 pl-8 text-[13px] text-text outline-none placeholder:text-text-subtle focus:border-accent"
-          />
-          {pending ? (
-            <span className="absolute top-1/2 right-2.5 flex -translate-y-1/2 items-center gap-1 text-[10px] text-text-subtle">
-              <Spinner className="size-3" />
-              mencari
-            </span>
-          ) : null}
-        </div>
+        {/* Pencarian dijalankan saat Enter, bukan per huruf (2 Sep 2026). */}
+        <KotakCari
+          nilaiAwal={cariAwal}
+          onCari={(q: string) => terapkan({ cari: q })}
+          placeholder="Cari nama atau kode jabatan…"
+          label="Cari nama atau kode jabatan"
+          pending={pending}
+          className="min-w-56 flex-1"
+        />
 
         <Pilih
           label="Unit organisasi"
@@ -148,7 +120,6 @@ export function FilterMasterJabatan({
             size="sm"
             variant="halus"
             onClick={() => {
-              setCari('')
               mulaiTransisi(() => router.push(pathname, { scroll: false }))
             }}
             ikon={<RotateCcw className="size-3.5" />}

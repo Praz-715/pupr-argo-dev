@@ -1,0 +1,3754 @@
+[
+ {
+  "no": "1",
+  "nama": "Galuh Sinta Dewi, S.T., M.M.",
+  "nip": "198311012008012007",
+  "tmtGolongan": "01-10-2022",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "tmtJabatan": "01-11-2025",
+  "sekolah": "Universitas Budi Luhur",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER MANAJEMEN SISTEM INFORMASI",
+  "riwayatPendidikan": "S2 - MAGISTER MANAJEMEN SISTEM INFORMASI (2010)\nS1/D4 - TEKNIK INFORMATIKA (2005)\nSLTA - SMA  IPA (2001)\nSLTP - SMP (1998)\nSD - S.D. (1995)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2022",
+  "jenisAsesmen": "PENGAWAS",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "52.08",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 4,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal Bina Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45962",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Analis Barang Milik Negara, Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal Bina Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 0 Bulan 18 Hari",
+    "tmtMulaiSerial": "45943",
+    "tmtAkhirSerial": "45961"
+   },
+   {
+    "nama": "Kepala Subbagian Tata Usaha, Direktorat Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 2 Bulan 11 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "45942"
+   },
+   {
+    "nama": "Kepala Subbagian Tata Usaha, Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 1 Bulan 24 Hari",
+    "tmtMulaiSerial": "45450",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Kepala Subbagian Tata Usaha, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "5 Tahun 3 Bulan 9 Hari",
+    "tmtMulaiSerial": "43524",
+    "tmtAkhirSerial": "45449"
+   },
+   {
+    "nama": "Arsiparis Ahli Muda Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 4 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "44017"
+   },
+   {
+    "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Sinkronisasi dan Evaluasi Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 10 Bulan 14 Hari",
+    "tmtMulaiSerial": "42838",
+    "tmtAkhirSerial": "43523"
+   },
+   {
+    "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "0 Tahun 10 Bulan 3 Hari",
+    "tmtMulaiSerial": "42530",
+    "tmtAkhirSerial": "42837"
+   },
+   {
+    "nama": "Kepala Subbagian Tata Usaha Kepegawaian, Bagian Kepegawaian, Organisasi, dan Tata Laksana, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "0 Tahun 10 Bulan 10 Hari",
+    "tmtMulaiSerial": "42214",
+    "tmtAkhirSerial": "42529"
+   },
+   {
+    "nama": "PENGOLAH BMN BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "2 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42213"
+   },
+   {
+    "nama": "STAF SUBBAGIAN PENGELOLAAN BARANG MILIK NEGARA, BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "40575",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF SUBBAG RUMAH TANGGA, BAG. UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTR. & SDM, DEP. PU.",
+    "masaKerja": "1 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "39845",
+    "tmtAkhirSerial": "40574"
+   },
+   {
+    "nama": "STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "1 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "39448",
+    "tmtAkhirSerial": "39844"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Tata Kelola, Manajemen Risiko dan Kepatuhan",
+   "Workshop Pembinaan Kinerja Bagi Pengelola Kepegawaian di Lingkungan Kementerian PUPR",
+   "PPSPM Negara Tersertifikasi (SNT)",
+   "Pelatihan Jarak Jauh PPSPM Angkatan I Tahun 2023",
+   "Auditor Internal SNI 37001:2016 (Anty-Bribery Management System)",
+   "Manajemen Risiko",
+   "Pelatihan Digital Policy 4.0 Angkatan II Tahun 2019",
+   "Manajemen TIK dalam Pemerintahan",
+   "Kepemimpinan Tingkat IV",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
+  ],
+  "tmtDiklat": "28 Juli 2026\ns/d\n28 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "52.08",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 4
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "59.86",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 5
+   }
+  ],
+  "foto": "doc/data/foto/198311012008012007.png"
+ },
+ {
+  "no": "2",
+  "nama": "Yosaphat Bisma Wikantyasa, S.Sos, M.IKom",
+  "nip": "198211142008011008",
+  "tmtGolongan": "01-12-2024",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pranata Hubungan Masyarakat Ahli Madya",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Mercu Buana Yogyakarta",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "ILMU KOMUNIKASI",
+  "riwayatPendidikan": "S2 - ILMU KOMUNIKASI (2015)\nS1/D4 - ILMU KOMUNIKASI (2004)\nSLTA - SMA  IPS (2000)\nSLTP - SMP (1997)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "75.42",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 24,
+  "riwayatJabatan": [
+   {
+    "nama": "Pranata Hubungan Masyarakat Ahli Madya, Bagian Hukum, Informasi Jasa Konstruksi, dan Komunikasi Publik, Sekretariat Direktorat Jenderal Bina Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "45536",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Arsiparis Ahli Muda Bagian Hukum, Informasi Jasa Konstruksi, dan Komunikasi Publik, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 6 Bulan 21 Hari",
+    "tmtMulaiSerial": "43992",
+    "tmtAkhirSerial": "44196"
+   },
+   {
+    "nama": "Kepala Subbagian Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Banten, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 8 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43991"
+   },
+   {
+    "nama": "PENELAAH PEMBERDAYAAN MASYARAK SEKSI PENGEMBANGAN TEKNOLOGI KONSTRUKSI, BALAI PENERAPAN TEKNOLOGI KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 1 Bulan 25 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "PENYUSUN MONEV & PELAPORAN SUBBAGIAN EVALUASI DAN PELAPORAN, BAGIAN PERENCANAAN DAN EVALUASI, SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 2 Bulan 5 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENYUSUN PROGRAM DAN RENCANA ANGGARAN SUBBAGIAN PROGRAM DAN ANGGARAN, BAGIAN PERENCANAAN, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 8 Bulan 3 Hari",
+    "tmtMulaiSerial": "41694",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "PENGOLAH DATA & INFORMASI BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 4 Bulan 22 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "41693"
+   },
+   {
+    "nama": "STAF SUBBAGIAN DATA DAN INFORMASI, BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI KEMENTERIAN PU ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "39845",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "1 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "39448",
+    "tmtAkhirSerial": "39844"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sertifikasi Jabatan Fungsional Pranata Humas Tingkat Ahli",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Bimbingan Teknis Pembekalan serta Peningkatan Kompetensi Jabatan Fungsional Pranata Hubungan Masyarakat",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Pelaksanaan Anggaran",
+   "KEGIATAN PEMBEKALAN PETUGAS PENELITI RKA-K/L TAHUN 2014 KEMENTERIAN PEKERJAAN UMUM",
+   "BIMB. TEHNIS PENYELESAIAN HUKUM",
+   "Penanggulangan Bencana",
+   "Pengembangan Metode Teknologi Konstruksi"
+  ],
+  "tmtDiklat": "2 Mei 2026\ns/d\n13 Mei 202",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "75.42",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 24
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "90.97",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 25
+   }
+  ],
+  "foto": "doc/data/foto/198211142008011008.png"
+ },
+ {
+  "no": "3",
+  "nama": "Nurasih Asriningtyas, S.T.",
+  "nip": "198311172010122002",
+  "tmtGolongan": "01-04-2026",
+  "golongan": "IV/b",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Indonesia",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK ELEKTRO",
+  "riwayatPendidikan": "S1/D4 - TEKNIK ELEKTRO (2005)\nSLTA - SMA  IPA (2001)\nSLTP - SMP (1998)\nSD - S.D. (1995)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2026",
+  "jenisAsesmen": "ADMINISTRATOR",
+  "statusAsesmen": "VALID",
+  "potkom": "91.15",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "9",
+  "barisExcel": 44,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Kelembagaan, Direktorat Usaha dan Kelembagaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "4 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "44621",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Kelembagaan, Material, Peralatan, dan Usaha Jasa Konstruksi, Direktorat Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "2 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "44621",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Direktorat Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 7 Bulan 27 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "44620"
+   },
+   {
+    "nama": "Kepala Seksi Lembaga Pemerintah, Subdirektorat Kelembagaan, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 7 Bulan 30 Hari",
+    "tmtMulaiSerial": "42674",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Seksi Lembaga Pemerintah, Subdirektorat Kelembagaan, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 29 Hari",
+    "tmtMulaiSerial": "42644",
+    "tmtAkhirSerial": "42673"
+   },
+   {
+    "nama": "PENYUSUN MONEV & PELAPORAN, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 29 Hari",
+    "tmtMulaiSerial": "42095",
+    "tmtAkhirSerial": "42277"
+   },
+   {
+    "nama": "Staf, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "4 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "42094"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Bimbingan Teknis tentang Kenyamanan Termal dan Tata Cara Perancangan Sistem Pengondisian Udara pada Bangunan Gedung sesuai SNI 9382:2025 dan SNI 9444:2026",
+   "Penyegaran Asesor dan Panitia Teknis Skema Sertifikasi Person Berdasarkan ISO/IEC 17024:2026",
+   "Bimbingan Teknis Pembinaan Jasa Konstruksi",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Pengendalian Gratifikasi di Hari Raya",
+   "Manajemen Konstruksi",
+   "Workshop Perancangan Perundang-Undangan",
+   "Pelatihan Asesor SNI ISO/IEC 17024-2012",
+   "E-Learning Manajemen Risiko",
+   "Narasumber dalam kegiatan \"Penyelenggaraan Pelatihan untuk Peningkatan Kapasitas Administrator SIPJAKI\"",
+   "Bimtek Tata Cara Perhitungan TKDN",
+   "PELATIHAN ASESOR AKREDITASI LSBU SEKTOR JASA KONSTRUKSI",
+   "Pelatihan SNI ISO /IEC 170665:2012 Calon Asesor Skema Akreditasi LSBU Sektor Jasa Konstruksi",
+   "PELATIHAN ASESOR KOMPETENSI",
+   "Hukum Kontrak Konstruksi"
+  ],
+  "tmtDiklat": "29 Juli 2026\ns/d\n29 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "91.15",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "ADMINISTRATOR",
+    "statusAsesmen": "VALID",
+    "barisExcel": 44
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "113.19",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "ADMINISTRATOR",
+    "statusAsesmen": "VALID",
+    "barisExcel": 45
+   }
+  ],
+  "foto": "doc/data/foto/198311172010122002.png"
+ },
+ {
+  "no": "4",
+  "nama": "Tisky Anisha Azwen, S.E., M.Bus.",
+  "nip": "198808302009122001",
+  "tmtGolongan": "01-04-2026",
+  "golongan": "IV/b",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "University of Queensland",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MASTER OF BUSINESS ADMINISTRATION",
+  "riwayatPendidikan": "S2 - MASTER OF BUSINESS ADMINISTRATION (2013)\nS1/D4 - EKONOMI  AKUNTANSI (2009)\nSLTA - SMA  IPA (2005)\nSLTP - SMP (2002)\nSD - S.D. (1999)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2026",
+  "jenisAsesmen": "ADMINISTRATOR",
+  "statusAsesmen": "VALID",
+  "potkom": "94.79",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "9",
+  "barisExcel": 64,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Penerapan Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Bakuan Kompetensi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45047",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 10 Bulan 20 Hari",
+    "tmtMulaiSerial": "43992",
+    "tmtAkhirSerial": "45046"
+   },
+   {
+    "nama": "Kepala Seksi Standardisasi Profesi, Subdirektorat Pengembangan Profesi Jasa Konstruksi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 6 Bulan 29 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "44104"
+   },
+   {
+    "nama": "KEPALA SEKSI PASAR INTERNASIONAL, SUBDIREKTORAT PASAR INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "42838",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "Kepala Seksi Pola Pembiayaan, Subdirektorat Penyiapan Kebijakan Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 26 Hari",
+    "tmtMulaiSerial": "42660",
+    "tmtAkhirSerial": "42837"
+   },
+   {
+    "nama": "PENELAAH DATA KEUANGAN SUBBAGIAN KEUANGAN, BAGIAN KEUANGAN DAN UMUM, SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 18 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42659"
+   },
+   {
+    "nama": "PENGOLAH BMN BAGIAN UMUM, SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 0 Bulan 26 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "STAF SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 8 Bulan 29 Hari",
+    "tmtMulaiSerial": "40544",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "1 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "40148",
+    "tmtAkhirSerial": "40543"
+   }
+  ],
+  "riwayatDiklat": [
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Pelatihan Asesor SNI ISO/IEC 17024:2012 Skema Akreditasi Lembaga Sertifikasi Person",
+   "PELATIHAN ASESOR AKREDITASI",
+   "Pelatihan Asesor Akreditasi KAN",
+   "In Country Refresher Training and Technical Assistance Workshop to Prepare Negative List Schedules",
+   "Capacity Building Penilaian Kelayakan Proyek Penyediaan Infrastruktur",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "AHLI PENGADAAN BARANG/JASA PEMERINTAH",
+   "INTERNATIONAL SHORT COURSE PROGRAM: PENGEMBANGAN KAPASITAS PEMBINA JASA KONSTRUKSI",
+   "PRE DEPARTURE TRAINING COURSE",
+   "Program Percepatan Akuntabilitas Pemerintahan (PPAKP)",
+   "DIKLAT FUNGSIONAL Administrasi Keuangan Bagi Calon Bendahara PENGELUARAN"
+  ],
+  "tmtDiklat": "27 April 2026\ns/d\n01 Mei 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "94.79",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "ADMINISTRATOR",
+    "statusAsesmen": "VALID",
+    "barisExcel": 64
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "117.36",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "ADMINISTRATOR",
+    "statusAsesmen": "VALID",
+    "barisExcel": 65
+   }
+  ],
+  "foto": "doc/data/foto/198808302009122001.png"
+ },
+ {
+  "no": "5",
+  "nama": "Kurniasari Moerni Hasanah, S.T., M.T",
+  "nip": "197710212009022001",
+  "tmtGolongan": "01-02-2024",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Pelita Harapan",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER TEKNIK SIPIL",
+  "riwayatPendidikan": "S2 - MAGISTER TEKNIK SIPIL (2012)\nS1/D4 - TEKNIK ARSITEKTUR (2001)\nSLTA - SMA . FISIKA (1996)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MADYA",
+  "statusAsesmen": "VALID",
+  "potkom": "71.46",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 84,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Pengembangan Profesi Jasa Konstruksi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Penerapan Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Pengembangan Profesi Jasa Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 7 Bulan 27 Hari",
+    "tmtMulaiSerial": "45108",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Pengembangan Profesi Jasa Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 10 Bulan 29 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "45107"
+   },
+   {
+    "nama": "KEPALA SEKSI FASILITASI PENYETARAAN KOMPETENSI, SUBDIREKTORAT PENGEMBANGAN PROFESI JASA KONSTRUKSI, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 8 Bulan 29 Hari",
+    "tmtMulaiSerial": "43041",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "PENELAAH KOMPETENSI JASA KONST SEKSI STANDAR DAN PEDOMAN, SUBDIREKTORAT PRODUKTIVITAS, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 2 Bulan 0 Hari",
+    "tmtMulaiSerial": "42248",
+    "tmtAkhirSerial": "43040"
+   },
+   {
+    "nama": "PELAKSANA SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "6 Tahun 6 Bulan 30 Hari",
+    "tmtMulaiSerial": "39845",
+    "tmtAkhirSerial": "42247"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Kerja Sama Pemerintah dan Badan Usaha (KPBU) Infrastruktur Pekerjaan Umum",
+   "Penerapan Teknologi RISHA dalam Penyediaan Perumahan Melalui Microlearning",
+   "LHKPN Tuntas, Integritas dan Akuntabilitas Terjaga",
+   "E-Learning Manajemen Risiko",
+   "e-Learning Manajemen Rantai Pasok",
+   "Pelatihan Building Information Modelling (BIM) Untuk Aparatur Sipil Negara PUPR",
+   "Bimbingan Teknis Penyusunan Skema Sertifikasi Lembaga Sertifikasi Profesi (e-Learning)",
+   "Pengadaan Barang/Jasa Pemerintah (PBJ)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
+  ],
+  "tmtDiklat": "28 Juli 2026\ns/d\n28 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "71.46",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 84
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "85.07",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 85
+   }
+  ],
+  "foto": "doc/data/foto/197710212009022001.png"
+ },
+ {
+  "no": "6",
+  "nama": "Hilda Isfanovi, S.T., MPSDA",
+  "nip": "198211102010122001",
+  "tmtGolongan": "01-12-2024",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Institut Teknologi Bandung",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "PASCA BID PENGEMBANGAN SUMBER DAYA AIR",
+  "riwayatPendidikan": "S2 - PASCA BID PENGEMBANGAN SUMBER DAYA AIR (2015)\nS1/D4 - D-IV TEKNIK SIPIL (2006)\nSLTA - SMA  IPA (2000)\nSLTP - SMP (1997)\nSD - S.D. (1994)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MADYA",
+  "statusAsesmen": "VALID",
+  "potkom": "84.51",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 104,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Pengelolaan Katalog Elektronik, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Fasilitasi dan Kelembagaan Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45536",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "4 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "43952",
+    "tmtAkhirSerial": "45535"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Seksi Advokasi, Sub Direktorat Advokasi dan Fasilitasi Pengelolaan Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Analis Investasi Dan Pasar Konstruksi Seksi Sinkronisasi, Subdirektorat Sinkronisasi dan Evaluasi Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 2 Bulan 28 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43555"
+   },
+   {
+    "nama": "PENGOLAH PEMETAAN SDI SEKSI SINKRONISASI, SUBDIREKTORAT SINKRONISASI DAN EVALUASI INVESTASI INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 2 Bulan 5 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENGOLAH PEMETAAN SDI PUSAT PEMBINAAN SUMBER DAYA INVESTASI, BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 6 Bulan 26 Hari",
+    "tmtMulaiSerial": "42095",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "PENELAAH KEBIJAKAN DAN STRATEGI BIDANG MATERIAL DAN PERALATAN, PUSAT PEMBINAAN SUMBER DAYA INVESTASI ,BPK KEMENTERIAN PU",
+    "masaKerja": "2 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42094"
+   },
+   {
+    "nama": "STAF SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "41182"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "The International Women in Engineering Day (INWED 2025)",
+   "Pelatihan Women&rsquo;s Leadership Training pada Program Promoting Advancement of Women in Indonesia&rsquo;s Infrastructure Sector (PAVE)",
+   "Penguatan Kompetensi Pokja Pemilihan dan Pejabat Pengadaan Unit Pelaksanaan Teknis melalui E-Purchasing dengan Metode Mini Kompetisi pada Pekerjaan Konstruksi Kementerian Pekerjaan Umum di Provinsi Riau",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Pembiayaan Infrastruktur"
+  ],
+  "tmtDiklat": "28 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "84.51",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 104
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "103.31",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 105
+   }
+  ],
+  "foto": "doc/data/foto/198211102010122001.png"
+ },
+ {
+  "no": "7",
+  "nama": "Badriya, S.H., M.Hum.",
+  "nip": "198501232008012002",
+  "tmtGolongan": "01-08-2025",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Katolik Parahyangan",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER HUKUM",
+  "riwayatPendidikan": "S2 - MAGISTER HUKUM (2016)\nS1/D4 - HUKUM  UMUM (2007)\nSLTA - SMA  IPS (2003)\nSLTP - SMP (2000)\nSD - S.D. (1997)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "55.90",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 124,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Kontrak Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 2 Bulan 27 Hari",
+    "tmtMulaiSerial": "45809",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 0 Bulan 0 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45717"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kontrak Konstruksi, Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "4 Tahun 10 Bulan 30 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45808"
+   },
+   {
+    "nama": "Pejabat Penguji SPM DIREKTORAT BINA PENYELENGGARAAN JASA KONSTRUKSI, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "43831",
+    "tmtAkhirSerial": "44196"
+   },
+   {
+    "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 2 Bulan 17 Hari",
+    "tmtMulaiSerial": "42838",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "Penelaah Kebijakan Seksi Standar dan Pedoman, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 3 Bulan 9 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "42837"
+   },
+   {
+    "nama": "PENELAAH PERJANJIAN DAN INFORMASI HUKUM SUBBID PENYIAPAN DOKUMEN II, BIDANG ADMINISTRASI KONTRAK, PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "41323",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENYUSUN NSPK BIDANG ADMINISTRASI KONTRAK, PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 4 Bulan 16 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "41322"
+   },
+   {
+    "nama": "STAF SUBBIDANG PENYIAPAN DOKUMEN I, BIDANG ADMINISTRASI KONTRAK, PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "40575",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF SUBBID PENGATURAN, BID ADM KONTRAK KONSTRUKSI, PUSAT PEMB. PENYEL. KONST. , BPKSDM DEP. U",
+    "masaKerja": "1 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "39845",
+    "tmtAkhirSerial": "40574"
+   },
+   {
+    "nama": "Staf , PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI , Departemen Pekerjaan Umum",
+    "masaKerja": "0 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "39482",
+    "tmtAkhirSerial": "39844"
+   },
+   {
+    "nama": "Staf STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "0 Tahun 1 Bulan 2 Hari",
+    "tmtMulaiSerial": "39448",
+    "tmtAkhirSerial": "39481"
+   }
+  ],
+  "riwayatDiklat": [
+   "LAIN - LAIN",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Kerja Sama Pemerintah dan Badan Usaha (KPBU) Infrastruktur Pekerjaan Umum",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "e-Learning Manajemen Rantai Pasok",
+   "8th MLIT Training Program: FY2024 Real Estate and Construction Industrial Policy Program",
+   "DIKLAT JAFUNG PERANCANG PERATURAN PERUNDANG-UNDANG",
+   "Training Of Trainer Bimbingan Teknis Pra Konstruksi",
+   "Sistem Manajemen Keselamatan Konstruksi (SMKK) Blended Learning",
+   "Pelatihan Hukum Kontrak Konstruksi"
+  ],
+  "tmtDiklat": "20-04-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "55.90",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 124
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "64.33",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 125
+   }
+  ],
+  "foto": "doc/data/foto/198501232008012002.png"
+ },
+ {
+  "no": "8",
+  "nama": "Kartika Indryhapsari Putri, S.T.",
+  "nip": "198607122014022005",
+  "tmtGolongan": "01-08-2025",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-06-2025",
+  "sekolah": "Universitas Diponegoro",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK  SIPIL",
+  "riwayatPendidikan": "S1/D4 -  TEKNIK  SIPIL (2008)\nSLTA - SMA  IPA (2004)\nSLTP - SMP (2001)\nSD - S.D. (1998)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2022",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "57.92",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 144,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Fasilitasi dan Kelembagaan Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Advokasi dan Fasilitasi Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 11 Bulan 14 Hari",
+    "tmtMulaiSerial": "44729",
+    "tmtAkhirSerial": "45808"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kepatuhan Intern, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44728"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Muda Subdirektorat Teknologi Konstruksi dan Produksi Dalam Negeri, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 2 Bulan 30 Hari",
+    "tmtMulaiSerial": "43952",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Standar dan Pedoman, Subdirektorat Teknologi Konstruksi dan Produksi Dalam Negeri, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "4 Tahun 10 Bulan 29 Hari",
+    "tmtMulaiSerial": "42156",
+    "tmtAkhirSerial": "43951"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU , Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "42095",
+    "tmtAkhirSerial": "42155"
+   },
+   {
+    "nama": "Staf PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU , Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "41671",
+    "tmtAkhirSerial": "42094"
+   }
+  ],
+  "riwayatDiklat": [
+   "WORKSHOP SUSTAINABLE PROCUREMENT: MORE THAN GOING GREEN &ndash; Driving Sustainable Development Through Procurement",
+   "Sasirangan (Semangat Berbagi Solusi dan Informasi Pengadaan) #18 - Tata Cara Pengadaan Darurat di Kementerian Pekerjaan Umum",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Sosialisasi Pemantauan dan Evaluasi Peningkatan Nilai Indeks Tata Kelola Pengadaan (ITKP) Kementerian Pekerjaan Umum",
+   "Penguatan Kompetensi Pokja Pemilihan dan Pejabat Pengadaan Unit Pelaksanaan Teknis melalui E-Purchasing dengan Metode Mini Kompetisi pada Pekerjaan Konstruksi Kementerian Pekerjaan Umum di Provinsi Riau",
+   "Gerakan Literasi Digital",
+   "Manajemen Mutu Pekerjaan Konstruksi",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)"
+  ],
+  "tmtDiklat": "09-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "57.92",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 144
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "67.64",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 145
+   }
+  ],
+  "foto": "doc/data/foto/198607122014022005.png"
+ },
+ {
+  "no": "9",
+  "nama": "Dr. Ratih Fitriani, S.T., M.T.",
+  "nip": "198407312009122001",
+  "tmtGolongan": "01-08-2025",
+  "golongan": "IV/b",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Indonesia",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S3",
+  "jurusan": "DOKTOR TEKNIK SIPIL",
+  "riwayatPendidikan": "S3 - DOKTOR TEKNIK SIPIL (2022)\nS2 - PERENCANAAN WILAYAH DAN KOTA (2009)\nS1/D4 - TEKNIK ARSITEKTUR (2006)\nSLTA - SMA  IPA (2002)\nSLTP - SMP (1999)\nSD - S.D. (1996)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MADYA",
+  "statusAsesmen": "VALID",
+  "potkom": "96.53",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "9",
+  "barisExcel": 164,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Keselamatan Konstruksi, Direktorat Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 6 Bulan 27 Hari",
+    "tmtMulaiSerial": "44774",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Keamanan dan Keselamatan Konstruksi, Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan",
+    "masaKerja": "1 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44773"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Muda Subdirektorat Konstruksi Berkelanjutan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "43617",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pelaksana Subdirektorat Konstruksi Berkelanjutan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 2 Bulan 30 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43616"
+   },
+   {
+    "nama": "KEPALA SEKSI STANDAR DAN PEDOMAN, SUBDIREKTORAT KONSTRUKSI BERKELANJUTAN, DIREKTORAT BINA PENYELENGGARAAN JASA KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 4 Bulan 11 Hari",
+    "tmtMulaiSerial": "42660",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "Teknik Tata Bangunan & Perumahan Muda Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "1 Tahun 1 Bulan 15 Hari",
+    "tmtMulaiSerial": "42247",
+    "tmtAkhirSerial": "42659"
+   },
+   {
+    "nama": "Kepala Subbagian Evaluasi dan Pelaporan, Bagian Perencanaan dan Evaluasi, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "0 Tahun 1 Bulan 1 Hari",
+    "tmtMulaiSerial": "42214",
+    "tmtAkhirSerial": "42246"
+   },
+   {
+    "nama": "Teknik Tata Bangunan & Perumahan Ahli Muda TEKNIK TATA BANGUNAN & PERUMAHAN MUDA DIREKTORAT BINA PROGRAM,DITJEN CIPTA KARYA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 2 Bulan 26 Hari",
+    "tmtMulaiSerial": "41761",
+    "tmtAkhirSerial": "42213"
+   },
+   {
+    "nama": "PENGEVALUASI PROGRAM DAN KINERJA SUBDIT EVALUASI KINERJA, DIREKTORAT BINA PROGRAM,DITJEN CIPTA KARYA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 4 Bulan 0 Hari",
+    "tmtMulaiSerial": "41275",
+    "tmtAkhirSerial": "41760"
+   },
+   {
+    "nama": "STAF SUBDIT EVALUASI KINERJA, DIREKTORAT BINA PROGRAM,DITJEN CIPTA KARYA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 10 Bulan 30 Hari",
+    "tmtMulaiSerial": "40575",
+    "tmtAkhirSerial": "41274"
+   },
+   {
+    "nama": "STAF SEKRETARIAT DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "40544",
+    "tmtAkhirSerial": "40574"
+   },
+   {
+    "nama": "STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "1 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "40148",
+    "tmtAkhirSerial": "40543"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Webinar KORPRI PU Menyapa ASN &quot;ASN PU Upgrade: Organisasi Kuat, Kerja Makin Semangat&quot;",
+   "Tadaa!:Tanya Pengadaan Episode 15- Sosialisasi Perubahan Model Dokumen Kompetisi untuk Pekerjaan Konstruksi pada Katalog Elektronik dan Penugasan Tim Teknis e-Purchasing",
+   "Sosialisasi Keputusan Menteri PU No 33 Tahun 2025 tentang Besaran Remunerasi Minimal Tenaga Kerja Konstruksi pada Jenjang Kualifikasi Ahli untuk Layanan Jasa Konsultansi Konstruksi",
+   "Penerapan Teknologi RISHA dalam Penyediaan Perumahan Melalui Microlearning",
+   "pelatihan investigasi insiden",
+   "Calon Pengajar (ToT) untuk Pelatihan Pengelolaan Teknis Pembangunan Bangunan Gedung Negara (Distance Learning)",
+   "Estimasi Biaya Konstruksi (Distance Learning)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
+  ],
+  "tmtDiklat": "29 Juli 2026\ns/d\n29 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "96.53",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 164
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "116.62",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 165
+   }
+  ],
+  "foto": "doc/data/foto/198407312009122001.png"
+ },
+ {
+  "no": "10",
+  "nama": "Niken Dwi Pramesti, S.T., M.B.A.",
+  "nip": "198801212010122002",
+  "tmtGolongan": "01-08-2024",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Gadjah Mada",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MASTER OF BUSINESS ADMINISTRATION",
+  "riwayatPendidikan": "S2 - MASTER OF BUSINESS ADMINISTRATION (2015)\nS2 - MASTER OF BUSINESS ADMINISTRATION (2014)\nS1/D4 -  TEKNIK INDUSTRI (2009)\nSLTA - SMA  IPA (2005)\nSLTP - SMP (2002)\nSD - S.D. (1999)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "68.89",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 184,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Keberlanjutan Konstruksi, Direktorat Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45413",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Keamanan dan Keselamatan Konstruksi, Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45412"
+   },
+   {
+    "nama": "Kepala Seksi Penjaminan Mutu, Subdirektorat Pemberdayaan Wilayah III, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 29 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Muda Subdirektorat Kerjasama, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "43344",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI PERTAMA SEKSI LEMBAGA PEMERINTAH, SUBDIREKTORAT KERJASAMA, DIREKTORAT KERJA SAMA DAN PEMBERDAYAAN, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 6 Bulan 30 Hari",
+    "tmtMulaiSerial": "43132",
+    "tmtAkhirSerial": "43343"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama PPK, DIREKTORAT KERJA SAMA DAN PEMBERDAYAAN, Subbagian Tata Usaha, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "42767",
+    "tmtAkhirSerial": "43131"
+   },
+   {
+    "nama": "PENYUSUN PROGRAM DAN ANGGARAN Subbagian Tata Usaha, Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 7 Bulan 12 Hari",
+    "tmtMulaiSerial": "42174",
+    "tmtAkhirSerial": "42766"
+   },
+   {
+    "nama": "PENYUSUN PROGRAM DAN RENCANA ANGGARAN PPK II, SATKER SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, SUBBAGIAN PROGRAM DAN ANGGARAN, BAGIAN PERENCANAAN DAN EVALUASI, SEKRETARIAT DIREKTORAT JENDERAL, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 8 Bulan 17 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42173"
+   },
+   {
+    "nama": "ANALIS KEBIJAKAN INVESTASI SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "41182"
+   }
+  ],
+  "riwayatDiklat": [
+   "E-Learning Peningkatan Pemahaman Gratifikasi",
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Talkshow BALE WALUYA PENGADAAN Seri 18 Dengan Tema “Sosialisasi Pemanfaatan Aplikasi Pendukung Pengadaan Barang/Jasa Pemerintah untuk Mewujudkan Tata Kelola Pengadaan yang Efektif, Efisien, Transparan",
+   "SUSTAINABILITY FORUM 2025 : &ldquo;DARI SOLUSI MENUJU AKSI&rdquo; MEMBANGUN STRATEGI, MENJALIN KOLABORASI. UNTUK MASA DEPAN BERKELANJUTA",
+   "Green Construction",
+   "E-Learning Peningkatan Pemahaman Gratifikasi 2025",
+   "Sistem Manajemen Keselamatan Konstruksi dan Sertifikasi Ahli Madya K3 Konstruksi (Distance Learning)",
+   "Estimasi Biaya Konstruksi (Distance Learning)",
+   "Manajemen Rantai Pasok (Distance Learning)",
+   "Hukum Kontrak Konstruksi E-Learning",
+   "Manajemen Mutu Pekerjaan Konstruksi",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah",
+   "Pelatihan Project Cycle Intermediate",
+   "Pelatihan Project Cycle"
+  ],
+  "tmtDiklat": "20 Agustus 2026\ns/d\n22 Agustus 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "68.89",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 184
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "81.85",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 185
+   }
+  ],
+  "foto": "doc/data/foto/198801212010122002.png"
+ },
+ {
+  "no": "11",
+  "nama": "Anjar Pramularsih, S.T., M.T.",
+  "nip": "198111022006042004",
+  "tmtGolongan": "01-04-2022",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Institut Teknologi Bandung",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER TEKNIK STUDI PEMBANGUNAN",
+  "riwayatPendidikan": "S2 - MAGISTER TEKNIK STUDI PEMBANGUNAN (2011)\nS1/D4 - TEKNIK ARSITEKTUR (2004)\nSLTA - SMA (2000)\nSLTP - SMP (1997)\nSD - S.D. (1994)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "71.46",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 204,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya, Subdirektorat Pembinaan dan Pengembangan Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Pengelolaan Katalog Elektronik, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Subdirektorat Kepatuhan Intern, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45413",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kepatuhan Intern, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45412"
+   },
+   {
+    "nama": "Kepala Seksi Pemantauan dan Evaluasi, Subdirektorat Konstruksi Berkelanjutan, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 9 Bulan 6 Hari",
+    "tmtMulaiSerial": "43732",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "Kepala Seksi Standar dan Pedoman, Subdirektorat Teknologi Konstruksi dan Produksi Dalam Negeri, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 6 Bulan 22 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43731"
+   },
+   {
+    "nama": "KEPALA SEKSI PEMANTAUAN DAN EVALUASI, SUBDIREKTORAT TEKNOLOGI KONSTRUKSI DAN PRODUKSI DALAM NEGERI, DIREKTORAT BINA KELEMBAGAAN DAN SUMBER DAYA JASA KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 3 Bulan 27 Hari",
+    "tmtMulaiSerial": "42675",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Muda Seksi Pemantauan dan Evaluasi, Subdirektorat Teknologi Konstruksi dan Produksi Dalam Negeri, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "42644",
+    "tmtAkhirSerial": "42675"
+   },
+   {
+    "nama": "Kepala Seksi Lembaga Pemerintah, Subdirektorat Kelembagaan, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 2 Bulan 1 Hari",
+    "tmtMulaiSerial": "42214",
+    "tmtAkhirSerial": "42643"
+   },
+   {
+    "nama": "KEPALA SUBBIDANG PERIZINAN, BIDANG REGULASI DAN PERIZINAN, PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "2 Tahun 3 Bulan 27 Hari",
+    "tmtMulaiSerial": "41365",
+    "tmtAkhirSerial": "42213"
+   },
+   {
+    "nama": "PENGOLAH KINERJA LEMBAGA BIDANG KELEMBAGAAN, PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "41364"
+   },
+   {
+    "nama": "STAF SUBBIDANG SUMBER DAYA PERALATAN, BIDANG MATERIAL DAN PERALATAN, PUSAT PEMBINAAN SUMBER DAYA INVESTASI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "40575",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "Staf STAF BPKSDM DEP. PU",
+    "masaKerja": "4 Tahun 9 Bulan 30 Hari",
+    "tmtMulaiSerial": "38808",
+    "tmtAkhirSerial": "40574"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Training of Trainers (ToT) Bagi Pengajar",
+   "Manajemen Risiko Proyek Infrastruktur",
+   "Coaching Clinic Individu",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Bimbingan Teknis Wawancara Berbasis Kompetensi Bagi Calon Penilai Teknis Kementerian PU Gelombang I Tahun 2025",
+   "Jabatan Fungsional Pembina Jasa Konstruksi",
+   "E-Learning Manajemen Risiko",
+   "Training of Trainers (ToT) Manajemen Risiko",
+   "Pelatihan Audit Internal ISO 37001:2016 Sistem Manajemen Anti Penyuapan",
+   "Workshop Manajemen Risiko dan Kepatuhan Intern",
+   "ToT How to be Professional Trainer",
+   "Diklat Kepemimpinan Tingkat IV"
+  ],
+  "tmtDiklat": "28-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "71.46",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 204
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "85.07",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 205
+   }
+  ],
+  "foto": "doc/data/foto/198111022006042004.png"
+ },
+ {
+  "no": "12",
+  "nama": "M. Adnan Damin, S.T., M.T.",
+  "nip": "197601182006041008",
+  "tmtGolongan": "01-04-2022",
+  "golongan": "IV/a",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Madya",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VI Makassar",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Universitas Hasanuddin",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "Teknik Perencanaan Prasarana",
+  "riwayatPendidikan": "S2 - Teknik Perencanaan Prasarana (2013)\nS1/D4 - ARSITEKTUR (2005)",
+  "jenjangAsesmen": "AHLI MADYA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MADYA",
+  "statusAsesmen": "VALID",
+  "potkom": "63.06",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 224,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Madya Balai Jasa Konstruksi Wilayah VI Makassar, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "3 Tahun 2 Bulan 27 Hari",
+    "tmtMulaiSerial": "45078",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Penelaah Pemberdayaan Masyarakat Seksi Pelaksanaan, Balai Jasa Konstruksi Wilayah VI Makassar, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "44197",
+    "tmtAkhirSerial": "45077"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Barat, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 7 Bulan 30 Hari",
+    "tmtMulaiSerial": "43586",
+    "tmtAkhirSerial": "44196"
+   },
+   {
+    "nama": "Pejabat Pembuat Komitmen PENGEMBANGAN KAWASAN PERMUKIMAN PROVINSI SULAWESI BARAT, Subdirektorat Perencanaan Teknis Pengembangan Kawasan Permukiman, Direktorat Pengembangan Kawasan Permukiman, Direktorat Jenderal Cipta Karya, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "42370",
+    "tmtAkhirSerial": "42735"
+   },
+   {
+    "nama": "Pejabat Pembuat Komitmen PERENCANAAAN DAN PENGENDALIAN PROGRAM INFRASTRUKTUR PERMUKIMAN PROVINSI SULAWESI BARAT, Bagian Kepegawaian dan Umum, Sekretariat Direktorat Jenderal, Direktorat Jenderal Cipta Karya, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "40909",
+    "tmtAkhirSerial": "41274"
+   },
+   {
+    "nama": "Pejabat Pembuat Komitmen PERENCANAAAN DAN PENGENDALIAN PROGRAM INFRASTRUKTUR PERMUKIMAN PROVINSI SULAWESI BARAT, Bagian Kepegawaian dan Umum, Sekretariat Direktorat Jenderal, Direktorat Jenderal Cipta Karya",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "40544",
+    "tmtAkhirSerial": "40908"
+   }
+  ],
+  "riwayatDiklat": [
+   "Forum Komunikasi Budaya Kerja Core Values BerAKHLAK dan Citra Organisasi",
+   "INSTRUKTUR JUNIOR",
+   "Spesifikasi umum dan Spesifikasi Khusus Bina Marga terkait Sistem Manajemen Keselamatan Konstruksi (SMKK) Bidang Jalan dan Jembatan",
+   "Spesifikasi Umum dan Spesifikasi Khusus Bina Marga terkait Sistem Manajemen Keselamatan Konstruksi (SMKK) Bidang Jalan dan Jembatan",
+   "Perencanaan Pengembangan Infrastruktur Terpadu dengan Pendekatan Pengembangan Wilayah",
+   "Perencanaan Pengembangan Infrastruktur Terpadu dengan Pendekatan Pengembangan Wilayah",
+   "E-Learning Manajemen Pengembangan SDM",
+   "Ahli Muda Teknik Bangunan Gedung",
+   "Coaching Clinic JFT Ahli Madya Gelombang III Tahun 2024",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Diklat Kepemimpinan Tingkat IV"
+  ],
+  "tmtDiklat": "11 Juni 2026\ns/d\n12 Juni 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MADYA",
+    "potkom": "63.06",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 224
+   },
+   {
+    "jenjangAsesmen": "ADMINISTRATOR",
+    "potkom": "74.07",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MADYA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 225
+   }
+  ],
+  "foto": "doc/data/foto/197601182006041008.png"
+ },
+ {
+  "no": "13",
+  "nama": "Ridwan Nurhadi, S.E., M.M.",
+  "nip": "198810082020121010",
+  "tmtGolongan": "01-04-2025",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta",
+  "tmtJabatan": "01-02-2025",
+  "sekolah": "Universitas Gunadarma",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MANAJEMEN",
+  "riwayatPendidikan": "S2 - MANAJEMEN (2019)\nS1/D4 - AKUNTANSI (2010)",
+  "jenjangAsesmen": "",
+  "tahunAsesmen": "",
+  "jenisAsesmen": "",
+  "statusAsesmen": "",
+  "potkom": "",
+  "ratingKinerja": "",
+  "kotak9Sumber": "",
+  "barisExcel": 244,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Subbagian Umum dan Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 6 Bulan 27 Hari",
+    "tmtMulaiSerial": "45689",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 5 Bulan 26 Hari",
+    "tmtMulaiSerial": "44778",
+    "tmtAkhirSerial": "45688"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tengah, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 8 Bulan 3 Hari",
+    "tmtMulaiSerial": "44531",
+    "tmtAkhirSerial": "44777"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 29 Hari",
+    "tmtMulaiSerial": "44166",
+    "tmtAkhirSerial": "44530"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Tadaa!:Tanya Pengadaan Episode 17 -Sosialisasi Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Republik Indonesia Nomor 6 Tahun 2026 tentang Jabatan Fungsional Pengelola Pengadaan Barang/Jasa",
+   "Sasirangan (Semangat Berbagi Solusi dan Informasi Pengadaan) #20 - Penentuan Resiko Keselamatan Konstruksi dan Perhitungan Biaya SMKK untuk Pekerjaan Konstruksi di Kementerian Pekerjaan Umum",
+   "Penjenjangan Jabatan Fungsional Pengelola Pengadaan Barang/Jasa Ahli Pertama",
+   "Seminar Pengelolaan Kinerja Individu &ldquo;Becoming Empowering Leader Through Perfomance Dialogue&rdquo;"
+  ],
+  "tmtDiklat": "28 Juli 2026\ns/d\n28 Juli 2026",
+  "asesmen": [],
+  "foto": "doc/data/foto/198810082020121010.png"
+ },
+ {
+  "no": "14",
+  "nama": "Susman Hadi, S.T., M.T.",
+  "nip": "198411292010121002",
+  "tmtGolongan": "01-04-2022",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Institut Teknologi Bandung",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "SISTEM DAN TEKNIK JALAN RAYA",
+  "riwayatPendidikan": "S2 - SISTEM DAN TEKNIK JALAN RAYA (2015)\nS2 - SISTEM DAN TEKNIK JALAN RAYA (2015)\nS1/D4 - TEKNIK SIPIL (2007)\nSLTA - SMA  IPA (2002)\nSLTP - SMP (1999)\nSD - S.D. (1996)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2022",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "95.44",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "9",
+  "barisExcel": 264,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal Bina Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 1 Bulan 7 Hari",
+    "tmtMulaiSerial": "45859",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "PLT. Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 1 Bulan 19 Hari",
+    "tmtMulaiSerial": "45809",
+    "tmtAkhirSerial": "45858"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 19 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45858"
+   },
+   {
+    "nama": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 4 Bulan 27 Hari",
+    "tmtMulaiSerial": "45295",
+    "tmtAkhirSerial": "45808"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Ra",
+    "masaKerja": "3 Tahun 5 Bulan 2 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "45294"
+   },
+   {
+    "nama": "Kepala Seksi Pengembangan Sistem Pelaksanaan Pengadaan, Sub Direktorat Pengaturan dan Pengembangan Sistem Pelaksanaan Pengadaaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi , Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "KEPALA SEKSI PERENCANAAN DAN INFORMASI, BALAI JASA KONSTRUKSI WILAYAH III JAKARTA, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "42838",
+    "tmtAkhirSerial": "43524"
+   },
+   {
+    "nama": "KEPALA  SEKSI PERENCANAAN DAN INFORMASI, BALAI JASA KONSTRUKSI WILAYAH I BANDA ACEH, DIREKTORAT JENDERAL BINA KONSTRUKSI, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 26 Hari",
+    "tmtMulaiSerial": "42660",
+    "tmtAkhirSerial": "42837"
+   },
+   {
+    "nama": "PENGOLAH PENYELENGGARAAN PENGADAAN BARANG Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "0 Tahun 11 Bulan 18 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42659"
+   },
+   {
+    "nama": "PENGOLAH PENYELENGGARAAN PENGADAAN BARANG DAN JASA SUBBIDANG PENYUSUNAN REKOMENDASI I, BIDANG PEMILIHAN PENYEDIA BARANG DAN JASA, PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 0 Bulan 26 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "STAF PUSAT PEMBINAAN PENYELENGGARAAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "40940",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "40939"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peraturan Menteri PU Nomor 7 Tahun 2026 tentang Sistem Akuntabilitas Kinerja Instansi Pemerintah Kementerian Pekerjaan Umum",
+   "Manajemen Rantai Pasok",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Manajemen",
+   "Kepemimpinan Administrator",
+   "Kepemimpinan Tingkat IV",
+   "Pengadaan Barang/Jasa Pemerintah",
+   "Bimbingan Teknis Sistem Manajemen Mutu",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Sosialisasi Perpress no 80 Tahun 2013",
+   "PENDIDIKAN DAN PELATIHAN BUDAYA KERJA"
+  ],
+  "tmtDiklat": "12 Mei 2026\ns/d\n12 Mei 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "95.44",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 264
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "127.85",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 265
+   }
+  ],
+  "foto": "doc/data/foto/198411292010121002.png"
+ },
+ {
+  "no": "15",
+  "nama": "Elfiana Feratiwi Bakhri Harahap, S.T.",
+  "nip": "199005282014022003",
+  "tmtGolongan": "01-10-2023",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Gadjah Mada",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK  SIPIL",
+  "riwayatPendidikan": "S1/D4 -  TEKNIK  SIPIL (2012)\nSLTA - SMA  IPA (2008)\nSLTP - SMP (2005)\nSD - S.D. (2002)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "77.92",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 284,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Kelembagaan, Direktorat Usaha dan Kelembagaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kelembagaan, Material, Peralatan, dan Usaha Jasa Konstruksi, Direktorat Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "44256",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Subdirektorat Kelembagaan, Material, Peralatan, dan Usaha Jasa Konstruksi, Direktorat Kelembagaan dan Sumber Daya Konstruksi, Direktorat Jenderal Bina Konstruksi,",
+    "masaKerja": "0 Tahun 6 Bulan 27 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44255"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Lembaga Pemerintah, Subdirektorat Kelembagaan, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "43132",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Seksi Lembaga Masyarakat, Subdirektorat Kelembagaan, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 0 Bulan 28 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43131"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI PERTAMA PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 7 Bulan 1 Hari",
+    "tmtMulaiSerial": "42156",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "Staf PEMBINA JASA KONSTRUKSI SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "41974",
+    "tmtAkhirSerial": "42155"
+   },
+   {
+    "nama": "Staf PEMBINA JASA KONSTRUKSI PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU , Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "41671",
+    "tmtAkhirSerial": "41973"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Membangun Ekosistem Anti Suap Melalui Penerapan Sistem Manajemen Anti Penyuapan (SMAP)",
+   "Tadaa!:Tanya Pengadaan Episode 16- Sosialisasi Penerapan SIMPAN TA 2026 di Kementerian Pekerjaan Umum",
+   "DISKET BM (DISKUSI SERU KEPATUHAN INTERN) &quot; Cegah Stres, Cerdas Emosional : Tegak Disiplin Wujudkan Kinerja Berintegritas &quot;",
+   "Go Global with LPDP: Webinar Skema dan Arah Kebijakan LPDP Tahun 2026",
+   "Pelatihan Pembentukan Verifikator Panduan Cegah Korupsi (PANCEK) untuk Dunia Usaha Batch II Tahun 2025",
+   "Pengetahuan Antikorupsi Dasar dan Integritas (PADI)",
+   "Konstruksi Hijau",
+   "Sistem Manajemen Mutu SNI ISO 9001:2015",
+   "Sertifikat Kompetensi Asesmen Asesor Kompetensi",
+   "Sertifikat Pelatihan Asesor Kompetensi",
+   "Manajemen Proyek",
+   "Sistem Manajemen K3 konstruksi",
+   "Jabatan Fungsional Pembina Jasa Konstruksi",
+   "Trainer SIPJAKI"
+  ],
+  "tmtDiklat": "29-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "77.92",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 284
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "101.25",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 285
+   }
+  ],
+  "foto": "doc/data/foto/199005282014022003.png"
+ },
+ {
+  "no": "16",
+  "nama": "Imsaskia Setyawati Cassandra, S.T.",
+  "nip": "199011302019032011",
+  "tmtGolongan": "01-10-2025",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Lampung",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK SIPIL",
+  "riwayatPendidikan": "S1/D4 - TEKNIK SIPIL (2014)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "83.19",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 304,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Pasar Jasa Konstruksi, Direktorat Usaha dan Kelembagaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kontrak Konstruksi, Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "4 Tahun 7 Bulan 27 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Penelaah Mutu Konstruksi Seksi Standar dan Pedoman, Subdirektorat Manajemen Mutu, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "43891",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Direktorat Kerja Sama dan Pemberdayaan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 28 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43890"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Kompetensi PBJP untuk PPK Tipe C (PBJP Level-2)",
+   "Beludru Bang Rico Vol 5: Penyelenggaraan PBJ Swakelola Tipe I",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Manajemen Rantai Pasok",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Diskusi Kepatuhan Intern Penerapan Prinsip Kehati-hatian Sebagai Upaya Mitigasi Risiko pada Proses Serah Terima Pekerjaan dan Pengakhiran Tahun Anggaran 2025",
+   "Navigasi Sengketa Konstruksi: Menuju Resolusi Efektif dan Berkeadilan",
+   "E-Learning Manajemen Risiko",
+   "Webinar Sharing Knowledge Pengelolaan Sumber Daya Air&nbsp;di&nbsp;Belanda",
+   "Training of Trainer (ToT) Bimbingan Teknis Pra Konstruksi",
+   "Fungsional Pembina Jasa Konstruksi Ahli Pertama",
+   "Coaching Clinic",
+   "Hukum Kontrak Konstruksi",
+   "Kerjasama Pemerintah dengan Badan Usaha (KPBU)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "29 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "83.19",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 304
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "110.42",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 305
+   }
+  ],
+  "foto": "doc/data/foto/199011302019032011.png"
+ },
+ {
+  "no": "17",
+  "nama": "Bayu Dwi Samoedra, S.T., M.A.",
+  "nip": "198709122009121001",
+  "tmtGolongan": "01-04-2022",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "University of Reading",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MASTER OF PUBLIC POLICY",
+  "riwayatPendidikan": "S2 - MASTER OF PUBLIC POLICY (2018)\nS1/D4 - TEKNIK ARSITEKTUR (2009)\nSLTA - SMA  IPA (2004)\nSLTP - SMP (2001)\nSD - S.D. (1998)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2026",
+  "jenisAsesmen": "PENGAWAS",
+  "statusAsesmen": "VALID",
+  "potkom": "107.29",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "9",
+  "barisExcel": 324,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Penerapan Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Bakuan Kompetensi, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "44986",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Analis Monitoring, Evaluasi dan Pelaporan Subbagian Tata Usaha, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 11 Hari",
+    "tmtMulaiSerial": "44974",
+    "tmtAkhirSerial": "44985"
+   },
+   {
+    "nama": "Kepala Seksi Pelaksanaan, Balai Jasa Konstruksi Wilayah II Palembang, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 7 Bulan 10 Hari",
+    "tmtMulaiSerial": "44018",
+    "tmtAkhirSerial": "44973"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Balai Jasa Konstruksi Wilayah II Palembang, Seksi Pelaksanaan, Balai Jasa Konstruksi Wilayah II Palembang, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 4 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "44017"
+   },
+   {
+    "nama": "Kepala Seksi Penyelenggaraan dan Pengendalian Mutu, Balai Jasa Konstruksi Wilayah II Palembang, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 2 Bulan 17 Hari",
+    "tmtMulaiSerial": "42838",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "ANALIS INVESTASI DAN PASAR KO SEKSI PASAR INTERNASIONAL, SUBDIREKTORAT PASAR INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 3 Bulan 9 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "42837"
+   },
+   {
+    "nama": "PENELAAH KEBIJAKAN DAN STRATEGI SUBBAGIAN ORGANISASI DAN TATA LAKSANA, BAGIAN KEPEGAWAIAN, ORGANISASI, DAN TATA LAKSANA, SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 2 Bulan 5 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENELAAH KEBIJAKAN DAN STRATEGI BIDANG PASAR DAN DAYA SAING, PUSAT PEMBINAAN SUMBER DAYA INVESTASI ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 0 Bulan 26 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "STAF SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 8 Bulan 29 Hari",
+    "tmtMulaiSerial": "40544",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "Staf STAF BIRO KEPEGAWAIAN DAN ORGANISASI TATALAKSANA, SETJEN DEP. PU",
+    "masaKerja": "1 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "40148",
+    "tmtAkhirSerial": "40543"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sertifikat mengikuti Kegiatan e-Learning Peningkatan Pemahaman Gratifikasi dan #JadiPaham Konflik Kepentingan TA 2022",
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Klinik BIM PU #54 - New Way for Professional Multi-Level Project Management",
+   "Workshop Jurnalistik dan Fotografi Direktorat Jenderal Bina Konstruksi Tahun 2025",
+   "Seminar Nasional Mewujudkan Kehidupan Smart Living Perkotaan Indonesia Masa Depan",
+   "Penyusunan Policy Brief",
+   "Pelatihan Kepemimpinan Pengawas Angkatan I/2022",
+   "Pejabat Pembuat Komitmen Bersetiikat",
+   "Penyelenggaraan Proyek Infrastruktur PUPR dengan Metodologi Building Information Modeling (BIM)",
+   "Bimtek Tata Cara Perhitungan Tingkat Komponen Dalam Negeri (TKDN)",
+   "Sistem Manajemen K3 konstruksi",
+   "Bimbingan Teknis Bagi Penyelenggara Pelatihan dalam rangka Peningkatan Kompetensi SDM Pembina Jasa Konstruksi",
+   "Pengembangan Kapasitas Pembina Jasa Konstruksi (CID)",
+   "Pelatihan Auditor Mutu Internal",
+   "Pelatihan Quantity Surveyor",
+   "Greenship Associate Plus BP Konstruksi Angkatan I Tahun 2012",
+   "Investasi Infrastruktur Bidang Air Minum",
+   "Value Engineering Workshop Module 1",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang dan Jasa Pemerintah (Sertifikat L4)"
+  ],
+  "tmtDiklat": "20 Agustus 2026\ns/d\n22 Agustus 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "107.29",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 324
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "147.92",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2026",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 325
+   }
+  ],
+  "foto": "doc/data/foto/198709122009121001.png"
+ },
+ {
+  "no": "18",
+  "nama": "Indra Budiarsana, S.Kom.",
+  "nip": "198303252010121002",
+  "tmtGolongan": "01-10-2023",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Budi Luhur",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "SISTEM INFORMASI",
+  "riwayatPendidikan": "S1/D4 - SISTEM INFORMASI (2012)\nS1/D4 - SISTEM INFORMASI (2012)\nSM/D-3 - D-III MANAJEMEN INFORMATIKA (2005)\nSLTA - SMA  IPS (2001)\nSLTP - SMP (1998)\nSD - S.D. (1995)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "64.42",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 344,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subbagian Tata Usaha, Direktorat Kompetensi dan Produktivitas Tenaga Kerja Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subbagian Tata Usaha, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45047",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Bendahara Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "5 Tahun 4 Bulan 18 Hari",
+    "tmtMulaiSerial": "44218",
+    "tmtAkhirSerial": "46182"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 20 Hari",
+    "tmtMulaiSerial": "44197",
+    "tmtAkhirSerial": "44217"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama, Subbagian Tata Usaha, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 3 Bulan 29 Hari",
+    "tmtMulaiSerial": "44197",
+    "tmtAkhirSerial": "45046"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Subbagian Tata Usaha, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "44075",
+    "tmtAkhirSerial": "44196"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan Subdirektorat Kompetensi Tenaga Kerja Konstruksi, Direktorat Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44074"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan Seksi Pemantauan dan Evaluasi, Subdirektorat Penerapan Kompetensi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 6 Bulan 15 Hari",
+    "tmtMulaiSerial": "43481",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "PENYUSUN MONEV DAN PELAPORAN SEKSI PEMANTAUAN DAN EVALUASI, SUBDIREKTORAT PENERAPAN KOMPETENSI, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 14 Hari",
+    "tmtMulaiSerial": "43132",
+    "tmtAkhirSerial": "43480"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan Seksi Pemantauan dan Evaluasi, Subdirektorat Penerapan Kompetensi, Direktorat Bina Kompetensi dan Produktivitas Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 28 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "42766"
+   },
+   {
+    "nama": "PENYUSUN MONEV & PELAPORAN SEKSI PEMANTAUAN DAN EVALUASI, SUBDIREKTORAT PENERAPAN KOMPETENSI, DIREKTORAT BINA KOMPETENSI DAN PRODUKTIVITAS KONSTRUKSI, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 2 Bulan 5 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENGADMINISTRASI UMUM BIDANG PELATIHAN KETERAMPILAN KONSTRUKSI, PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "3 Tahun 0 Bulan 26 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "PENGOLAH MONEV DAN PELAPORAN STAF PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "41182"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "e-Learning Manajemen Rantai Pasok",
+   "Manajemen Rantai Pasok",
+   "E-Learning Manajemen Pengembangan SDM",
+   "Manajemen Pengembangan SDM",
+   "Penyelesaian Sengketa Kontrak Konstruksi (E-Learning)",
+   "Pengadaan Barang/Jasa Pemerintah",
+   "Manajemen Pengembangan SDM",
+   "Manajemen Pengembangan SDM",
+   "Deseminasi Penyusunan Standar Kompetensi Kerja Nasional Indonesia (SKKNI)"
+  ],
+  "tmtDiklat": "28-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "64.42",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 344
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "82.57",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 345
+   }
+  ],
+  "foto": "doc/data/foto/198303252010121002.png"
+ },
+ {
+  "no": "19",
+  "nama": "Denny Agiyantono, S.Kom.",
+  "nip": "198503122010121005",
+  "tmtGolongan": "01-08-2025",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-11-2025",
+  "sekolah": "Universitas Gunadarma",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "SISTEM INFORMASI",
+  "riwayatPendidikan": "S1/D4 - SISTEM INFORMASI (2010)\nSM/D-3 - D-III MANAJEMEN INFORMATIKA (2006)\nSLTA - SMA  IPS (2002)\nSLTP - SMP (1999)\nSD - S.D. (1996)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2025",
+  "jenisAsesmen": "PENGAWAS",
+  "statusAsesmen": "VALID",
+  "potkom": "66.39",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 364,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "45962",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Bagian Administrasi, Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "45778",
+    "tmtAkhirSerial": "45961"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 15 Hari",
+    "tmtMulaiSerial": "45306",
+    "tmtAkhirSerial": "45777"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 1 Bulan 13 Hari",
+    "tmtMulaiSerial": "45261",
+    "tmtAkhirSerial": "45305"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 1 Bulan 29 Hari",
+    "tmtMulaiSerial": "44105",
+    "tmtAkhirSerial": "45260"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Marga, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 7 Hari",
+    "tmtMulaiSerial": "44097",
+    "tmtAkhirSerial": "44104"
+   },
+   {
+    "nama": "Penelaah Bangunan Gedung Dan Permukiman Sub Bidang Pelaksanaan Wilayah Timur I, Bidang Pengembangan Wilayah Timur, Pusat Pengembangan Sarana Prasarana Pendidikan, Olahraga, dan Pasar, Direktorat Jenderal Cipta Karya, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 6 Bulan 4 Hari",
+    "tmtMulaiSerial": "43550",
+    "tmtAkhirSerial": "44104"
+   },
+   {
+    "nama": "Penelaah Bangunan Gedung Dan Permukiman PENGEMBANGAN PENATAAN BANGUNAN DAN LINGKUNGAN STRATEGIS, Direktorat Bina Penataan Bangunan, Direktorat Jenderal Cipta Karya, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "43101",
+    "tmtAkhirSerial": "43465"
+   },
+   {
+    "nama": "PENELAAH BANGUNAN GEDUNG DAN P SATKER PENGEMBANGAN PENATAAN BANGUNAN DAN LINGKUNGAN STRATEGIS, DIREKTORAT BINA PENATAAN BANGUNAN, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "42736",
+    "tmtAkhirSerial": "43100"
+   },
+   {
+    "nama": "PENYUSUN MONEV & PELAPORAN SATKER PBL STRATEGIS, DIREKTORAT BINA PENATAAN BANGUNAN, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "42373",
+    "tmtAkhirSerial": "42735"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK PADA PPK STRATEGIS 1, DIREKTORAT BINA PENATAAN BANGUNAN, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 3 Bulan 5 Hari",
+    "tmtMulaiSerial": "42276",
+    "tmtAkhirSerial": "42372"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK SATKER REHABILITASI/REKONSTRUKSI RUMAH PASCA GEMPA BUMI DIY & JATENG, DIREKTORAT PENATAAN BANGUNAN DAN LINGKUNGAN,DITJEN CIPTA KARYA KEMENTERIAN PU",
+    "masaKerja": "2 Tahun 8 Bulan 27 Hari",
+    "tmtMulaiSerial": "41275",
+    "tmtAkhirSerial": "42275"
+   },
+   {
+    "nama": "STAF DIREKTORAT PENATAAN BANGUNAN DAN LINGKUNGAN,DITJEN CIPTA KARYA KEMENTERIAN PU (STAF SNVT REHAB/REKON PASCA GEMPA BUMI DIY/JATENG)",
+    "masaKerja": "2 Tahun 0 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "41274"
+   }
+  ],
+  "riwayatDiklat": [
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Manajemen",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Sharing Session - Less is More: Lean Construction towards Sustainable Public Infrastructure",
+   "Uji Kompetensi Pengangkatan dalam Jabatan Fungsional Pengelola Pengadaan Barang/Jasa Melalui Perpindahan dari Jabatan Lain",
+   "Kader Bela Negara Bagi Kasatker dan PPK",
+   "Coaching Clinic",
+   "Hukum Kontrak Kerja Konstruksi (Distance Learning)",
+   "Pengadaan Barang/Jasa Pemerintah Lanjutan",
+   "DIKLAT KEUANGAN BENDAHARAWAN",
+   "DIKLAT PENGADAAN BARANG/JASA PEMERINTAH",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
+  ],
+  "tmtDiklat": "04 Mei 2026\ns/d\n03 Juni 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "66.39",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2025",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 364
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "85.83",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2025",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 365
+   }
+  ],
+  "foto": "doc/data/foto/198503122010121005.png"
+ },
+ {
+  "no": "20",
+  "nama": "Yollian Dwiyanty, S.Kom.",
+  "nip": "197812182014122001",
+  "tmtGolongan": "01-06-2025",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pranata Komputer Ahli Muda",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Universitas Bina Nusantara",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK INFORMATIKA",
+  "riwayatPendidikan": "S1/D4 - TEKNIK INFORMATIKA (2001)\nS1/D4 - TEKNIK INFORMATIKA (2001)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2021",
+  "jenisAsesmen": "JFT PERTAMA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "61.83",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 384,
+  "riwayatJabatan": [
+   {
+    "nama": "Pranata Komputer Ahli Muda, Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pranata Komputer Ahli Pertama, Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "44440",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pranata Komputer Ahli Pertama Bidang Manajemen Teknologi Informasi, Pusat Data dan Teknologi Informasi, Sekretariat Jenderal,",
+    "masaKerja": "0 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "44256",
+    "tmtAkhirSerial": "44439"
+   },
+   {
+    "nama": "Analis Sistem Informasi Manajemen Sub Bidang Portal Web, Kepala Bidang Sistem dan Infrastruktur Teknologi Informasi, Pusat Data dan Teknologi Informasi, Sekretariat Jenderal, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 10 Bulan 27 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44255"
+   },
+   {
+    "nama": "Penelaah Keuangan Subbagian Program, Bagian Program dan Umum, Pusat Data dan Teknologi Informasi, Sekretariat Jenderal, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 0 Bulan 23 Hari",
+    "tmtMulaiSerial": "43165",
+    "tmtAkhirSerial": "43553"
+   }
+  ],
+  "riwayatDiklat": [
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Spatial Corners PU Episode 01: AI for Modern Surveyors: Building Your Own Geo-enabled survey form and Geotagging System",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Workshop Peningkatan Kapasitas Petugas Pelayanan Publik Terpadu Kementerian PU",
+   "WebGIS Dalam Hitungan Menit, Power of Chatbot AI",
+   "e-Katalog Konstruksi Versi 6",
+   "Jabatan Fungsional Peningkatan Kompetensi Pranata Komputer Tingkat Ahli",
+   "Webinar Cepat dan Tepat Biaya Konstruksi",
+   "Bimbingan Teknis Manajemen Pelayanan Umum dan ICT",
+   "Pelaksanaan Anggaran"
+  ],
+  "tmtDiklat": "13 April 2026\ns/d\n17 April 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "61.83",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 384
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "78.68",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 385
+   }
+  ],
+  "foto": "doc/data/foto/197812182014122001.png"
+ },
+ {
+  "no": "21",
+  "nama": "Achmad Helmy Ariffullah, S.Kom.",
+  "nip": "198705152010121004",
+  "tmtGolongan": "01-04-2023",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Institut Teknologi Sepuluh Nopember",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK INFORMATIKA",
+  "riwayatPendidikan": "S1/D4 - TEKNIK INFORMATIKA (2009)\nSLTA - SMA (2004)\nSLTP - SMP (2001)\nSD - S.D. (1998)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2019",
+  "jenisAsesmen": "PELAKSANA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "74.17",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 404,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Subdirektorat Pengelolaan Katalog Elektronik, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 9 Bulan 30 Hari",
+    "tmtMulaiSerial": "45566",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Analis Sistem Informasi Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 8 Bulan 22 Hari",
+    "tmtMulaiSerial": "45299",
+    "tmtAkhirSerial": "45565"
+   },
+   {
+    "nama": "Pengolah Data Dan Informasi Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Barat, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 4 Bulan 29 Hari",
+    "tmtMulaiSerial": "44782",
+    "tmtAkhirSerial": "45298"
+   },
+   {
+    "nama": "Pengolah Data Dan Informasi Subbagian Umum dan Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Banten, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakya",
+    "masaKerja": "2 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "43732",
+    "tmtAkhirSerial": "44781"
+   },
+   {
+    "nama": "PENATA KEUANGAN Subbagian Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Banten, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 22 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "43731"
+   },
+   {
+    "nama": "Penata Keuangan PPK Bendung 2, PEMBANGUNAN BENDUNGAN BBWS CIDANAU CIUJUNG CIDURIAN, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 25 Hari",
+    "tmtMulaiSerial": "43530",
+    "tmtAkhirSerial": "43555"
+   },
+   {
+    "nama": "Penata Keuangan PPK Perencanaan, Pembangunan Bendungan BBWS Cidanau Ciujung Cidurian, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 1 Bulan 7 Hari",
+    "tmtMulaiSerial": "43126",
+    "tmtAkhirSerial": "43529"
+   },
+   {
+    "nama": "PENATA KEUANGAN PPK Perencanaan, PEMBANGUNAN BENDUNGAN, Seksi Pelaksanaan Jaringan Sumber Air, Bidang Pelaksanaan, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 0 Bulan 22 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43125"
+   },
+   {
+    "nama": "PELAKSANA ADMINISTRASI PPK PERENCANAAN, PEMBANGUNAN BENDUNGAN BBWS CIDANAU CIUJUNG CIDURIAN, Seksi Pelaksanaan Jaringan Sumber Air, Bidang Pelaksanaan, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 8 Bulan 13 Hari",
+    "tmtMulaiSerial": "42114",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "Pelaksana, PPK Ketatalaksanaan, BALAI BESAR WILAYAH SUNGAI CIDANAU-CIUJUNG-CIDURIAN, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 2 Bulan 8 Hari",
+    "tmtMulaiSerial": "41276",
+    "tmtAkhirSerial": "41708"
+   },
+   {
+    "nama": "PELAKSANA ADMINISTRASI, PPK Operasi dan Pemeliharaan SDA I, OPERASI DAN PEMELIHARAAN SUMBER DAYA AIR CIDANAU CIUJUNG CIDURIAN, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 2 Bulan 9 Hari",
+    "tmtMulaiSerial": "41275",
+    "tmtAkhirSerial": "41708"
+   },
+   {
+    "nama": "PENGOLAH DATA & INFORMASI BALAI BESAR WILAYAH SUNGAI CIDANAU-CIUJUNG-CIDURIAN,DITJEN SUMBER DAYA AIR KEMENTERIAN PU",
+    "masaKerja": "2 Tahun 4 Bulan 18 Hari",
+    "tmtMulaiSerial": "41244",
+    "tmtAkhirSerial": "42113"
+   },
+   {
+    "nama": "PRANATA KOMPUTER BALAI BESAR WILAYAH SUNGAI CIDANAU-CIUJUNG-CIDURIAN,DITJEN SUMBER DAYA AIR KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40940",
+    "tmtAkhirSerial": "41243"
+   },
+   {
+    "nama": "Pelaksana, PPK Ketatalaksanaan, BALAI BESAR WILAYAH SUNGAI CIDANAU-CIUJUNG-CIDURIAN, Balai Besar Wilayah Sungai Cidanau Ciujung Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 10 Bulan 16 Hari",
+    "tmtMulaiSerial": "40591",
+    "tmtAkhirSerial": "41276"
+   },
+   {
+    "nama": "PRANATA KOMPUTER Bagian Tata Usaha, Balai Besar Wilayah Sungai Cidanau, Ciujung, Cidurian, Direktorat Jenderal Sumber Daya Air, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "40939"
+   }
+  ],
+  "riwayatDiklat": [
+   "Tadaa!:Tanya Pengadaan Episode 17 -Sosialisasi Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Republik Indonesia Nomor 6 Tahun 2026 tentang Jabatan Fungsional Pengelola Pengadaan Barang/Jasa",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Membangun Ekosistem Anti Suap Melalui Penerapan Sistem Manajemen Anti Penyuapan (SMAP)",
+   "Tadaa!:Tanya Pengadaan Episode 16- Sosialisasi Penerapan SIMPAN TA 2026 di Kementerian Pekerjaan Umum",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Bela Negara Bagi Pejabat Pembuat Komitmen (PPK) dan Kelompok Kerja Pengadaan Barang/Jasa (Pokja PBJ) Kementerian PUPR",
+   "Pengadaan Barang/Jasa Pemerintah Lanjutan",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)"
+  ],
+  "tmtDiklat": "30 Juni 2026\ns/d\n30 Juni 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "74.17",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2019",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 404
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "97.50",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2019",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 405
+   }
+  ],
+  "foto": "doc/data/foto/198705152010121004.png"
+ },
+ {
+  "no": "22",
+  "nama": "Afrijhon Saragih, S.T., M.T.",
+  "nip": "198704172014021004",
+  "tmtGolongan": "01-04-2024",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Indonesia",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER TEKNIK SIPIL",
+  "riwayatPendidikan": "S2 - MAGISTER TEKNIK SIPIL (2024)\nS1/D4 -  TEKNIK  SIPIL (2010)\nS1/D4 - TEKNIK SIPIL (2010)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "80.51",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 424,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Kontrak Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Kontrak Konstruksi, Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 10 Bulan 14 Hari",
+    "tmtMulaiSerial": "44665",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 1 Bulan 12 Hari",
+    "tmtMulaiSerial": "44256",
+    "tmtAkhirSerial": "44664"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan",
+    "masaKerja": "0 Tahun 6 Bulan 27 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44255"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Pemantauan dan Evaluasi, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "43313",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan Seksi Pemantauan dan Evaluasi, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 9 Bulan 3 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "43312"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Pemantauan dan Evaluasi, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 26 Hari",
+    "tmtMulaiSerial": "42156",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 6 Bulan 21 Hari",
+    "tmtMulaiSerial": "41953",
+    "tmtAkhirSerial": "42155"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI PUSAT PEMBINAAN KOMPETENSI DAN PELATIHAN KONSTRUKSI ,BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 9 Bulan 8 Hari",
+    "tmtMulaiSerial": "41671",
+    "tmtAkhirSerial": "41952"
+   }
+  ],
+  "riwayatDiklat": [
+   "Training of Trainers (ToT) Bagi Pengaja",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Dasar Fungsional Pembina Jasa Konstruksi",
+   "Pelatihan Penyusunan Kurikulum dan Modul",
+   "Estimasi Biaya Konstruksi",
+   "Penyelesaian Sengketa Kontrak Konstruksi (E-Learning)",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Pengadaan Barang dan Jasa Pemerintah",
+   "Supply Chain Management",
+   "TRAINING ESQ",
+   "BIMBINGAN TEKNIS SUPPLY CHAIN MANAGEMENT/RANTAI PASOK PENYELENGGARA JASA KONSTRUKSI",
+   "UJIAN SERTIFIKASI AHLI PENGADAAN BARANG/JASA PEMERINTAH"
+  ],
+  "tmtDiklat": "04 Mei 2026\ns/d\n08 Mei 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "80.51",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 424
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "105.14",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 425
+   }
+  ],
+  "foto": "doc/data/foto/198704172014021004.png"
+ },
+ {
+  "no": "23",
+  "nama": "Rico Samuel, S.T., M.E., M.PMA.",
+  "nip": "198406022010121002",
+  "tmtGolongan": "01-04-2024",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Universitas Indonesia",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "PERENCANAAN DAN KEBIJAKAN PUBLIK",
+  "riwayatPendidikan": "S2 - MASTER OF PUBLIC POLICY (2017)\nS2 - PERENCANAAN DAN KEBIJAKAN PUBLIK (2017)\nS1/D4 - TEKNIK MESIN (2006)\nSLTA - SMA  IPA (2002)\nSLTP - SMP (1999)\nSD - S.D. (1996)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2025",
+  "jenisAsesmen": "PENGAWAS",
+  "statusAsesmen": "VALID",
+  "potkom": "78.63",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 444,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Analisis Biaya Pekerjaan Konstruksi, Direktorat Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Keselamatan Konstruksi, Direktorat Keselamatan dan Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "4 Tahun 6 Bulan 30 Hari",
+    "tmtMulaiSerial": "44197",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Penelaah Kebijakan Subdirektorat Keamanan dan Keselamatan Konstruksi, Direktorat Keberlanjutan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44196"
+   },
+   {
+    "nama": "Penelaah Kebijakan Seksi Standar dan Pedoman, Subdirektorat Kontrak Konstruksi, Direktorat Bina Penyelenggaraan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "43132",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Penelaah Kebijakan Seksi Standar dan Pedoman, Subdirektorat Material dan Peralatan Konstruksi, Direktorat Bina Kelembagaan dan Sumber Daya Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 0 Bulan 28 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43131"
+   },
+   {
+    "nama": "PENGOLAH DATA & INFORMASI SUBBAGIAN ORGANISASI DAN TATA LAKSANA, BAGIAN KEPEGAWAIAN, ORGANISASI, DAN TATA LAKSANA, SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 2 Bulan 5 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENELAAH KERJASAMA PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN, BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 6 Bulan 26 Hari",
+    "tmtMulaiSerial": "42095",
+    "tmtAkhirSerial": "42304"
+   },
+   {
+    "nama": "PENELAAH PELATIHAN BIDANG KELEMBAGAAN, PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU",
+    "masaKerja": "2 Tahun 5 Bulan 30 Hari",
+    "tmtMulaiSerial": "41183",
+    "tmtAkhirSerial": "42094"
+   },
+   {
+    "nama": "STAF PUSAT PEMBINAAN USAHA DAN KELEMBAGAAN ,BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 7 Bulan 29 Hari",
+    "tmtMulaiSerial": "40940",
+    "tmtAkhirSerial": "41182"
+   },
+   {
+    "nama": "STAF SEKRETARIAT BADAN PEMBINAAN KONSTRUKSI, BPK KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "40939"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Sosialisasi Permen PU No. 10 Tahun 2026 tentang Penggunaan Aspal Buton Olahan dan Kepmen PU No. 6950/KPTS/Mn/2026 tentang Penggunaan Aspal Buton Olahan untuk Pembangunan dan Preservasi Jalan Tahun 2026-2029",
+   "Microlearning Pemberdayaan Masyarakat dan Penyelesaian Konflik",
+   "Microlearning Sistem Informasi Sumber Daya Air",
+   "Coaching Clinic Pegawai Direktorat Jenderal Bina Konstruksi dan Inspektorat Jenderal Tahun 2025",
+   "Training of Trainer (ToT) bagi Pengajar",
+   "Perencanaan Konstruksi dengan SIstem Teknologi Building Information Modelling (BIM)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah (Blended Learning)",
+   "Estimasi Biaya Konstruksi (Distance Learning)",
+   "Manajemen Rantai Pasok (Distance Learning)",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)"
+  ],
+  "tmtDiklat": "29-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "78.63",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2025",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 444
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "103.26",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2025",
+    "jenisAsesmen": "PENGAWAS",
+    "statusAsesmen": "VALID",
+    "barisExcel": 445
+   }
+  ],
+  "foto": "doc/data/foto/198406022010121002.png"
+ },
+ {
+  "no": "24",
+  "nama": "Sintha Dailila, S.T.",
+  "nip": "198203042009022010",
+  "tmtGolongan": "01-04-2024",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "tmtJabatan": "01-08-2025",
+  "sekolah": "Institut Teknologi Indonesia",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK INDUSTRI",
+  "riwayatPendidikan": "S1/D4 -  TEKNIK INDUSTRI (2005)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2023",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "77.38",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 464,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Subdirektorat Pengendalian Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 0 Bulan 27 Hari",
+    "tmtMulaiSerial": "45870",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Pembinaan dan Pengembangan Kepatuhan Intern dan Manajemen Risiko, Direktorat Kepatuhan Intern, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "45717",
+    "tmtAkhirSerial": "45869"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Penyelenggaraan Jasa Konstruksi, Direktorat Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 10 Bulan 14 Hari",
+    "tmtMulaiSerial": "44665",
+    "tmtAkhirSerial": "45716"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Subdirektorat Sistem Pengadaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 8 Bulan 12 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "44664"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Pengembangan Sistem Pelaksanaan Pengadaan, Sub Direktorat Pengaturan dan Pengembangan Sistem Pelaksanaan Pengadaaan Jasa Konstruksi, Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Seksi Pola Pembiayaan, Subdirektorat Penyiapan Kebijakan Investasi Infrastruktur, Direktorat Bina Investasi Infrastruktur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 2 Bulan 15 Hari",
+    "tmtMulaiSerial": "43481",
+    "tmtAkhirSerial": "43555"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI PERTAMA SEKSI POLA PEMBIAYAAN, SUBDIREKTORAT PENYIAPAN KEBIJAKAN INVESTASI INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 5 Bulan 14 Hari",
+    "tmtMulaiSerial": "43313",
+    "tmtAkhirSerial": "43480"
+   },
+   {
+    "nama": "ANALIS INVESTASI DAN PASAR KO SEKSI POLA PEMBIAYAAN, SUBDIREKTORAT PENYIAPAN KEBIJAKAN INVESTASI INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 6 Bulan 28 Hari",
+    "tmtMulaiSerial": "42738",
+    "tmtAkhirSerial": "43312"
+   },
+   {
+    "nama": "PENGOLAH MONEV DAN PELAPORAN SUBBAGIAN PROGRAM, BAGIAN PROGRAM DAN UMUM, PUSAT DATA DAN TEKNOLOGI INFORMASI, SEKRETARIAT JENDERAL, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 8 Bulan 1 Hari",
+    "tmtMulaiSerial": "42491",
+    "tmtAkhirSerial": "42737"
+   },
+   {
+    "nama": "PENGOLAH BIMBINGAN TEKNIS DAN BANTUAN TEKNIS SEKSI POLA PEMBIAYAAN, SUBDIREKTORAT PENYIAPAN KEBIJAKAN INVESTASI INFRASTRUKTUR, DIREKTORAT BINA INVESTASI INFRASTRUKTUR, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 6 Bulan 2 Hari",
+    "tmtMulaiSerial": "42305",
+    "tmtAkhirSerial": "42490"
+   },
+   {
+    "nama": "PEMBINAAN JASA KONSTRUKSI MADYA PEMBINA JASA KONSTRUKSI PERTAMA PUSAT PEMBINAAN SUMBER DAYA INVESTASI, BPK KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 3 Bulan 29 Hari",
+    "tmtMulaiSerial": "42156",
+    "tmtAkhirSerial": "42277"
+   }
+  ],
+  "riwayatDiklat": [
+   "Pengetahuan Anti Korupsi Dasar dan Integritas (PADI)",
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Manajemen",
+   "Aparatur Sipil Negara (ASN) Berintegritas",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "Coaching Clinic JFT Ahli Muda Kementerian Pekerjaan Umum Tahun 2025",
+   "E-learning Kepatuhan Intern",
+   "E-Learning Manajemen Risiko",
+   "PPSPM",
+   "Hukum Kontrak Kerja Konstruksi",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "25-05-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "77.38",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 464
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "102.01",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2023",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 465
+   }
+  ],
+  "foto": "doc/data/foto/198203042009022010.png"
+ },
+ {
+  "no": "25",
+  "nama": "Jasana Kaban, S.Tr.",
+  "nip": "199402242019031004",
+  "tmtGolongan": "01-04-2024",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah III Jakarta",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Politeknik Negeri Jakarta",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK PERANCANGAN JALAN DAN JEMBATAN",
+  "riwayatPendidikan": "S1/D4 - TEKNIK PERANCANGAN JALAN DAN JEMBATAN (2016)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2021",
+  "jenisAsesmen": "PELAKSANA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "76.57",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 484,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Balai Jasa Konstruksi Wilayah III Jakarta, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "3 Tahun 3 Bulan 27 Hari",
+    "tmtMulaiSerial": "45047",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Timur, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "2 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45046"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Timur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "43891",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Pertama Balai Material dan Peralatan Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 28 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43890"
+   }
+  ],
+  "riwayatDiklat": [
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Membangun Ekosistem Anti Suap Melalui Penerapan Sistem Manajemen Anti Penyuapan (SMAP)",
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Manajemen",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Pengendalian Gratifikasi di Hari Raya",
+   "Workshop Jurnalistik dan Fotografi Direktorat Jenderal Bina Konstruksi Tahun 2025",
+   "E-Learning Manajemen Risiko",
+   "Pengelolaan BMN",
+   "Coaching Clinic",
+   "Fungsional Pembina Jasa Konstruksi Ahli (Blended Learning)",
+   "Penyelesaian Sengketa Kontrak Konstruksi (E-Learning)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "12-05-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "76.57",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 484
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "98.61",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 485
+   }
+  ],
+  "foto": "doc/data/foto/199402242019031004.png"
+ },
+ {
+  "no": "26",
+  "nama": "A. Muh Imran Azhar Mangkona, S.T., M.Eng.",
+  "nip": "199508272019031002",
+  "tmtGolongan": "01-04-2024",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VI Makassar",
+  "tmtJabatan": "01-03-2026",
+  "sekolah": "",
+  "bidangStudi": "",
+  "tingkatPendidikan": "S2",
+  "jurusan": "",
+  "riwayatPendidikan": "S1/D4 - TEKNIK SIPIL (2017)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "84.35",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 505,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Seksi Pelaksanaan, Balai Jasa Konstruksi Wilayah VI Makassar, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "46082",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Penelaah Pemberdayaan Masyarakat, Seksi Pelaksanaan, Balai Jasa Konstruksi Wilayah VI Makassar, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 0 Bulan 0 Hari",
+    "tmtMulaiSerial": "46082",
+    "tmtAkhirSerial": "46082"
+   },
+   {
+    "nama": "Karyasiswa Master dan Doktoral, Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal Bina Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 6 Bulan 27 Hari",
+    "tmtMulaiSerial": "45505",
+    "tmtAkhirSerial": "46081"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda SEKRETARIAT DIREKTORAT JENDERAL BINA KONSTRUKSI, Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 2 Bulan 30 Hari",
+    "tmtMulaiSerial": "45047",
+    "tmtAkhirSerial": "45504"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Bagian Perencanaan, Program, dan Keuangan, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "2 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "44013",
+    "tmtAkhirSerial": "45046"
+   },
+   {
+    "nama": "Penyusun Program Dan Rencana Anggaran Subbagian Program dan Anggaran, Bagian Perencanaan dan Evaluasi, Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 30 Hari",
+    "tmtMulaiSerial": "43891",
+    "tmtAkhirSerial": "44043"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama Sekretariat Direktorat Jenderal, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 28 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43890"
+   }
+  ],
+  "riwayatDiklat": [
+   "Forum Komunikasi Budaya Kerja Core Values BerAKHLAK dan Citra Organisasi",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Pengendali",
+   "Diskusi Kepatuhan Intern Penerapan Prinsip Kehati-hatian Sebagai Upaya Mitigasi Risiko pada Proses Serah Terima Pekerjaan dan Pengakhiran Tahun Anggaran 2025",
+   "Kolokium hasil pendidikan Karyasiswa Pendidikan Kementerian PU",
+   "Masterclass on Construction and Project Management: Creating Capacity and Capability for the Construction Sector.",
+   "Sharing Session - Less is More: Lean Construction towards Sustainable Public Infrastructure",
+   "UK Road Preservation Technology : Lesson for Indonesia`s Future Infrastructure",
+   "Instruktur Building Information Modelling (BIM)",
+   "Fungsional Pembina Jasa Konstruksi Ahli (Blended Learning)",
+   "Bela Negara Bagi CPNS",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "11 Juni 2026\ns/d\n12 Juni 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "84.35",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 505
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "110.28",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 506
+   }
+  ],
+  "foto": "doc/data/foto/199508272019031002.png"
+ },
+ {
+  "no": "27",
+  "nama": "Nailil Muna, S.T., M.T.",
+  "nip": "198603232010122002",
+  "tmtGolongan": "01-02-2024",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Universitas Syiah Kuala",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S2",
+  "jurusan": "MAGISTER TEKNIK SIPIL",
+  "riwayatPendidikan": "S2 - MAGISTER TEKNIK SIPIL (2015)\nS1/D4 - D-IV TEKNIK SIPIL (2009)\nSLTA - SMA  IPA (2004)\nSLTP - SMP (2001)\nSD - S.D. (1998)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2022",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "85.07",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 525,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 10 Bulan 27 Hari",
+    "tmtMulaiSerial": "45566",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Penata Kelola Jalan dan Jembatan Ahli Muda Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 28 Hari",
+    "tmtMulaiSerial": "45384",
+    "tmtAkhirSerial": "45565"
+   },
+   {
+    "nama": "Teknik Jalan Dan Jembatan Ahli Muda Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 8 Bulan 9 Hari",
+    "tmtMulaiSerial": "44035",
+    "tmtAkhirSerial": "45383"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 8 Bulan 7 Hari",
+    "tmtMulaiSerial": "43784",
+    "tmtAkhirSerial": "44034"
+   },
+   {
+    "nama": "Teknik Jalan Dan Jembatan Muda Seksi Perencanaan dan Pemantauan, Balai Pelaksanaan Jalan Nasional I Banda Aceh, Direktorat Jenderal Bina Marga, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "3 Tahun 2 Bulan 13 Hari",
+    "tmtMulaiSerial": "42614",
+    "tmtAkhirSerial": "43783"
+   },
+   {
+    "nama": "TEKNIK JALAN DAN JEMBATAN PERTAMA PERENCANAAN DAN PENGAWASAN JALAN NASIONAL ACEH BALAI BESAR PELAKSANAAN JALAN NASIONAL I, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 10 Bulan 30 Hari",
+    "tmtMulaiSerial": "42278",
+    "tmtAkhirSerial": "42613"
+   },
+   {
+    "nama": "TEKNIK JALAN DAN JEMBATAN PERTAMA BALAI BESAR PELAKSANAAN JALAN NASIONAL I, DITJEN BINA MARGA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 6 Bulan 30 Hari",
+    "tmtMulaiSerial": "41640",
+    "tmtAkhirSerial": "42216"
+   },
+   {
+    "nama": "PENGAWAS BALAI BESAR PELAKSANAAN JALAN NASIONAL I ,DITJEN BINA MARGA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 1 Bulan 0 Hari",
+    "tmtMulaiSerial": "41244",
+    "tmtAkhirSerial": "41640"
+   },
+   {
+    "nama": "STAF BALAI BESAR PELAKSANAAN JALAN NASIONAL I ,DITJEN BINA MARGA KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 9 Bulan 29 Hari",
+    "tmtMulaiSerial": "40940",
+    "tmtAkhirSerial": "41243"
+   },
+   {
+    "nama": "STAF SEKRETARIAT DITJEN BINA MARGA ,DITJEN BINA MARGA KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "40939"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Sosialisasi Strategi Penguatan dan Monitoring Pelaksanaan Indeks Tata Kelola Pengadaan (ITKP), Pemanfaatan E-Purchasing dan Workshop Penerapan SIPASTI Tahun Anggaran 2026 di BP2JK Wilayah Aceh",
+   "TOT Instruksi Pemberian Kompetensi Tambahan (PKT) Gelombang II Tahun 2026",
+   "Praktik Penyusunan Profil Risiko Tahun Anggaran 2026 dalam Sistem e-PURISK",
+   "Manajemen Pengembangan SDM",
+   "BIMBINGAN TEKNIS PENGADAAN BARANG/JASA PEMERINTAH",
+   "Bimbingan Teknis Implementasi P3DN di Kementerian PU Wilayah Sumatera Bagian Utara",
+   "E-Learning Penyelesaian Tagihan (Open Access) Tahun 2026",
+   "e-Learning Kerjasama Pemerintah dengan Badan Usaha (KPBU)",
+   "PELATIHAN PROGRAM APLIKASI SIG",
+   "DIKLAT PENGAWASAN PEKERJAAN JALAN DAN JEMBATAN",
+   "PELATIHAN TEKNIS QUALITY CONTROL PELAKSANAAN JALAN DAN JEMBATAN TAHUN ANGGARAN 2012",
+   "AHLI PENGADAAN NASIONAL",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "DISEMINASI PELAKSANAAN DAN PENGAWASAN BIDANG JALAN DAN JEMBATAN"
+  ],
+  "tmtDiklat": "28 Juli 2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "85.07",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 525
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "112.29",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2022",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 526
+   }
+  ],
+  "foto": "doc/data/foto/198603232010122002.png"
+ },
+ {
+  "no": "28",
+  "nama": "Sherly Purnama Sari, S.T.",
+  "nip": "198311252014122002",
+  "tmtGolongan": "01-10-2023",
+  "golongan": "III/b",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat",
+  "tmtJabatan": "01-03-2026",
+  "sekolah": "Universitas Andalas",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK LINGKUNGAN",
+  "riwayatPendidikan": "S1/D4 - TEKNIK LINGKUNGAN (2007)\nS1/D4 - TEKNIK LINGKUNGAN (2007)\nSLTA - SMA  IPA (2002)\nSLTA - SMA  IPA (2002)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT PERTAMA",
+  "statusAsesmen": "VALID",
+  "potkom": "66.39",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 545,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "46082",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "4 Tahun 10 Bulan 27 Hari",
+    "tmtMulaiSerial": "44287",
+    "tmtAkhirSerial": "46081"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 4 Bulan 16 Hari",
+    "tmtMulaiSerial": "43784",
+    "tmtAkhirSerial": "44286"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan Balai Prasarana Permukiman Wilayah Sumatera Barat, Direktorat Jenderal Cipta Karya, Kementerian Pekerjaan Umum dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 7 Bulan 19 Hari",
+    "tmtMulaiSerial": "43550",
+    "tmtAkhirSerial": "43783"
+   },
+   {
+    "nama": "PENYUSUN MONEV DAN PELAPORAN PPK PEMBINAAN TEKNIS PENGEMBANGAN SPAM, PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM PROVINSI SUMATERA BARAT, DIREKTORAT PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "42736",
+    "tmtAkhirSerial": "43465"
+   },
+   {
+    "nama": "PENYUSUN MONEV DAN PELAPORAN SATKER PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM PROVINSI SUMATERA BARAT, DIREKTORAT PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 30 Hari",
+    "tmtMulaiSerial": "42736",
+    "tmtAkhirSerial": "43100"
+   },
+   {
+    "nama": "PENGOLAH MONEV DAN PELAPORAN SATKER PSPAM PROV. SUMATERA BARAT, DIREKTORAT PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 11 Bulan 27 Hari",
+    "tmtMulaiSerial": "42373",
+    "tmtAkhirSerial": "42735"
+   },
+   {
+    "nama": "PENGADMINISTRASI UMUM JENJANG III SATKER PAMS PROV. SUMATERA BARAT, DIREKTORAT PENGEMBANGAN SISTEM PENYEDIAAN AIR MINUM, DIREKTORAT JENDERAL CIPTA KARYA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 3 Bulan 5 Hari",
+    "tmtMulaiSerial": "42276",
+    "tmtAkhirSerial": "42372"
+   },
+   {
+    "nama": "PELAKSANA DIREKTORAT PENGEMBANGAN AIR MINUM,DITJEN CIPTA KARYA KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 9 Bulan 27 Hari",
+    "tmtMulaiSerial": "41974",
+    "tmtAkhirSerial": "42275"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Sasirangan (Semangat Berbagi Solusi dan Informasi Pengadaan) #20 - Penentuan Resiko Keselamatan Konstruksi dan Perhitungan Biaya SMKK untuk Pekerjaan Konstruksi di Kementerian Pekerjaan Umum",
+   "Tadaa!:Tanya Pengadaan Episode 15- Sosialisasi Perubahan Model Dokumen Kompetisi untuk Pekerjaan Konstruksi pada Katalog Elektronik dan Penugasan Tim Teknis e-Purchasing",
+   "Webinar Series Kepatuhan Intern dan Tata Kelola Bina Konstruksi (KITABina) dengan tema Pengendalian Gratifikasi di Hari Raya",
+   "Klinik BIM PU #43 - Transformasi Tata Kelola Dokumen Proyek melalui Common Data Environment (CDE)",
+   "Sertifikat Kompetensi Penjenjangan Pengadaan Barang/Jasa Ahli Muda",
+   "Bimbingan Teknis Implementasi P3DN di Kementerian PU Wilayah Sumatera Bagian Utara",
+   "Bela Negara Bagi Pejabat Pembuat Komitmen (PPK) dan Kelompok Kerja Pengadaan Barang/Jasa (Pokja PBJ) Kementerian PUPR",
+   "Pembentukan Jabatan Fungsional Pengelolaan Pengadaan Barang/Jasa",
+   "Sertifikasi Jabatan Kerja Komisioning Instalasi Pengolahan Air",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah (PBJ)"
+  ],
+  "tmtDiklat": "29-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "66.39",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 545
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "85.83",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 546
+   }
+  ],
+  "foto": "doc/data/foto/198311252014122002.png"
+ },
+ {
+  "no": "29",
+  "nama": "Diki Saputra, S.H.",
+  "nip": "199404262019031004",
+  "tmtGolongan": "01-04-2026",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan",
+  "tmtJabatan": "01-03-2026",
+  "sekolah": "Universitas Sriwijaya",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "ILMU HUKUM",
+  "riwayatPendidikan": "S1/D4 - ILMU HUKUM (2016)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT PERTAMA",
+  "statusAsesmen": "VALID",
+  "potkom": "76.67",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 565,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 5 Bulan 27 Hari",
+    "tmtMulaiSerial": "46082",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Pertama Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "5 Tahun 7 Bulan 5 Hari",
+    "tmtMulaiSerial": "44035",
+    "tmtAkhirSerial": "46081"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 4 Bulan 21 Hari",
+    "tmtMulaiSerial": "43891",
+    "tmtAkhirSerial": "44034"
+   },
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Pertama Direktorat Pengadaan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 11 Bulan 28 Hari",
+    "tmtMulaiSerial": "43525",
+    "tmtAkhirSerial": "43890"
+   }
+  ],
+  "riwayatDiklat": [
+   "TERAS LPJK Episode 8 - SBU KBLI 2020 dan KBLI 2025 dalam Perizinan dan Pengadaan Jasa Konstruksi",
+   "Sosialisasi SE Menteri PUPR Mengenai Evaluasi Kewajaran Harga (EKH)",
+   "Penguatan Kompetensi Pokja Pemilihan dan Pejabat Pengadaan Unit Pelaksanaan Teknis melalui E-Purchasing dengan Metode Mini Kompetisi pada Pekerjaan Konstruksi Kementerian Pekerjaan Umum di Provinsi Riau",
+   "Pelatihan Kompetensi Manajerial bagi Pokja PBJP Kementerian PUPR",
+   "Estimasi Biaya Konstruksi",
+   "Penjenjangan Jabatan Fungsional Pengelola Pengadaan Barang/Jasa Ahli Pertama",
+   "Pembentukan Jabatan Fungsional Pengelolaan Pengadaan Barang/Jasa",
+   "Sistem Manajemen Keselamatan Konstruksi (SMKK) Blended Learning",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "29-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "76.67",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 565
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "100.00",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT PERTAMA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 566
+   }
+  ],
+  "foto": "doc/data/foto/199404262019031004.png"
+ },
+ {
+  "no": "30",
+  "nama": "Feby Lorentika, S.T.",
+  "nip": "199102142018022001",
+  "tmtGolongan": "01-04-2025",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Institut Teknologi Bandung",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK SIPIL",
+  "riwayatPendidikan": "S1/D4 - TEKNIK SIPIL (2012)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2024",
+  "jenisAsesmen": "JFT MUDA",
+  "statusAsesmen": "VALID",
+  "potkom": "83.82",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "7",
+  "barisExcel": 585,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 8 Bulan 27 Hari",
+    "tmtMulaiSerial": "45627",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur, Direktorat Jenderal Bina Konstruksi",
+    "masaKerja": "4 Tahun 3 Bulan 29 Hari",
+    "tmtMulaiSerial": "44044",
+    "tmtAkhirSerial": "45626"
+   },
+   {
+    "nama": "Penelaah Pengadaan Barang Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 3 Bulan 30 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44043"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "e-Learning Manajemen Rantai Pasok",
+   "Sosialisasi SE Menteri PUPR No. 12/SE/M/2024",
+   "Pentingnya Literasi Keuangan Bagi Genmud PUPR untuk Memantapkan Integritas dan Profesionalisme",
+   "Fungsional Pembina Jasa Konstruksi Ahli (Distance Learning)",
+   "Bimbingan Teknis Peningkatan Kompetensi Kelompok Kerja Pengadaan Barang/Jasa Pemerintah",
+   "Penyelesaian Sengketa Kontrak Konstruksi (E-Learning)",
+   "Sistem Manajemen K3 Konstruksi (E-Learning)",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang/Jasa Pemerintah"
+  ],
+  "tmtDiklat": "28-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "83.82",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 585
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "111.04",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2024",
+    "jenisAsesmen": "JFT MUDA",
+    "statusAsesmen": "VALID",
+    "barisExcel": 586
+   }
+  ],
+  "foto": "doc/data/foto/199102142018022001.png"
+ },
+ {
+  "no": "31",
+  "nama": "A. A. Ari Widayanti, S.T.",
+  "nip": "198505162010122004",
+  "tmtGolongan": "01-10-2023",
+  "golongan": "III/d",
+  "eselon": "",
+  "namaJabatan": "Pengelola Pengadaan Barang/Jasa Ahli Muda",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali",
+  "tmtJabatan": "01-03-2025",
+  "sekolah": "Universitas Udayana",
+  "bidangStudi": "Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "TEKNIK  SIPIL",
+  "riwayatPendidikan": "S1/D4 -  TEKNIK  SIPIL (2009)\nSLTA - SMA  IPA (2004)\nSLTP - SMP (2001)\nSD - S.D. (1998)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2016",
+  "jenisAsesmen": "PELAKSANA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "61.67",
+  "ratingKinerja": "BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 605,
+  "riwayatJabatan": [
+   {
+    "nama": "Pengelola Pengadaan Barang/Jasa Ahli Muda Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "1 Tahun 10 Bulan 27 Hari",
+    "tmtMulaiSerial": "45566",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "PLT. Kepala Subbagian Umum dan Tata Usaha, Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 3 Bulan 0 Hari",
+    "tmtMulaiSerial": "45229",
+    "tmtAkhirSerial": "45321"
+   },
+   {
+    "nama": "Penelaah Kebijakan Pengadaan Barang dan Jasa Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "4 Tahun 10 Bulan 15 Hari",
+    "tmtMulaiSerial": "43784",
+    "tmtAkhirSerial": "45565"
+   },
+   {
+    "nama": "Pelaksana Teknik PPK 1.2, PELAKSANAAN JALAN NASIONAL WILAYAH I PROVINSI BALI, Balai Besar Pelaksanaan Jalan Nasional VIII Surabaya, Direktorat Jenderal Bina Marga, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 8 Bulan 2 Hari",
+    "tmtMulaiSerial": "43536",
+    "tmtAkhirSerial": "43783"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK PPK CEKIK - BTS. KOTA NEGARA - ANTOSARI - TABANAN - PEKUTATAN, PELAKSANAAN JALAN NASIONAL WILAYAH I PROVINSI BALI, BALAI BESAR PELAKSANAAN JALAN NASIONAL VIII SURABAYA, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 1 Bulan 2 Hari",
+    "tmtMulaiSerial": "43140",
+    "tmtAkhirSerial": "43535"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK PPK 03 (CEKIK - BTS. KOTA NEGARA - ANTOSARI - TABANAN - PEKUTATAN), PELAKSANAAN JALAN NASIONAL WILAYAH I PROVINSI BALI, BALAI BESAR PELAKSANAAN JALAN NASIONAL VIII SURABAYA, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 7 Bulan 7 Hari",
+    "tmtMulaiSerial": "42917",
+    "tmtAkhirSerial": "43139"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK Balai Besar Pelaksanaan Jalan Nasional VIII Surabaya, Direktorat Jenderal Bina Marga, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 5 Bulan 26 Hari",
+    "tmtMulaiSerial": "42739",
+    "tmtAkhirSerial": "42916"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK PPK 03 (CEKIK - BTS. KOTA NEGARA - ANTOSARI - TABANAN - PEKUTATAN), PELAKSANAAN JALAN NASIONAL WILAYAH I PROVINSI BALI, BALAI BESAR PELAKSANAAN JALAN NASIONAL VIII SURABAYA, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 5 Bulan 29 Hari",
+    "tmtMulaiSerial": "42736",
+    "tmtAkhirSerial": "42916"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK PELAKSANAAN JALAN NASIONAL WILAYAH I PROVINSI BALI, BALAI BESAR PELAKSANAAN JALAN NASIONAL VIII SURABAYA, DIREKTORAT JENDERAL BINA MARGA, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "0 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "42675",
+    "tmtAkhirSerial": "42735"
+   },
+   {
+    "nama": "PELAKSANA TEKNIK SEKSI PERENCANAAN, BALAI PELAKSANAAN JALAN NASIONAL VIII, DIREKTORAT JENDERAL BINA MARGA,",
+    "masaKerja": "1 Tahun 2 Bulan 30 Hari",
+    "tmtMulaiSerial": "42217",
+    "tmtAkhirSerial": "42674"
+   },
+   {
+    "nama": "PELAKSANA BALAI PELAKSANAAN JALAN NASIONAL VIII, DITJEN BINA MARGA KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 8 Bulan 30 Hari",
+    "tmtMulaiSerial": "41944",
+    "tmtAkhirSerial": "42216"
+   },
+   {
+    "nama": "Auditor Ahli Pertama AUDITOR AHLI PERTAMA BALAI PELAKSANAAN JALAN NASIONAL VIII DITJEN BINA MARGA KEMENTERIAN PU,",
+    "masaKerja": "0 Tahun 10 Bulan 30 Hari",
+    "tmtMulaiSerial": "41883",
+    "tmtAkhirSerial": "42216"
+   },
+   {
+    "nama": "AUDITOR AHLI PERTAMA INSPEKTORAT WILAYAH II, INSPEKTORAT JENDERAL KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 6 Bulan 6 Hari",
+    "tmtMulaiSerial": "41695",
+    "tmtAkhirSerial": "41882"
+   },
+   {
+    "nama": "AUDITOR AHLI PERTAMA BAGIAN RENCANA DAN PROGRAM, SEKRETARIAT INSPEKTORAT JENDERAL ,INSPEKTORAT JENDERAL KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 6 Bulan 23 Hari",
+    "tmtMulaiSerial": "41487",
+    "tmtAkhirSerial": "41694"
+   },
+   {
+    "nama": "PENGADMINISTRASI UMUM BAGIAN RENCANA DAN PROGRAM, SEKRETARIAT INSPEKTORAT JENDERAL ,INSPEKTORAT JENDERAL KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 9 Bulan 21 Hari",
+    "tmtMulaiSerial": "41193",
+    "tmtAkhirSerial": "41487"
+   },
+   {
+    "nama": "ANALIS DATA TEKNIS INFASTRUKTUR BAGIAN RENCANA DAN PROGRAM, SEKRETARIAT INSPEKTORAT JENDERAL ,INSPEKTORAT JENDERAL KEMENTERIAN PU",
+    "masaKerja": "1 Tahun 8 Bulan 9 Hari",
+    "tmtMulaiSerial": "40575",
+    "tmtAkhirSerial": "41192"
+   },
+   {
+    "nama": "ANALIS DATA TEKNIS INFRASTRUKTUR SEKRETARIAT INSPEKTORAT JENDERAL ,INSPEKTORAT JENDERAL KEMENTERIAN PU",
+    "masaKerja": "0 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "40513",
+    "tmtAkhirSerial": "40574"
+   }
+  ],
+  "riwayatDiklat": [
+   "Sosialisasi Peningkatan Kesadaran Budaya Kerja, Kode Etik, dan Kesehatan Mental bagi Pegawai Direktorat Jenderal Bina Konstruksi",
+   "Governance Beyond Compliance: Penguatan Integritas dan Peran Aparatur dalam Pencegahan Korupsi",
+   "E-Learning Manajemen Risiko",
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Manajemen",
+   "E-Learning Pengetahuan Antikorupsi Dasar dan Integritas (PADI)",
+   "PPK Negara Tersertifikasi (PNT)",
+   "Kompetensi PBJP untuk PPK Tipe C (PBJP Level-2)",
+   "Bela Negara Bagi Pejabat Pembuat Komitmen (PPK) dan Kelompok Kerja Pengadaan Barang/Jasa (Pokja PBJ) Kementerian PUPR",
+   "Pejabat Inti Satuan Kerja (PISK) Bidang Jalan & Jembatan",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "DIKLAT PENGADAAN BARANG/JASA PEMERINTAH"
+  ],
+  "tmtDiklat": "28-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "61.67",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2016",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 605
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "85.00",
+    "kotak9Sumber": "7",
+    "tahunAsesmen": "2016",
+    "jenisAsesmen": "PELAKSANA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 606
+   }
+  ],
+  "foto": "doc/data/foto/198505162010122004.png"
+ },
+ {
+  "no": "32",
+  "nama": "Wiworo Setyoningrum, S.A.",
+  "nip": "199207252018022002",
+  "tmtGolongan": "01-03-2026",
+  "golongan": "III/c",
+  "eselon": "",
+  "namaJabatan": "Pembina Jasa Konstruksi Ahli Muda",
+  "unitKerja": "Sekretariat Lembaga Pengembangan Jasa Konstruksi",
+  "tmtJabatan": "01-01-2026",
+  "sekolah": "Universitas Airlangga",
+  "bidangStudi": "Non Teknik",
+  "tingkatPendidikan": "S1/D4",
+  "jurusan": "EKONOMI  AKUNTANSI",
+  "riwayatPendidikan": "S1/D4 - EKONOMI  AKUNTANSI (2015)",
+  "jenjangAsesmen": "AHLI MUDA",
+  "tahunAsesmen": "2021",
+  "jenisAsesmen": "AUDITOR PERTAMA",
+  "statusAsesmen": "EXPIRED",
+  "potkom": "70.86",
+  "ratingKinerja": "SANGAT BAIK",
+  "kotak9Sumber": "4",
+  "barisExcel": 626,
+  "riwayatJabatan": [
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Muda, Bagian Administrasi, Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "0 Tahun 7 Bulan 27 Hari",
+    "tmtMulaiSerial": "46023",
+    "tmtAkhirSerial": "-"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama, Bagian Administrasi, Sekretariat Lembaga Pengembangan Jasa Konstruksi, Direktorat Jenderal Bina Konstruksi, Kementerian Pekerjaan Umum",
+    "masaKerja": "4 Tahun 2 Bulan 30 Hari",
+    "tmtMulaiSerial": "44470",
+    "tmtAkhirSerial": "46022"
+   },
+   {
+    "nama": "Pembina Jasa Konstruksi Ahli Pertama, Sekretariat Inspektorat Jenderal, Inspektorat Jenderal",
+    "masaKerja": "2 Tahun 3 Bulan 29 Hari",
+    "tmtMulaiSerial": "43617",
+    "tmtAkhirSerial": "44469"
+   },
+   {
+    "nama": "Penelaah Kepegawaian, Subbagian Kepegawaian dan Keuangan, Bagian Umum, Sekretariat Inspektorat Jenderal, Inspektorat Jenderal, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 2 Bulan 29 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "Penyusun Monev Dan Pelaporan PPK Layanan Teknis dan Administratif Bidang Pengawasan, SEKRETARIAT INSPEKTORAT JENDERAL, Subbagian Kepegawaian dan Keuangan, Bagian Umum, Sekretariat Inspektorat Jenderal, Inspektorat Jenderal, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "0 Tahun 0 Bulan 0 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "43556"
+   },
+   {
+    "nama": "Penelaah Kepegawaian, Subbagian Kepegawaian dan Keuangan, Bagian Umum, Sekretariat Inspektorat Jenderal, Inspektorat Jenderal, Kementerian Pekerjaan Umum Dan Perumahan Rakyat",
+    "masaKerja": "1 Tahun 2 Bulan 29 Hari",
+    "tmtMulaiSerial": "43556",
+    "tmtAkhirSerial": "44012"
+   },
+   {
+    "nama": "PEMBINA JASA KONSTRUKSI PERTAMA DIREKTORAT KERJA SAMA DAN PEMBERDAYAAN, DIREKTORAT JENDERAL BINA KONSTRUKSI, KEMENTERIAN PEKERJAAN UMUM DAN PERUMAHAN RAKYAT",
+    "masaKerja": "1 Tahun 1 Bulan 30 Hari",
+    "tmtMulaiSerial": "43132",
+    "tmtAkhirSerial": "43555"
+   }
+  ],
+  "riwayatDiklat": [
+   "E-Learning Peningkatan Pemahaman Gratifikasi 2026",
+   "E-Learning Peningkatan Pemahaman Gratifikasi bagi Penyelenggara Negara/Pegawai Negeri",
+   "Pelatihan Pembentukan Verifikator Panduan Cegah Korupsi (PANCEK) untuk Dunia Usaha",
+   "E-LEARNING PENGETAHUAN ANTI KORUPSI DASAR DAN INTEGRITAS (PADI) KEMENTERIAN DAN LEMBAGA NEGARA",
+   "Pelatihan Asesor SNI ISO/IEC 17065:2012 Lingkup Jasa Konstruksi",
+   "Pelatihan Pemahaman SNI ISO/IEC 17065:2012",
+   "Sertifikasi Asesor Kompetensi",
+   "Hukum Kontrak Kerja Konstruksi",
+   "Pelatihan Asesor Kompetensi",
+   "Jabatan Fungsional Pembina Jasa Konstruksi",
+   "Fungsional Pembina Jasa Konstruksi Ahli (Distance Learning)",
+   "MANAJEMEN RISIKO ORGANISASI SEKTOR PUBLIK",
+   "Sertifikat Pengadaan Barang dan Jasa Level 1 (Dasar)",
+   "Pengadaan Barang dan Jasa Pemerintah"
+  ],
+  "tmtDiklat": "29-07-2026",
+  "asesmen": [
+   {
+    "jenjangAsesmen": "AHLI MUDA",
+    "potkom": "70.86",
+    "kotak9Sumber": "4",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "AUDITOR PERTAMA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 626
+   },
+   {
+    "jenjangAsesmen": "PENGAWAS",
+    "potkom": "91.60",
+    "kotak9Sumber": "9",
+    "tahunAsesmen": "2021",
+    "jenisAsesmen": "AUDITOR PERTAMA",
+    "statusAsesmen": "EXPIRED",
+    "barisExcel": 627
+   }
+  ],
+  "foto": "doc/data/foto/199207252018022002.png"
+ }
+]

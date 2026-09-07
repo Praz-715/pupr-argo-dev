@@ -57,7 +57,7 @@ export async function KesehatanData() {
             <li key={b.item} className="px-4 py-2.5">
               <div className="flex items-center gap-3">
                 <StatusDot tone={nada} />
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-text">
+                <span className="min-w-0 flex-1 text-[13px] font-medium text-text break-words">
                   {b.item}
                 </span>
                 <span className="shrink-0 text-[10px] text-text-subtle">

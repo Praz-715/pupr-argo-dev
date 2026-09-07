@@ -24,16 +24,29 @@ import { TombolJadikanDraft } from './tombol-jadikan-draft'
  * Peran nav kedua halaman **sudah identik** (Super Admin · Admin Talenta ·
  * Pimpinan), jadi peleburan ini tidak menggeser siapa boleh melihat apa. Itu
  * diperiksa lebih dulu, bukan diasumsikan.
+ *
+ * **24 Agu 2026:** Pengelola Unit ikut — ia yang mengusulkan kursi kosong unitnya
+ * jadi draft. Karena itu daftarnya kini **tersaring lingkup** (`unitWajib`): baris
+ * di luar unitnya akan membawa tombol yang pasti ditolak server, dan daftar yang
+ * memajangnya berbohong tentang apa yang bisa dikerjakan pembacanya.
  */
 
 export async function PanelJabatanKosong({
   hanyaStrategis,
   bolehUbah,
+  unitWajib,
 }: {
   hanyaStrategis: boolean
   bolehUbah: boolean
+  /**
+   * Batas unit penonton: `null` = lingkup penuh, angka = unit itu beserta
+   * turunannya. Diteruskan dari halaman (`unitWajib(lingkupData(pengguna))`), bukan
+   * dibaca di sini — komponen ini juga dipakai di dalam `<Suspense>`, dan membaca
+   * sesi di dua tempat berarti dua sumber kebenaran untuk satu pertanyaan.
+   */
+  unitWajib: number | null
 }) {
-  const { daftar, total, tanpaTarget } = await ambilJabatanKosongRinci(hanyaStrategis)
+  const { daftar, total, tanpaTarget } = await ambilJabatanKosongRinci(hanyaStrategis, unitWajib)
 
   return (
     <Panel padat id="jabatan-kosong">
@@ -153,8 +166,15 @@ export async function PanelJabatanKosong({
   )
 }
 
-export async function PanelRisikoKekosongan({ ambang }: { ambang: number }) {
-  const { daftar, totalDiperiksa, nipTidakTerbaca } = await ambilPejabatBerisiko(ambang)
+export async function PanelRisikoKekosongan({
+  ambang,
+  unitWajib,
+}: {
+  ambang: number
+  /** Sama seperti `PanelJabatanKosong` — lihat catatan di sana. */
+  unitWajib: number | null
+}) {
+  const { daftar, totalDiperiksa, nipTidakTerbaca } = await ambilPejabatBerisiko(ambang, unitWajib)
 
   return (
     <Panel padat id="risiko-kekosongan">
@@ -228,10 +248,10 @@ export async function PanelRisikoKekosongan({ ambang }: { ambang: number }) {
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      <span className="block max-w-[20rem] truncate text-text-muted" title={d.namaJabatan}>
+                      <span className="block max-w-[20rem] text-text-muted break-words" title={d.namaJabatan}>
                         {d.namaJabatan}
                       </span>
-                      <span className="block max-w-[20rem] truncate text-[11px] text-text-subtle" title={d.namaUnit}>
+                      <span className="block max-w-[20rem] text-[11px] text-text-subtle break-words" title={d.namaUnit}>
                         {d.eselon === 'NON_ESELON' ? 'Non-eselon' : `Eselon ${d.eselon}`} ·{' '}
                         {d.namaUnit}
                       </span>

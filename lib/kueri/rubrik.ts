@@ -1,6 +1,10 @@
 import 'server-only'
 
+import { adalahKategoriCatatan, type KategoriCatatan } from '../catatan-pegawai'
+import { sqlPeringkatEselon } from '../eselon'
+import { klausaRumpun } from './rumpun'
 import { angka, angkaWajib, kueri, kueriSatu } from '../db'
+import { SUBKUERI_UNIT_TURUNAN } from './dasar'
 import type { KunciIndikator } from '../penilaian'
 import type { ProfilKandidat, RubrikJabatanTarget, SkorTersimpan } from '../skor-massal'
 import type {
@@ -14,7 +18,7 @@ import type {
   StatusAsesmen,
   Sumbu,
 } from '../scoring'
-import type { Eselon, JenisSyarat } from '../scoring/eligibility'
+import type { Eselon, JabatanAsal, JenisSyarat } from '../scoring/eligibility'
 import type { TingkatPendidikan } from '../normalisasi'
 import { CTE_ASESMEN_TERBARU, filterSumber } from './dasar'
 
@@ -38,6 +42,27 @@ import { CTE_ASESMEN_TERBARU, filterSumber } from './dasar'
 
 export type StatusJabatanTarget = 'DRAFT' | 'AKTIF' | 'NONAKTIF'
 
+/*
+  Unit organisasi jabatan target — DUA kolom, bukan satu, dan itu bukan kelebihan.
+
+  `jumlah_unit` yang memutuskan apakah satu nama unit boleh disebut sama sekali:
+  target beranggota banyak unit tidak boleh dilabeli salah satunya, sebab label
+  begitu menyatakan sesuatu yang TIDAK benar untuk anggota lainnya — lebih buruk
+  daripada tidak menyebut unit. Aturan & alasan yang sama dengan
+  `ambilOpsiTargetPool()` (`Detail Revisi PUPR 1_9_2026.pdf`, butir 1).
+
+  Ditulis sekali di sini karena kedua kueri di bawah memakainya; disalin, keduanya
+  akan berselisih pada target multi-unit dan yang terjadi bukan galat melainkan dua
+  halaman yang menyebut unit berbeda untuk jabatan target yang sama.
+*/
+const SUBKUERI_UNIT_TARGET = `
+  (SELECT COUNT(*) FROM jabatan ju WHERE ju.id = t.jabatan_id)                       AS jumlah_unit,
+  (SELECT uo.nama_unit
+     FROM jabatan ju
+     JOIN unit_organisasi uo ON uo.id = ju.unit_organisasi_id
+    WHERE ju.id = t.jabatan_id)                                                      AS nama_unit
+`
+
 export interface BarisJabatanTarget {
   id: number
   kodeTarget: string
@@ -53,6 +78,14 @@ export interface BarisJabatanTarget {
   jumlahEligible: number
   jumlahDinilai: number
   jumlahPool: number
+  /**
+   * Unit organisasi jabatan anggotanya. `null` kalau targetnya belum punya
+   * anggota, ATAU kalau anggotanya tersebar di lebih dari satu unit — lihat
+   * `jumlahUnit`.
+   */
+  namaUnit: string | null
+  /** Berapa unit berbeda yang diwakili target ini. 0 = belum punya anggota. */
+  jumlahUnit: number
   /** Perhitungan match score terakhir; null = belum pernah dihitung. */
   dihitungPada: string | null
   namaPembuat: string | null
@@ -74,7 +107,8 @@ export async function ambilDaftarJabatanTarget(): Promise<BarisJabatanTarget[]> 
               WHERE m.jabatan_target_id = t.id AND m.eligible = 1 ${filterSumber('p_me')})       AS jumlah_eligible,
            (SELECT COUNT(*) FROM talent_pool tp JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
               WHERE tp.jabatan_target_id = t.id ${filterSumber('p_tp')})                         AS jumlah_pool,
-           (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada
+           (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada,
+           ${SUBKUERI_UNIT_TARGET}
     FROM jabatan_target t
     LEFT JOIN users u ON u.id = t.dibuat_oleh
     ORDER BY FIELD(t.status, 'AKTIF', 'DRAFT', 'NONAKTIF'), t.nama_target
@@ -99,7 +133,8 @@ export async function ambilJabatanTarget(id: number): Promise<BarisJabatanTarget
               WHERE m.jabatan_target_id = t.id AND m.eligible = 1 ${filterSumber('p_me')})       AS jumlah_eligible,
             (SELECT COUNT(*) FROM talent_pool tp JOIN pegawai p_tp ON p_tp.id = tp.pegawai_id
               WHERE tp.jabatan_target_id = t.id ${filterSumber('p_tp')})                         AS jumlah_pool,
-            (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada
+            (SELECT MAX(m.computed_at) FROM match_score m WHERE m.jabatan_target_id = t.id)   AS dihitung_pada,
+            ${SUBKUERI_UNIT_TARGET}
      FROM jabatan_target t
      LEFT JOIN users u ON u.id = t.dibuat_oleh
      WHERE t.id = ?`,
@@ -123,6 +158,11 @@ function petakanBarisTarget(r: Record<string, unknown>): BarisJabatanTarget {
     jumlahEligible: Number(r.jumlah_eligible),
     jumlahDinilai: Number(r.jumlah_dinilai),
     jumlahPool: Number(r.jumlah_pool),
+    jumlahUnit: Number(r.jumlah_unit ?? 0),
+    // Lebih dari satu unit → sengaja `null`: menyebut salah satunya membuat label
+    // menyatakan sesuatu yang tidak benar untuk anggota lainnya.
+    namaUnit:
+      Number(r.jumlah_unit ?? 0) === 1 && r.nama_unit !== null ? String(r.nama_unit) : null,
     dihitungPada: r.dihitung_pada === null ? null : String(r.dihitung_pada),
     namaPembuat: r.nama_pembuat === null ? null : String(r.nama_pembuat),
   }
@@ -185,7 +225,7 @@ export async function ambilPohonRubrik(jabatanTargetId: number | null): Promise<
     ),
     kueri<Record<string, unknown>>(
       `SELECT i.id, i.rubrik_komponen_id, i.parent_indikator_id, i.nama_indikator, i.kunci_sistem,
-              i.bobot_indikator, i.mode_skor, i.kebutuhan_data, i.sumber_data, i.urutan
+              i.bobot_indikator, i.mode_skor, i.skala_maks, i.kebutuhan_data, i.sumber_data, i.urutan
        FROM rubrik_indikator i
        JOIN rubrik_komponen k ON k.id = i.rubrik_komponen_id
        WHERE ${jabatanTargetId === null ? 'k.jabatan_target_id IS NULL' : 'k.jabatan_target_id = ?'}
@@ -227,6 +267,7 @@ export async function ambilPohonRubrik(jabatanTargetId: number | null): Promise<
       kunci: r.kunci_sistem === null ? null : (String(r.kunci_sistem) as KunciIndikator),
       bobot: angka(r.bobot_indikator as string),
       modeSkor: String(r.mode_skor) as ModeSkor,
+      skalaMaks: angka(r.skala_maks as string),
       kebutuhanData: r.kebutuhan_data === null ? null : String(r.kebutuhan_data),
       sumberData: r.sumber_data === null ? null : String(r.sumber_data),
       parentIndikatorId: r.parent_indikator_id === null ? null : Number(r.parent_indikator_id),
@@ -303,10 +344,10 @@ export interface BarisPersyaratan extends Persyaratan {
 
 export async function ambilPersyaratan(jabatanTargetId: number): Promise<BarisPersyaratan[]> {
   const baris = await kueri<Record<string, unknown>>(
-    `SELECT id, jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal
+    `SELECT id, jabatan_target_id, jenis_syarat, deskripsi, nilai_minimal, durasi_tahun_min
      FROM jabatan_target_persyaratan
      WHERE jabatan_target_id = ?
-     ORDER BY FIELD(jenis_syarat, 'PENDIDIKAN_MIN', 'BIDANG_ILMU', 'PENGALAMAN_MIN', 'LAINNYA'), id`,
+     ORDER BY FIELD(jenis_syarat, 'PENDIDIKAN_MIN', 'BIDANG_ILMU', 'GOLONGAN_MIN', 'PENGALAMAN_MIN', 'LAINNYA'), id`,
     [jabatanTargetId],
   )
   return baris.map((r) => ({
@@ -315,6 +356,7 @@ export async function ambilPersyaratan(jabatanTargetId: number): Promise<BarisPe
     jenisSyarat: String(r.jenis_syarat) as JenisSyarat,
     deskripsi: String(r.deskripsi),
     nilaiMinimal: r.nilai_minimal === null ? null : String(r.nilai_minimal),
+    durasiTahunMin: r.durasi_tahun_min === null ? null : Number(r.durasi_tahun_min),
   }))
 }
 
@@ -397,10 +439,15 @@ export async function ambilAnggotaJabatan(jabatanTargetId: number): Promise<Jaba
     `SELECT j.id, j.kode_jabatan, j.nama_jabatan, u.nama_unit, j.eselon, j.jenjang,
             j.status_jabatan,
             (SELECT COUNT(*) FROM pegawai p WHERE p.jabatan_id = j.id AND p.status_aktif = 'AKTIF') AS penghuni,
+            -- KURSI, bukan daftar asal. Sejak tabel anggota berarti "jabatan asal
+            -- kandidat", sebuah Kepala Sub Bagian WAJAR muncul di puluhan jabatan
+            -- target — memperingatkannya berarti menandai keadaan normal sebagai
+            -- masalah, dan peringatan yang muncul di hampir semua baris berhenti
+            -- dibaca. Yang layak disebut hanya kalau kursi itu sendiri sudah jadi
+            -- jabatan target (kolom jabatan_id, doc/sql/032).
             (SELECT GROUP_CONCAT(t2.nama_target SEPARATOR ' · ')
-               FROM jabatan_target_anggota a2
-               JOIN jabatan_target t2 ON t2.id = a2.jabatan_target_id
-               WHERE a2.jabatan_id = j.id AND a2.jabatan_target_id <> ?)                   AS target_lain
+               FROM jabatan_target t2
+               WHERE t2.jabatan_id = j.id AND t2.id <> ?)                                  AS target_lain
      FROM jabatan_target_anggota a
      JOIN jabatan j ON j.id = a.jabatan_id
      JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
@@ -412,24 +459,150 @@ export async function ambilAnggotaJabatan(jabatanTargetId: number): Promise<Jaba
 }
 
 /**
+ * Master jabatan untuk **membuat** jabatan target — pemilih berpencarian.
+ *
+ * ## Kenapa ada, padahal `cariJabatanUntukTarget()` sudah mirip
+ *
+ * Yang itu menyaring "belum jadi anggota target INI", jadi ia butuh id target yang
+ * saat membuat belum ada. Di sini yang ditanyakan berbeda: "jabatan mana di master
+ * yang belum punya jabatan target sama sekali".
+ *
+ * ## Yang sudah punya target TETAP ditampilkan, dengan keterangannya
+ *
+ * Menyembunyikannya membuat pengguna mencari nama yang jelas-jelas ada di master
+ * lalu menyimpulkan pencariannya rusak. Barisnya ikut tampil, ditandai memakai
+ * `targetLain`, dan tombolnya dimatikan di UI — sebab `buatTargetDariJabatan()`
+ * memang akan menolaknya: dua jabatan target untuk satu kursi berarti dua daftar
+ * kandidat yang bersaing tanpa ada yang menjelaskan mana yang berlaku.
+ *
+ * `unitWajib` wajib diisi dengan alasan yang sama seperti kueri kekosongan di
+ * `lib/kueri/master.ts`: barisnya membawa tombol yang server bisa tolak
+ * (`jabatanTerjangkau()`), jadi daftar yang tidak tersaring menawarkan kursi yang
+ * pasti gagal. `null` = lingkup penuh.
+ */
+export async function cariJabatanUntukTargetBaru(
+  cari: string,
+  unitWajib: number | null,
+  batas = 25,
+): Promise<JabatanAnggota[]> {
+  const teks = cari.trim().slice(0, 80)
+  const pola = `%${teks}%`
+  const filterUnit = unitWajib === null ? '' : `AND u.id IN (${SUBKUERI_UNIT_TURUNAN})`
+  const params: unknown[] = [teks, pola, pola, pola]
+  if (unitWajib !== null) params.push(unitWajib)
+  params.push(batas)
+
+  const baris = await kueri<Record<string, unknown>>(
+    `SELECT j.id, j.kode_jabatan, j.nama_jabatan, u.nama_unit, j.eselon, j.jenjang,
+            j.status_jabatan,
+            (SELECT COUNT(*) FROM pegawai p WHERE p.jabatan_id = j.id AND p.status_aktif = 'AKTIF') AS penghuni,
+            -- Kursi yang sudah punya jabatan target sendiri (kolom jabatan_id,
+            -- doc/sql/032). Lewat tabel anggota, setiap Kepala Seksi akan tampil
+            -- "sudah jadi jabatan target" hanya karena ia jabatan ASAL kandidat.
+            (SELECT GROUP_CONCAT(t2.nama_target SEPARATOR ' · ')
+               FROM jabatan_target t2
+               WHERE t2.jabatan_id = j.id)                                                 AS target_lain
+     FROM jabatan j
+     JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
+     WHERE j.status_jabatan <> 'DIHAPUS'
+       AND (? = '' OR j.nama_jabatan LIKE ? OR j.kode_jabatan LIKE ? OR u.nama_unit LIKE ?)
+       ${filterUnit}
+     ORDER BY (SELECT COUNT(*) FROM jabatan_target t3 WHERE t3.jabatan_id = j.id) ASC,
+              j.status_jabatan = 'KOSONG' DESC,
+              j.eselon IS NULL, j.eselon, j.nama_jabatan
+     LIMIT ?`,
+    params,
+  )
+  return baris.map(petakanJabatanAnggota)
+}
+
+/**
  * Jabatan yang BELUM jadi anggota target ini, untuk dipilih di tab Jabatan Anggota.
  * Dibatasi & bisa dicari karena master jabatan punya 47 baris di dev dan akan
  * jauh lebih banyak di produksi.
+ *
+ * ## Bawaannya menyaring ke JENJANG target ini (`koreksi sistem informasi.pdf` butir 1)
+ *
+ * Sebelum ini daftarnya menawarkan SELURUH master jabatan, sehingga target
+ * ber-Eselon IV (mis. "Kepala Subbidang … BP2JK Wilayah Jawa Barat") menyodorkan
+ * Direktur Jenderal dan para Direktur — Eselon I dan II — sebagai calon anggota.
+ * Itu bukan pilihan yang salah dipilih orang; itu pilihan yang tidak pernah benar,
+ * dan ia mendorong daftar anggota berisi kursi yang tidak sejenjang, yang lalu
+ * membuat satu daftar kandidat dipakai untuk dua tingkat jabatan sekaligus.
+ *
+ * Jenjangnya **diturunkan dari anggota target itu sendiri**, bukan dari daftar
+ * lima nama yang dipaku. Alasannya sama dengan `PINDAH` di `rapikan-unit.ts`:
+ * daftar tetap akan salah begitu ada target di jenjang yang tidak terdaftar,
+ * sementara anggota yang sudah ada adalah pernyataan eksplisit pembuat targetnya.
+ * Sejak `buatTargetDariJabatan()` jadi satu-satunya jalur buat, tiap target lahir
+ * membawa satu anggota — jadi selalu ada yang bisa diturunkan.
+ *
+ * Tiga keadaan, dan yang ketiga yang membuatnya aman:
+ *   1. `semuaJenjang` → tidak menyaring (jalan keluar eksplisit di UI)
+ *   2. target belum punya anggota bereselon → tidak menyaring; tidak ada yang
+ *      bisa diturunkan, dan menyaring ke himpunan kosong akan menghasilkan daftar
+ *      kosong yang terbaca sebagai pencarian rusak
+ *   3. selain itu → eselon yang **setingkat atau di BAWAH kursi** yang dituju
+ *
+ * ## ⚠️ ARAHNYA: "setingkat atau di BAWAH kursi" — JANGAN dibalik lagi
+ *
+ * Diputuskan pemilik proses 2 Sep 2026, sesudah arahnya sempat bolak-balik dua kali
+ * dalam sehari: *"ambilnya setingkat atau bawahnya sih, cuma patokan awalnya tetep
+ * ambil dari persyaratan itu ya yang udah diganti jadi jabatan asal kandidat."*
+ *
+ * Kalimat `Detail Revisi PUPR 1_9_2026.pdf` butir 4 berbunyi *"harus minimal
+ * setingkat atau diatasnya"* — dan itu benar UNTUK KEADAAN SAAT PDF DITULIS, ketika
+ * daftar ini masih berarti "kursi yang dituju": menggabungkan kursi hanya masuk akal
+ * dengan kursi sederajat atau lebih tinggi. Sejak daftarnya berarti **jabatan asal
+ * kandidat**, kalimat yang sama menghasilkan aturan yang terbalik — ia akan
+ * menuntut kandidat SUDAH sederajat dengan kursi yang ia lamar, sehingga jalur
+ * promosi normal (Kasubbag → Kepala Balai) tidak pernah muncul.
+ *
+ * Terukur pada target eselon III: "di atas" menawarkan 74 kursi tapi NOL dari rumpun
+ * yang benar-benar mengisinya, sementara "di bawah" menawarkan 126 kursi termasuk
+ * Kepala Sub Bagian (48) & Kepala Seksi (11) — dan 49 kandidat yang lolos syarat
+ * hari ini semuanya datang dari kedua rumpun itu.
+ *
+ * **Patokannya tetap KURSI** (`jabatan_target.jabatan_id`), bukan daftar asal yang
+ * sedang disusun: kalau patokannya daftar itu sendiri, perbandingannya melingkar.
+ * Isi awal daftarnya sendiri datang dari bekas syarat `RUMPUN_JABATAN` — "rumpun
+ * satu tingkat di bawah kursi" — yang dimaterialkan `npm run jabatan:asal`.
+ *
+ * Catatan aslinya (masih berlaku sebagai alasan kenapa ia tidak PERSIS sama): Yang ditutup aturan lama adalah keadaan yang
+ * wajar — target beranggota eselon III tidak bisa ditambahi kursi eselon II yang
+ * fungsinya sama — dan penolakannya tidak terlihat sebagai penolakan: jabatannya
+ * cuma tidak muncul, yang terbaca sebagai "tidak ada di master". Perbandingannya
+ * `sqlPeringkatEselon()` di `lib/eselon.ts`, ekspresi yang diturunkan dari peta
+ * peringkat yang sama dengan sisi TypeScript-nya.
+ *
+ * Jabatan yang eselonnya TIDAK DIKETAHUI (kolomnya kosong atau berisi tulisan
+ * yang bukan eselon) tetap tidak pernah lolos — `FIELD()` memberinya 0 dan
+ * syaratnya `> 0`. Meloloskan yang tidak diketahui akan mengembalikan justru
+ * kebisingan yang saringan ini ada untuk membuang, dan jalan keluarnya sudah ada
+ * & eksplisit di UI (`semuaJenjang`).
+ *
+ * Jabatan FUNGSIONAL (`NON_ESELON`) hanya lolos kalau targetnya sendiri
+ * beranggota fungsional — peringkatnya paling bawah, jadi ia tidak pernah
+ * "setingkat atau di atas" jabatan struktural mana pun. Itu benar: jenjang
+ * fungsional bukan turunan eselon, jadi menyamakannya adalah tebakan.
  */
 export async function cariJabatanUntukTarget(
   jabatanTargetId: number,
   cari: string,
   batas = 20,
+  semuaJenjang = false,
 ): Promise<JabatanAnggota[]> {
   const pola = `%${cari.trim()}%`
   const baris = await kueri<Record<string, unknown>>(
     `SELECT j.id, j.kode_jabatan, j.nama_jabatan, u.nama_unit, j.eselon, j.jenjang,
             j.status_jabatan,
             (SELECT COUNT(*) FROM pegawai p WHERE p.jabatan_id = j.id AND p.status_aktif = 'AKTIF') AS penghuni,
+            -- Lihat catatan pada ambilAnggotaJabatan(): yang ditandai adalah
+            -- kursi yang sudah punya jabatan target sendiri, bukan jabatan yang
+            -- kebetulan jadi asal kandidat di tempat lain.
             (SELECT GROUP_CONCAT(t2.nama_target SEPARATOR ' · ')
-               FROM jabatan_target_anggota a2
-               JOIN jabatan_target t2 ON t2.id = a2.jabatan_target_id
-               WHERE a2.jabatan_id = j.id)                                                 AS target_lain
+               FROM jabatan_target t2
+               WHERE t2.jabatan_id = j.id)                                                 AS target_lain
      FROM jabatan j
      JOIN unit_organisasi u ON u.id = j.unit_organisasi_id
      WHERE j.status_jabatan <> 'DIHAPUS'
@@ -438,9 +611,33 @@ export async function cariJabatanUntukTarget(
          WHERE a.jabatan_target_id = ? AND a.jabatan_id = j.id
        )
        AND (? = '' OR j.nama_jabatan LIKE ? OR j.kode_jabatan LIKE ? OR u.nama_unit LIKE ?)
+       AND (
+         ? = 1
+         -- Kursinya belum ditentukan → tidak ada yang bisa dijadikan patokan.
+         OR NOT EXISTS (
+           SELECT 1 FROM jabatan_target tk WHERE tk.id = ? AND tk.jabatan_id IS NOT NULL
+         )
+         OR EXISTS (
+           SELECT 1 FROM jabatan_target tk
+             JOIN jabatan jk ON jk.id = tk.jabatan_id
+            WHERE tk.id = ?
+              AND ${sqlPeringkatEselon('j.eselon')} > 0
+              AND ${sqlPeringkatEselon('j.eselon')} <= ${sqlPeringkatEselon('jk.eselon')}
+         )
+       )
      ORDER BY j.eselon IS NULL, j.eselon, j.nama_jabatan
      LIMIT ?`,
-    [jabatanTargetId, cari.trim(), pola, pola, pola, batas],
+    [
+      jabatanTargetId,
+      cari.trim(),
+      pola,
+      pola,
+      pola,
+      semuaJenjang ? 1 : 0,
+      jabatanTargetId,
+      jabatanTargetId,
+      batas,
+    ],
   )
   return baris.map(petakanJabatanAnggota)
 }
@@ -488,11 +685,20 @@ export interface BarisKandidat {
   rankingPool: number | null
   jumlahPerluReview: number
   jumlahManual: number
+  /** Kode catatan (HDS/HDB/TBTL/TBS) — MENANDAI barisnya, tidak menilai. */
+  catatanKategori: KategoriCatatan | null
+  catatanKeterangan: string | null
 }
 
 export interface FilterKandidat {
   hanyaEligible?: boolean
   cari?: string
+  /**
+   * Rumpun jabatan pegawainya SEKARANG (`Detail Revisi PUPR 1_9_2026.pdf`,
+   * butir 4) — "tampilkan hanya kandidat yang saat ini kepala seksi".
+   * Bawaannya tidak menyaring; aturannya di `lib/kueri/rumpun.ts`.
+   */
+  rumpun?: string
   urut?: 'skorTotal' | 'nama' | 'kotak9' | 'potkom'
   arah?: 'asc' | 'desc'
   halaman?: number
@@ -537,6 +743,14 @@ export async function ambilKandidat(
   const params: unknown[] = [jabatanTargetId]
   if (cari !== '') params.push(pola, pola)
 
+  // Urutan `syarat` menentukan urutan `params`, jadi klausanya didorong tepat
+  // sesudah parameter pencarian — bukan di akhir.
+  const rumpun = await klausaRumpun('j.nama_jabatan', filter.rumpun)
+  if (rumpun.sql !== '') {
+    syarat.push(rumpun.sql.replace(/^ AND /, ''))
+    params.push(...rumpun.params)
+  }
+
   const batasSumber = filterSumber('p')
   if (batasSumber) syarat.push(batasSumber.replace(/^ AND /, ''))
   const where = syarat.join(' AND ')
@@ -551,6 +765,7 @@ export async function ambilKandidat(
               m.catatan_eligibility, m.computed_at,
               a.kotak_9, a.rating_kinerja, a.nilai_kinerja_y, a.tahun_asesmen, a.status_asesmen,
               tp.status AS status_pool, tp.ranking AS ranking_pool,
+              p.catatan_kategori, p.catatan_keterangan,
               (SELECT COUNT(*) FROM match_score_detail d
                  WHERE d.match_score_id = m.id AND d.perlu_review = 1)          AS perlu_review,
               (SELECT COUNT(*) FROM match_score_detail d
@@ -568,9 +783,17 @@ export async function ambilKandidat(
       [...params, ukuran, (halaman - 1) * ukuran],
     ),
     kueriSatu<{ n: number }>(
+      /*
+        `jabatan` ikut di-JOIN walau kolomnya tidak diseleksi: penyaring rumpun
+        menyebut `j.nama_jabatan`, dan penghitung yang tidak mengenal alias itu
+        akan gagal — atau lebih buruk, kalau suatu saat aliasnya kebetulan ada,
+        menghitung populasi yang berbeda dari barisnya. Jumlah yang berselisih
+        dengan isinya adalah cacat yang tidak pernah memunculkan galat.
+      */
       `SELECT COUNT(*) AS n
        FROM match_score m
        JOIN pegawai p ON p.id = m.pegawai_id
+       LEFT JOIN jabatan j ON j.id = p.jabatan_id
        WHERE ${where}`,
       params,
     ),
@@ -601,6 +824,11 @@ export async function ambilKandidat(
       rankingPool: angka(r.ranking_pool as number),
       jumlahPerluReview: Number(r.perlu_review),
       jumlahManual: Number(r.manual),
+      catatanKategori:
+        r.catatan_kategori !== null && adalahKategoriCatatan(String(r.catatan_kategori))
+          ? (String(r.catatan_kategori) as KategoriCatatan)
+          : null,
+      catatanKeterangan: r.catatan_keterangan === null ? null : String(r.catatan_keterangan),
     })),
     total: Number(total?.n ?? 0),
   }
@@ -753,28 +981,58 @@ export async function ambilJejakManual(jabatanTargetId: number): Promise<JejakMa
  * Karena itu fungsi ini hanya dipanggil perhitungan ulang & simulasi — bukan
  * saat merender halaman (phase.md §3 K-5).
  */
-export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
+/**
+ * `satuPegawaiId` menyaring seluruh pembacaan ke SATU pegawai.
+ *
+ * Lahir dari permintaan pemilik proses 25 Agu 2026: skor di panel Kecocokan harus
+ * bergerak **seketika** setelah catatan hukuman disiplin diubah, tanpa menekan
+ * Hitung Ulang. Menghitung ulang seluruh populasi di dalam permintaan itu tidak
+ * mungkin — terukur 1–5 detik per jabatan target × 8 target. Yang berubah hanya
+ * data SATU orang, jadi yang perlu dihitung ulang juga hanya baris orang itu:
+ * `tulisHasilSkor()` memang aman dipakai sebagian (upsert skor, dan rinciannya
+ * dihapus hanya untuk `match_score_id` yang ikut dikirim).
+ *
+ * Bawaannya tetap "semua" supaya Hitung Ulang penuh tidak berubah perilaku.
+ */
+export async function ambilProfilKandidat(satuPegawaiId?: number): Promise<ProfilKandidat[]> {
+  const satu = satuPegawaiId !== undefined && Number.isFinite(satuPegawaiId)
+  // Disaring di SETIAP kueri, bukan hasilnya difilter di TypeScript: kueri
+  // `JSON_TABLE` & riwayat jabatan memindai seluruh tabel, dan itu justru biaya
+  // yang sedang dihindari.
+  const f = (klausa: string) => (satu ? klausa : '')
+  const pP = satu ? [satuPegawaiId] : []
+
   const [pegawaiRaw, pendidikanRaw, riwayatRaw, hukumanRaw, kategoriRaw, asesmenRaw] =
     await Promise.all([
     kueri<Record<string, unknown>>(
       `SELECT p.id, p.nip, p.nama_lengkap, p.tingkat_pendidikan, p.bidang_studi_terakhir,
-              p.riwayat_diklat, p.tmt_jabatan, j.jenjang, j.eselon
+              p.riwayat_diklat, p.tmt_jabatan, p.golongan, j.jenjang, j.eselon,
+              j.nama_jabatan, p.jabatan_id
        FROM pegawai p
        LEFT JOIN jabatan j ON j.id = p.jabatan_id
-       WHERE p.status_aktif = 'AKTIF'
+       WHERE p.status_aktif = 'AKTIF' ${f('AND p.id = ?')}
        ORDER BY p.id`,
+      pP,
     ),
-    kueri<Record<string, unknown>>(`SELECT pegawai_id, bidang_studi FROM riwayat_pendidikan`),
+    kueri<Record<string, unknown>>(
+      `SELECT pegawai_id, bidang_studi FROM riwayat_pendidikan
+        WHERE 1 = 1 ${f('AND pegawai_id = ?')}`,
+      pP,
+    ),
     kueri<Record<string, unknown>>(
       `SELECT r.pegawai_id, r.jabatan_nama_mentah, r.jabatan_id, r.tanggal_mulai, r.tanggal_akhir,
-              r.jenis_penugasan,
+              r.jenis_penugasan, r.lama_bulan,
               j.jenjang, j.eselon, j.unit_organisasi_id
        FROM riwayat_jabatan r
        LEFT JOIN jabatan j ON j.id = r.jabatan_id
+       WHERE 1 = 1 ${f('AND r.pegawai_id = ?')}
        ORDER BY r.pegawai_id, r.urutan`,
+      pP,
     ),
     kueri<Record<string, unknown>>(
-      `SELECT pegawai_id, tingkat_hukuman, status_aktif FROM hukuman_disiplin`,
+      `SELECT pegawai_id, tingkat_hukuman, status_aktif FROM hukuman_disiplin
+        WHERE 1 = 1 ${f('AND pegawai_id = ?')}`,
+      pP,
     ),
     /**
      * Kategori diklat TERVALIDASI per pegawai (`doc/sql/014`).
@@ -796,12 +1054,15 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
          JOIN master_kategori_riwayat_diklat k ON k.id = pd.kategori_id
         WHERE p.riwayat_diklat IS NOT NULL
           AND pd.status = 'TERVALIDASI'
-          AND k.aktif = 1`,
+          AND k.aktif = 1 ${f('AND p.id = ?')}`,
+      pP,
     ),
     kueri<Record<string, unknown>>(
       `${CTE_ASESMEN_TERBARU}
        SELECT pegawai_id, tahun_asesmen, status_asesmen, potkom, rating_kinerja, nilai_kinerja_y
-       FROM asesmen_terbaru`,
+       FROM asesmen_terbaru
+       WHERE 1 = 1 ${f('AND pegawai_id = ?')}`,
+      pP,
     ),
   ])
 
@@ -829,6 +1090,7 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
           r.jenis_penugasan === null
             ? null
             : (String(r.jenis_penugasan) as 'DEFINITIF' | 'PLT' | 'PLH'),
+        lamaBulan: r.lama_bulan === null ? null : Number(r.lama_bulan),
       },
     ])
   }
@@ -878,7 +1140,10 @@ export async function ambilProfilKandidat(): Promise<ProfilKandidat[]> {
       riwayatDiklat: bacaJsonTeks(p.riwayat_diklat),
       kategoriDiklatTervalidasi: kategoriPer.get(pegawaiId) ?? [],
       jenjangSaatIni: p.jenjang === null ? null : String(p.jenjang),
+      namaJabatanSaatIni: p.nama_jabatan === null ? null : String(p.nama_jabatan),
+      jabatanIdSaatIni: p.jabatan_id === null || p.jabatan_id === undefined ? null : Number(p.jabatan_id),
       eselonSaatIni: p.eselon === null ? null : (String(p.eselon) as Eselon),
+      golongan: p.golongan === null || p.golongan === '' ? null : String(p.golongan),
       tmtJabatan: tanggal(p.tmt_jabatan),
       riwayatJabatan: riwayatPer.get(pegawaiId) ?? [],
       potkom: asesmen?.potkom ?? null,
@@ -979,6 +1244,24 @@ export async function ambilOpsiSyaratDiklat(
   }))
 }
 
+/**
+ * Jabatan asal kandidat sebuah jabatan target — gerbang `JABATAN_ASAL`.
+ *
+ * Namanya ikut diambil supaya alasan kelayakannya bisa menyebut jabatan yang cocok,
+ * bukan sekadar "id 42". Alasan yang tidak bisa dibaca sama tidak bergunanya dengan
+ * tidak ada alasan.
+ */
+async function ambilJabatanAsal(jabatanTargetId: number): Promise<JabatanAsal[]> {
+  const baris = await kueri<{ id: number; nama_jabatan: string }>(
+    `SELECT j.id, j.nama_jabatan
+       FROM jabatan_target_anggota a
+       JOIN jabatan j ON j.id = a.jabatan_id
+      WHERE a.jabatan_target_id = ?`,
+    [jabatanTargetId],
+  )
+  return baris.map((b) => ({ id: Number(b.id), nama: String(b.nama_jabatan) }))
+}
+
 export async function ambilRubrikUntukHitung(
   jabatanTargetId: number,
 ): Promise<{ rubrik: RubrikJabatanTarget; komponen: KomponenRubrik[] } | null> {
@@ -1002,7 +1285,9 @@ export async function ambilRubrikUntukHitung(
         jenisSyarat: p.jenisSyarat,
         deskripsi: p.deskripsi,
         nilaiMinimal: p.nilaiMinimal,
+        durasiTahunMin: p.durasiTahunMin ?? null,
       })),
+      jabatanAsal: await ambilJabatanAsal(jabatanTargetId),
     },
   }
 }

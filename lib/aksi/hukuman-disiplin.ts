@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { jalankanMutasi } from '../audit'
 import { getCurrentUser } from '../auth'
 import { eksekusi, kueriSatu } from '../db'
+import { hitungUlangSatuPegawai } from '../skoring-satu'
 import { gerbangPeran } from './gerbang'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
@@ -72,6 +73,44 @@ async function bacaHukuman(id: number) {
   )
 }
 
+/**
+ * Hitung ulang skor pegawainya SEKETIKA, lalu kembalikan kalimat dampaknya.
+ *
+ * Permintaan pemilik proses 25 Agu 2026: *"kalo gw ubah lagi hukuman disiplinnya gak
+ * langsung berubah di kecocokannya"*. Sebelum ini ketiga aksi di berkas ini hanya
+ * MENYURUH pengguna menekan Hitung Ulang — dan pesan yang menyuruh orang menjalankan
+ * langkah kedua untuk menyelesaikan langkah pertama adalah pekerjaan yang belum
+ * selesai, bukan keterangan.
+ *
+ * Dihitung untuk **satu pegawai** saja (`lib/skoring-satu.ts`), bukan seluruh
+ * populasi: yang berubah datanya satu orang, dan menghitung 79 pegawai × 8 jabatan
+ * target di dalam permintaan yang ditunggu pengguna akan memakan detik-detik yang
+ * membuat tombolnya terasa menggantung.
+ *
+ * **Kegagalannya tidak membatalkan mutasinya.** Catatan disiplinnya sudah tersimpan
+ * dan itu yang diminta pengguna; skor bisa dihitung ulang kapan saja. Yang tidak
+ * boleh adalah gagal tanpa suara — jadi kalimatnya berubah menjadi permintaan
+ * menjalankan Hitung Ulang, dan sebabnya dicatat ke konsol.
+ */
+async function segarkanSkor(pegawaiId: number, nip?: string): Promise<string> {
+  try {
+    const r = await hitungUlangSatuPegawai(pegawaiId)
+    revalidatePath('/master/hukuman-disiplin')
+    revalidatePath('/talenta')
+    if (nip !== undefined) revalidatePath(`/talenta/${nip}`)
+    revalidatePath('/talent-pool')
+    // Kalimatnya tidak menyebut "aktif": cakupannya SETIAP jabatan target yang
+    // sudah punya baris skor, termasuk draft & nonaktif — kalau tidak, skor
+    // tersimpan di sana menyimpang dan `verifikasi:skoring` merah atas keadaan
+    // yang bukan cacat kode.
+    if (r.jumlahTarget === 0) return ' Belum ada jabatan target berskor, jadi tidak ada yang perlu disesuaikan.'
+    return ` Skor kecocokannya langsung disesuaikan di ${r.jumlahTarget} jabatan target (${r.durasiMs} ms).`
+  } catch (e) {
+    console.error('[hukuman-disiplin] gagal menghitung ulang skor pegawai', pegawaiId, e)
+    return ' Catatannya tersimpan, tapi skor kecocokannya GAGAL dihitung ulang — jalankan Hitung Ulang di jabatan targetnya.'
+  }
+}
+
 export async function buatHukuman(masukan: unknown): Promise<HasilAksi<{ id: number }>> {
   const tolak = await gerbangPeran(PERAN_DISIPLIN)
   if (tolak) return tolak
@@ -80,8 +119,8 @@ export async function buatHukuman(masukan: unknown): Promise<HasilAksi<{ id: num
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
 
-  const pegawai = await kueriSatu<{ nama: string }>(
-    `SELECT nama_lengkap AS nama FROM pegawai WHERE id = ?`,
+  const pegawai = await kueriSatu<{ nama: string; nip: string }>(
+    `SELECT nama_lengkap AS nama, nip FROM pegawai WHERE id = ?`,
     [d.pegawaiId],
   )
   if (!pegawai) return gagal('Pegawai tidak ditemukan.', { pegawaiId: 'Pegawai tidak ditemukan.' })
@@ -123,12 +162,10 @@ export async function buatHukuman(masukan: unknown): Promise<HasilAksi<{ id: num
       },
     })
 
-    revalidatePath('/master/hukuman-disiplin')
-    // Nilai integritas pegawai ikut berubah → halaman yang menampilkannya.
-    revalidatePath('/talenta')
+    const dampak = await segarkanSkor(d.pegawaiId, pegawai.nip)
     return berhasil(
       { id: hasil.entitasId ?? 0 },
-      `Catatan disiplin ${d.tingkatHukuman} untuk ${pegawai.nama} disimpan.`,
+      `Catatan disiplin ${d.tingkatHukuman} untuk ${pegawai.nama} disimpan.${dampak}`,
     )
   } catch (e) {
     const pesan = pesanDariGalatDb(e, {})
@@ -147,6 +184,15 @@ export async function ubahHukuman(id: unknown, masukan: unknown): Promise<HasilA
   const urai = SkemaHukuman.safeParse(masukan)
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
+
+  /*
+    Dibaca SEBELUM mutasi. Form ini juga bisa MEMINDAHKAN catatan ke pegawai lain,
+    dan kalau begitu skor pemilik lamanya harus ikut dihitung ulang — kalau tidak, ia
+    tetap memakai hukuman yang sudah bukan miliknya. Membacanya sesudah mutasi
+    mengembalikan pemilik BARU, jadi pemilik lamanya tidak akan pernah disegarkan.
+  */
+  const lama = await bacaHukuman(idH.data)
+  const idLama = lama === null ? null : Number(lama.pegawai_id)
 
   try {
     await jalankanMutasi({
@@ -183,9 +229,10 @@ export async function ubahHukuman(id: unknown, masukan: unknown): Promise<HasilA
       },
     })
 
-    revalidatePath('/master/hukuman-disiplin')
-    revalidatePath('/talenta')
-    return berhasil(undefined, 'Catatan disiplin disimpan.')
+    let dampak = ''
+    if (idLama !== null && idLama !== d.pegawaiId) dampak += await segarkanSkor(idLama)
+    dampak += await segarkanSkor(d.pegawaiId)
+    return berhasil(undefined, `Catatan disiplin disimpan.${dampak}`)
   } catch (e) {
     const pesan = pesanDariGalatDb(e, {})
     if (pesan) return gagal(pesan)
@@ -227,10 +274,9 @@ export async function nonaktifkanHukuman(id: unknown): Promise<HasilAksi<void>> 
     },
   })
 
-  revalidatePath('/master/hukuman-disiplin')
-  revalidatePath('/talenta')
+  const dampak = await segarkanSkor(Number(sekarang.pegawai_id))
   return berhasil(
     undefined,
-    'Catatan dinonaktifkan. Ia tidak lagi menurunkan skor integritas, tapi jejaknya tetap ada.',
+    `Catatan dinonaktifkan — jejaknya tetap ada, dan ia berhenti menurunkan skor integritas.${dampak}`,
   )
 }

@@ -23,7 +23,15 @@ const LABEL_PERIODE: Record<string, string> = {
 export interface TitikTrenChart {
   periode: string
   nilaiKinerja: number
-  nilaiPerilaku: number
+  /**
+   * `null` = BELUM DIUKUR, dan itu harus tetap null sampai ke grafik.
+   *
+   * Pemanggil sebelumnya menambal `?? nilaiKinerja` — hasilnya dua garis identik
+   * yang terbaca sebagai dua pengukuran berbeda yang saling mengonfirmasi. Sumber
+   * Excel Talent Pool hanya memberi predikat kinerja; nilai perilaku tidak ada di
+   * situ, jadi menggambarnya berarti mengarang.
+   */
+  nilaiPerilaku: number | null
   /** Jumlah pegawai di balik angka (dashboard agregat); null untuk 1 pegawai. */
   jumlahPegawai?: number | null
 }
@@ -55,7 +63,13 @@ export function TrenKinerja({
 
   // Zoom ke rentang data + bantalan supaya perubahan beberapa poin terlihat,
   // dijaga agar tidak pernah keluar 0–100.
-  const semua = data.flatMap((d) => [d.nilaiKinerja, d.nilaiPerilaku])
+  // Seri perilaku hanya digambar kalau ADA yang terukur. Kalau seluruhnya null,
+  // garis & legendanya dihilangkan — legenda yang menyebut seri kosong membuat
+  // pembaca mencari garis yang tidak pernah ada.
+  const adaPerilaku = data.some((d) => d.nilaiPerilaku !== null)
+  const semua = data.flatMap((d) =>
+    d.nilaiPerilaku === null ? [d.nilaiKinerja] : [d.nilaiKinerja, d.nilaiPerilaku],
+  )
   const min = Math.max(0, Math.floor(Math.min(...semua) - 4))
   const maks = Math.min(100, Math.ceil(Math.max(...semua) + 4))
 
@@ -92,6 +106,7 @@ export function TrenKinerja({
             activeDot={{ r: 5 }}
             animationDuration={200}
           />
+          {adaPerilaku ? (
           <Line
             type="monotone"
             dataKey="nilaiPerilaku"
@@ -103,6 +118,7 @@ export function TrenKinerja({
             activeDot={{ r: 5 }}
             animationDuration={200}
           />
+          ) : null}
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -128,9 +144,16 @@ function IsiTooltip({
         <span aria-hidden className="size-2 rounded-full bg-chart-1" />
         Kinerja <span className="font-medium text-text">{formatSkor(titik.nilaiKinerja)}</span>
       </p>
+      {/* Perilaku yang belum diukur dikatakan APA ADANYA, bukan disembunyikan:
+          barisnya yang hilang membuat pembaca mengira tooltipnya rusak. */}
       <p className="tabular flex items-center gap-1.5 text-text-muted">
         <span aria-hidden className="h-0.5 w-2 bg-chart-2" />
-        Perilaku <span className="font-medium text-text">{formatSkor(titik.nilaiPerilaku)}</span>
+        Perilaku{' '}
+        {titik.nilaiPerilaku === null ? (
+          <span className="text-text-subtle">belum diukur</span>
+        ) : (
+          <span className="font-medium text-text">{formatSkor(titik.nilaiPerilaku)}</span>
+        )}
       </p>
       {titik.jumlahPegawai ? (
         <p className="mt-1.5 border-t border-border pt-1.5 text-text-subtle">

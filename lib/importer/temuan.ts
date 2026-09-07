@@ -19,6 +19,8 @@ export type KodeTemuan =
   | 'POTKOM_DI_ATAS_100'
   /** §6.2 — `kotak_9` sumber berbeda dengan hitungan ambang Lampiran A. */
   | 'KOTAK9_BEDA_DENGAN_HITUNGAN'
+  /** Jabatan di master lebih lama daripada riwayat jabatan terbarunya. */
+  | 'JABATAN_MASTER_BASI'
   /** §6.3 — nilai integritas datang pada skala kecil (1–4), dinaikkan ke 0–100. */
   | 'INTEGRITAS_SKALA_KECIL'
   /** §6.4 — format golongan campur (`IV.b` vs `III/d`). */
@@ -94,6 +96,16 @@ export const DEFINISI_TEMUAN: Record<KodeTemuan, DefinisiTemuan> = {
     tingkat: 'PERLU_MANUSIA',
     dampak:
       'Nilai TIDAK dipotong — disimpan sesuai sumbernya, dan sumbu X ikut melebihi 100. Diputuskan user setelah dua sumber independen (eNominasi & Excel Talent Pool ES 2/3) sama-sama mengirim potkom >100 pada sekitar 40% rekaman: memotongnya membuat separuh populasi menumpuk di X=100 dan kehilangan seluruh daya bedanya. Klasifikasi Kotak 9 tidak terpengaruh (ambang teratas ≥80, dan >100 tetap ≥80), tapi `nilai_talenta` TETAP diplafon 100 karena ia komposit berskala 0–100.',
+  },
+  JABATAN_MASTER_BASI: {
+    kode: 'JABATAN_MASTER_BASI',
+    // Bukan aturan bernomor phase.md §6 — ia tidak lahir saat impor melainkan dari
+    // perbandingan dua kolom yang sama-sama sudah tersimpan.
+    aturan: null,
+    label: 'Jabatan di master lebih lama daripada riwayat jabatan terbarunya',
+    tingkat: 'PERLU_MANUSIA',
+    dampak:
+      'Kolom pegawai.jabatan_id adalah satu-satunya sumber "jabatan sekarang" untuk gerbang JABATAN ASAL KANDIDAT — kalau ia basi, pegawainya dinilai memakai jabatan yang sudah bukan miliknya, dan itu tidak menghasilkan galat apa pun. Terukur 1 Sep 2026: satu pegawai punya riwayat mulai 1 Agu 2026 pada jabatan fungsional sementara master masih mencatatnya Kepala Sub Bagian, sehingga ia lolos syarat di 8 jabatan target sebagai "Kepala Sub Bagian". TIDAK dibetulkan otomatis: riwayatnya teks bebas yang belum dipetakan ke master, dan menimpanya dari sana berarti menebak — apalagi baris PLT/PLH yang memang bukan jabatan definitif. Perbaikannya lewat Ubah identitas di profil pegawainya.',
   },
   KOTAK9_BEDA_DENGAN_HITUNGAN: {
     kode: 'KOTAK9_BEDA_DENGAN_HITUNGAN',

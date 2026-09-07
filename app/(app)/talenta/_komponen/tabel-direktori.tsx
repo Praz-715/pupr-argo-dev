@@ -64,8 +64,18 @@ export function TabelDirektori({
       judul: 'Jabatan',
       lebarMin: '16rem',
       render: (p) => (
-        <span className="block max-w-[20rem] truncate text-text-muted" title={p.namaJabatan ?? ''}>
+        <span className="block max-w-[20rem] text-text-muted break-words" title={p.namaJabatan ?? ''}>
           {p.namaJabatan ?? <span className="text-text-subtle">Belum tertaut jabatan</span>}
+        </span>
+      ),
+    },
+    {
+      kunci: 'unit',
+      judul: 'Unit Organisasi',
+      lebarMin: '14rem',
+      render: (p) => (
+        <span className="block max-w-[18rem] text-text-muted break-words" title={p.namaUnit ?? ''}>
+          {p.namaUnit ?? '—'}
         </span>
       ),
     },
@@ -82,16 +92,6 @@ export function TabelDirektori({
         ) : (
           <span className="text-text-muted">{p.eselon}</span>
         ),
-    },
-    {
-      kunci: 'unit',
-      judul: 'Unit Organisasi',
-      lebarMin: '14rem',
-      render: (p) => (
-        <span className="block max-w-[18rem] truncate text-text-muted" title={p.namaUnit ?? ''}>
-          {p.namaUnit ?? '—'}
-        </span>
-      ),
     },
     {
       kunci: 'pangkat',
@@ -208,13 +208,47 @@ export function TabelDirektori({
   ]
 
   return (
+    /*
+      Pemilih kolom DIPASANG KEMBALI (24 Agu 2026, permintaan user: *"direktori
+      pegawai kasih buat pilih kolom kaya di dashboard sama peta talenta"*).
+
+      Riwayatnya, supaya tidak diubah bolak-balik: revisi `PUR.pdf` 12 Agu 2026
+      MELEPASNYA dari halaman ini lewat prop `tanpaPemilihKolom` — alasannya, tombol
+      pemilih kolom duduk berdampingan dengan "Menampilkan 1–10 dari 10 baris" dan
+      keduanya memajang pasangan angka berbentuk sama ("10/11" vs "1–10 dari 10")
+      yang menghitung hal berbeda. Sekarang dipasang lagi karena tabel yang sama
+      kini muncul di tiga halaman: drill-down dashboard & Peta Talenta punya
+      pemilihnya, dan halaman yang kolomnya PALING banyak (13) justru satu-satunya
+      yang tidak bisa menyembunyikan kolom.
+
+      **Ini keputusan user yang paling baru; jangan melepasnya lagi sebagai
+      "perbaikan".**
+
+      Prop `tanpaPemilihKolom` di `DataTable` sekarang **nol pemakai** — halaman ini
+      satu-satunya yang pernah memakainya. Ia TIDAK dihapus, sama seperti
+      `components/layout/pita-populasi.tsx`: ia mekanisme yang terbukti bekerja untuk
+      keputusan yang bisa diminta lagi, dan menghapusnya berarti menulis ulang dari
+      nol kalau pilihannya berbalik ketiga kali. Kalau nanti benar-benar dipastikan
+      tidak diperlukan, hapus prop-nya sekaligus dari `DataTable` supaya tidak ada
+      cabang mati yang tidak pernah teruji.
+    */
     <DataTable
       id="direktori-pegawai"
       kolom={kolom}
-      tanpaPemilihKolom
       baris={baris}
       kunciBaris={(p) => p.pegawaiId}
       tautanBaris={(p) => `/talenta/${p.nip}`}
+      /*
+        Penanda kuning untuk pegawai berkode catatan (`2 sept- masukan sistem
+        informasi.pdf` butir 1). Alasannya dikembalikan sebagai teks, bukan boolean:
+        ia jadi `title` barisnya, dan warna sendirian tidak terbaca pembaca layar
+        maupun pengguna CVD.
+      */
+      barisDitandai={(p) =>
+        p.catatanKategori === null
+          ? null
+          : `Catatan: ${p.catatanKategori}${p.catatanKeterangan ? ` — ${p.catatanKeterangan}` : ''}`
+      }
       total={total}
       halaman={halaman}
       ukuranHalaman={ukuranHalaman}

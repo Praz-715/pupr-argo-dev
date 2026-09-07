@@ -11,7 +11,7 @@
 |---|---|---|
 | **Super Admin** | Tim IT DJBK — kelola pengguna, master data, klien & token API, audit log | 28 |
 | **Admin Talenta** | Bagian Kepegawaian & Umum — rubrik, talent pool, verifikasi nominasi, laporan | 21 |
-| **Pengelola Unit** | Staf kepegawaian unit — input & validasi data unitnya, ajukan nominasi | 8 |
+| **Pengelola Unit** | Staf kepegawaian unit — input & validasi data unitnya, ajukan nominasi | 10 |
 | **Pimpinan** | Dirjen, Sesditjen, Para Direktur — dashboard, profil talenta, persetujuan akhir | 15 |
 | **Viewer** | Pembina kebijakan — akses baca terbatas ke dashboard & laporan | 7 |
 

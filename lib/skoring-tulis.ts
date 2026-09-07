@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { eksekusi, kueri } from './db'
+import { urutAsesmenBerlaku } from './kueri/dasar'
 import { hitungRanking } from './scoring'
 import type { HasilSkorKandidat } from './skor-massal'
 
@@ -214,9 +215,11 @@ async function peringkatUlangPool(jabatanTargetId: number): Promise<number> {
                             AND m.jabatan_target_id = tp.jabatan_target_id
      LEFT JOIN (
        SELECT pegawai_id, nilai_kinerja_y FROM (
-         SELECT pegawai_id, nilai_kinerja_y,
-                ROW_NUMBER() OVER (PARTITION BY pegawai_id ORDER BY tahun_asesmen DESC, id DESC) AS rn
-         FROM asesmen_talenta
+         SELECT a.pegawai_id, a.nilai_kinerja_y,
+                ROW_NUMBER() OVER (
+                  PARTITION BY a.pegawai_id ORDER BY ${urutAsesmenBerlaku('a')}
+                ) AS rn
+         FROM asesmen_talenta a
        ) x WHERE x.rn = 1
      ) a ON a.pegawai_id = tp.pegawai_id
      WHERE tp.jabatan_target_id = ?`,

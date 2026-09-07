@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Pencil, Plus, Trash2, Users } from 'lucide-react'
+import { Briefcase, ChevronRight, Pencil, Plus, Trash2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 
@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/cn'
 import { formatAngka } from '@/lib/format'
 import { hapusUnit } from '@/lib/aksi/unit-organisasi'
-import type { NodeUnit } from '@/lib/kueri/master'
+import type { DaunJabatan, NodeUnit } from '@/lib/kueri/master'
 import { FormUnit } from './form-unit'
 
 /**
@@ -25,10 +25,38 @@ import { FormUnit } from './form-unit'
  */
 export function PohonUnit({
   node,
+  jabatan,
   opsiInduk,
+  bolehUbah,
 }: {
   node: NodeUnit[]
+  /**
+   * Jabatan sebagai DAUN di bawah unitnya (permintaan pemilik proses 24 Agu 2026).
+   *
+   * Datang sebagai satu larik rata lalu dikelompokkan di sini, bukan sebagai
+   * `NodeUnit.jabatan[]` dari SQL: pohon unit memakai `WITH RECURSIVE` dengan tiga
+   * subkueri penghitung per baris, dan JOIN ke `jabatan` akan melipatgandakan baris
+   * unit sehingga ketiga penghitung itu terhitung berkali-kali — salah tanpa galat.
+   */
+  jabatan: DaunJabatan[]
   opsiInduk: Array<{ id: number; nama: string; kedalaman: number }>
+  /**
+   * Hanya Super Admin. Kontrol tulis DISEMBUNYIKAN, bukan dinonaktifkan.
+   *
+   * Halaman ini memang bisa dibaca peran lain — itu keputusan sadar yang tertulis
+   * di docblock halamannya: wewenangnya ditegakkan di server action, bukan dengan
+   * menyembunyikan halaman. Tapi keputusan itu juga berkata "item navigasi memang
+   * hilang untuk peran lain", dan tombol Tambah/Ubah/Hapus di DALAM halaman
+   * ternyata tidak ikut hilang. Hasilnya klik mati: Pimpinan mengisi seluruh form
+   * unit baru, menekan Simpan, lalu ditolak server — kerja yang terbuang dan
+   * pesan penolakan yang terbaca seperti kerusakan. Terukur pada audit RBAC
+   * 22 Agu 2026: 1 tombol tulis tampil untuk Pimpinan di halaman ini.
+   *
+   * Disembunyikan, bukan `disabled`: tombol nonaktif tanpa penjelasan sama
+   * membingungkannya, dan peran yang tidak berwenang tidak perlu tahu bahwa
+   * kontrolnya ada.
+   */
+  bolehUbah: boolean
 }) {
   const { tampilkan } = useToast()
   const [pending, mulaiTransisi] = useTransition()
@@ -53,6 +81,12 @@ export function PohonUnit({
   /** Baris disembunyikan kalau ada leluhurnya yang terlipat. */
   const tampil = node.filter((n) => !leluhurTerlipat(n, node, terlipat))
 
+  const jabPerUnit = new Map<number, DaunJabatan[]>()
+  for (const j of jabatan) {
+    if (!jabPerUnit.has(j.unitId)) jabPerUnit.set(j.unitId, [])
+    jabPerUnit.get(j.unitId)!.push(j)
+  }
+
   function konfirmasiHapus() {
     if (!akanHapus) return
     const unit = akanHapus
@@ -73,22 +107,28 @@ export function PohonUnit({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-3.5 py-3">
         <p className="text-[11px] text-text-subtle">
-          {formatAngka(node.length)} unit · klik tanda panah untuk melipat cabang
+          {formatAngka(node.length)} unit · {formatAngka(jabatan.length)} jabatan · klik tanda panah untuk melipat cabang
         </p>
-        <Button
-          size="sm"
-          onClick={() => setFormUntuk({ mode: 'buat', parentId: null })}
-          ikon={<Plus className="size-3.5" />}
-        >
-          Tambah unit
-        </Button>
+        {bolehUbah ? (
+          <Button
+            size="sm"
+            onClick={() => setFormUntuk({ mode: 'buat', parentId: null })}
+            ikon={<Plus className="size-3.5" />}
+          >
+            Tambah unit
+          </Button>
+        ) : null}
       </div>
 
       <ul>
-        {tampil.map((n) => {
-          const punyaAnak = n.jumlahAnak > 0
+        {tampil.flatMap((n) => {
+          const daun = jabPerUnit.get(n.id) ?? []
+          // Unit tanpa sub-unit tapi BERISI jabatan tetap bisa dilipat — kalau
+          // tidak, panah lipatnya hilang justru pada baris yang isinya paling
+          // panjang (mis. Sekretariat dengan 16 jabatan).
+          const punyaAnak = n.jumlahAnak > 0 || daun.length > 0
           const lipat = terlipat.has(n.id)
-          return (
+          const barisUnit = (
             <li
               key={n.id}
               className="flex flex-wrap items-center gap-2 border-b border-border px-3.5 py-2 last:border-b-0 hover:bg-surface-2"
@@ -112,7 +152,7 @@ export function PohonUnit({
                 )}
 
                 <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-medium text-text">
+                  <span className="block text-[13px] font-medium text-text break-words">
                     {n.namaUnit}
                   </span>
                   <span className="tabular block text-[11px] text-text-subtle">
@@ -160,6 +200,8 @@ export function PohonUnit({
               </span>
 
               <span className="flex shrink-0 items-center gap-1">
+                {bolehUbah ? (
+                <>
                 <button
                   type="button"
                   onClick={() => setFormUntuk({ mode: 'buat', parentId: n.id })}
@@ -187,9 +229,65 @@ export function PohonUnit({
                 >
                   <Trash2 className="size-3.5" />
                 </button>
+                </>
+                ) : null}
               </span>
             </li>
           )
+
+          if (lipat || daun.length === 0) return [barisUnit]
+          return [
+            barisUnit,
+            ...daun.map((j) => (
+              <li
+                key={`j-${j.id}`}
+                className="flex flex-wrap items-center gap-2 border-b border-border px-3.5 py-1.5 last:border-b-0 hover:bg-surface-2"
+              >
+                <span
+                  className="flex min-w-0 flex-1 items-center gap-1.5"
+                  style={{ paddingLeft: `${(n.kedalaman + 1) * 1.25 + 1.125}rem` }}
+                >
+                  <Briefcase aria-hidden className="size-3 shrink-0 text-text-subtle" />
+                  <span className="min-w-0">
+                    <span className="block text-[12px] text-text break-words">{j.namaJabatan}</span>
+                    <span className="tabular block text-[10px] text-text-subtle">
+                      {j.kodeJabatan}
+                      {j.eselon !== 'NON_ESELON' ? ` · eselon ${j.eselon}` : ''}
+                      {j.jenjang !== null ? ` · ${j.jenjang}` : ''}
+                    </span>
+                  </span>
+                </span>
+
+                <span className="flex shrink-0 items-center gap-2 text-[11px]">
+                  {/*
+                    Lencana status DAN jumlah penghuni dua-duanya ditampilkan,
+                    walau terlihat berlebihan. `status_jabatan` adalah kolom yang
+                    disetel manusia sementara jumlah penghuni dihitung dari
+                    `pegawai.jabatan_id` — keduanya BISA berselisih, dan pernah:
+                    40 jabatan tercatat TERISI tanpa satu pun penghuni setelah
+                    pegawainya dihapus (24 Agu 2026). Memajang salah satunya saja
+                    menyembunyikan selisih itu; memajang keduanya membuatnya
+                    ketahuan di tempat orang paling mungkin melihatnya.
+                  */}
+                  <Badge tone={j.statusJabatan === 'TERISI' ? 'sukses' : 'netral'}>
+                    {j.statusJabatan === 'TERISI' ? 'Terisi' : 'Kosong'}
+                  </Badge>
+                  {j.jumlahPegawai > 0 ? (
+                    <Link
+                      href={`/talenta?jabatan=${j.id}`}
+                      className="tabular inline-flex items-center gap-1 rounded px-1 text-text-muted hover:bg-surface-3 hover:text-accent"
+                      title={`Buka Direktori Pegawai untuk ${j.namaJabatan}`}
+                    >
+                      <Users aria-hidden className="size-3" />
+                      {formatAngka(j.jumlahPegawai)}
+                    </Link>
+                  ) : (
+                    <span className="tabular px-1 text-text-subtle">—</span>
+                  )}
+                </span>
+              </li>
+            )),
+          ]
         })}
       </ul>
 

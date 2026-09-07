@@ -1,7 +1,9 @@
 import { catatEkspor } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth'
-import { headerCsv, namaBerkasCsv, susunCsv, type KolomEkspor } from '@/lib/ekspor'
+import { type KolomEkspor } from '@/lib/ekspor'
+import { headerXlsx, namaBerkasXlsx, susunXlsx } from '@/lib/ekspor-xlsx'
 import { ambilAuditLog, ambilRiwayatPerhitungan } from '@/lib/kueri/admin'
+import { ambilMasterJabatan, ambilRiwayatMentah } from '@/lib/kueri/ekspor-master'
 import {
   ambilGapIndikator,
   ambilGapPerJenjang,
@@ -16,7 +18,13 @@ import { angkaPositif, tanggalIso } from '@/lib/param'
 import { punyaPeran, type Peran } from '@/lib/peran'
 
 /**
- * Unduhan CSV (Fase 8).
+ * Unduhan `.xlsx` (Fase 8, format diganti dari CSV 2 Sep 2026 — permintaan
+ * pemilik proses: *"yang pusat ekspor kayanya bikin excel aja dah jangan csv."*).
+ *
+ * Serialisasinya di `lib/ekspor-xlsx.ts`, ditulis sendiri tanpa dependensi baru —
+ * lihat docblock di sana untuk alasannya. Route ini sendiri tidak berubah sama
+ * sekali: gerbang peran, batas unit, dan jejak audit tetap seperti sebelumnya,
+ * yang berganti cuma bentuk BERKASNYA.
  *
  * ## Kenapa Route Handler, bukan server action
  *
@@ -29,7 +37,7 @@ import { punyaPeran, type Peran } from '@/lib/peran'
  *
  * U-10 menetapkan ekspor besar jadi **job asinkron + progress + notifikasi**.
  * Itu ditulis sebelum ada angka. Yang terukur sekarang: seluruh kueri laporan
- * selesai 2–60 ms, dan tabel terbesar di produksi 1.872 pegawai — CSV-nya
+ * selesai 2–60 ms, dan tabel terbesar di produksi 1.872 pegawai — berkasnya
  * beberapa ratus kilobyte, selesai dalam satu permintaan tanpa terasa. Membangun
  * antrean job sekarang berarti infrastruktur untuk masalah yang belum ada, dan
  * proyek ini berkali-kali memilih sebaliknya ("skala terukur, bukan diasumsikan").
@@ -56,6 +64,8 @@ type Jenis =
   | 'rekap-unit'
   | 'audit-log'
   | 'riwayat-perhitungan'
+  | 'master-jabatan'
+  | 'riwayat-jabatan-mentah'
 
 const PERAN_LAPORAN: readonly Peran[] = ['Super Admin', 'Admin Talenta', 'Pimpinan']
 const PERAN_AUDIT: readonly Peran[] = ['Super Admin']
@@ -73,6 +83,15 @@ const PERAN_PER_JENIS: Record<Jenis, readonly Peran[]> = {
   // berapa baris, berapa perlu ditinjau) — bukan `data_sebelum`/`data_sesudah`
   // mentah yang bisa memuat nilai kolom apa pun.
   'riwayat-perhitungan': PERAN_LAPORAN,
+  /*
+    Kedua ekspor master ini dipakai MEMETAKAN data, bukan menilai orang — dan yang
+    mengerjakan pemetaannya Admin Talenta bersama pengelola data. Isinya pun bukan
+    penilaian: nama jabatan, unit, dan hitungan pemakaian. Pimpinan ikut karena
+    daftar peran laporan sudah memuatnya dan tidak ada alasan menyempitkannya di
+    sini saja.
+  */
+  'master-jabatan': PERAN_LAPORAN,
+  'riwayat-jabatan-mentah': PERAN_LAPORAN,
 }
 
 export const JENIS_EKSPOR = Object.keys(PERAN_PER_JENIS) as Jenis[]
@@ -91,7 +110,7 @@ export async function GET(
   }
 
   // 401, bukan pengalihan: yang memanggil ini adalah unduhan, dan mengalihkannya
-  // ke halaman masuk menghasilkan berkas HTML bernama .csv.
+  // ke halaman masuk menghasilkan berkas HTML bernama .xlsx.
   const pengguna = await getCurrentUser()
   if (!pengguna) return new Response('Sesi sudah berakhir.', { status: 401 })
 
@@ -115,7 +134,7 @@ export async function GET(
     sampai: tanggalIso(q('sampai')),
   }
 
-  const { csv, jumlah } = await susun(jenis, filter, q('cari'))
+  const { xlsx, jumlah } = await susun(jenis, filter, q('cari'))
 
   await catatEkspor({
     userId: pengguna.id,
@@ -131,16 +150,59 @@ export async function GET(
     jumlahBaris: jumlah,
   })
 
-  return new Response(csv, { headers: headerCsv(namaBerkasCsv(jenis, new Date())) })
+  return new Response(new Uint8Array(xlsx), { headers: headerXlsx(namaBerkasXlsx(jenis, new Date())) })
 }
 
-/** Definisi kolom per jenis — satu tempat, supaya header CSV tidak lahir ad-hoc. */
+/** Definisi kolom per jenis — satu tempat, supaya header lembar tidak lahir ad-hoc. */
 async function susun(
   jenis: Jenis,
   filter: FilterLaporan,
   cari: string | undefined,
-): Promise<{ csv: string; jumlah: number }> {
+): Promise<{ xlsx: Buffer; jumlah: number }> {
   switch (jenis) {
+    case 'master-jabatan': {
+      const baris = await ambilMasterJabatan()
+      const kolom: Array<KolomEkspor<(typeof baris)[number]>> = [
+        { kunci: 'kode', judul: 'Kode Jabatan', nilai: (b) => b.kodeJabatan },
+        { kunci: 'nama', judul: 'Nama Jabatan', nilai: (b) => b.namaJabatan },
+        { kunci: 'rumpun', judul: 'Rumpun', nilai: (b) => b.rumpun },
+        { kunci: 'unit', judul: 'Unit Organisasi', nilai: (b) => b.namaUnit },
+        { kunci: 'jenis', judul: 'Jenis Jabatan', nilai: (b) => b.jenisJabatan },
+        { kunci: 'jenjang', judul: 'Jenjang', nilai: (b) => b.jenjang },
+        { kunci: 'eselon', judul: 'Eselon', nilai: (b) => b.eselon },
+        { kunci: 'status', judul: 'Status Jabatan', nilai: (b) => b.statusJabatan },
+        { kunci: 'penghuni', judul: 'Penghuni Aktif', nilai: (b) => b.jumlahPenghuni },
+        { kunci: 'nama_pegawai', judul: 'Nama Pegawai', nilai: (b) => b.namaPegawai },
+        { kunci: 'kursi', judul: 'Jadi Kursi Jabatan Target', nilai: (b) => b.jadiKursiTarget },
+        { kunci: 'asal', judul: 'Jadi Jabatan Asal Kandidat', nilai: (b) => b.jadiJabatanAsal },
+        { kunci: 'riwayat', judul: 'Baris Riwayat Tertaut', nilai: (b) => b.jumlahRiwayatTertaut },
+      ]
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
+    }
+
+    case 'riwayat-jabatan-mentah': {
+      const baris = await ambilRiwayatMentah()
+      const kolom: Array<KolomEkspor<(typeof baris)[number]>> = [
+        { kunci: 'nama', judul: 'Nama Jabatan (apa adanya dari sumber)', nilai: (b) => b.namaMentah },
+        { kunci: 'baris', judul: 'Jumlah Baris Riwayat', nilai: (b) => b.jumlahBaris },
+        { kunci: 'pegawai', judul: 'Jumlah Pegawai', nilai: (b) => b.jumlahPegawai },
+        { kunci: 'contoh', judul: 'Contoh Pegawai', nilai: (b) => b.contohPegawai },
+        { kunci: 'terpetakan', judul: 'Sudah Terpetakan', nilai: (b) => b.jumlahTerpetakan },
+        { kunci: 'master', judul: 'Nama di Master Jabatan', nilai: (b) => b.namaMasterTertaut },
+        { kunci: 'rumpun', judul: 'Rumpun (usulan)', nilai: (b) => b.rumpun },
+        { kunci: 'ukategori', judul: 'USULAN Kategori', nilai: (b) => b.usulanKategori },
+        { kunci: 'ujenjang', judul: 'USULAN Jenjang', nilai: (b) => b.usulanJenjang },
+        { kunci: 'ueselon', judul: 'USULAN Eselon', nilai: (b) => b.usulanEselon },
+        { kunci: 'upenugasan', judul: 'USULAN Penugasan', nilai: (b) => b.usulanPenugasan },
+        // Dua kolom KOSONG, dan itu isi berkasnya: di sinilah keputusan manusia
+        // dituliskan lalu dikembalikan. Mengisinya dengan usulan berarti tidak ada
+        // lagi yang bisa membedakan tebakan mesin dari keputusan orang.
+        { kunci: 'kkategori', judul: 'KEPUTUSAN Kategori (isi manual)', nilai: () => null },
+        { kunci: 'kjenjang', judul: 'KEPUTUSAN Jenjang (isi manual)', nilai: () => null },
+      ]
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
+    }
+
     case 'gap-indikator': {
       const baris = await ambilGapIndikator(filter)
       const kolom: Array<KolomEkspor<(typeof baris)[number]>> = [
@@ -155,7 +217,7 @@ async function susun(
         { kunci: 'manual', judul: 'Nilai Manual', nilai: (b) => b.jumlahManual },
         { kunci: 'review', judul: 'Perlu Review', nilai: (b) => b.jumlahPerluReview },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
 
     case 'gap-unit':
@@ -175,7 +237,7 @@ async function susun(
         { kunci: 'kj', judul: 'Rata Kualifikasi (20%)', nilai: (b) => b.rataKualifikasi },
         { kunci: 'im', judul: 'Rata Integritas (15%)', nilai: (b) => b.rataIntegritas },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
 
     case 'nominasi': {
@@ -193,7 +255,7 @@ async function susun(
         { kunci: 'hari', judul: 'Hari Proses', nilai: (b) => b.hariProses },
         { kunci: 'tahap', judul: 'Jumlah Tahap', nilai: (b) => b.jumlahTahap },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
 
     case 'rekap-periode': {
@@ -206,7 +268,7 @@ async function susun(
         { kunci: 'berjalan', judul: 'Masih Berjalan', nilai: (b) => b.berjalan },
         { kunci: 'hari', judul: 'Rata Hari Proses', nilai: (b) => b.rataHariProses },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
 
     case 'rekap-unit': {
@@ -219,7 +281,7 @@ async function susun(
         { kunci: 'berjalan', judul: 'Masih Berjalan', nilai: (b) => b.berjalan },
         { kunci: 'hari', judul: 'Rata Hari Proses', nilai: (b) => b.rataHariProses },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
 
     case 'audit-log': {
@@ -242,7 +304,7 @@ async function susun(
         { kunci: 'entitasId', judul: 'ID Entitas', nilai: (b) => b.entitasId },
         { kunci: 'ip', judul: 'IP', nilai: (b) => b.ipAddress },
       ]
-      return { csv: susunCsv(kolom, hasil.baris), jumlah: hasil.baris.length }
+      return { xlsx: susunXlsx(kolom, hasil.baris), jumlah: hasil.baris.length }
     }
 
     case 'riwayat-perhitungan': {
@@ -278,7 +340,7 @@ async function susun(
         { kunci: 'durasiMs', judul: 'Durasi (ms)', nilai: (b) => b.durasiMs },
         { kunci: 'auditId', judul: 'ID Audit', nilai: (b) => b.auditId },
       ]
-      return { csv: susunCsv(kolom, baris), jumlah: baris.length }
+      return { xlsx: susunXlsx(kolom, baris), jumlah: baris.length }
     }
   }
 }

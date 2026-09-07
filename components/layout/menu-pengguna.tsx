@@ -57,7 +57,7 @@ export function MenuPengguna({ pengguna }: { pengguna: PenggunaAktif }) {
         >
           {inisial(pengguna.nama)}
         </span>
-        <span className="hidden max-w-[9rem] truncate font-medium text-text sm:inline">
+        <span className="hidden max-w-[12rem] text-left leading-tight font-medium break-words text-text sm:inline-block">
           {pengguna.nama}
         </span>
         <span className="hidden rounded bg-surface-3 px-1.5 py-px text-[10px] text-text-muted md:inline">
@@ -72,8 +72,12 @@ export function MenuPengguna({ pengguna }: { pengguna: PenggunaAktif }) {
           className="absolute right-0 z-40 mt-1.5 w-72 overflow-hidden rounded-lg border border-border bg-surface shadow-[var(--shadow-overlay)]"
         >
           <div className="border-b border-border px-3 py-2.5">
-            <p className="truncate text-[13px] font-medium text-text">{pengguna.nama}</p>
-            <p className="truncate text-[11px] text-text-subtle">{pengguna.email}</p>
+            <p className="text-[13px] leading-snug font-medium break-words text-text">
+              {pengguna.nama}
+            </p>
+            {/* Surel dipecah per karakter bila perlu: ia satu kata tanpa spasi,
+                jadi `break-words` saja membiarkannya meluber dari panel 18rem. */}
+            <p className="text-[11px] leading-snug break-all text-text-subtle">{pengguna.email}</p>
             <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-text-muted">
               <ShieldCheck className="mt-px size-3.5 shrink-0 text-text-subtle" />
               <span>

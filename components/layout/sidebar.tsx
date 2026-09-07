@@ -55,24 +55,30 @@ export function Sidebar({
         <LogoPU sumber={logo} size={28} varian="kotak" />
         {!ciut ? (
           <span className="min-w-0 leading-tight">
-            <span className="block truncate text-[13px] font-semibold text-sidebar-teks-kuat">
+            <span className="block text-[13px] font-semibold text-sidebar-teks-kuat">
               SIMT DJBK
             </span>
-            <span className="block truncate text-[10px] text-sidebar-teks-samar">
+            <span className="block text-[10px] text-sidebar-teks-samar">
               Manajemen Talenta
             </span>
           </span>
         ) : null}
       </div>
 
-      {/* Baris tetap untuk tombol ciutkan — ditaruh di ATAS (konvensi Notion/
+      {/* Baris tetap untuk tombol tutup — ditaruh di ATAS (konvensi Notion/
           VS Code) dan tingginya sama di kedua state, jadi daftar menu tidak
-          bergeser saat sidebar dibuka-tutup. */}
+          bergeser saat sidebar dibuka-tutup.
+
+          Labelnya "Tutup", bukan "Ciutkan" (permintaan pemilik proses 25 Agu 2026).
+          Pasangannya ikut disesuaikan jadi "Buka sidebar" — "Tutup" lawan "Perluas"
+          bukan pasangan, dan tombol yang berganti label ke kata yang tidak
+          berlawanan membuat orang ragu apakah ia menekan kontrol yang sama. Kata
+          yang sama juga sudah dipakai kepala grup di bawah ("Buka {grup}"). */}
       <div className="shrink-0 border-b border-sidebar-garis p-2">
         <button
           type="button"
           onClick={() => setCiut(!ciut)}
-          title={ciut ? 'Perluas sidebar' : 'Ciutkan sidebar'}
+          title={ciut ? 'Buka sidebar' : 'Tutup sidebar'}
           className={cn(
             'flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-[13px] text-sidebar-teks-samar transition-colors hover:bg-sidebar-hover hover:text-sidebar-teks-kuat',
             ciut && 'justify-center px-0',
@@ -83,7 +89,7 @@ export function Sidebar({
           ) : (
             <PanelLeftClose className="size-4 shrink-0" />
           )}
-          {!ciut ? <span>Ciutkan</span> : null}
+          {!ciut ? <span>Tutup</span> : null}
         </button>
       </div>
 
@@ -119,7 +125,7 @@ export function Sidebar({
                     punyaAktif
                       ? `${grup.label} — berisi halaman yang sedang dibuka`
                       : terbuka
-                        ? `Ciutkan ${grup.label}`
+                        ? `Tutup ${grup.label}`
                         : `Buka ${grup.label}`
                   }
                   className={cn(
@@ -137,7 +143,7 @@ export function Sidebar({
                       punyaAktif && 'opacity-40',
                     )}
                   />
-                  <span className="min-w-0 flex-1 truncate text-left">{grup.label}</span>
+                  <span className="min-w-0 flex-1 text-left break-words">{grup.label}</span>
                   {/* Jumlah item yang tersembunyi — supaya grup yang tertutup
                       tetap menyatakan ada apa di dalamnya, bukan cuma lenyap. */}
                   {!terbuka ? (
@@ -162,7 +168,7 @@ export function Sidebar({
                     <IkonNav nama={item.ikon} className="size-4 shrink-0" />
                     {!ciut ? (
                       <>
-                        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        <span className="min-w-0 flex-1 break-words">{item.label}</span>
                         {/* "Segera", bukan "F6". Nomor fase adalah penanda rencana
                             pengembangan internal — bagi staf kepegawaian ia tidak
                             berarti apa pun, dan lebih buruk: ia terbaca seperti kode
@@ -178,7 +184,7 @@ export function Sidebar({
                 )
 
                 const kelasDasar = cn(
-                  'relative flex h-8 items-center gap-2.5 rounded-md px-2 text-[13px]',
+                  'relative flex min-h-8 items-center gap-2.5 rounded-md px-2 py-0.5 text-[13px]',
                   ciut && 'justify-center px-0',
                 )
 

@@ -17,6 +17,14 @@ import { readFileSync } from 'node:fs'
 /** Username akun seed (lihat doc/sql/002_seed.sql). */
 export const AKUN = {
   superAdmin: 'superadmin',
+  /**
+   * Pengelola Unit berlingkup unit AKAR (akun demo).
+   *
+   * Dipakai uji yang harus MENGUSULKAN sesuatu: ketiga akun seed Pengelola Unit
+   * masing-masing hanya punya satu kursi kosong di lingkupnya dan kursi itu sudah
+   * punya jabatan target, jadi tidak ada yang bisa diusulkan dengan mereka.
+   */
+  pengelolaUnitAkar: 'test_pengelola_unit',
   adminTalenta: 'martyanti.rbs',
   pengelolaUnit: 'reza.kurniawan',
   pengelolaUnitLain: 'farid.hidayat',
@@ -52,8 +60,21 @@ function sandiDariEnv(kunci) {
   }
 }
 
+/*
+  Akun DEMO `test_*` (didaftar di `doc/user_guide.md`) memakai sandinya sendiri,
+  bukan sandi seed. Sandinya dibaca dari `.env.local` — sama seperti `superadmin`
+  dan atas alasan yang sama, walaupun panduan pengguna memang memuatnya: berkas uji
+  ikut ter-commit, panduan bisa berubah kapan saja, dan setiap tebakan yang salah
+  menaikkan `gagal_masuk_beruntun` sampai akunnya terkunci 15 menit.
+*/
+const SANDI_DEMO = sandiDariEnv('SANDI_SMOKE_TEST_DEMO')
+
 const SANDI_KHUSUS = {
   superadmin: sandiDariEnv('SANDI_SMOKE_SUPERADMIN'),
+  test_admin_talenta: SANDI_DEMO,
+  test_pengelola_unit: SANDI_DEMO,
+  test_pimpinan: SANDI_DEMO,
+  test_viewer: SANDI_DEMO,
 }
 
 export function sandiUntuk(username) {

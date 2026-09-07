@@ -17,7 +17,7 @@ import { hitungKotak9 } from '../lib/scoring/kotak9'
 // Seed dasar SENGAJA memakai ambang bawaan, bukan `pengaturan_sistem`: berkas
 // SQL ini adalah titik awal database, jadi ia tidak boleh bergantung pada isi
 // tabel yang baru dibuat olehnya sendiri.
-import { AMBANG_SUMBU } from '../lib/scoring/konstanta'
+import { AMBANG_SUMBU, PARAMETER_SKORING_BAWAAN } from '../lib/scoring/konstanta'
 import type { Predikat } from '../lib/scoring/types'
 
 const TAHUN_SEKARANG = 2026
@@ -32,7 +32,8 @@ const MASA_BERLAKU = 3
  * data contoh e-Nominasi (kasus Tasya & Tina).
  */
 const kotakSeed = (predikat: Predikat, potkom: number): number =>
-  hitungKotak9(SKOR_PREDIKAT[predikat], potkom, AMBANG_SUMBU).kotak
+  hitungKotak9(SKOR_PREDIKAT[predikat], potkom, AMBANG_SUMBU, PARAMETER_SKORING_BAWAAN.bobotTalenta)
+    .kotak
 
 const statusSeed = (tahunAsesmen: number): 'Berlaku' | 'Expired' =>
   evaluasiMasaBerlaku(tahunAsesmen, null, {
@@ -519,7 +520,7 @@ for (const p of PEGAWAI) {
   nipTerlihat.add(p.nip)
 
   const y = SKOR_PREDIKAT[p.predikat]
-  const kotak = hitungKotak9(y, p.potkom, AMBANG_SUMBU).kotak
+  const kotak = hitungKotak9(y, p.potkom, AMBANG_SUMBU, PARAMETER_SKORING_BAWAAN.bobotTalenta).kotak
   if (kotak !== p.kotakTarget) {
     masalah.push(
       `${p.nama}: predikat ${p.predikat} (Y=${y}) + potkom ${p.potkom} menghasilkan kotak ${kotak}, bukan ${p.kotakTarget}`,

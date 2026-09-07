@@ -86,7 +86,7 @@ async function main() {
     jalan. Aturan ini sudah tertulis di `scripts/recompute.ts`; saya melanggarnya
     di empat skrip sekaligus saat memindahkan ambang ke pengaturan (22 Agu 2026).
   */
-  const { ambangSumbuDari, ambilPengaturan } = await import('@/lib/pengaturan')
+  const { ambilPengaturan, parameterSkoringDari } = await import('@/lib/pengaturan')
   const arg = process.argv.slice(2)
   const idxDb = arg.indexOf('--dari-db')
   const nip =
@@ -142,7 +142,7 @@ async function main() {
   )
 
   // ── Lapis 5: pemetaan ────────────────────────────────────────────────────────
-  const { hasil, temuan } = petakanSemua(rekaman.rekaman, { tahunSekarang: TAHUN_SEKARANG, ambang: ambangSumbuDari(await ambilPengaturan()) })
+  const { hasil, temuan } = petakanSemua(rekaman.rekaman, { tahunSekarang: TAHUN_SEKARANG, ...parameterSkoringDari(await ambilPengaturan()) })
   lapis(
     'pemetaan ke asesmen_talenta',
     hasil.length === rekaman.rekaman.length,

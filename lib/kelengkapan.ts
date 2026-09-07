@@ -113,8 +113,19 @@ export const BUTIR_KELENGKAPAN: ButirKelengkapan[] = [
     label: 'Rekam jejak disiplin terverifikasi',
     kategori: 'INTEGRITAS',
     bobot: 3,
+    /*
+      Dua jalan memenuhinya, dan keduanya WAJIB disebut (permintaan pemilik proses
+      25 Agu 2026): *"kalo dia ada hukuman disiplin isinya di page hukuman disiplin
+      tapi kalo gaada di profil tinggal verifikasi kalo dia gak ada hukuman
+      disiplin"*.
+
+      Menyebut satu jalan saja akan mendorong orang menempuh jalan yang salah:
+      kalau hanya "isi catatan" yang disebut, pegawai yang justru BERSIH akan
+      dibuatkan baris hukuman demi menaikkan angka — dan angka yang dinaikkan
+      begitu tidak berarti apa pun lagi.
+    */
     alasan:
-      'Tanpa catatan, sistem menganggap "tidak pernah dihukum" (skor 100) — itu asumsi, bukan fakta terverifikasi',
+      'Skor Integritas 15% bergantung padanya. DUA cara memenuhinya: kalau pegawai punya hukuman disiplin, catat di Master Data › Hukuman Disiplin; kalau tidak ada, cukup centang "Sudah diperiksa" di panel Integritas pada profilnya',
   },
 ]
 

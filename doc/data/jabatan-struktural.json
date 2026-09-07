@@ -1,0 +1,740 @@
+[
+ {
+  "no": 1,
+  "namaJabatan": "Direktur Jenderal Bina Konstruksi",
+  "unitKerja": "Direktorat Jenderal Bina Konstruksi",
+  "eselon": "I"
+ },
+ {
+  "no": 2,
+  "namaJabatan": "Sekretaris Direktorat Jenderal Bina Konstruksi",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "eselon": "II"
+ },
+ {
+  "no": 3,
+  "namaJabatan": "Kepala Bagian Perencanaan, Program dan Keuangan",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 4,
+  "namaJabatan": "Kepala Bagian Kepegawaian dan Umum",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 5,
+  "namaJabatan": "Kepala Bagian Hukum, Informasi Jasa Konstruksi, dan Komunikasi Publik",
+  "unitKerja": "Sekretariat Direktorat Jenderal Bina Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 6,
+  "namaJabatan": "Direktur Usaha dan Kelembagaan Jasa Konstruksi",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "II"
+ },
+ {
+  "no": 7,
+  "namaJabatan": "Kepala Sub Direktorat Usaha Jasa Konstruksi",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 8,
+  "namaJabatan": "Kepala Sub Direktorat Kelembagaan",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 9,
+  "namaJabatan": "Kepala Sub Direktorat Pasar Jasa Konstruksi",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 10,
+  "namaJabatan": "Kepala Sub Direktorat Material, Peralatan Konstruksi, dan Pengelolaan Produk Dalam Negeri",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 11,
+  "namaJabatan": "Kepala Sub Bagian Tata Usaha",
+  "unitKerja": "Direktorat Usaha dan Kelembagaan Jasa Konstruksi",
+  "eselon": "IV"
+ },
+ {
+  "no": 12,
+  "namaJabatan": "Direktur Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "II"
+ },
+ {
+  "no": 13,
+  "namaJabatan": "Kepala Sub Direktorat Bakuan Kompetensi",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 14,
+  "namaJabatan": "Kepala Sub Direktorat Pengembangan Profesi Jasa Konstruksi",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 15,
+  "namaJabatan": "Kepala Sub Direktorat Penerapan Kompetensi Tenaga Kerja Konstruksi",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 16,
+  "namaJabatan": "Kepala Sub Direktorat Pengelolaan JF bidang Jasa Konstruksi",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 17,
+  "namaJabatan": "Kepala Sub Bagian Tata Usaha",
+  "unitKerja": "Direktorat Kompetensi dan Produktivitas Konstruksi Tenaga Kerja Konstruksi",
+  "eselon": "IV"
+ },
+ {
+  "no": 18,
+  "namaJabatan": "Direktur Pengadaan Jasa Konstruksi",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "II"
+ },
+ {
+  "no": 19,
+  "namaJabatan": "Kepala Sub Direktorat Sistem Pengadaan Jasa Konstruksi",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 20,
+  "namaJabatan": "Kepala Sub Direktorat Fasilitasi dan Kelembagaan Pengadaan Jasa Konstruksi",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 21,
+  "namaJabatan": "Kepala Sub Direktorat Pengelolaan Katalog Elektronik",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 22,
+  "namaJabatan": "Kepala Sub Direktorat Kontrak Kontruksi",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 23,
+  "namaJabatan": "Kepala Sub Bagian Tata Usaha",
+  "unitKerja": "Direktorat Pengadaan Jasa Konstruksi",
+  "eselon": "IV"
+ },
+ {
+  "no": 24,
+  "namaJabatan": "Direktur Keselamatan dan Keberlanjutan Konstruksi",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "eselon": "II"
+ },
+ {
+  "no": 25,
+  "namaJabatan": "Kepala Sub Direktorat Keberlanjutan Konstruksi",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 26,
+  "namaJabatan": "Kepala Sub Direktorat Keselamatan Konstruksi",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 27,
+  "namaJabatan": "Kepala Sub Direktorat Analisis Biaya Pekerjaan Konstruksi",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 28,
+  "namaJabatan": "Kepala Sub Bagian Tata Usaha",
+  "unitKerja": "Direktorat Keselamatan dan Keberlanjutan Konstruksi",
+  "eselon": "IV"
+ },
+ {
+  "no": 29,
+  "namaJabatan": "Direktur Kepatuhan Intern",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "eselon": "II"
+ },
+ {
+  "no": 30,
+  "namaJabatan": "Kepala Sub Direktorat Pembinaan dan Pengembangan Kepatuhan Intern dan Manajemen Risiko",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "eselon": "III"
+ },
+ {
+  "no": 31,
+  "namaJabatan": "Kepala Sub Direktorat Pengendalian Kepatuhan Intern dan Manajemen Risiko",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "eselon": "III"
+ },
+ {
+  "no": 32,
+  "namaJabatan": "Kepala Sub Direktorat Pemantauan Kepatuhan Intern dan Manajemen Risiko",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "eselon": "III"
+ },
+ {
+  "no": 33,
+  "namaJabatan": "Kepala Sub Bagian Tata Usaha",
+  "unitKerja": "Direktorat Kepatuhan Intern",
+  "eselon": "IV"
+ },
+ {
+  "no": 34,
+  "namaJabatan": "Kepala Bagian Administrasi",
+  "unitKerja": "Sekretariat Lembaga Pengembangan Jasa Konstruksi",
+  "eselon": "III"
+ },
+ {
+  "no": 35,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah I Aceh",
+  "eselon": "III"
+ },
+ {
+  "no": 36,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah I Aceh",
+  "eselon": "IV"
+ },
+ {
+  "no": 37,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah I Aceh",
+  "eselon": "IV"
+ },
+ {
+  "no": 38,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah II Palembang",
+  "eselon": "III"
+ },
+ {
+  "no": 39,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah II Palembang",
+  "eselon": "IV"
+ },
+ {
+  "no": 40,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah II Palembang",
+  "eselon": "IV"
+ },
+ {
+  "no": 41,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah III Jakarta",
+  "eselon": "III"
+ },
+ {
+  "no": 42,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah III Jakarta",
+  "eselon": "IV"
+ },
+ {
+  "no": 43,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah III Jakarta",
+  "eselon": "IV"
+ },
+ {
+  "no": 44,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah IV Surabaya",
+  "eselon": "III"
+ },
+ {
+  "no": 45,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah IV Surabaya",
+  "eselon": "IV"
+ },
+ {
+  "no": 46,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah IV Surabaya",
+  "eselon": "IV"
+ },
+ {
+  "no": 47,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah V Banjarmasin",
+  "eselon": "III"
+ },
+ {
+  "no": 48,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah V Banjarmasin",
+  "eselon": "IV"
+ },
+ {
+  "no": 49,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah V Banjarmasin",
+  "eselon": "IV"
+ },
+ {
+  "no": 50,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VI Makassar",
+  "eselon": "III"
+ },
+ {
+  "no": 51,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VI Makassar",
+  "eselon": "IV"
+ },
+ {
+  "no": 52,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VI Makassar",
+  "eselon": "IV"
+ },
+ {
+  "no": 53,
+  "namaJabatan": "Kepala Balai Jasa Konstruksi Pelaksana Pemilihan Jasa Konstruksi Jasa Konstruksi",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VII Jayapura",
+  "eselon": "III"
+ },
+ {
+  "no": 54,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VII Jayapura",
+  "eselon": "IV"
+ },
+ {
+  "no": 55,
+  "namaJabatan": "Kepala Seksi Pelaksanaan",
+  "unitKerja": "Balai Jasa Konstruksi Wilayah VII Jayapura",
+  "eselon": "IV"
+ },
+ {
+  "no": 56,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh",
+  "eselon": "III"
+ },
+ {
+  "no": 57,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Aceh",
+  "eselon": "IV"
+ },
+ {
+  "no": 58,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Utara",
+  "eselon": "III"
+ },
+ {
+  "no": 59,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Utara",
+  "eselon": "IV"
+ },
+ {
+  "no": 60,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 61,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 62,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan",
+  "eselon": "III"
+ },
+ {
+  "no": 63,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sumatera Selatan",
+  "eselon": "IV"
+ },
+ {
+  "no": 64,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jambi",
+  "eselon": "III"
+ },
+ {
+  "no": 65,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jambi",
+  "eselon": "IV"
+ },
+ {
+  "no": 66,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Lampung",
+  "eselon": "III"
+ },
+ {
+  "no": 67,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Lampung",
+  "eselon": "IV"
+ },
+ {
+  "no": 68,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Banten",
+  "eselon": "III"
+ },
+ {
+  "no": 69,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Banten",
+  "eselon": "IV"
+ },
+ {
+  "no": 70,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta",
+  "eselon": "III"
+ },
+ {
+  "no": 71,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah DKI Jakarta",
+  "eselon": "IV"
+ },
+ {
+  "no": 72,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 73,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 74,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah D.I. Yogyakarta",
+  "eselon": "III"
+ },
+ {
+  "no": 75,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah D.I. Yogyakarta",
+  "eselon": "IV"
+ },
+ {
+  "no": 76,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Tengah",
+  "eselon": "III"
+ },
+ {
+  "no": 77,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Tengah",
+  "eselon": "IV"
+ },
+ {
+  "no": 78,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur",
+  "eselon": "III"
+ },
+ {
+  "no": 79,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Jawa Timur",
+  "eselon": "IV"
+ },
+ {
+  "no": 80,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali",
+  "eselon": "III"
+ },
+ {
+  "no": 81,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bali",
+  "eselon": "IV"
+ },
+ {
+  "no": 82,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Timur",
+  "eselon": "III"
+ },
+ {
+  "no": 83,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Timur",
+  "eselon": "IV"
+ },
+ {
+  "no": 84,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 85,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Nusa Tenggara Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 86,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 87,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 88,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Selatan",
+  "eselon": "III"
+ },
+ {
+  "no": 89,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Selatan",
+  "eselon": "IV"
+ },
+ {
+  "no": 90,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Tengah",
+  "eselon": "III"
+ },
+ {
+  "no": 91,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Tengah",
+  "eselon": "IV"
+ },
+ {
+  "no": 92,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Timur",
+  "eselon": "III"
+ },
+ {
+  "no": 93,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Timur",
+  "eselon": "IV"
+ },
+ {
+  "no": 94,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Utara",
+  "eselon": "III"
+ },
+ {
+  "no": 95,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kalimantan Utara",
+  "eselon": "IV"
+ },
+ {
+  "no": 96,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Utara",
+  "eselon": "III"
+ },
+ {
+  "no": 97,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Utara",
+  "eselon": "IV"
+ },
+ {
+  "no": 98,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tenggara",
+  "eselon": "III"
+ },
+ {
+  "no": 99,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tenggara",
+  "eselon": "IV"
+ },
+ {
+  "no": 100,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tengah",
+  "eselon": "III"
+ },
+ {
+  "no": 101,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Tengah",
+  "eselon": "IV"
+ },
+ {
+  "no": 102,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Selatan",
+  "eselon": "III"
+ },
+ {
+  "no": 103,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Selatan",
+  "eselon": "IV"
+ },
+ {
+  "no": 104,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Papua",
+  "eselon": "III"
+ },
+ {
+  "no": 105,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Papua",
+  "eselon": "IV"
+ },
+ {
+  "no": 106,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Papua Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 107,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Papua Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 108,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Riau",
+  "eselon": "III"
+ },
+ {
+  "no": 109,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Riau",
+  "eselon": "IV"
+ },
+ {
+  "no": 110,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kepulauan Riau",
+  "eselon": "III"
+ },
+ {
+  "no": 111,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Kepulauan Riau",
+  "eselon": "IV"
+ },
+ {
+  "no": 112,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu",
+  "eselon": "III"
+ },
+ {
+  "no": 113,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bengkulu",
+  "eselon": "IV"
+ },
+ {
+  "no": 114,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bangka Belitung",
+  "eselon": "III"
+ },
+ {
+  "no": 115,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Bangka Belitung",
+  "eselon": "IV"
+ },
+ {
+  "no": 116,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Gorontalo",
+  "eselon": "III"
+ },
+ {
+  "no": 117,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Gorontalo",
+  "eselon": "IV"
+ },
+ {
+  "no": 118,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Barat",
+  "eselon": "III"
+ },
+ {
+  "no": 119,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Sulawesi Barat",
+  "eselon": "IV"
+ },
+ {
+  "no": 120,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Maluku",
+  "eselon": "III"
+ },
+ {
+  "no": 121,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Maluku",
+  "eselon": "IV"
+ },
+ {
+  "no": 122,
+  "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Maluku Utara",
+  "eselon": "III"
+ },
+ {
+  "no": 123,
+  "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+  "unitKerja": "Balai Pelaksana Pemilihan Jasa Konstruksi Wilayah Maluku Utara",
+  "eselon": "IV"
+ }
+]

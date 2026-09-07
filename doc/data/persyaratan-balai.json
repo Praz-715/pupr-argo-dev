@@ -1,0 +1,77 @@
+[
+  {
+    "no": "1",
+    "namaJabatan": "Kepala Balai Jasa Konstruksi",
+    "tempat": "Balai Jasa Konstruksi",
+    "pendidikanMin": "S2",
+    "bidangPendidikan": "Teknik / Ekonomi Studi Pembangunan/ Manajemen/ Akuntansi/ Hukum/Komunikasi / Administrasi Negara/ Administrasi Publik / Teknik Informatika (semua jurusan)",
+    "pelatihanManajerial": "Diklat Kepemimpinan/ Diklat PIM IV/ Pelatihan Kepemimpinan Pengawas",
+    "pelatihanTeknis": "Pelatihan Teknis Perencanaan, Pengendalian Mutu, dan Evaluasi Pembinaan Jasa Konstruksi, Pelatihan Teknis Pengembangan Kompetensi Tenaga Kerja dan Pengelolaan Data Jasa Konstruksi",
+    "pengalamanKerja": [
+      "Sedang atau pernah jabatan administrator (kepala bagian/kepala sub direktorat/kepala bidang/kepala balai) atau",
+      "jabatan fungsional  jenjang Ahli Madya (Pembina Jasa Konstruksi Ahli Madya/Pengelola Pengadaan Barang dan Jasa Ahli Madya) paling singkat 2 tahun"
+    ],
+    "golonganMin": "IV/b",
+    "keterangan": null
+  },
+  {
+    "no": "2",
+    "namaJabatan": "Kepala Seksi Pelaksana",
+    "tempat": "Balai Jasa Konstruksi",
+    "pendidikanMin": "D4/S1",
+    "bidangPendidikan": "Teknik / Ekonomi Studi Pembangunan/ Manajemen/ Akuntansi/ Hukum/Komunikasi / Administrasi Negara/ Administrasi Publik / Teknik Informatika (semua jurusan)",
+    "pelatihanManajerial": "Pelatihan Kepatuhan Internal, Pengelolaan Manajemen Resiko, Pengelolaan BMN, Manajemen Pengembangan SDM, Sistem Akuntansi Instansi, Pelaksanaan Anggaran, Perencanaan Anggaran, Tata Persuratan dan Kearsipan",
+    "pelatihanTeknis": "Pelatihan Teknis Pengendalian Mutu dan Pengawasan Pembinaan Jasa Konstruksi, Pelatihan Teknis Pengembangan Kompetensi dan Pengelolaan Data Sumber Daya Jasa Konstruksi",
+    "pengalamanKerja": [
+      "Memiliki pengalaman dalam jabatan pelaksana paling singkat 4 tahun atau",
+      "jabatan fungsional yang setingkat dengan jabatan pelaksana sesuai dengan bidang tugas jabatan yang akan diduduki (Pembina Jasa Konstruksi Ahli Muda/Pertama  atau Pengelola Pengadaan Barang dan Jasa Ahli Muda/Pertama)"
+    ],
+    "golonganMin": "III/b",
+    "keterangan": "Yang dimaksud dengan jabatan pelaksana adalah semua jabatan selain jabatan struktural dan fungsional (yang tidak ada keterangan pemula, terampil, pelaksana lanjutan, penyelia, ahli pertama, ahli muda dan ahli madya)"
+  },
+  {
+    "no": "3",
+    "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+    "tempat": "Balai Jasa Konstruksi",
+    "pendidikanMin": "D4/S1",
+    "bidangPendidikan": "Teknik / Ekonomi Studi Pembangunan/ Manajemen/ Akuntansi/ Hukum/Komunikasi / Administrasi Negara/ Administrasi Publik / Teknik Informatika (semua jurusan)",
+    "pelatihanManajerial": "Pelatihan Kepatuhan Internal, Pengelolaan Manajemen Resiko, Pengelolaan BMN, Manajemen Pengembangan SDM, Sistem Akuntansi Instansi, Pelaksanaan Anggaran, Perencanaan Anggaran, Tata Persuratan dan Kearsipan",
+    "pelatihanTeknis": "Pelatihan Teknis Administrasi Umum, Keuangan, BMN, dan Tata Kelola Perkantoran, Pelatihan Teknis Kepatuhan Intern, Manajemen Risiko, SPIP, dan Zona Integritas",
+    "pengalamanKerja": [
+      "Memiliki pengalaman dalam jabatan pelaksana paling singkat 4 tahun atau",
+      "jabatan fungsional yang setingkat dengan jabatan pelaksana sesuai dengan bidang tugas jabatan yang akan diduduki (Pembina Jasa Konstruksi Ahli Muda/Pertama  atau Pengelola Pengadaan Barang dan Jasa Ahli Muda/Pertama)"
+    ],
+    "golonganMin": "III/b",
+    "keterangan": "Yang dimaksud dengan jabatan pelaksana adalah semua jabatan selain jabatan struktural dan fungsional (yang tidak ada keterangan pemula, terampil, pelaksana lanjutan, penyelia, ahli pertama, ahli muda dan ahli madya)"
+  },
+  {
+    "no": "4",
+    "namaJabatan": "Kepala Balai Pelaksana Pemilihan Jasa Konstruksi",
+    "tempat": "Balai Pelaksana Pemilihan Jasa Konstruksi",
+    "pendidikanMin": "D4/S1",
+    "bidangPendidikan": "Teknik / Ekonomi Studi Pembangunan/ Manajemen/ Akuntansi/ Hukum/Komunikasi / Administrasi Negara/ Administrasi Publik / Teknik Informatika (semua jurusan)",
+    "pelatihanManajerial": "Diklat Kepemimpinan/ Diklat PIM IV/ Pelatihan Kepemimpinan Pengawas",
+    "pelatihanTeknis": "Pelatihan Teknis Pengadaan Barang/Jasa dan Manajemen Risiko Pengadaan, Pelatihan Teknis Kepatuhan Intern, SPIP, Zona Integritas, Pelatihan Manajemen Konstruksi, Pelatihan Teknis Pengelolaan Sistem, Data, dan Kontrak Pengadaan Jasa Konstruksi",
+    "pengalamanKerja": [
+      "Memiliki pengalaman pada jabatan pengawas (kepala subbagian umum dan tata usaha/tata usaha/kepala seksi) paling singkat 3 tahun atau",
+      "- jabatan fungsional (Pembina Jasa Konstruksi Ahli Madya/Muda atau Pengelola Pengadaan Barang dan Jasa Ahli Muda/Madya) yang setingkat dengan jabatan pengawas sesuai dengan bidang tugas jabatan yang akan diduduki"
+    ],
+    "golonganMin": "III/d",
+    "keterangan": null
+  },
+  {
+    "no": "5",
+    "namaJabatan": "Kepala Sub Bagian Umum dan Tata Usaha",
+    "tempat": "Balai Pelaksana Pemilihan Jasa Konstruksi",
+    "pendidikanMin": "D4/S1",
+    "bidangPendidikan": "Teknik / Ekonomi Studi Pembangunan/ Manajemen/ Akuntansi/ Hukum/Komunikasi / Administrasi Negara/ Administrasi Publik / Teknik Informatika (semua jurusan)",
+    "pelatihanManajerial": "Pelatihan Kepatuhan Internal, Pengelolaan Manajemen Resiko, Pengelolaan BMN, Manajemen Pengembangan SDM, Sistem Akuntansi Instansi, Pelaksanaan Anggaran, Perencanaan Anggaran, Tata Persuratan dan Kearsipan",
+    "pelatihanTeknis": "Pelatihan Teknis (Pelatihan Pengadaan Barang dan Jasa/ Procurement, Pelatihan Hukum Kontrak, Pelatihan Manajemen Konstruksi)\nPelatihan Manajemen Umum (Pelatihan Kepatuhan Internal, Pengelolaan Manajemen Resiko, Pengelolaan BMN, Manajemen Pengembangan SDM, Sistem Akuntansi Instansi, Pelaksanaan Anggaran, Perencanaan Anggaran, Tata Persuratan dan Kearsipan",
+    "pengalamanKerja": [
+      "Memiliki pengalaman dalam jabatan pelaksana paling singkat 4 tahun atau",
+      "jabatan fungsional yang setingkat dengan jabatan pelaksana sesuai dengan bidang tugas jabatan yang akan diduduki (Pembina Jasa Konstruksi Ahli Muda/Pertama  atau Pengelola Pengadaan Barang dan Jasa Ahli Muda/Pertama)"
+    ],
+    "golonganMin": "III/b",
+    "keterangan": "Yang dimaksud dengan jabatan pelaksana adalah semua jabatan selain jabatan struktural dan fungsional yang tidak ada keterangan pemula, terampil, pelaksana lanjutan, penyelia, ahli pertama, ahli muda dan ahli madya"
+  }
+]

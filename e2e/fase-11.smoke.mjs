@@ -155,6 +155,8 @@ async function main() {
   let sebaranGenerik = null
   let targetId = null
   let namaTarget = null
+  /** Jabatan target yang belum punya syarat pelatihan — diturunkan, tidak dipaku. */
+  let ID_TANPA_DIKLAT = 0
 
   // -------------------------------------------------------------------------
   // Tampilan generik — pagar utama fase ini
@@ -533,8 +535,12 @@ async function main() {
     await tombol.click()
     // Tunggu KEADAAN: berpindah ke editor. Menunggu teks toast akan lolos seketika
     // karena kalimatnya memuat kata yang sudah ada di layar (jebakan #1).
-    await page.waitForURL(/\/jabatan-target\/\d+$/, { timeout: 15000 })
-    idDraftBaru = Number(page.url().match(/\/jabatan-target\/(\d+)$/)[1])
+    //
+    // Tujuannya `?tab=syarat` sejak 24 Agu 2026 — persyaratan adalah langkah
+    // pertama alur, dan pengusul berperan Pengelola Unit tidak bisa menyunting tab
+    // Rubrik. Pola URL-nya karena itu tidak lagi berakhir pada angka.
+    await page.waitForURL(/\/jabatan-target\/\d+\?tab=syarat$/, { timeout: 15000 })
+    idDraftBaru = Number(page.url().match(/\/jabatan-target\/(\d+)/)[1])
 
     const cek = await denganDb(async (c) => {
       const [t] = await c.query('SELECT status, kode_target FROM jabatan_target WHERE id = ?', [
@@ -578,6 +584,22 @@ async function main() {
   await langkah('Bersihkan draft uji', async () => {
     const sisa = await denganDb(async (c) => {
       await c.query('DELETE FROM jabatan_target WHERE id = ?', [idDraftBaru])
+      /*
+        Notifikasinya ikut dihapus, dan itu harus DISENGAJA: `notifikasi.entitas_id`
+        bukan foreign key, jadi menghapus jabatan targetnya meninggalkan kabar
+        "Usulan jabatan target" yang menaut ke halaman yang sudah tidak ada.
+        Terukur: tiga jalan uji ini meninggalkan tiga baris yatim sebelum diperbaiki
+        (24 Agu 2026) — dan proyek ini sudah punya 21 notifikasi yatim dari seed,
+        jadi menambah lebih banyak berarti menenggelamkan yang asli.
+
+        Yang menerimanya bukan pelakunya: `kirimKePeran()` mengecualikan pelaku, dan
+        uji ini masuk sebagai Admin Talenta — jadi kabarnya jatuh ke Admin Talenta
+        LAIN. Menghapus per `entitas_id` menjangkau keduanya; menghapus per pengguna
+        yang sedang masuk tidak akan menyentuh satu pun.
+      */
+      await c.query(`DELETE FROM notifikasi WHERE entitas = 'jabatan_target' AND entitas_id = ?`, [
+        idDraftBaru,
+      ])
       const [t] = await c.query('SELECT COUNT(*) AS n FROM jabatan_target WHERE id = ?', [
         idDraftBaru,
       ])
@@ -585,25 +607,73 @@ async function main() {
         'SELECT COUNT(*) AS n FROM jabatan_target_anggota WHERE jabatan_target_id = ?',
         [idDraftBaru],
       )
-      return { target: Number(t[0].n), anggota: Number(a[0].n) }
+      const [nf] = await c.query(
+        `SELECT COUNT(*) AS n FROM notifikasi WHERE entitas = 'jabatan_target' AND entitas_id = ?`,
+        [idDraftBaru],
+      )
+      return { target: Number(t[0].n), anggota: Number(a[0].n), notifikasi: Number(nf[0].n) }
     })
     tegaskan(sisa.target === 0, 'jabatan target uji masih ada')
     tegaskan(sisa.anggota === 0, `${sisa.anggota} baris anggota tertinggal (cascade tidak jalan)`)
-    return `#${idDraftBaru} dihapus · anggotanya ikut terhapus lewat cascade`
+    tegaskan(sisa.notifikasi === 0, `${sisa.notifikasi} notifikasi yatim tertinggal`)
+    return `#${idDraftBaru} dihapus · anggota lewat cascade · notifikasinya ikut dibersihkan`
   })
 
   // -------------------------------------------------------------------------
   // No. 3 — satu tempat mendeklarasikan bidang ilmu
   // -------------------------------------------------------------------------
-  await langkah('Form profil jabatan target TIDAK lagi menyunting kata kunci', async () => {
+  await langkah('"Buat jabatan target" MEMILIH dari master, bukan mengetik', async () => {
+    /*
+      Permintaan pemilik proses 25 Agu 2026: penambahan jabatan target diambil dari
+      master jabatan, tidak diketik bebas. Yang dijaga di sini bukan tampilan
+      dialognya melainkan ketiadaan jalur bebas-teks: begitu kotak "Kode target"
+      kembali muncul di dialog PEMBUATAN, nama jabatan target bisa berbeda dari
+      master lagi dan targetnya bisa lahir tanpa menunjuk kursi mana pun.
+    */
     await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'domcontentloaded' })
     await page.locator('main button', { hasText: /^Buat jabatan target$/ }).click()
     const dialog = page.locator('dialog[open]')
     await dialog.waitFor()
+    const pencarian = dialog.locator('input[aria-label="Cari jabatan di master"]')
+    await pencarian.waitFor({ state: 'visible', timeout: 15000 })
+
+    // Kontrol positif: daftarnya benar-benar terisi dari master, bukan kosong.
+    const tombolPilih = dialog.locator('button', { hasText: /^Pilih$/ })
+    await tombolPilih.first().waitFor({ state: 'attached', timeout: 20000 })
+    const jml = await tombolPilih.count()
+
     const teks = await dialog.innerText()
-    // Kontrol positif dulu: dialognya memang terbuka dan memuat field identitas.
-    tegaskan(/Kode target/i.test(teks), 'kontrol positif gagal — dialog tidak memuat Kode target')
-    tegaskan(/Nama jabatan target/i.test(teks), 'dialog tidak memuat Nama jabatan target')
+    tegaskan(
+      !/Kode target/i.test(teks),
+      'dialog pembuatan masih memuat "Kode target" — jalur bebas-teks hidup lagi',
+    )
+    tegaskan(/master/i.test(teks), 'dialog tidak menyatakan bahwa jabatannya diambil dari master')
+
+    // Pencariannya benar-benar menyaring, bukan hiasan.
+    await pencarian.fill('zzz-tidak-mungkin-ada')
+    await page.waitForFunction(
+      () =>
+        document.querySelector('dialog[open]')?.innerText.includes('Tidak ada jabatan yang cocok') ??
+        false,
+      null,
+      { timeout: 15000 },
+    )
+    await page.keyboard.press('Escape')
+    return `${jml} jabatan master ditawarkan · tanpa kotak kode/nama · pencarian menyaring`
+  })
+
+  await langkah('Form UBAH profil tetap tanpa kata kunci relevansi', async () => {
+    // Invarian Fase 11 no. 3 pindah ke dialog UBAH, sebab dialog BUAT tidak lagi
+    // punya field identitas sama sekali. Yang dijaga sama: satu deklarasi syarat
+    // bidang ilmu, satu tempat menulisnya (tab Persyaratan).
+    await page.goto(`${BASE}/jabatan-target`, { waitUntil: 'networkidle' })
+    await page.locator('button[aria-label^="Aksi untuk"]').first().click()
+    await page.getByRole('button', { name: /^Ubah profil$/ }).first().click()
+    const dialog = page.locator('dialog[open]')
+    await dialog.waitFor()
+    const teks = await dialog.innerText()
+    tegaskan(/Kode target/i.test(teks), 'kontrol positif gagal — dialog ubah tidak memuat Kode target')
+    tegaskan(/Nama jabatan target/i.test(teks), 'dialog ubah tidak memuat Nama jabatan target')
     tegaskan(
       !/Kata kunci relevansi/i.test(teks),
       'form profil masih menyunting kata kunci relevansi — jalur tulis kedua masih hidup',
@@ -613,7 +683,7 @@ async function main() {
       'dialog tidak memberi tahu di mana syarat sekarang diatur',
     )
     await page.keyboard.press('Escape')
-    return 'dialog memuat identitas saja + menunjuk ke tab Persyaratan'
+    return 'identitas saja + menunjuk ke tab Persyaratan'
   })
 
   let selisihAwal = null
@@ -749,9 +819,44 @@ async function main() {
   // No. 3 lanjutan — syarat pelatihan punya UI (sebelumnya SQL-only)
   // -------------------------------------------------------------------------
   await langkah('Panel syarat pelatihan tampil & rumpun TIDAK bisa dicentang', async () => {
-    // Target 3 (BJKW) sengaja tanpa syarat pelatihan — lembar 6 tidak memuat BJKW.
-    await page.goto(`${BASE}/jabatan-target/3?tab=syarat`, { waitUntil: 'domcontentloaded' })
+    /*
+      Subjeknya DITURUNKAN: jabatan target mana pun yang belum punya syarat
+      pelatihan. Sampai 1 Sep 2026 berkas ini memaku `/jabatan-target/3` (BJKW,
+      yang memang sengaja dibiarkan tanpa syarat karena lembar 6 `sample.xlsx`
+      tidak memuat BJKW). Id itu lenyap saat `jabatan_target` dikosongkan lalu
+      disimulasikan ulang, dan dua langkah di sini gagal dengan `locator timeout`
+      — yang terbaca seperti panel syarat pelatihan yang rusak.
+
+      Yang dijaga bukan target nomor 3, melainkan invariannya: rumpun tampil
+      sebagai JUDUL kelompok dan tidak bisa dicentang. Target mana pun yang masih
+      kosong bisa menjawabnya.
+    */
+    ID_TANPA_DIKLAT = await denganDb(async (c) => {
+      const [r] = await c.query(
+        `SELECT t.id FROM jabatan_target t
+          WHERE NOT EXISTS (
+            SELECT 1 FROM jabatan_target_syarat_diklat s WHERE s.jabatan_target_id = t.id
+          )
+          ORDER BY t.id LIMIT 1`,
+      )
+      return r.length === 0 ? 0 : Number(r[0].id)
+    })
+    tegaskan(
+      ID_TANPA_DIKLAT !== 0,
+      'tidak ada jabatan target tanpa syarat pelatihan — ini PRASYARAT, bukan temuan tentang panel syarat pelatihan',
+    )
+    await page.goto(`${BASE}/jabatan-target/${ID_TANPA_DIKLAT}?tab=syarat`, {
+      waitUntil: 'domcontentloaded',
+    })
     const panel = page.locator('main section').filter({ hasText: 'Syarat pelatihan' })
+    /*
+      DITUNGGU dulu, baru dihitung. `count()` tidak menunggu apa pun, dan isi tab ini
+      datang lewat `<Suspense>` — jadi menghitung tepat sesudah `domcontentloaded`
+      berarti mengukur kapan servernya kebetulan selesai, bukan apakah panelnya ada.
+      Gejalanya "cocok 0 elemen" dan terbaca seperti panel yang hilang; yang
+      sebenarnya berubah cuma satu kueri tambahan di badan halaman.
+    */
+    await panel.first().waitFor({ state: 'attached', timeout: 20000 })
     tegaskan((await panel.count()) === 1, `panel syarat pelatihan cocok ${await panel.count()} elemen`)
     const teks = await panel.innerText()
 
@@ -787,11 +892,16 @@ async function main() {
   await langkah('Menyimpan syarat pelatihan menulis tabelnya, lalu dipulihkan', async () => {
     const semula = await denganDb(async (c) => {
       const [r] = await c.query(
-        `SELECT kategori_id FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3 ORDER BY kategori_id`,
+        `SELECT kategori_id FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = ?
+          ORDER BY kategori_id`,
+        [ID_TANPA_DIKLAT],
       )
       return r.map((x) => Number(x.kategori_id))
     })
-    tegaskan(semula.length === 0, `target 3 seharusnya tanpa syarat diklat, ada ${semula.length}`)
+    tegaskan(
+      semula.length === 0,
+      `target ${ID_TANPA_DIKLAT} seharusnya tanpa syarat diklat, ada ${semula.length}`,
+    )
 
     const panel = page.locator('main section').filter({ hasText: 'Syarat pelatihan' })
     await panel.locator('input[type="checkbox"]').first().check()
@@ -803,7 +913,8 @@ async function main() {
         `SELECT s.kategori_id, s.wajib, k.parent_id
            FROM jabatan_target_syarat_diklat s
            JOIN master_kategori_riwayat_diklat k ON k.id = s.kategori_id
-          WHERE s.jabatan_target_id = 3`,
+          WHERE s.jabatan_target_id = ?`,
+        [ID_TANPA_DIKLAT],
       )
       if (r.length === 0) return false
       return r.map((x) => ({
@@ -816,9 +927,12 @@ async function main() {
     tegaskan(!sesudah[0].rumpun, 'yang tersimpan justru rumpun')
 
     await denganDb(async (c) => {
-      await c.query('DELETE FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3')
+      await c.query('DELETE FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = ?', [
+        ID_TANPA_DIKLAT,
+      ])
       const [r] = await c.query(
-        'SELECT COUNT(*) AS n FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = 3',
+        'SELECT COUNT(*) AS n FROM jabatan_target_syarat_diklat WHERE jabatan_target_id = ?',
+        [ID_TANPA_DIKLAT],
       )
       tegaskan(Number(r[0].n) === 0, 'syarat uji tidak berhasil dibersihkan')
     })

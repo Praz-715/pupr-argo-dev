@@ -18,6 +18,49 @@ export type KategoriSumbuX = 'Tinggi' | 'Menengah' | 'Rendah'
  * Berupa tipe, bukan konstanta, karena nilainya bisa diubah Super Admin lewat
  * `pengaturan_sistem`. Nilai bawaannya `AMBANG_SUMBU` di `konstanta.ts`.
  */
+/**
+ * Predikat kinerja → skor sumbu Y.
+ *
+ * Nilainya dari KERANGKA TALENT POOL (100/80/60/40/20) tapi **bisa diubah Super
+ * Admin** lewat `pengaturan_sistem`, jadi ia dikirim sebagai argumen — bukan
+ * dibaca dari konstanta modul. Kuncinya tetap kelima predikat resmi: yang boleh
+ * diatur adalah skornya, bukan daftar predikatnya, sebab nama predikat datang
+ * dari sumber (e-Kinerja / Excel) dan menambah satu nama di sini tidak membuat
+ * sumbernya mengirimkannya.
+ */
+export type SkalaPredikat = Record<Predikat, number>
+
+/**
+ * Bobot Formula A: Nilai Talenta = kinerja×Y + potensial×X.
+ *
+ * Disimpan sebagai FRAKSI (0,5), bukan persen — supaya rumusnya terbaca sama
+ * dengan dokumen. Halaman Pengaturan menyimpannya sebagai bilangan bulat persen
+ * karena `pengaturan_sistem.nilai_min/max` bertipe INT; konversinya satu tempat,
+ * di `bobotTalentaDari()`.
+ */
+export interface BobotTalenta {
+  kinerja: number
+  potensial: number
+}
+
+/**
+ * Seluruh parameter skoring yang boleh diubah pengguna, dalam SATU objek.
+ *
+ * Dikumpulkan jadi satu supaya menambah parameter berikutnya adalah galat
+ * kompilasi di tiap tempat yang menyusunnya — bukan argumen keempat yang
+ * diam-diam kehilangan nilai di satu jalur. Tiga argumen terpisah yang harus
+ * ditulis berurutan juga tempat tertukarnya dua angka bertipe sama.
+ *
+ * `lib/scoring` & `lib/importer` MENERIMA objek ini; keduanya tidak pernah
+ * membaca DB. Yang mengambilnya dari `pengaturan_sistem` adalah
+ * `parameterSkoringDari()` di `lib/pengaturan.ts`.
+ */
+export interface ParameterSkoring {
+  ambang: AmbangSumbu
+  skalaPredikat: SkalaPredikat
+  bobotTalenta: BobotTalenta
+}
+
 export interface AmbangSumbu {
   atas: number
   tengah: number
@@ -55,6 +98,20 @@ export interface IndikatorNode {
   /** null untuk sub-indikator → bobot dianggap sama rata (phase.md §2.5). */
   bobot: number | null
   modeSkor: ModeSkor
+  /**
+   * Skala MAKSIMUM nilai mentahnya, bila bukan 0–100.
+   *
+   * `null` = nilai mentahnya memang berskala 0–100 → perilaku lama persis.
+   * Angka = skor dihitung `nilai / skalaMaks × 100`, sementara nilai mentahnya
+   * TETAP disimpan & ditampilkan apa adanya.
+   *
+   * Ada karena Potkom berskala **0–150** (terukur: maksimum 147,92 di berkas
+   * Fungsional, 143,23 di Pengawas — semuanya di bawah 150, tidak satu pun di
+   * bawah 100 secara sistematis). Tanpa ini, `NILAI_LANGSUNG` memotongnya ke
+   * 100 dan **setiap orang ber-potkom di atas 100 mendapat skor yang sama** —
+   * daya bedanya hilang tepat di ujung atas, tempat kandidat terbaik berada.
+   */
+  skalaMaks: number | null
   urutan: number
   kategori: KategoriSkor[]
   /** Node dengan anak = agregator murni; `kategori` boleh kosong. */

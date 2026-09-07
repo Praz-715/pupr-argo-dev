@@ -15,6 +15,7 @@ import {
   ambilPohonRubrik,
   ambilRincianSkor,
 } from '@/lib/kueri/rubrik'
+import { ambilOpsiRumpun } from '@/lib/kueri/rumpun'
 import { angkaPositif } from '@/lib/param'
 import { punyaPeran } from '@/lib/peran'
 import { FilterKandidat } from './_komponen/filter-kandidat'
@@ -63,8 +64,28 @@ export default async function KandidatPage({
 
   const p = await searchParams
   const filter = {
-    hanyaEligible: p.eligible === '1',
+    /*
+      BAWAANNYA MENYARING, dan `?eligible=0` yang membukanya — kebalikan dari
+      sebelumnya.
+
+      Permintaan pemilik proses (`koreksi sistem informasi.pdf`, butir 4):
+      *"Filter untuk golongan sesuai persyaratan jabatan, jadi untuk jabatan
+      target ketika dinilai, tidak masuk semua datanya."* Penyaringnya sudah ada
+      sejak Fase 5 — yang salah bawaannya: ia MATI, jadi tampilan pertama tetap
+      memuat semua orang dan syarat golongan PP 11/2017 yang sudah ditegakkan
+      `cekGolongan()` tidak terlihat efeknya sampai seseorang mencentang kotak
+      yang tidak ia tahu ada.
+
+      Datanya TIDAK dibuang: baris yang tidak lolos tetap ditulis ke
+      `match_score` beserta `catatan_eligibility`-nya, dan tetap bisa dibuka.
+      Yang berubah hanya apa yang tampil lebih dulu — pola yang sama dengan
+      panel Kecocokan yang bawaannya hanya jabatan target AKTIF (`?semuaTarget=1`
+      membukanya), dan alasannya sama: daftar yang paling atasnya bukan kandidat
+      sungguhan membuat angka teratas dibaca sebagai peringkat yang berlaku.
+    */
+    hanyaEligible: p.eligible !== '0',
     cari: (p.cari ?? '').slice(0, 100),
+    rumpun: (p.rumpun ?? '').slice(0, 80),
     urut: (['skorTotal', 'nama', 'kotak9', 'potkom'] as const).find((k) => k === p.urut),
     arah: p.arah === 'asc' ? ('asc' as const) : p.arah === 'desc' ? ('desc' as const) : undefined,
     halaman: Math.max(1, Number(p.hal ?? 1) || 1),
@@ -131,14 +152,14 @@ export default async function KandidatPage({
       ) : (
         <>
           <Suspense fallback={<Skeleton className="h-9 w-full max-w-lg rounded-md" />}>
-            <FilterKandidat
+            <IsiFilterKandidat
               total={target.jumlahDinilai}
               jumlahEligible={target.jumlahEligible}
             />
           </Suspense>
 
           <Suspense
-            key={`${filter.cari}|${filter.hanyaEligible}|${filter.urut}|${filter.arah}|${filter.halaman}`}
+            key={`${filter.cari}|${filter.rumpun}|${filter.hanyaEligible}|${filter.urut}|${filter.arah}|${filter.halaman}`}
             fallback={<TabelSkeletonKandidat />}
           >
             <IsiTabel idTarget={idTarget} filter={filter} />
@@ -152,6 +173,29 @@ export default async function KandidatPage({
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * Opsi rumpun dibaca DI DALAM `<Suspense>` bilah filternya sendiri.
+ *
+ * Ia butuh satu kueri master jabatan; menaruhnya di badan halaman berarti seluruh
+ * halaman menunggunya sebelum satu piksel pun tergambar, padahal yang perlu
+ * hanyalah bilah filternya.
+ */
+async function IsiFilterKandidat({
+  total,
+  jumlahEligible,
+}: {
+  total: number
+  jumlahEligible: number
+}) {
+  return (
+    <FilterKandidat
+      total={total}
+      jumlahEligible={jumlahEligible}
+      opsiRumpun={await ambilOpsiRumpun(null)}
+    />
   )
 }
 

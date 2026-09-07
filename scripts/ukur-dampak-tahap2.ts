@@ -27,8 +27,22 @@ async function main() {
   const { ambilJejakManual, ambilNilaiManual, ambilProfilKandidat, ambilRubrikUntukHitung } =
     await import('../lib/kueri/rubrik')
   const { hitungSkorMassal } = await import('../lib/skor-massal')
+  const { ambilPengaturan } = await import('../lib/pengaturan')
 
   console.log(`Database: ${process.env.DATABASE_NAME}\n`)
+
+  /*
+    Masa berlaku asesmen dibaca dari `pengaturan_sistem`, TIDAK dibiarkan jatuh ke
+    bawaan `lib/scoring`. Ini pelanggaran keempat dari kelas kesalahan yang sama di
+    proyek ini (`recompute.ts` & `ukur-hitung-ulang.ts` sudah dibetulkan lebih dulu,
+    dan `verifikasi:skoring` juga pernah kena) — dan di sini akibatnya paling
+    menipu: SKORNYA identik, yang bergeser hanya kolom KELAYAKAN. Terukur saat
+    ditemukan: skrip ini melaporkan "lolos syarat 775 → 625", 150 baris yang
+    seluruhnya artefak alat ukurnya sendiri, tepat pada laporan yang dipakai
+    memutuskan apakah perubahan data boleh ditulis.
+  */
+  const pengaturan = await ambilPengaturan()
+  console.log(`Masa berlaku asesmen (dari pengaturan_sistem): ${pengaturan.masaBerlakuAsesmenTahun} tahun\n`)
 
   const target = await kueri<{ id: number; nama_target: string }>(
     'SELECT id, nama_target FROM jabatan_target ORDER BY id',
@@ -65,7 +79,10 @@ async function main() {
     ])
     void jejakManual
 
-    const baru = hitungSkorMassal(siap.rubrik, profil, { nilaiManual })
+    const baru = hitungSkorMassal(siap.rubrik, profil, {
+      nilaiManual,
+      masaBerlakuTahun: pengaturan.masaBerlakuAsesmenTahun,
+    })
     const lama = new Map(
       (
         await kueri<{ pegawai_id: number; skor_total: string; eligible: number }>(

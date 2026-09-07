@@ -356,6 +356,27 @@ try {
     })
 
     await langkah(`RBAC: ${akun} — data laporan tidak ikut terkirim ke HTML`, async () => {
+      /*
+        Prasyaratnya DIPERIKSA lebih dulu — uji RBAC tidak boleh berteriak palsu.
+
+        Penanda kebocoran di sini adalah nama kandidat nyata dari DB. Ketika
+        `nominasi` kosong (24 Agu 2026, sesudah 10 pegawai eNominasi dikeluarkan),
+        `namaNominee` bernilai `null`, dan `html.includes(null)` mencari string
+        **"null"** — yang muncul di hampir setiap payload React. Hasilnya langkah
+        ini melaporkan `nama kandidat "null" ikut terkirim`: sebuah KEGAGALAN RBAC
+        yang tidak pernah terjadi.
+
+        Itu jenis kebisingan paling berbahaya di harness keamanan. Uji yang
+        berteriak palsu akan diabaikan, dan kebocoran yang sungguhan ikut
+        terabaikan bersamanya. Jadi tanpa penanda, langkah ini GAGAL dengan alasan
+        yang jujur ("tidak ada data untuk diuji"), bukan menuduh.
+      */
+      tegaskan(
+        typeof namaNominee === 'string' && namaNominee.length >= 4,
+        'PRASYARAT TIDAK ADA: butuh satu nominasi di DB sebagai penanda kebocoran. ' +
+          'Tabel nominasi kosong, jadi uji ini tidak bisa membuktikan apa pun — ' +
+          'ini BUKAN temuan RBAC.',
+      )
       const resp = await page.goto(`${BASE}/laporan/nominasi`, { waitUntil: 'networkidle' })
       const html = await resp.text()
       tegaskan(!html.includes(namaNominee), `nama kandidat "${namaNominee}" ikut terkirim`)

@@ -239,6 +239,43 @@ export interface BarisTemuanData {
  * tidak ada lagi di data. Yang tampil di antrian hanyalah pekerjaan yang **masih
  * perlu dikerjakan**.
  */
+/*
+  Jabatan di master (`pegawai.jabatan_id`) lebih LAMA daripada riwayat jabatan
+  terbarunya — dilaporkan pemilik proses 1 Sep 2026 lewat satu kasus nyata.
+
+  ## Kenapa pembandingnya `tmt_jabatan`, bukan sekadar "namanya beda"
+
+  Membandingkan nama saja menghasilkan 12 temuan dari 120, dan sepuluh di antaranya
+  BUKAN masalah: baris `PLT.`/`PLH.` (penugasan sementara — jabatan definitifnya
+  memang berbeda), dan riwayat yang berhenti bertahun lalu sementara master sudah
+  mencatat promosi sesudahnya. Daftar yang sebagian besarnya normal berhenti dibaca,
+  dan temuan sungguhan ikut terabaikan bersamanya — pelajaran yang sudah berulang
+  di repo ini (ambang kemiripan 85% yang berteriak 108 kali).
+
+  Yang membedakan: riwayat terbarunya MULAI SESUDAH `tmt_jabatan`. Itu berarti
+  orangnya berpindah setelah tanggal SK yang tercatat di master, jadi masternya yang
+  tertinggal — bukan riwayatnya. Terukur: **1 dari 146**, nol kebisingan.
+
+  `tanggal_akhir IS NULL` sengaja TIDAK dipakai sebagai penanda "sedang dijabat":
+  1.369 dari 1.405 baris riwayat belum terpetakan dan sebagian besar tidak punya
+  tanggal akhir sama sekali (sumber ES 2 & 3 tidak memuatnya), jadi ia menandai
+  354 baris — termasuk delapan sekaligus untuk satu orang.
+*/
+const SQL_JABATAN_MASTER_BASI = `
+  FROM pegawai p
+  JOIN riwayat_jabatan r ON r.id = (
+    SELECT r2.id FROM riwayat_jabatan r2
+     WHERE r2.pegawai_id = p.id AND r2.tanggal_mulai IS NOT NULL
+     ORDER BY r2.tanggal_mulai DESC, r2.id DESC LIMIT 1
+  )
+  JOIN jabatan j ON j.id = p.jabatan_id
+ WHERE p.status_aktif = 'AKTIF'
+   AND p.tmt_jabatan IS NOT NULL
+   AND r.tanggal_mulai > p.tmt_jabatan
+   AND r.jabatan_nama_mentah NOT LIKE 'PLT%'
+   AND r.jabatan_nama_mentah NOT LIKE 'PLH%'
+`
+
 export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
   const r = await kueriSatu<Record<string, unknown>>(`
     SELECT
@@ -261,7 +298,8 @@ export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
       (SELECT COUNT(*) FROM pegawai p
          WHERE p.jabatan_id IS NULL ${filterSumber('p')})                          AS tanpa_jabatan,
       (SELECT COUNT(*) FROM asesmen_talenta a
-         WHERE a.potkom > 100 ${filterSumberPegawaiId('a.pegawai_id')})            AS potkom_lebih
+         WHERE a.potkom > 100 ${filterSumberPegawaiId('a.pegawai_id')})            AS potkom_lebih,
+      (SELECT COUNT(*) ${SQL_JABATAN_MASTER_BASI} ${filterSumber('p')})            AS jabatan_basi
   `)
 
   const jumlah: Partial<Record<KodeTemuan, number>> = {
@@ -280,6 +318,7 @@ export async function ambilRingkasTemuan(): Promise<KelompokTemuan[]> {
      * ada 10 rekaman yang skala aslinya belum pernah dikonfirmasi siapa pun.
      */
     POTKOM_DI_ATAS_100: Number(r?.potkom_lebih ?? 0),
+    JABATAN_MASTER_BASI: Number(r?.jabatan_basi ?? 0),
   }
 
   return Object.values(DEFINISI_TEMUAN)
@@ -397,6 +436,29 @@ export async function ambilTemuanRinci(
         ]
           .filter(Boolean)
           .join(', '),
+      }))
+    }
+
+    case 'JABATAN_MASTER_BASI': {
+      const baris = await kueri<Record<string, unknown>>(
+        `SELECT p.id, p.nip, p.nama_lengkap, p.tmt_jabatan, j.nama_jabatan,
+                r.jabatan_nama_mentah, r.tanggal_mulai
+         ${SQL_JABATAN_MASTER_BASI} ${filterSumber('p')}
+         ORDER BY r.tanggal_mulai DESC LIMIT ?`,
+        [batas],
+      )
+      return baris.map((r) => ({
+        kode,
+        entitas: 'pegawai',
+        entitasId: Number(r.id),
+        subjek: String(r.nama_lengkap),
+        nip: String(r.nip),
+        // Kedua sisinya disebut beserta tanggalnya — tanpa itu pembacanya harus
+        // membuka profilnya untuk tahu apa yang sebenarnya berselisih.
+        keterangan:
+          `Master: "${String(r.nama_jabatan)}" (TMT ${String(r.tmt_jabatan)}) · ` +
+          `riwayat terbaru: "${String(r.jabatan_nama_mentah).slice(0, 60)}" ` +
+          `mulai ${String(r.tanggal_mulai)}`,
       }))
     }
 

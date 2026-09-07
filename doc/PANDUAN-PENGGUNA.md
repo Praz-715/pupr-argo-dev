@@ -4,7 +4,7 @@ Satu sekuens utuh: **masuk → susun formulasi → siapkan data pegawai → hitu
 
 Untuk gambaran proses & kendalinya, lihat [`PROBIS.md`](PROBIS.md).
 
-> Nama menu, label tombol, dan pesan di panduan ini diambil dari aplikasi pada **12 Agustus 2026**. Kalau ada label yang tidak Anda temukan, kemungkinan besar panduannya yang menua — bukan Anda yang salah lihat.
+> Nama menu, label tombol, dan pesan di panduan ini diambil dari aplikasi pada **24 Agustus 2026**. Kalau ada label yang tidak Anda temukan, kemungkinan besar panduannya yang menua — bukan Anda yang salah lihat.
 
 ---
 
@@ -13,14 +13,15 @@ Untuk gambaran proses & kendalinya, lihat [`PROBIS.md`](PROBIS.md).
 | # | Langkah | Peran | Halaman |
 |---|---|---|---|
 | 0 | Masuk | semua | `/masuk` |
-| 1 | Buat jabatan target (DRAFT) | Admin Talenta | Suksesi › Jabatan Target |
+| 1 | Buat jabatan target (DRAFT) | Admin Talenta · **Pengelola Unit** (dari kursi kosong unitnya) | Suksesi › Jabatan Target |
 | 2 | Isi jabatan anggota | Admin Talenta | tab **Jabatan Anggota** |
-| 3 | Isi persyaratan | Admin Talenta | tab **Persyaratan** |
+| 3 | Isi persyaratan | Admin Talenta · **Pengelola Unit** | tab **Persyaratan** |
 | 4 | Susun rubrik | Admin Talenta | tab **Rubrik Penilaian** |
 | 5 | Aktifkan (lewat gerbang) | Admin Talenta | tombol status |
 | 6 | Siapkan data pegawai | Admin Talenta / Pengelola Unit | Data & Kualitas + profil |
 | 7 | **Hitung Ulang** | Admin Talenta | `/jabatan-target/{id}` |
 | 8 | Baca nilai akhir | semua | Kandidat · Peta Talenta · profil |
+| 8b | Masukkan kandidat ke talent pool | Admin Talenta · **Pengelola Unit** (pegawai unitnya) | Talent Pool |
 | 9 | Ajukan nominasi | Pengelola Unit · Admin Talenta | Talent Pool |
 | 10 | Verifikasi | Admin Talenta | Nominasi |
 | 11 | Tetapkan suksesor | Pimpinan | Nominasi |
@@ -52,13 +53,39 @@ Kalau sandi Anda masih buatan Super Admin, aplikasi menahan Anda di halaman gant
 
 ## 1–5 · Setup formulasi
 
-> Peran: **Admin Talenta** atau Super Admin. Pengelola Unit & Pimpinan tidak melihat tombolnya.
+> **Siapa mengerjakan apa (berubah 24 Agustus 2026).** Dua peran, dua tanggung jawab:
+>
+> - **Pengelola Unit MENGUSULKAN** — menjadikan kursi kosong di unitnya sebagai draft (langkah 1) dan mengisi persyaratannya (langkah 3). Ia hanya melihat kekosongan **unitnya sendiri**; daftarnya diberi keterangan "Dibatasi ke unit Anda".
+> - **Admin Talenta MEMUTUSKAN** — jabatan anggota (2), rubrik penilaian (4), dan **aktivasi** (5).
+>
+> Alasan pembagiannya: unit yang paling tahu kursinya kosong dan syarat apa yang dibutuhkan, sedangkan bobot 65/20/15 berlaku se-organisasi — kalau tiap unit menyetel bobotnya sendiri, peringkat antar unit tidak bisa lagi dibandingkan padahal Peta Talenta memajangnya bersebelahan. Aktivasi ditahan karena itulah titik verifikasinya: selama DRAFT, jabatan target **tidak** dihitung dan **tidak** muncul di pemilih Peta Talenta.
+>
+> Pimpinan & Viewer membaca saja di semua langkah ini.
+
+### Alur usulan dari kursi kosong — langkah demi langkah
+
+| # | Siapa | Yang dilakukan | Yang terjadi sesudahnya |
+|---|---|---|---|
+| 1 | **Pengelola Unit** | **Suksesi › Jabatan Target** → panel **Sudah kosong** → tombol **Jadikan draft** pada barisnya | Draft dibuat + 1 jabatan anggota terisi otomatis. Halaman langsung membuka tab **Persyaratan**. Admin Talenta menerima notifikasi *"Usulan jabatan target"* di Inbox. |
+| 2 | **Pengelola Unit** | Isi **Persyaratan** & **Syarat pelatihan** | Tersimpan. Tombol **Aktifkan** memang tidak ada — bukan kerusakan. |
+| 3 | **Admin Talenta** | Buka notifikasinya → tinjau persyaratan → tab **Rubrik Penilaian** → **Salin rubrik** dari jabatan target yang sudah lolos pemeriksaan | Rubrik terisi tanpa mengetik ulang 9 indikator. |
+| 4 | **Admin Talenta** | **Aktifkan** | Status AKTIF, skor mulai dihitung. Pengusulnya menerima notifikasi *"Jabatan target aktif"*. |
+| 5 | **Pengelola Unit** | **Talent Pool** → pilih jabatan target itu → **Tambahkan ke pool** | Hanya pegawai **di unitnya** yang ditawarkan. Sesudah masuk pool, ia bisa **Ajukan nominasi** (langkah 9). |
+
+**Kalau tombol "Jadikan draft" tidak ada pada satu baris:** kursi itu **sudah** punya jabatan target. Buka yang itu alih-alih membuat draft kedua — dua jabatan target untuk satu kursi berarti dua daftar kandidat yang bersaing tanpa ada yang menjelaskan mana yang berlaku.
 
 ### 1. Buat jabatan target
 
-**Suksesi › Jabatan Target** → tombol **Buat jabatan target** (kanan atas).
+Dua jalan, dan **keduanya memilih dari master jabatan** — tidak ada lagi kode & nama yang diketik sendiri (berubah 25 Agustus 2026):
 
-Isi **Kode target** (mis. `JT-KABALAI-BJKW`), **Nama jabatan target**, dan Deskripsi (opsional — konteks untuk pembaca, tidak dipakai perhitungan). Simpan.
+- **Dari kursi kosong**: panel **Sudah kosong** → **Jadikan draft** pada barisnya.
+- **Dari seluruh master**: tombol **Buat jabatan target** (kanan atas) → cari jabatannya (bisa dicari menurut **nama jabatan, kode, atau unit organisasi**) → **Pilih**.
+
+Tiap pilihan menampilkan eselon, unit organisasi, dan status terisi/kosong. Jabatan yang **sudah** punya jabatan target tetap tampil, ditandai nama targetnya, dan tombol Pilih-nya mati — sunting yang itu alih-alih membuat yang kedua untuk kursi yang sama.
+
+Kode target, nama target, dan **jabatan anggotanya** terisi otomatis dari master. Itu yang menutup tiga kekeliruan yang dulu mungkin terjadi: nama yang berbeda dari master, kode yang bentrok/terpotong, dan jabatan target yang tidak menunjuk kursi mana pun karena tab Jabatan Anggota terlewat.
+
+> Menyunting nama/deskripsi jabatan target yang **sudah ada** tetap bisa — menu baris → **Ubah profil**. Yang dicabut hanya cara MEMBUAT.
 
 **Yang seharusnya terlihat:** baris baru berstatus **DRAFT**, rubrik "belum ada", kandidat "—".
 
@@ -72,7 +99,21 @@ Satu jabatan target boleh mewakili beberapa posisi sejenis — itu gunanya tab i
 
 ### 3. Persyaratan
 
-Tab **Persyaratan** — syarat minimal kandidat: bidang ilmu, pendidikan minimal, pelatihan (kategori diklat), pengalaman jabatan.
+> Peran: Admin Talenta **dan Pengelola Unit** (untuk jabatan target yang salah satu jabatan anggotanya ada di unitnya). Kalau isian di tab ini hanya bisa dibaca, jabatan target itu di luar lingkup unit Anda.
+
+Tab **Persyaratan** — syarat minimal kandidat. **Lima jenis** (golongan ditambahkan 25 Agustus 2026):
+
+| Jenis | Isi nilai minimalnya | Perilaku |
+|---|---|---|
+| **Pendidikan minimal** | `SLTA` · `D3` · `S1_D4` · `S2` · `S3` | menggugurkan |
+| **Bidang ilmu** | daftar kata kunci dipisah koma; `semua` = semua bidang | menggugurkan |
+| **Golongan minimal** | `I/a` sampai `IV/e` (mis. `III/d`) | **menggugurkan** — syarat keras PP 11/2017 |
+| **Pengalaman minimal** | eselon (`I`–`IV`, `NON_ESELON`) atau jumlah tahun; ditambah kolom **Lama minimal (tahun)** | eselon menggugurkan; **durasinya** ditandai perlu verifikasi manusia |
+| **Lainnya** | bebas | selalu perlu penilaian manusia |
+
+**Kenapa durasi belum diperiksa mesin:** "pengawas paling singkat 3 tahun" menuntut riwayat jabatan yang sudah dipetakan ke master **dan** lamanya diketahui. Lamanya kini diketahui untuk **seluruh** baris (bertanggal, atau berdurasi dari kolom *Masa Kerja Jabatan Penempatan* berkas Talent Pool), tapi **pemetaan ke master** yang belum: baru 35 dari 670 baris (5%) memenuhi keduanya — jadi menegakkannya sekarang akan menandai hampir semua kandidat "perlu verifikasi manual" bukan karena syaratnya tidak dipenuhi, melainkan karena riwayatnya belum terbaca. Syaratnya tetap ditampilkan lengkap (mis. lencana *min. 3 tahun*) supaya pemeriksanya tahu apa yang harus dicek.
+
+**Penolakan golongan selalu menyebut alasannya** — mis. "Golongan IV/a di bawah syarat minimal IV/b" — sehingga tidak ada kandidat yang hilang dari daftar tanpa keterangan.
 
 **Ini satu-satunya tempat syarat diisi.** Gerbang kelayakan dan indikator rubrik membaca daftar yang sama, jadi tidak ada dua daftar yang bisa berselisih.
 
@@ -136,7 +177,7 @@ Tiap bagian punya tombol **Tambah** / **Ubah**:
 |---|---|
 | Kepala profil — **Ubah data** | nama, golongan, pangkat, TMT, jabatan, pendidikan terakhir, status kepegawaian |
 | Riwayat pendidikan | jenjang, bidang studi, sekolah, tahun lulus, no. pertek BKN |
-| Riwayat jabatan | nama jabatan, tautan ke jabatan master, jenis penugasan, unit, tanggal, no. SK |
+| Riwayat jabatan | nama jabatan, tautan ke jabatan master, jenis penugasan, unit, tanggal, **lama menjabat (bulan)**, no. SK |
 | Riwayat diklat | nama diklat/sertifikasi |
 | Tren kinerja | tahun, periode SKP, nilai kinerja & perilaku, predikat |
 | Posisi Kotak 9 | tahun asesmen, jenis, nilai kinerja (Y), potkom, integritas, predikat |
@@ -146,6 +187,40 @@ Tiga hal yang perlu diketahui:
 - **NIP tidak bisa diubah dari sini.** Ia identitas baris, alamat halaman, dan satu-satunya sumber tanggal lahir, usia, masa kerja, dan proyeksi pensiun. NIP yang salah diperbaiki lewat Antrian Pembersihan.
 - **Kotak 9, nilai potensial, dan nilai talenta DIHITUNG** dari isian asesmen — tidak diketik. Formulirnya tidak menyediakan kolomnya.
 - **Diklat baru belum langsung dihitung.** Ia perlu dipetakan kategorinya di Validasi Riwayat (langkah c).
+- **"Lama menjabat (bulan)" hanya dipakai kalau tanggalnya kosong.** Kolom itu untuk riwayat yang sumbernya memberi lamanya saja tanpa tanggal — mis. berkas Talent Pool Eselon II & III. Kalau tanggal mulai terisi, lamanya dihitung dari tanggal dan isian ini tidak berpengaruh. Dikosongkan berarti "tidak diketahui", **bukan** nol bulan.
+
+### e. Verifikasi rekam jejak disiplin — **ceklis di panel Integritas** (25 Agustus 2026)
+
+Panel **Integritas & rekam jejak disiplin** pada profil kini berbunyi netral bila pegawainya
+tidak punya catatan: *"Tanpa catatan hukuman disiplin. Skor Integritas & Moralitas dihitung
+100 untuk keadaan ini."* — bukan lagi kotak peringatan, yang dulu muncul di hampir semua
+profil dan karena itu berhenti dibaca.
+
+Di bawahnya ada ceklis **"Sudah diperiksa, tidak ada catatan hukuman disiplin"**. Yang
+dicentang adalah **pemeriksaannya**, bukan orangnya: sistem merekam siapa yang memeriksa dan
+kapan, lalu menampilkannya di panel itu. Tekan sekali lagi untuk melepas tandanya.
+
+**Skor tidak berubah karena mencentangnya.** Ketiadaan catatan sudah dinilai 100 sejak awal;
+yang ditambahkan adalah jejak bahwa angka itu benar sudah diperiksa manusia — pembedaan yang
+penting karena komponen ini 15% dari match score.
+
+**Melengkapi butir kesiapan data "Rekam jejak disiplin terverifikasi" — DUA cara:**
+
+1. **Pegawai punya hukuman disiplin** → catat di **Master Data › Hukuman Disiplin** (tingkat, SK, status aktif).
+2. **Pegawai tidak punya** → cukup centang **"Sudah diperiksa, tidak ada catatan hukuman disiplin"** di panel Integritas pada profilnya.
+
+Keduanya memenuhi butir yang sama (bobot 3 dari 32 — sekitar 9,4 poin kesiapan data). **Jangan** mencentang verifikasi untuk pegawai yang sebenarnya punya hukuman: yang hilang bukan angkanya, tapi catatan yang justru paling perlu ada.
+
+**Kalau catatan hukuman disiplin DIISI atau DIUBAH, skornya langsung menyesuaikan.** Sejak
+25 Agustus 2026, menyimpan catatan di **Master Data › Hukuman Disiplin** ikut menghitung ulang
+skor pegawai itu pada seluruh jabatan target aktif — tidak perlu menekan Hitung Ulang, dan
+pesan suksesnya menyebutkan berapa jabatan target yang disesuaikan. Nilainya mengikuti tingkat
+**terberat yang berstatus aktif**: Ringan 75 · Sedang 50 · Berat 25 · Sedang Menjalani 0 ·
+tanpa catatan aktif 100. Pengaruhnya pada skor total = (100 − nilai) × 15%, jadi hukuman Berat
+menurunkan **11,25 poin**.
+
+Peran: sama dengan pengisian profil (Admin Talenta · Super Admin · Pengelola Unit untuk
+pegawai di unitnya).
 
 ---
 
@@ -196,6 +271,10 @@ Baris **Nilai Pengalaman Jabatan** tidak punya tombol Isi manual — ia rata-rat
 
 Di **Sebaran Kotak 9** (dashboard) dan **Peta Talenta**: klik satu kotak → daftar pegawainya muncul → klik namanya → profil lengkapnya.
 
+**Membuka profil dari Talent Pool, Nominasi, atau Peta Talenta per jabatan target (25 Agustus 2026):** panel *Kecocokan dengan jabatan target* menampilkan **jabatan target yang sedang dibicarakan saja** — judulnya menyebut namanya, dan tautan **Tampilkan semua** membuka kembali seluruh daftarnya. Dari Direktori Pegawai atau Peta Talenta tanpa jabatan target, panelnya menampilkan seluruh jabatan target **aktif**.
+
+> Di Peta Talenta, konteks itu ikut hanya kalau Anda sedang memilih satu jabatan target (kesiapan per jabatan) — sebab di keadaan itu sumbu Potensial-nya memang match score jabatan tersebut.
+
 ### Mengubah ambang Kotak 9 (Super Admin)
 
 **Admin › Pengaturan Sistem** → `Ambang kategori teratas Kotak 9` (bawaan **80**) dan
@@ -222,7 +301,11 @@ Tiga hal yang perlu dipahami sebelum mengubahnya:
 
 **Suksesi › Talent Pool** → pilih jabatan targetnya → temukan kandidatnya → **Ajukan nominasi**.
 
-Kandidat yang lolos syarat tapi belum masuk daftar ada di panel **"Kandidat lolos syarat di luar pool"**. ⚠️ **Panel itu hanya terlihat oleh Admin Talenta & Super Admin** — Pengelola Unit mengajukan dari kandidat yang sudah ada di daftar. Kalau orangnya belum masuk daftar, minta Admin Talenta menambahkannya lebih dulu.
+Kandidat yang lolos syarat tapi belum masuk daftar ada di panel **"Kandidat lolos syarat di luar pool"** → **Tambahkan ke pool**.
+
+**Sejak 24 Agustus 2026 Pengelola Unit ikut melihat panel itu**, dengan satu batas: yang ditawarkan hanya **pegawai di unitnya**. Sebelumnya panel ini milik Admin Talenta & Super Admin saja, dan itu membuat alur usulan pincang — aksi **Ajukan nominasi** sudah mengizinkan Pengelola Unit tapi menuntut kandidatnya sudah ada di pool, sehingga unit tidak bisa memulai apa pun.
+
+Yang dibatasi **orangnya**, bukan kursinya: unit tetap boleh mengusulkan pegawainya untuk jabatan target unit mana pun — suksesi memang sering memindahkan orang antar unit, dan nominasi mencatat unit pengaju secara terpisah.
 
 ### 10. Verifikasi — **Admin Talenta**
 
@@ -282,5 +365,5 @@ Supaya tidak dicari-cari:
 - **Ekspor Excel (.xlsx) & PDF** — baru CSV.
 - **Tombol sinkronisasi manual** dari UI — jalur eNominasi dijalankan lewat perintah, bukan tombol.
 - **eHRM & eKinerja belum tersambung.** Riwayat sinkronisasi keduanya di halaman Konsolidasi adalah **data contoh**, dan halaman itu menandainya "Belum tersambung".
-- **Populasi prototipe: 36 pegawai** — 10 dari API eNominasi + 26 dari `DATA TALENT POOL ES 2 & 3 LENGKAP.xlsx`. Pembatasan "hanya yang ada di eNominasi" (`HANYA_PEGAWAI_SUMBER`) **sedang mati**; kalau dinyalakan, ke-26 pegawai Excel hilang dari semua halaman karena definisi populasinya mensyaratkan asesmen dari eNominasi.
+- **Populasi prototipe: 79 pegawai** — 26 dari `DATA TALENT POOL ES 2 & 3 LENGKAP.xlsx` (Eselon II & III) + 53 dari `TALENT POOL PENGAWAS#2 fix.xlsx` (Eselon IV). **10 pegawai eNominasi sudah dikeluarkan** atas permintaan pemilik proses (24 Agu 2026); bersama mereka ikut hilang seluruh alur nominasi & approval di data demo (9 entri talent pool, 3 nominasi, 6 approval log), jadi kartu "Daftar nominasi" dan "Terverifikasi" di dashboard sekarang 0. Cadangannya ada dan bisa dipulihkan. Pembatasan "hanya yang ada di eNominasi" (`HANYA_PEGAWAI_SUMBER`) **mati**; kalau dinyalakan sekarang, SELURUH 79 pegawai hilang dari semua halaman karena tak satu pun punya asesmen dari eNominasi.
 - **26 pegawai Excel belum terkonfirmasi ada di eNominasi**, dan tidak bisa dikonfirmasi sekarang: **endpoint eNominasi sudah tidak dilayani**. Terbukti 22 Agu 2026 dengan membandingkan implementasi referensi resmi mereka — URL, metode, body, dan secret kita semuanya identik; server membalas 404 pada keempat varian path/metode dan mengirim `Set-Cookie: PHPSESSID` padahal referensi memakai `ci_session`. Yang dibutuhkan satu hal dari pengelola eNominasi: **alamat endpoint yang berlaku sekarang**. Sisi kita tidak perlu diubah.

@@ -39,6 +39,13 @@ const JENIS: Array<{ nilai: JenisSyarat; label: string; contoh: string; keterang
       'Daftar kata kunci dipisah koma; "semua" berarti semua bidang diperbolehkan. Dipakai gerbang kelayakan DAN indikator rubrik Kesesuaian Bidang Ilmu — satu deklarasi, dua pembaca',
   },
   {
+    nilai: 'GOLONGAN_MIN',
+    label: 'Golongan minimal',
+    contoh: 'III/d',
+    keterangan:
+      'Golongan PP 11/2017 — I/a sampai IV/e. Syarat KERAS: pegawai di bawahnya dinyatakan tidak lolos, dengan alasan yang disebutkan',
+  },
+  {
     nilai: 'PENGALAMAN_MIN',
     label: 'Pengalaman minimal',
     contoh: 'III',
@@ -55,7 +62,11 @@ const JENIS: Array<{ nilai: JenisSyarat; label: string; contoh: string; keterang
 const LABEL_JENIS: Record<JenisSyarat, string> = {
   PENDIDIKAN_MIN: 'Pendidikan minimal',
   BIDANG_ILMU: 'Bidang ilmu',
+  GOLONGAN_MIN: 'Golongan minimal',
   PENGALAMAN_MIN: 'Pengalaman minimal',
+  // Tidak pernah disimpan sebagai baris persyaratan — lihat `JENIS_SYARAT_VIRTUAL`.
+  // Labelnya tetap ada supaya rincian kelayakan bisa menampilkannya.
+  JABATAN_ASAL: 'Jabatan asal kandidat',
   LAINNYA: 'Lainnya',
 }
 
@@ -198,11 +209,17 @@ export function TabSyarat({
                         <Badge tone="aksen" title="Bisa diperiksa otomatis">
                           <span className="tabular">{s.nilaiMinimal}</span>
                         </Badge>
-                      ) : (
+                      ) : null}
+                      {s.durasiTahunMin ? (
+                        <Badge tone="peringatan" title="Belum diperiksa mesin — verifikasi manual">
+                          <span className="tabular">min. {s.durasiTahunMin} tahun</span>
+                        </Badge>
+                      ) : null}
+                      {!terstruktur ? (
                         <Badge tone="peringatan" title="Tidak menyaring siapa pun">
                           perlu verifikasi manual
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
                     <p className="mt-1 text-[12px] leading-relaxed text-text-muted">{s.deskripsi}</p>
                     {!terstruktur ? (
@@ -289,6 +306,11 @@ function FormSyarat({
   const [jenisSyarat, setJenisSyarat] = useState<JenisSyarat>(baris?.jenisSyarat ?? 'PENDIDIKAN_MIN')
   const [deskripsi, setDeskripsi] = useState(baris?.deskripsi ?? '')
   const [nilaiMinimal, setNilaiMinimal] = useState(baris?.nilaiMinimal ?? '')
+  const [durasi, setDurasi] = useState(
+    baris?.durasiTahunMin === null || baris?.durasiTahunMin === undefined
+      ? ''
+      : String(baris.durasiTahunMin),
+  )
 
   const jenisTerpilih = JENIS.find((j) => j.nilai === jenisSyarat)!
 
@@ -299,6 +321,10 @@ function FormSyarat({
         jenisSyarat,
         deskripsi,
         nilaiMinimal: nilaiMinimal.trim() === '' ? null : nilaiMinimal,
+        // Durasi hanya dikirim untuk syarat pengalaman. Mengirimnya untuk jenis lain
+        // ditolak server — dan itu benar: durasi tanpa jenjang tidak berarti apa pun.
+        durasiTahunMin:
+          jenisSyarat === 'PENGALAMAN_MIN' && durasi.trim() !== '' ? Number(durasi) : null,
       })
       if (hasil.ok) {
         tampilkan({ nada: 'sukses', judul: hasil.pesan ?? 'Disimpan.' })
@@ -393,6 +419,42 @@ function FormSyarat({
             </span>
           ) : null}
         </label>
+
+        {jenisSyarat === 'PENGALAMAN_MIN' ? (
+          <label className="block">
+            <span className="mb-1 flex flex-wrap items-baseline gap-1.5">
+              <span className="text-[12px] font-medium text-text">Lama minimal (tahun)</span>
+              <span className="text-[10px] text-text-subtle">
+                opsional — mis. 3 untuk &ldquo;pengawas paling singkat 3 tahun&rdquo;
+              </span>
+            </span>
+            <input
+              value={durasi}
+              onChange={(e) => setDurasi(e.target.value.replace(/[^0-9]/g, ''))}
+              disabled={pending}
+              inputMode="numeric"
+              placeholder="mis. 3"
+              className={cn(
+                'tabular h-9 w-full rounded-md border bg-surface px-2.5 text-[13px] text-text outline-none disabled:opacity-60',
+                galat.durasiTahunMin ? 'border-danger-border' : 'border-border focus:border-accent',
+              )}
+            />
+            {galat.durasiTahunMin ? (
+              <span role="alert" className="mt-1 block text-[11px] leading-relaxed text-danger">
+                {galat.durasiTahunMin}
+              </span>
+            ) : null}
+            {durasi.trim() !== '' ? (
+              <span className="mt-1 block text-[11px] leading-relaxed text-text-subtle">
+                Durasi <strong className="font-medium text-text-muted">belum diperiksa mesin</strong>
+                : lama menjabat pada satu jenjang menuntut riwayat jabatan yang sudah dipetakan ke
+                master DAN bertanggal, dan baru sebagian kecil data memenuhi keduanya. Kandidat yang
+                jenjangnya sudah terpenuhi akan ditandai perlu verifikasi manual beserta angka
+                syaratnya — bukan diloloskan diam-diam.
+              </span>
+            ) : null}
+          </label>
+        ) : null}
 
         {nilaiMinimal.trim() === '' && jenisSyarat !== 'LAINNYA' ? (
           <div className="rounded-md border border-warning-border bg-warning-subtle px-3 py-2.5">

@@ -178,7 +178,7 @@ async function main() {
   // ia turunan predikat kinerja yang berskala tetap; menguji Y=130 berarti
   // menguji keadaan yang tidak bisa terjadi.
   const { ekspresiSqlKotak9, hitungKotak9 } = await import('../lib/scoring')
-  const { ambangSumbuDari } = await import('../lib/pengaturan')
+  const { ambangSumbuDari, bobotTalentaDari } = await import('../lib/pengaturan')
 
   /**
    * Ambang dibaca dari `pengaturan_sistem` — dan justru itu yang membuat langkah
@@ -191,6 +191,7 @@ async function main() {
    * pengguna berbulan-bulan kemudian.
    */
   const ambang = ambangSumbuDari(pengaturan)
+  const bobot = bobotTalentaDari(pengaturan)
   console.log(`ambang sumbu dipakai: tengah ${ambang.tengah} · atas ${ambang.atas}`)
   const kisi = await kueri<{ y: number; x: number; kotak: number }>(
     `WITH RECURSIVE ny(v) AS (SELECT 0 UNION ALL SELECT v + 5 FROM ny WHERE v < 100),
@@ -201,7 +202,7 @@ async function main() {
 
   let bedaKisi = 0
   for (const r of kisi) {
-    const dariTs = hitungKotak9(Number(r.y), Number(r.x), ambang).kotak
+    const dariTs = hitungKotak9(Number(r.y), Number(r.x), ambang, bobot).kotak
     if (Number(r.kotak) !== dariTs) {
       bedaKisi++
       if (contoh.length < 10) {

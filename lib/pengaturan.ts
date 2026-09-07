@@ -3,8 +3,13 @@ import 'server-only'
 import { cache } from 'react'
 
 import { kueri } from './db'
-import { AMBANG_SUMBU, MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT } from './scoring/konstanta'
-import type { AmbangSumbu } from './scoring/types'
+import {
+  AMBANG_SUMBU,
+  BOBOT_FORMULA_A,
+  MASA_BERLAKU_ASESMEN_TAHUN_DEFAULT,
+  SKOR_PREDIKAT,
+} from './scoring/konstanta'
+import type { AmbangSumbu, BobotTalenta, ParameterSkoring, SkalaPredikat } from './scoring/types'
 
 /**
  * Parameter sistem yang boleh diubah tanpa deploy (PRD §6.10 & §10.11).
@@ -27,6 +32,15 @@ export interface Pengaturan {
   ambangSumbuAtas: number
   /** Ambang kategori tengah Kotak 9 (`>= tengah`). */
   ambangSumbuTengah: number
+  /** Skor sumbu Y per predikat kinerja. Lihat `skalaPredikatDari()`. */
+  skorPredikatSangatBaik: number
+  skorPredikatBaik: number
+  skorPredikatButuhPerbaikan: number
+  skorPredikatKurang: number
+  skorPredikatSangatKurang: number
+  /** Bobot Formula A dalam PERSEN bulat (50 = 0,5). Lihat `bobotTalentaDari()`. */
+  bobotTalentaKinerja: number
+  bobotTalentaPotensial: number
   sesiIdleMenit: number
   sesiMaksimalJam: number
   maksGagalMasuk: number
@@ -38,6 +52,13 @@ export const PENGATURAN_BAWAAN: Pengaturan = {
   tahunAsesmenAktif: 2026,
   ambangSumbuAtas: AMBANG_SUMBU.atas,
   ambangSumbuTengah: AMBANG_SUMBU.tengah,
+  skorPredikatSangatBaik: SKOR_PREDIKAT['Sangat Baik'],
+  skorPredikatBaik: SKOR_PREDIKAT.Baik,
+  skorPredikatButuhPerbaikan: SKOR_PREDIKAT['Butuh Perbaikan'],
+  skorPredikatKurang: SKOR_PREDIKAT.Kurang,
+  skorPredikatSangatKurang: SKOR_PREDIKAT['Sangat Kurang'],
+  bobotTalentaKinerja: BOBOT_FORMULA_A.kinerja * 100,
+  bobotTalentaPotensial: BOBOT_FORMULA_A.potensial * 100,
   sesiIdleMenit: 60,
   sesiMaksimalJam: 12,
   maksGagalMasuk: 5,
@@ -50,6 +71,13 @@ export const KUNCI_PENGATURAN: Record<string, keyof Pengaturan> = {
   tahun_asesmen_aktif: 'tahunAsesmenAktif',
   ambang_sumbu_atas: 'ambangSumbuAtas',
   ambang_sumbu_tengah: 'ambangSumbuTengah',
+  skor_predikat_sangat_baik: 'skorPredikatSangatBaik',
+  skor_predikat_baik: 'skorPredikatBaik',
+  skor_predikat_butuh_perbaikan: 'skorPredikatButuhPerbaikan',
+  skor_predikat_kurang: 'skorPredikatKurang',
+  skor_predikat_sangat_kurang: 'skorPredikatSangatKurang',
+  bobot_talenta_kinerja: 'bobotTalentaKinerja',
+  bobot_talenta_potensial: 'bobotTalentaPotensial',
   sesi_idle_menit: 'sesiIdleMenit',
   sesi_maksimal_jam: 'sesiMaksimalJam',
   maks_gagal_masuk: 'maksGagalMasuk',
@@ -92,13 +120,33 @@ export const ambilPengaturan = cache(async (): Promise<Pengaturan> => {
     const field = KUNCI_PENGATURAN[b.kunci]
     if (!field) continue
     const angka = Number(b.nilai)
+    if (!Number.isFinite(angka)) continue
     // Nilai tak masuk akal di DB (kosong, teks, nol) tidak boleh menggantikan
     // bawaan — parameter yang rusak akan menghasilkan timeout 0 menit, artinya
     // tidak ada yang bisa masuk sama sekali.
-    if (Number.isFinite(angka) && angka > 0) hasil[field] = angka
+    //
+    // **NOL SAH untuk skor predikat**, dan hanya untuk itu. "Sangat Kurang → 0"
+    // adalah pengaturan yang wajar diminta, sementara sesi 0 menit atau bobot 0%
+    // pada KEDUA sumbu adalah keadaan yang membuat aplikasinya tidak bisa
+    // dipakai. Kalau pengecualian ini tidak ada, nilai 0 yang disimpan pengguna
+    // akan diam-diam terbaca sebagai 20 — pengaturan yang menampilkan satu angka
+    // dan memakai angka lain.
+    const nolBoleh = BOLEH_NOL.has(b.kunci)
+    if (angka > 0 || (nolBoleh && angka === 0)) hasil[field] = angka
   }
   return hasil
 })
+
+/** Kunci yang nilai 0-nya SAH — lihat alasannya di `ambilPengaturan()`. */
+const BOLEH_NOL = new Set([
+  'skor_predikat_sangat_baik',
+  'skor_predikat_baik',
+  'skor_predikat_butuh_perbaikan',
+  'skor_predikat_kurang',
+  'skor_predikat_sangat_kurang',
+  'bobot_talenta_kinerja',
+  'bobot_talenta_potensial',
+])
 
 /**
  * Bentuk ambang yang diterima `lib/scoring` — dua field pipih jadi satu objek.
@@ -139,4 +187,69 @@ export async function ambilBarisPengaturan(): Promise<BarisPengaturan[]> {
     diubahOleh: r.diubah_oleh === null ? null : String(r.diubah_oleh),
     diubahPada: r.diubah_pada === null ? null : new Date(String(r.diubah_pada)),
   }))
+}
+
+/**
+ * Skala predikat efektif.
+ *
+ * **Urutan menurun ditegakkan di sini juga**, bukan hanya di aksi: skala yang
+ * memberi "Kurang" lebih tinggi daripada "Baik" membuat sumbu Y memeringkat
+ * orang secara terbalik, dan itu tidak akan pernah muncul sebagai galat — hanya
+ * sebagai Kotak 9 yang terlihat aneh. Baris DB masih bisa diubah lewat SQL
+ * langsung, jadi jalur baca ikut berjaga (pola yang sama dengan
+ * `ambangSumbuDari`).
+ */
+export function skalaPredikatDari(p: Pengaturan): SkalaPredikat {
+  const s: SkalaPredikat = {
+    'Sangat Baik': p.skorPredikatSangatBaik,
+    Baik: p.skorPredikatBaik,
+    'Butuh Perbaikan': p.skorPredikatButuhPerbaikan,
+    Kurang: p.skorPredikatKurang,
+    'Sangat Kurang': p.skorPredikatSangatKurang,
+  }
+  const urut = [
+    s['Sangat Baik'],
+    s.Baik,
+    s['Butuh Perbaikan'],
+    s.Kurang,
+    s['Sangat Kurang'],
+  ]
+  const menurun = urut.every((v, i) => i === 0 || urut[i - 1]! >= v)
+  const wajar = urut.every((v) => Number.isFinite(v) && v >= 0 && v <= 100)
+  return menurun && wajar ? s : SKOR_PREDIKAT
+}
+
+/**
+ * Bobot Formula A efektif — persen bulat di DB → fraksi.
+ *
+ * Kalau jumlahnya bukan 100, ia **dinormalisasi**, tidak ditolak: pengguna yang
+ * baru mengubah satu dari dua kolom lewat SQL langsung sudah punya keadaan
+ * 60+50, dan menolaknya berarti jatuh ke 50/50 — yaitu MENGABAIKAN kedua angka
+ * yang ia tulis. Menormalisasi tetap menghormati perbandingannya. Yang benar-
+ * benar tidak bisa diselamatkan hanya jumlah nol; itu jatuh ke bawaan.
+ */
+export function bobotTalentaDari(p: Pengaturan): BobotTalenta {
+  const k = Number(p.bobotTalentaKinerja)
+  const x = Number(p.bobotTalentaPotensial)
+  if (!Number.isFinite(k) || !Number.isFinite(x) || k < 0 || x < 0) return BOBOT_FORMULA_A
+  const jumlah = k + x
+  if (jumlah <= 0) return BOBOT_FORMULA_A
+  return { kinerja: k / jumlah, potensial: x / jumlah }
+}
+
+/**
+ * Ketiga parameter skoring sebagai satu objek — bentuk yang diterima
+ * `lib/scoring` & `lib/importer`.
+ *
+ * Ada supaya pemanggil tidak menyusunnya sendiri di belasan tempat, alasan yang
+ * sama dengan `ambangSumbuDari()`: objek yang dirakit ulang berkali-kali adalah
+ * tempat satu field-nya tertinggal, dan yang tertinggal tidak menghasilkan galat
+ * — hanya satu halaman yang berhitung berbeda dari halaman lain.
+ */
+export function parameterSkoringDari(p: Pengaturan): ParameterSkoring {
+  return {
+    ambang: ambangSumbuDari(p),
+    skalaPredikat: skalaPredikatDari(p),
+    bobotTalenta: bobotTalentaDari(p),
+  }
 }

@@ -190,7 +190,7 @@ try {
       })
 
       await langkah('sidebar: collapse bertahan setelah reload', async () => {
-        await page.click('button[title="Ciutkan sidebar"]')
+        await page.click('button[title="Tutup sidebar"]')
         await page.waitForTimeout(400)
         const ciut = await page.locator('aside').evaluate((el) => el.clientWidth)
         tegaskan(ciut < 80, `lebar setelah diciutkan ${ciut}px`)
@@ -199,7 +199,7 @@ try {
         const setelahReload = await page.locator('aside').evaluate((el) => el.clientWidth)
         tegaskan(setelahReload < 80, `lebar setelah reload ${setelahReload}px — tidak bertahan`)
 
-        await page.click('button[title="Perluas sidebar"]')
+        await page.click('button[title="Buka sidebar"]')
         await page.waitForTimeout(400)
         const luas = await page.locator('aside').evaluate((el) => el.clientWidth)
         tegaskan(luas > 200, `lebar setelah diperluas ${luas}px`)
@@ -382,7 +382,7 @@ try {
     await pageTS.waitForSelector('[role="menu"]', { timeout: 4000 })
     await pageTS.keyboard.press('Escape')
 
-    // Ciutkan sidebar: satu-satunya kontrol yang memang MEMBACA localStorage.
+    // Tutup sidebar: satu-satunya kontrol yang memang MEMBACA localStorage.
     const lebarAwal = await pageTS.locator('aside').evaluate((e) => e.getBoundingClientRect().width)
     await pageTS.locator('aside button[title]').first().click()
     await pageTS.waitForTimeout(400)

@@ -1,10 +1,10 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
 import { kelasInput } from '@/components/ui/bidang'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { cn } from '@/lib/cn'
 import type { OpsiPeran } from '@/lib/kueri/admin'
 
@@ -24,16 +24,11 @@ export function FilterPengguna({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [pending, mulaiTransisi] = useTransition()
-  const [teks, setTeks] = useState(cari)
-
-  // Debounce 300ms (phase.md §5.7) — mengetik nama tidak boleh jadi satu
-  // permintaan per huruf.
-  useEffect(() => {
-    if (teks === cari) return
-    const t = setTimeout(() => ganti('cari', teks), 300)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teks])
+  /*
+    Pencarian dijalankan saat ENTER, bukan per huruf (permintaan pemilik proses
+    2 Sep 2026). Debounce 300 ms yang dulu ada di sini — beserta effect-nya —
+    pindah ke `KotakCari`, satu tempat untuk sebelas kotak pencarian.
+  */
 
   function ganti(kunci: string, nilai: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -44,16 +39,14 @@ export function FilterPengguna({
 
   return (
     <div className={cn('flex flex-wrap items-center gap-2', pending && 'opacity-60')}>
-      <span className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-subtle" />
-        <input
-          value={teks}
-          onChange={(e) => setTeks(e.target.value)}
-          placeholder="Cari nama, username, email…"
-          aria-label="Cari pengguna"
-          className={`${kelasInput()} w-64 pl-8`}
-        />
-      </span>
+      <KotakCari
+        nilaiAwal={cari}
+        onCari={(q: string) => ganti('cari', q)}
+        placeholder="Cari nama, username, email…"
+        label="Cari pengguna"
+        pending={pending}
+        className="w-64"
+      />
 
       <select
         value={roleId}

@@ -9,13 +9,16 @@ import { eksekusi, kueriSatu } from '../db'
 import { ambilEntriPool } from '../kueri/suksesi'
 import { kirimSemua, kirimanUntukAksi } from '../notifikasi'
 import {
+  AKSI,
   giliranSiapa,
   PERAN_WORKFLOW,
   terapkanAksi,
   type AksiWorkflow,
   type StatusPool,
 } from '../workflow'
+import { PERAN_KELOLA_POOL } from '../peran'
 import { gerbangPeran } from './gerbang'
+import { pegawaiTerjangkau } from './lingkup-data'
 import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from './hasil'
 
 /**
@@ -35,18 +38,23 @@ import { berhasil, gagal, galatDariZod, pesanDariGalatDb, type HasilAksi } from 
 
 const idPositif = z.number().int().positive()
 
-const AKSI_SAH = [
-  'AJUKAN',
-  'AJUKAN_ULANG',
-  'VERIFIKASI_SETUJU',
-  'VERIFIKASI_TOLAK',
-  'MINTA_REVISI',
-  'TETAPKAN',
-  'TOLAK_PIMPINAN',
-  'BATALKAN_PENETAPAN',
-  'TOLAK_KANDIDAT',
-  'PULIHKAN_KANDIDAT',
-] as const
+/**
+ * Aksi yang diterima jalur tulis — DITURUNKAN dari tabel transisi, bukan diketik ulang.
+ *
+ * ⚠️ Daftar ini sebelumnya ditulis tangan, dan itu langsung menggigit: dua transisi
+ * mundur yang ditambahkan 1 Sep 2026 (`BATALKAN_VERIFIKASI`, `BATALKAN_NOMINASI`,
+ * `Detail Revisi PUPR 1_9_2026.pdf` butir 3) masuk ke `lib/workflow.ts` beserta
+ * ujinya, tapi TIDAK ke sini. Akibatnya bentuk kegagalan yang paling menipu di
+ * aplikasi ini: tombolnya **tergambar** — daftar tombol diturunkan dari
+ * `aksiTersedia()`, yang membaca tabel transisi — dialognya terbuka, catatannya
+ * bisa diisi, lalu Simpan selalu dijawab *"Aksi tidak dikenali."*. Nol galat, nol
+ * uji merah; 573 uji unit tetap hijau karena semuanya menguji `lib/workflow.ts`,
+ * yang memang benar.
+ *
+ * Diturunkan, satu-satunya cara agar kelalaian yang sama tidak bisa terulang:
+ * `AKSI` bertipe `Record<AksiWorkflow, …>`, jadi transisi berikutnya otomatis ikut.
+ */
+const AKSI_SAH = Object.keys(AKSI) as [AksiWorkflow, ...AksiWorkflow[]]
 
 const SkemaAksi = z.object({
   catatan: z.string().trim().max(2000, 'Catatan maksimal 2.000 karakter'),
@@ -268,12 +276,28 @@ export async function tambahKePool(
   jabatanTargetId: unknown,
   pegawaiId: unknown,
 ): Promise<HasilAksi<{ talentPoolId: number }>> {
-  const tolak = await gerbangPeran(PERAN_POOL)
+  const tolak = await gerbangPeran(PERAN_KELOLA_POOL)
   if (tolak) return tolak
 
   const idTarget = idPositif.safeParse(jabatanTargetId)
   const idPegawai = idPositif.safeParse(pegawaiId)
   if (!idTarget.success || !idPegawai.success) return gagal('Pilihan kandidat tidak dikenali.')
+
+  /*
+    Pengelola Unit hanya boleh mengusulkan pegawai DI UNITNYA.
+
+    Diperiksa sebelum apa pun dibaca soal skornya: kalau pemeriksaannya ditaruh
+    sesudah, pesan galat "belum punya skor" vs "tidak lolos syarat" jadi cara
+    menebak isi unit lain — pegawai yang tidak terjangkau pun akan memberi jawaban
+    yang berbeda-beda menurut keadaan datanya.
+
+    Super Admin & Admin Talenta lolos sendiri: `unitWajib()` untuk mereka `null`.
+  */
+  if ((await pegawaiTerjangkau(idPegawai.data)) === null) {
+    return gagal(
+      'Pegawai itu tidak ada atau di luar lingkup unit Anda. Anda hanya bisa mengusulkan pegawai unit sendiri.',
+    )
+  }
 
   const skor = await kueriSatu<{ id: number; eligible: number; skor_total: string; nama: string }>(
     `SELECT ms.id, ms.eligible, ms.skor_total, p.nama_lengkap AS nama
@@ -296,7 +320,7 @@ export async function tambahKePool(
     const hasil = await jalankanMutasi({
       entitas: 'talent_pool',
       aksi: 'BUAT',
-      peranDiizinkan: PERAN_POOL,
+      peranDiizinkan: PERAN_KELOLA_POOL,
       jalankan: async () => {
         const { insertId } = await eksekusi(
           `INSERT INTO talent_pool (pegawai_id, jabatan_target_id, match_score_id, status)
@@ -358,23 +382,138 @@ export type MasukanRencana = z.infer<typeof SkemaRencana>
 
 const PERAN_RENCANA = ['Super Admin', 'Admin Talenta', 'Pimpinan'] as const
 
-/**
- * Peran yang boleh memasukkan kandidat ke pool. Diangkat jadi konstanta supaya
- * gerbang di awal aksi dan `peranDiizinkan` pada `jalankanMutasi()` membaca
- * daftar yang **sama** — dua daftar yang bisa berselisih adalah dua aturan.
- */
-const PERAN_POOL = ['Super Admin', 'Admin Talenta'] as const
+/*
+  Peran yang boleh memasukkan kandidat ke pool: `PERAN_KELOLA_POOL` di
+  `lib/peran.ts` — satu daftar, dipakai bersama halaman Talent Pool yang menggambar
+  tombolnya. Pengelola Unit ikut sejak 24 Agu 2026; alasan & batas lingkupnya ada di
+  modul itu.
+*/
 
+
+/**
+ * Sasaran sebuah rencana pengembangan.
+ *
+ * Dua bentuk yang saling menggantikan, bukan dua kolom yang harus diisi keduanya:
+ * `talentPoolId` untuk rencana yang lahir dari pencalonan sebuah jabatan target,
+ * `pegawaiId` untuk rencana umum yang tidak terikat kursi mana pun.
+ */
+export interface SasaranRencana {
+  talentPoolId?: number | null
+  pegawaiId?: number | null
+  /** Suksesor yang rencananya dijadikan contoh; hanya dipakai saat membuat baru. */
+  dicontohDariPegawaiId?: number | null
+}
+
+/**
+ * KELUARKAN seseorang dari talent pool — hapus barisnya, bukan tandai ditolak.
+ *
+ * Permintaan pemilik proses 2 Sep 2026, dua kali dan makin tegas: *"kalo udah
+ * dimasukin pool punya opsi dikeluarin lagi, soalnya takut user salah pencet"*,
+ * lalu *"yang talent pool buat keluarin dari pool pake keluarkan dari pool aja,
+ * jadi bukan statusnya ditolak tapi keluar dari pool aja."*
+ *
+ * ## Ini MENGGANTIKAN aksi `TOLAK_KANDIDAT`, yang dihapus dari state machine
+ *
+ * Aksi itu berlabel "Keluarkan dari pool" tapi yang dilakukannya menyetel status
+ * jadi **DITOLAK** — keputusan TENTANG ORANGNYA, dan ia mengendap: namanya tetap
+ * di daftar dengan lencana Ditolak, masuk laporan, dan terbaca lagi bertahun
+ * kemudian saat ia dicalonkan di kursi lain. Label dan akibatnya tidak pernah
+ * sama, dan yang dibaca pengguna labelnya.
+ *
+ * Penolakan yang sungguhan tetap ada dan tidak disentuh: `VERIFIKASI_TOLAK` dan
+ * `TOLAK_PIMPINAN` — keduanya keputusan seseorang atas sebuah nominasi, dan
+ * memang layak mengendap.
+ *
+ * ## Barisnya DIHAPUS, dan riwayatnya tetap ada di jejak audit
+ *
+ * `nominasi` menunjuk `talent_pool` dengan `ON DELETE CASCADE`, jadi mengeluarkan
+ * orang yang pernah dinominasikan ikut membuang baris nominasi & approval-nya.
+ * Yang TIDAK ikut hilang: `audit_log`, yang merekam tiap transisi beserta
+ * `data_sebelum` — jadi "siapa memutuskan apa" tetap bisa ditelusuri, dan
+ * penghapusannya sendiri bisa dibalik.
+ *
+ * Karena itu jumlah nominasi yang ikut terbuang DISEBUTKAN di pesan
+ * konfirmasinya, bukan dihapus diam-diam.
+ */
+export async function keluarkanDariPool(talentPoolId: unknown): Promise<HasilAksi<void>> {
+  const tolak = await gerbangPeran(PERAN_KELOLA_POOL)
+  if (tolak) return tolak
+
+  const idPool = idPositif.safeParse(talentPoolId)
+  if (!idPool.success) return gagal('Entri talent pool tidak dikenali.')
+
+  const entri = await ambilEntriPool(idPool.data)
+  if (entri === null) return gagal('Entri talent pool itu tidak ada.')
+
+  /*
+    Suksesor yang SUDAH DITETAPKAN tidak boleh dikeluarkan begitu saja — itu
+    membatalkan keputusan Pimpinan lewat pintu belakang, tanpa melewati
+    `BATALKAN_PENETAPAN` yang menuntut catatan dan mencatat pembatalannya.
+  */
+  if (entri.status === 'DITETAPKAN') {
+    return gagal(
+      `${entri.nama} sudah ditetapkan sebagai suksesor. Batalkan penetapannya dulu lewat aksi pada barisnya, baru keluarkan dari pool.`,
+    )
+  }
+
+  const nom = await kueriSatu<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM nominasi WHERE talent_pool_id = ?`,
+    [idPool.data],
+  )
+  const jumlahNominasi = Number(nom?.n ?? 0)
+
+  await jalankanMutasi({
+    entitas: 'talent_pool',
+    aksi: 'HAPUS',
+    peranDiizinkan: PERAN_KELOLA_POOL,
+    sebelum: () => kueriSatu(`SELECT * FROM talent_pool WHERE id = ?`, [idPool.data]),
+    jalankan: async () => {
+      await eksekusi(`DELETE FROM talent_pool WHERE id = ?`, [idPool.data])
+      return { entitasId: idPool.data, sesudah: null }
+    },
+  })
+
+  segarkan(entri.jabatanTargetId)
+  return berhasil(
+    undefined,
+    `${entri.nama} dikeluarkan dari pool — tanpa catatan penolakan, dan ia kembali muncul di daftar kandidat yang lolos syarat.` +
+      (jumlahNominasi > 0
+        ? ` ${jumlahNominasi} baris nominasi ikut terbuang; riwayat keputusannya tetap ada di jejak audit.`
+        : ''),
+  )
+}
+
+/**
+ * Simpan rencana pengembangan — untuk suksesor ATAU untuk pegawai mana pun.
+ *
+ * Permintaan pemilik proses (`Detail Revisi PUPR 1_9_2026.pdf`, butir 5): pegawai
+ * di luar talent pool juga harus bisa diberi rekomendasi pengembangan. Sampai
+ * `doc/sql/029`, yang mengunci bukan halaman ini melainkan skemanya —
+ * `talent_pool_id` NOT NULL, jadi 142 dari 146 pegawai tidak punya tempat untuk
+ * menyimpan satu baris rencana pun.
+ *
+ * ## Gerbang "harus DITETAPKAN" TETAP berlaku untuk jalur pool, dan hanya di situ
+ *
+ * Aturannya (PRD §6.6) menjawab pertanyaan yang spesifik: jangan menjanjikan
+ * pengembangan untuk sebuah KURSI kepada orang yang pencalonannya belum diputuskan.
+ * Rencana umum tidak menjanjikan kursi apa pun, jadi aturan itu tidak berlaku di
+ * sana — dan menerapkannya juga akan mengembalikan kuncian yang justru sedang
+ * dibuka. Yang membedakan keduanya bukan longgar-ketat melainkan **apa yang
+ * dijanjikan**.
+ *
+ * Jalur pegawai dibatasi `pegawaiTerjangkau()`, penjaga lingkup unit yang sama
+ * dengan seluruh jalur tulis profil — Pengelola Unit tidak bisa menyusun rencana
+ * untuk pegawai unit lain, dan yang di luar lingkup dijawab "tidak ada", bukan
+ * "akses ditolak".
+ */
 export async function simpanRencana(
-  talentPoolId: unknown,
+  sasaran: SasaranRencana,
   rencanaId: unknown,
   masukan: unknown,
 ): Promise<HasilAksi<{ id: number }>> {
   const tolak = await gerbangPeran(PERAN_RENCANA)
   if (tolak) return tolak
 
-  const idPool = idPositif.safeParse(talentPoolId)
-  if (!idPool.success) return gagal('Entri talent pool tidak dikenali.')
   const idRencana = rencanaId === null ? null : idPositif.safeParse(rencanaId)
   if (idRencana !== null && !idRencana.success) return gagal('Rencana tidak dikenali.')
 
@@ -382,16 +521,40 @@ export async function simpanRencana(
   if (!urai.success) return gagal('Periksa isian yang ditandai.', galatDariZod(urai.error.issues))
   const d = urai.data
 
-  const entri = await ambilEntriPool(idPool.data)
-  if (entri === null) return gagal('Entri talent pool itu tidak ada.')
-  // Rencana pengembangan hanya bermakna untuk suksesor yang sudah ditetapkan
-  // (PRD §6.6). Membuatnya untuk kandidat biasa akan menjanjikan pengembangan
-  // kepada orang yang belum diputuskan.
-  if (idRencana === null && entri.status !== 'DITETAPKAN') {
-    return gagal(
-      `Rencana pengembangan hanya bisa dibuat untuk suksesor yang sudah DITETAPKAN. ${entri.nama} berstatus ${entri.status}.`,
-    )
+  const idPool = sasaran?.talentPoolId == null ? null : idPositif.safeParse(sasaran.talentPoolId)
+  if (idPool !== null && !idPool.success) return gagal('Entri talent pool tidak dikenali.')
+
+  let pegawaiId: number
+  let jabatanTargetId: number | null = null
+
+  if (idPool !== null) {
+    const entri = await ambilEntriPool(idPool.data)
+    if (entri === null) return gagal('Entri talent pool itu tidak ada.')
+    // Rencana pengembangan untuk sebuah KURSI hanya bermakna bagi suksesor yang
+    // sudah ditetapkan (PRD §6.6). Membuatnya untuk kandidat biasa akan
+    // menjanjikan pengembangan kepada orang yang belum diputuskan.
+    if (idRencana === null && entri.status !== 'DITETAPKAN') {
+      return gagal(
+        `Rencana pengembangan untuk jabatan target hanya bisa dibuat untuk suksesor yang sudah DITETAPKAN. ${entri.nama} berstatus ${entri.status}. Rencana pengembangan umum tetap bisa dibuat dari daftar semua pegawai.`,
+      )
+    }
+    pegawaiId = entri.pegawaiId
+    jabatanTargetId = entri.jabatanTargetId
+  } else {
+    const idPegawai = sasaran?.pegawaiId == null ? null : idPositif.safeParse(sasaran.pegawaiId)
+    if (idPegawai === null || !idPegawai.success) {
+      return gagal('Rencana ini belum punya pemilik — pilih pegawainya lebih dulu.')
+    }
+    const orang = await pegawaiTerjangkau(idPegawai.data)
+    if (orang === null) return gagal('Pegawai itu tidak ada.')
+    pegawaiId = orang.id
   }
+
+  const idContoh =
+    sasaran?.dicontohDariPegawaiId == null
+      ? null
+      : idPositif.safeParse(sasaran.dicontohDariPegawaiId)
+  if (idContoh !== null && !idContoh.success) return gagal('Suksesor contoh tidak dikenali.')
 
   const pengguna = await getCurrentUser()
 
@@ -412,10 +575,13 @@ export async function simpanRencana(
       if (idRencana === null) {
         const { insertId } = await eksekusi(
           `INSERT INTO rencana_pengembangan
-             (talent_pool_id, jenis_pengembangan, deskripsi, target_selesai, status, dibuat_oleh)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+             (pegawai_id, talent_pool_id, dicontoh_dari_pegawai_id,
+              jenis_pengembangan, deskripsi, target_selesai, status, dibuat_oleh)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            idPool.data,
+            pegawaiId,
+            idPool === null ? null : idPool.data,
+            idContoh === null ? null : idContoh.data,
             d.jenisPengembangan,
             d.deskripsi,
             d.targetSelesai,
@@ -425,24 +591,31 @@ export async function simpanRencana(
         )
         return { entitasId: insertId, sesudah: { id: insertId, ...d } }
       }
+      /*
+        Dikunci `id` + `pegawai_id`, bukan `id` + `talent_pool_id`. Sejak
+        `doc/sql/029` kolom pool boleh NULL, dan `talent_pool_id = NULL` tidak
+        pernah cocok dengan apa pun di SQL — `UPDATE` untuk rencana umum akan
+        menyentuh NOL baris, melapor berhasil, dan tidak mengubah apa-apa.
+      */
       await eksekusi(
         `UPDATE rencana_pengembangan
          SET jenis_pengembangan = ?, deskripsi = ?, target_selesai = ?, status = ?
-         WHERE id = ? AND talent_pool_id = ?`,
+         WHERE id = ? AND pegawai_id = ?`,
         [
           d.jenisPengembangan,
           d.deskripsi,
           d.targetSelesai,
           d.status,
           idRencana.data,
-          idPool.data,
+          pegawaiId,
         ],
       )
       return { entitasId: idRencana.data, sesudah: { id: idRencana.data, ...d } }
     },
   })
 
-  segarkan(entri.jabatanTargetId)
+  if (jabatanTargetId !== null) segarkan(jabatanTargetId)
+  revalidatePath('/rencana-pengembangan')
   return berhasil({ id: hasil.entitasId ?? 0 }, `Rencana ${d.jenisPengembangan.toLowerCase()} disimpan.`)
 }
 

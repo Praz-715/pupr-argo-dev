@@ -59,6 +59,33 @@ export interface DataTableProps<T> {
   kunciBaris: (baris: T) => string | number
   /** Tautan detail per baris — dipakai untuk prefetch saat hover. */
   tautanBaris?: (baris: T) => string
+  /**
+   * Baris yang sedang dibuka rinciannya, supaya ia ditandai.
+   *
+   * Rincian yang muncul jauh di bawah tabel memaksa pembacanya mengingat baris mana
+   * yang ia klik; penanda ini yang menjawab "rincian siapa yang sedang saya baca"
+   * tanpa harus menggulir balik. Diberikan pemakainya, bukan disimpulkan dari URL di
+   * sini: tiap tabel memakai nama param yang berbeda.
+   */
+  barisAktif?: (baris: T) => boolean
+  /**
+   * Baris yang DITANDAI — dikembalikan sebagai alasannya, atau `null`.
+   *
+   * Permintaan pemilik proses 2 Sep 2026: pegawai yang punya kode catatan
+   * (HDS/HDB/TBTL/TBS) harus *"kelihatan berwarna / ada highlight kuning"* di
+   * direktori pegawai dan daftar kandidat.
+   *
+   * Sengaja LATAR PENUH, menyimpang dari `barisAktif` yang cuma garis kiri — dan
+   * alasan yang ditulis di sana justru yang berlaku di sini: latar berwarna
+   * terbaca sebagai "status baris ini", dan di sini itu memang artinya. Warnanya
+   * `warning`, bukan `danger`: kodenya menandai sesuatu yang perlu DILIHAT LAGI,
+   * bukan menyatakan orangnya bermasalah — sistem bahkan tidak tahu arti kodenya.
+   *
+   * Alasannya dipasang sebagai `title` supaya penandanya bisa dijawab tanpa
+   * membuka profilnya; warna sendirian tidak pernah cukup (pengguna CVD, dan
+   * pembaca layar tidak melihat warna sama sekali).
+   */
+  barisDitandai?: (baris: T) => string | null
   total: number
   halaman: number
   ukuranHalaman: number
@@ -76,6 +103,8 @@ export function DataTable<T>({
   baris,
   kunciBaris,
   tautanBaris,
+  barisAktif,
+  barisDitandai,
   total,
   halaman,
   ukuranHalaman,
@@ -222,10 +251,22 @@ export function DataTable<T>({
             <tbody>
               {baris.map((b) => {
                 const href = tautanBaris?.(b)
+                const aktif = barisAktif?.(b) ?? false
+                const ditandai = barisDitandai?.(b) ?? null
                 return (
                   <tr
                     key={kunciBaris(b)}
-                    className="group border-b border-border last:border-b-0 hover:bg-surface-2"
+                    aria-current={aktif ? 'true' : undefined}
+                    title={ditandai ?? undefined}
+                    className={cn(
+                      'group border-b border-border last:border-b-0 hover:bg-surface-2',
+                      ditandai !== null &&
+                        'bg-warning-subtle shadow-[inset_3px_0_0_var(--color-warning)] hover:bg-warning-subtle',
+                      // Garis kiri, bukan latar penuh: latar berwarna pada satu baris
+                      // di tengah tabel terbaca seperti status baris itu (mis. "ada
+                      // masalah"), padahal artinya cuma "yang sedang dibuka".
+                      aktif && 'bg-accent-subtle shadow-[inset_3px_0_0_var(--color-accent)]',
+                    )}
                   >
                     {kolomTampil.map((k, i) => (
                       <td
@@ -234,6 +275,12 @@ export function DataTable<T>({
                           'px-3 py-2 align-middle',
                           k.rataKanan && 'text-right',
                           k.sticky && 'sticky left-0 bg-surface group-hover:bg-surface-2',
+                          // Kolom sticky punya latarnya sendiri; tanpa ini penanda
+                          // baris aktif terputus tepat di kolom nama.
+                          k.sticky && aktif && 'bg-accent-subtle',
+                          // Alasan yang sama dengan baris di atas: tanpa ini penanda
+                          // kuningnya terputus tepat di kolom nama yang sticky.
+                          k.sticky && ditandai !== null && 'bg-warning-subtle',
                         )}
                       >
                         {/* Kolom pertama membawa tautan detail + prefetch on hover */}
@@ -352,7 +399,7 @@ function PemilihKolom<T>({
                   }}
                   className="size-3.5 accent-[var(--accent)]"
                 />
-                <span className="min-w-0 flex-1 truncate">{k.judul}</span>
+                <span className="min-w-0 flex-1 break-words">{k.judul}</span>
               </label>
             )
           })}

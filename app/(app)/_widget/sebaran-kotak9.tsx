@@ -1,13 +1,18 @@
-import { ArrowDown, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import Link from 'next/link'
 
+import { TabelPegawaiKotak9 } from '@/app/(app)/_komponen/tabel-pegawai-kotak9'
 import { Kotak9Grid } from '@/components/charts/kotak9-grid'
 import { Badge } from '@/components/ui/badge'
 import { Panel, PanelHeader } from '@/components/ui/panel'
 import { Kotak9Skeleton, ListSkeleton, Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
-import { formatAngka, formatNip, formatSkorRingkas } from '@/lib/format'
-import { ambilAnggotaKotak, ambilSebaranKotak9 } from '@/lib/kueri/dashboard'
+import { formatAngka } from '@/lib/format'
+import {
+  ambilAnggotaKotak,
+  ambilSebaranKotak9,
+  UKURAN_HALAMAN_KOTAK,
+} from '@/lib/kueri/dashboard'
 import { DESKRIPSI_KOTAK_9, type Kotak9 } from '@/lib/scoring'
 
 /**
@@ -101,30 +106,22 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
           (permintaan user: "beberapa detik setelah di klik nanti ngilang").
           Animasinya CSS, bukan timer React — alasan lengkapnya di blok keyframes
           di `app/globals.css`. */}
-      {kotakAktif !== null ? (
-        <p
-          // `key` WAJIB. Tanpa itu, mengeklik sel kedua hanya memperbarui teks
-          // elemen yang sama — React tidak melepasnya, animasi CSS tidak pernah
-          // mulai ulang, dan pemberitahuan yang sudah memudar tidak muncul lagi
-          // meski pengguna baru saja mengeklik. `key` memaksanya dilepas & dibuat
-          // ulang, dan animasinya ikut dari nol.
-          key={kotakAktif}
-          // role="status" supaya pembaca layar mengumumkannya saat ia masuk. Ini
-          // penting justru KARENA ia hilang sendiri: pengguna yang tidak melihat
-          // layar tidak punya kesempatan kedua membacanya.
-          role="status"
-          className="pemberitahuan-sekejap mt-3 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs leading-snug text-text"
-        >
-          <ArrowDown aria-hidden className="size-4 shrink-0 text-accent" />
-          <span>
-            Daftar nama pegawai <strong className="font-semibold">Kotak {kotakAktif}</strong> sudah
-            tersedia di bawah.{' '}
-            <a href="#anggota-kotak" className="font-medium text-accent underline">
-              Lihat daftarnya
-            </a>
-          </span>
-        </p>
-      ) : null}
+      {/*
+        Pemberitahuan "Daftar nama pegawai Kotak N sudah tersedia di bawah"
+        DILEPAS atas permintaan pemilik proses (24 Agu 2026: *"ilangin pop up ini di
+        dashboard ilangin aja"*).
+
+        Yang perlu diketahui kalau nanti ada yang berpikir mengembalikannya:
+        pemberitahuan ini ada untuk menjelaskan bahwa hasil klik muncul di panel LAIN
+        di bawah grid, bukan di tempat yang diklik. Fungsi itu tidak hilang — panel
+        drill-down membawa judulnya sendiri ("Pegawai di Kotak N · M orang") beserta
+        tombol tutup, dan grid menandai sel yang sedang aktif dengan ring aksen
+        (dijaga langkah smoke `drill-down: sel terpilih ditandai`). Jadi keadaannya
+        tetap terbaca, hanya tanpa pita yang muncul lalu memudar.
+
+        JANGAN dikembalikan sebagai "perbaikan" — ini keputusan user, sekelas dengan
+        pita populasi, lima widget dashboard, dan paragraf keterangan warna Kotak 9.
+      */}
 
       {/* flex-1 min-h-0: grid menyerap sisa tinggi panel, dan `min-h-0` yang
           membuatnya boleh MENYUSUT — tanpa itu flex item menolak lebih pendek
@@ -152,8 +149,18 @@ export async function SebaranKotak9({ kotakAktif }: { kotakAktif: number | null 
 }
 
 /** Panel drill-down: muncul saat `?kotak=N` ada di URL. */
-export async function AnggotaKotak({ kotak }: { kotak: number }) {
-  const { daftar, total } = await ambilAnggotaKotak(kotak)
+export async function AnggotaKotak({
+  kotak,
+  halaman = 1,
+  urut,
+  arah,
+}: {
+  kotak: number
+  halaman?: number
+  urut?: string | null
+  arah?: 'asc' | 'desc' | null
+}) {
+  const { daftar, total } = await ambilAnggotaKotak(kotak, halaman, urut, arah)
   const valid = kotak >= 1 && kotak <= 9
 
   return (
@@ -189,74 +196,28 @@ export async function AnggotaKotak({ kotak }: { kotak: number }) {
           Tidak ada pegawai di kotak ini.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[42rem] text-[13px]">
-            <thead>
-              <tr className="border-b border-border text-left text-[11px] tracking-wide text-text-subtle uppercase">
-                <th className="px-4 py-2 font-medium">Nama & NIP</th>
-                <th className="px-4 py-2 font-medium">Jabatan</th>
-                <th className="px-4 py-2 text-right font-medium">Kinerja</th>
-                <th className="px-4 py-2 text-right font-medium">Potensial</th>
-                <th className="px-4 py-2 font-medium">Asesmen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {daftar.map((p) => (
-                <tr
-                  key={p.pegawaiId}
-                  className="border-b border-border last:border-b-0 hover:bg-surface-2"
-                >
-                  <td className="px-4 py-2.5">
-                    <Link href={`/talenta/${p.nip}`} className="block hover:text-accent">
-                      <span className="block font-medium text-text">{p.nama}</span>
-                      <span className="tabular block text-[11px] text-text-subtle">
-                        {formatNip(p.nip)}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="max-w-[18rem] px-4 py-2.5 text-text-muted">
-                    <span className="block truncate" title={p.namaJabatan ?? undefined}>
-                      {p.namaJabatan ?? '—'}
-                    </span>
-                    <span className="block truncate text-[11px] text-text-subtle">
-                      {p.namaUnit ?? '—'}
-                    </span>
-                  </td>
-                  <td className="tabular px-4 py-2.5 text-right">
-                    <span className="block font-medium text-text">
-                      {formatSkorRingkas(p.nilaiKinerjaY)}
-                    </span>
-                    {/* Predikat & kategori sumbu adalah DUA taksonomi berbeda —
-                        jangan dicampur dalam satu kolom (phase.md §3 K-3) */}
-                    <span className="block text-[11px] text-text-subtle">{p.predikat}</span>
-                  </td>
-                  <td className="tabular px-4 py-2.5 text-right font-medium text-text">
-                    {formatSkorRingkas(p.nilaiPotensialX)}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className="tabular block text-text-muted">{p.tahunAsesmen}</span>
-                    {p.statusAsesmen !== 'Berlaku' ? (
-                      <Badge tone="peringatan" className="mt-0.5">
-                        {p.statusAsesmen}
-                      </Badge>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        /*
+          Tabel yang SAMA dengan drill-down Peta Talenta (24 Agu 2026, permintaan
+          pemilik proses). Sebelumnya di sini ada `<table>` HTML mentah dengan
+          kolom sendiri — Nama & NIP digabung satu sel, Jabatan & Unit ditumpuk,
+          tanpa Eselon, tanpa Nilai Talenta, tanpa paginasi, tanpa pemilih kolom.
+          Kolomnya mustahil tetap sama dengan dua tabel lain kalau ditulis
+          terpisah, dan memang sudah berbeda.
 
-      <p className="border-t border-border px-4 py-2.5 text-[11px] text-text-subtle">
-        {total > daftar.length
-          ? `Menampilkan ${formatAngka(daftar.length)} dari ${formatAngka(total)} pegawai, diurutkan dari nilai potensial tertinggi. `
-          : 'Diurutkan dari nilai potensial tertinggi. '}
-        <Link href={`/talenta?kotak=${kotak}`} className="text-accent hover:underline">
-          Buka {formatAngka(total)} pegawai ini di Direktori
-        </Link>{' '}
-        untuk memfilter & mengurutkan lebih lanjut.
-      </p>
+          Paginasinya memakai `halKotak`, bukan `hal`: URL dashboard sudah membawa
+          `?kotak=` dan bisa membawa param tabel lain nanti.
+        */
+        <TabelPegawaiKotak9
+          id="anggota-kotak9-dashboard"
+          daftar={daftar}
+          total={total}
+          halaman={halaman}
+          ukuranHalaman={UKURAN_HALAMAN_KOTAK}
+          paramHalaman="halKotak"
+          paramUrut="urutKotak"
+          paramArah="arahKotak"
+        />
+      )}
     </Panel>
   )
 }

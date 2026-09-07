@@ -1,10 +1,11 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { Pilih } from '@/components/ui/pilih'
 import { formatAngka } from '@/lib/format'
 import { LABEL_POOL, type StatusPool } from '@/lib/workflow'
@@ -30,21 +31,6 @@ export function PemilihTarget({
   const [pending, mulaiTransisi] = useTransition()
 
   const cariUrl = searchParams.get('cari') ?? ''
-  const [cari, setCari] = useState(cariUrl)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const [cariTerakhir, setCariTerakhir] = useState(cariUrl)
-  if (cariUrl !== cariTerakhir) {
-    setCariTerakhir(cariUrl)
-    setCari(cariUrl)
-  }
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    [],
-  )
 
   function terapkan(perubahan: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -53,12 +39,6 @@ export function PemilihTarget({
       else params.set(k, v)
     }
     mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
-  }
-
-  function onCari(nilai: string) {
-    setCari(nilai)
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => terapkan({ cari: nilai === '' ? null : nilai }), 300)
   }
 
   const adaFilter = status !== null || cariUrl !== ''
@@ -92,21 +72,15 @@ export function PemilihTarget({
         ]}
       />
 
-      <div className="relative min-w-48 flex-1">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-        <input
-          value={cari}
-          onChange={(e) => onCari(e.target.value)}
-          placeholder="Cari nama atau NIP…"
-          aria-label="Cari anggota pool"
-          className="h-8 w-full rounded-md border border-border bg-surface pr-16 pl-8 text-[13px] text-text outline-none focus:border-accent"
-        />
-        {pending ? (
-          <span className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[10px] text-text-subtle">
-            memuat…
-          </span>
-        ) : null}
-      </div>
+      {/* Pencarian dijalankan saat Enter, bukan per huruf (2 Sep 2026). */}
+      <KotakCari
+        nilaiAwal={cariUrl}
+        onCari={(q: string) => terapkan({ cari: q === '' ? null : q })}
+        placeholder="Cari nama atau NIP…"
+        label="Cari anggota pool"
+        pending={pending}
+        className="min-w-48 flex-1"
+      />
 
       {adaFilter ? (
         <Button

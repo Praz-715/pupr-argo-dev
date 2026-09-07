@@ -172,7 +172,9 @@ const pool = await ukur('talentPool(1 target)', () =>
   sk.ambilTalentPool({ jabatanTargetId: idTarget }),
 )
 await ukur('ringkasPool', () => sk.ambilRingkasPool(idTarget))
-await ukur('kandidatLuarPool', () => sk.ambilKandidatLuarPool(idTarget))
+// `null` = lingkup penuh: pengukuran harus mewakili kueri terberat, dan
+// saringan unit justru mengecilkannya.
+await ukur('kandidatLuarPool', () => sk.ambilKandidatLuarPool(idTarget, null))
 const nominasi = await ukur('daftarNominasi', () => sk.ambilDaftarNominasi())
 if (nominasi[0]) {
   await ukur('riwayatApproval(1)', () => sk.ambilRiwayatApproval(nominasi[0]!.id))

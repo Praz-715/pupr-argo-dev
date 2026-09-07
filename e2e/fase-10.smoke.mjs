@@ -135,6 +135,21 @@ async function tungguTeks(page, teks, timeout = 20000) {
 
 const disentuhPemetaan = []
 const disentuhRiwayat = []
+/**
+ * Potret keadaan SEBELUM uji, dipakai langkah pemulihan di akhir.
+ *
+ * Dulu langkah itu menuntut **nol** pemetaan bertatus bukan-USULAN, dengan
+ * anggapan seluruh isi tabel ini masih usulan seperti di seed. Anggapan itu
+ * berhenti benar 25 Agu 2026: `npm run syarat:pp11` memvalidasi sebagian pemetaan
+ * sebagai bagian dari pemasangan syarat PP 11/2017 — keadaan yang SAH dan permanen.
+ * Sejak itu langkahnya merah pada setiap jalan, atas data yang justru benar, dan
+ * penjaga yang selalu merah berhenti dibaca.
+ *
+ * Yang dibandingkan sekarang **selisih terhadap potret awal**: itu tetap menangkap
+ * baris yang uji ini ubah tanpa mengembalikannya (yang memang tugasnya), tanpa
+ * melarang keadaan yang sudah ada sebelum ia jalan.
+ */
+const awal = {}
 
 try {
   await langkah('bersihkan sisa uji sebelumnya', async () => {
@@ -143,9 +158,14 @@ try {
       const [r] = await c.query(
         "SELECT COUNT(*) AS n FROM pemetaan_diklat WHERE status <> 'USULAN'",
       )
-      return Number(r[0].n)
+      const [j] = await c.query(
+        'SELECT COUNT(*) AS n FROM riwayat_jabatan WHERE jenis_penugasan IS NOT NULL',
+      )
+      return { pemetaan: Number(r[0].n), jabatan: Number(j[0].n) }
     })
-    return `kategori uji dihapus · ${sisa} pemetaan bukan-USULAN tersisa dari sebelumnya`
+    awal.pemetaan = sisa.pemetaan
+    awal.jabatan = sisa.jabatan
+    return `kategori uji dihapus · potret awal: ${sisa.pemetaan} pemetaan tervalidasi · ${sisa.jabatan} riwayat bervalidasi penugasan`
   })
 
   // -------------------------------------------------------------------------
@@ -608,9 +628,15 @@ try {
       return { pemetaan: Number(r[0].n), kategori: Number(k[0].n), jabatan: Number(j[0].n) }
     })
     tegaskan(sisa.kategori === 0, 'kategori uji masih ada')
-    tegaskan(sisa.pemetaan === 0, `${sisa.pemetaan} pemetaan masih bukan USULAN`)
-    tegaskan(sisa.jabatan === 0, `${sisa.jabatan} riwayat jabatan masih tervalidasi`)
-    return `${disentuhPemetaan.length} pemetaan + ${disentuhRiwayat.length} riwayat dipulihkan · kategori uji dihapus`
+    tegaskan(
+      sisa.pemetaan === awal.pemetaan,
+      `pemetaan tervalidasi ${awal.pemetaan} → ${sisa.pemetaan}: ada yang diubah uji ini tapi tidak dikembalikan`,
+    )
+    tegaskan(
+      sisa.jabatan === awal.jabatan,
+      `riwayat bervalidasi penugasan ${awal.jabatan} → ${sisa.jabatan}: ada yang diubah uji ini tapi tidak dikembalikan`,
+    )
+    return `${disentuhPemetaan.length} pemetaan + ${disentuhRiwayat.length} riwayat dipulihkan · kategori uji dihapus · kembali ke potret awal (${awal.pemetaan}/${awal.jabatan})`
   })
   await browser.close()
 }

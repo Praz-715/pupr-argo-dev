@@ -1,10 +1,11 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { KotakCari } from '@/components/ui/kotak-cari'
 import { cn } from '@/lib/cn'
 import { formatAngka } from '@/lib/format'
 
@@ -18,9 +19,12 @@ import { formatAngka } from '@/lib/format'
 export function FilterKandidat({
   total,
   jumlahEligible,
+  opsiRumpun,
 }: {
   total: number
   jumlahEligible: number
+  /** Rumpun jabatan yang benar-benar ada pada populasi (`lib/kueri/rumpun.ts`). */
+  opsiRumpun: Array<{ kunci: string; label: string; jumlahPegawai: number }>
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -28,29 +32,18 @@ export function FilterKandidat({
   const [pending, mulaiTransisi] = useTransition()
 
   const cariUrl = searchParams.get('cari') ?? ''
-  const eligibleUrl = searchParams.get('eligible') === '1'
+  // Bawaannya MENYARING; `?eligible=0` yang membukanya. Harus sama persis dengan
+  // pembacaan di `page.tsx` — kalau berselisih, kotaknya menampilkan keadaan yang
+  // berbeda dari daftar yang sedang tampil di bawahnya.
+  const eligibleUrl = searchParams.get('eligible') !== '0'
 
-  const [cari, setCari] = useState(cariUrl)
   const [hanyaEligible, setHanyaEligible] = useState(eligibleUrl)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [cariTerakhir, setCariTerakhir] = useState(cariUrl)
-  if (cariUrl !== cariTerakhir) {
-    setCariTerakhir(cariUrl)
-    setCari(cariUrl)
-  }
   const [eligibleTerakhir, setEligibleTerakhir] = useState(eligibleUrl)
   if (eligibleUrl !== eligibleTerakhir) {
     setEligibleTerakhir(eligibleUrl)
     setHanyaEligible(eligibleUrl)
   }
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current)
-    },
-    [],
-  )
 
   function terapkan(perubahan: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -64,31 +57,46 @@ export function FilterKandidat({
     mulaiTransisi(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }))
   }
 
-  function onCariBerubah(nilai: string) {
-    setCari(nilai)
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = setTimeout(() => terapkan({ cari: nilai === '' ? null : nilai }), 300)
-  }
-
-  const adaFilter = cariUrl !== '' || eligibleUrl
+  const rumpunUrl = searchParams.get('rumpun') ?? ''
+  const adaFilter = cariUrl !== '' || eligibleUrl || rumpunUrl !== ''
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-56 flex-1">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-text-subtle" />
-        <input
-          value={cari}
-          onChange={(e) => onCariBerubah(e.target.value)}
-          placeholder="Cari nama atau NIP kandidat…"
-          aria-label="Cari kandidat"
-          className="h-8 w-full rounded-md border border-border bg-surface pr-16 pl-8 text-[13px] text-text outline-none focus:border-accent"
-        />
-        {pending ? (
-          <span className="absolute top-1/2 right-2.5 -translate-y-1/2 text-[10px] text-text-subtle">
-            mencari…
-          </span>
-        ) : null}
-      </div>
+      {/* Pencarian dijalankan saat Enter, bukan per huruf (2 Sep 2026). */}
+      <KotakCari
+        nilaiAwal={cariUrl}
+        onCari={(q: string) => terapkan({ cari: q === '' ? null : q })}
+        placeholder="Cari nama atau NIP kandidat…"
+        label="Cari kandidat"
+        pending={pending}
+        className="min-w-56 flex-1"
+      />
+
+      {/*
+        Rumpun jabatan (`Detail Revisi PUPR 1_9_2026.pdf`, butir 4): penyaring
+        awal yang sama di setiap modul berkandidat. Yang disaring jabatan
+        pegawainya SEKARANG, bukan jabatan targetnya — pertanyaannya "siapa yang
+        hari ini kepala seksi", dan targetnya sudah ditentukan halaman ini.
+
+        `<select>` polos, bukan `Pilih`: bilah ini bukan toolbar penyaring
+        berlebar tetap seperti di Direktori, dan `Pilih` memasang `shrink-0` yang
+        akan mendorong kotak pencarian membungkus di layar sempit.
+      */}
+      {opsiRumpun.length > 0 ? (
+        <select
+          value={rumpunUrl}
+          onChange={(e) => terapkan({ rumpun: e.target.value === '' ? null : e.target.value })}
+          aria-label="Saring menurut rumpun jabatan kandidat"
+          className="h-8 shrink-0 rounded-md border border-border bg-surface px-2 text-[13px] text-text outline-none focus:border-accent"
+        >
+          <option value="">Semua rumpun jabatan</option>
+          {opsiRumpun.map((r) => (
+            <option key={r.kunci} value={r.kunci}>
+              {r.label} ({formatAngka(r.jumlahPegawai)})
+            </option>
+          ))}
+        </select>
+      ) : null}
 
       <label
         className={cn(
@@ -103,7 +111,7 @@ export function FilterKandidat({
           checked={hanyaEligible}
           onChange={(e) => {
             setHanyaEligible(e.target.checked)
-            terapkan({ eligible: e.target.checked ? '1' : null })
+            terapkan({ eligible: e.target.checked ? null : '0' })
           }}
           className="size-3.5 accent-[var(--accent)]"
         />
@@ -117,7 +125,7 @@ export function FilterKandidat({
         <Button
           size="sm"
           variant="halus"
-          onClick={() => terapkan({ cari: null, eligible: null })}
+          onClick={() => terapkan({ cari: null, eligible: null, rumpun: null })}
           pending={pending}
           ikon={<X className="size-3.5" />}
         >
