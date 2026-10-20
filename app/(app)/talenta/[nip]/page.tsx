@@ -48,6 +48,7 @@ import { RincianSkor } from './_komponen/rincian-skor'
 import { labelJenjang } from '@/lib/jenjang-asesmen'
 import { PilihAsesmenDipakai } from './_komponen/pilih-asesmen-dipakai'
 import { TombolEditor } from './_komponen/tombol-editor'
+import { FotoPegawaiEditor } from './_komponen/foto-pegawai-editor'
 
 /** Batas unit pengguna yang sedang masuk — dipakai judul halaman & isinya. */
 async function batasUnitSaya(): Promise<number | null> {
@@ -292,37 +293,13 @@ async function KepalaProfil({ profil }: { profil: ProfilPegawai }) {
       */}
       <div className="flex flex-col gap-5 sm:flex-row">
         <div className="shrink-0">
-          {punyaFoto ? (
-            /*
-              `<img>`, BUKAN `next/image`. Pengoptimal Next mengambil gambarnya
-              lewat permintaan HTTP-nya sendiri dari sisi server, tanpa membawa
-              cookie sesi — dan rute foto ini berpenjaga sesi, jadi yang didapat
-              pengoptimal adalah 401 dan yang tampil di halaman adalah gambar
-              rusak. Gambar berpenjaga memang salah satu hal yang tidak bisa
-              lewat `next/image`.
-            */
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/api/internal/foto/${profil.nip}`}
-              alt={`Foto ${profil.nama}`}
-              width={148}
-              height={198}
-              className="h-[12.375rem] w-[9.25rem] rounded-lg border border-border bg-surface-2 object-cover object-top"
-            />
-          ) : (
-            <div
-              className="flex h-[12.375rem] w-[9.25rem] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-2"
-              title="Belum ada foto untuk pegawai ini"
-            >
-              <span
-                aria-hidden
-                className="flex size-14 items-center justify-center rounded-full bg-accent-subtle text-lg font-semibold text-accent"
-              >
-                {inisial(profil.nama)}
-              </span>
-              <span className="text-[11px] text-text-subtle">Belum ada foto</span>
-            </div>
-          )}
+          <FotoPegawaiEditor
+            nip={profil.nip}
+            nama={profil.nama}
+            inisial={inisial(profil.nama)}
+            punyaFoto={punyaFoto}
+            boleh={bolehUbah}
+          />
         </div>
 
         <div className="min-w-0 flex-1">

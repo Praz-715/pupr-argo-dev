@@ -192,7 +192,8 @@ export async function bacaFotoPegawai(nip: string): Promise<FotoPegawai | null> 
 
   const s = await stat(jalur)
   const cap = `"${s.size.toString(16)}-${s.mtimeMs.toString(16)}-w${LEBAR_SAJI}"`
-  const tersimpan = cacheOlah.get(cap)
+  const kunciCache = `${nip}:${cap}`
+  const tersimpan = cacheOlah.get(kunciCache)
   if (tersimpan) return tersimpan
 
   const mentah = await readFile(jalur)
@@ -209,5 +210,5 @@ export async function bacaFotoPegawai(nip: string): Promise<FotoPegawai | null> 
     .jpeg({ quality: 80, mozjpeg: true })
     .toBuffer()
 
-  return simpanCache(cap, { data, tipe: 'image/jpeg', cap })
+  return simpanCache(kunciCache, { data, tipe: 'image/jpeg', cap })
 }
