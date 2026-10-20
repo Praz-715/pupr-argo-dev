@@ -41,7 +41,7 @@ export const NAVIGASI: GrupNav[] = [
     item: [
       {
         label: 'Dashboard',
-        href: '/',
+        href: '/dashboard',
         ikon: 'LayoutDashboard',
         fase: 1,
         kataKunci: ['beranda', 'ringkasan', 'kotak 9'],

@@ -22,7 +22,7 @@ export default async function MasukPage({ searchParams }: { searchParams: ParamH
   if (sesi) {
     // Sesi hidup + wajib ganti sandi → jangan pulangkan ke dashboard, karena
     // app shell akan langsung memantulkannya kembali ke sini.
-    redirect(sesi.harusGantiSandi ? '/ganti-sandi' : '/')
+    redirect(sesi.harusGantiSandi ? '/ganti-sandi' : '/dashboard')
   }
 
   return <FormMasuk next={sp.next ?? null} baruKeluar={sp.keluar === '1'} />

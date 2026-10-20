@@ -26,7 +26,7 @@ export function Breadcrumb() {
   const pathname = usePathname()
   const cocok = itemDariPath(pathname)
 
-  const jejak: Array<{ label: string; href?: string }> = [{ label: 'SIMT DJBK', href: '/' }]
+  const jejak: Array<{ label: string; href?: string }> = [{ label: 'SIMT DJBK', href: '/dashboard' }]
 
   if (cocok) {
     if (cocok.grup.label) jejak.push({ label: cocok.grup.label })

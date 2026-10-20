@@ -66,10 +66,10 @@ function dariForm(fd: FormData): Record<string, unknown> {
  * dibaca sebagai host lain).
  */
 function tujuanAman(next: string | null | undefined): string {
-  if (!next) return '/'
-  if (!next.startsWith('/') || next.startsWith('//')) return '/'
-  if (next.startsWith('/masuk') || next.startsWith('/lupa-password')) return '/'
-  return next
+  if (!next) return '/dashboard'
+  if (!next.startsWith('/') || next.startsWith('//')) return '/dashboard'
+  if (next.startsWith('/masuk') || next.startsWith('/lupa-password')) return '/dashboard'
+  return next === '/' ? '/dashboard' : next
 }
 
 async function ipPemanggil(): Promise<string | null> {
@@ -263,7 +263,7 @@ export async function gantiSandiSaya(
   // Penggantian WAJIB: begitu selesai, penahannya tidak berlaku lagi — antar
   // langsung ke aplikasi. Kalau tidak, penggunanya tinggal di halaman yang
   // baru saja berhenti punya alasan untuk ada.
-  if (d.wajib === '1') redirect('/')
+  if (d.wajib === '1') redirect('/dashboard')
 
   return berhasil(
     { pesan: 'Sandi diperbarui.' },

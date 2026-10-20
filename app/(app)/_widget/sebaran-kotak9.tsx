@@ -182,7 +182,7 @@ export async function AnggotaKotak({
           ) : null}
         </div>
         <Link
-          href="/"
+          href="/dashboard"
           scroll={false}
           aria-label="Tutup daftar pegawai"
           className="flex size-7 shrink-0 items-center justify-center rounded-md text-text-subtle transition-colors hover:bg-surface-3 hover:text-text"

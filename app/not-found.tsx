@@ -14,7 +14,7 @@ export default function NotFound() {
           Halaman yang kamu tuju belum ada. Sebagian modul SIMT DJBK masih dibangun bertahap —
           lihat penanda fase di sidebar.
         </p>
-        <Link href="/" className={`${gayaTombol({ variant: 'utama' })} mt-5`}>
+        <Link href="/dashboard" className={`${gayaTombol({ variant: 'utama' })} mt-5`}>
           Kembali ke Dashboard
         </Link>
       </div>
