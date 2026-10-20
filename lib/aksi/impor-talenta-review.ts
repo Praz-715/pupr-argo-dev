@@ -7,6 +7,9 @@ import { kueri } from '@/lib/db'
 import { gerbangPeran } from '@/lib/aksi/gerbang'
 import { lingkupData, tanpaAkses, unitWajib } from '@/lib/lingkup'
 import { bacaTalentPool, type BarisTalentPool, type EntriAsesmenExcel } from '@/lib/importer/talentpool-xlsx'
+import { ekstrakFotoTalentPool } from '@/lib/importer/foto-xlsx'
+import { adaFotoPegawai } from '@/lib/foto-pegawai'
+import { simpanFotoPegawai } from '@/lib/foto-pegawai-upload' 
 
 export type JenisMasalah = 'pegawai' | 'asesmen' | 'pendidikan'
 export type MasalahImport = {
@@ -46,6 +49,7 @@ export type PegawaiPreview = {
   }
   ringkas: { jabatan: number; pelatihan: number; pendidikan: number; asesmen: number }
 }
+export type FotoPreview = {nip:string; baris:number; sudahAda:boolean; ukuran:number; tipe:string}
 export type Pratinjau = {
   sha: string
   snapshot: string
@@ -56,6 +60,8 @@ export type Pratinjau = {
   sama: number
   daftar: PegawaiPreview[]
   masalah: MasalahImport[]
+  foto: FotoPreview[]
+  peringatanFoto: string[]
   tidakDikenal: string[]
 }
 export type Putusan = {
@@ -255,7 +261,7 @@ function kumpul(rows:BarisTalentPool[],existing:Awaited<ReturnType<typeof dbSnap
     pegawai:[...existing.pejabat.values()].sort((a,b)=>a.nip.localeCompare(b.nip)),
     riwayat:[...existing.riwayat].sort(([a],[b])=>a.localeCompare(b))
   })).digest('hex')
-  return {sha,snapshot,file,jumlah:rows.length,baru,berubah,sama,daftar,masalah,tidakDikenal:[]}
+  return {sha,snapshot,file,jumlah:rows.length,baru,berubah,sama,daftar,masalah,foto:[],peringatanFoto:[],tidakDikenal:[]}
 }
 async function siapkan(fd:FormData) {
   const gate=await gerbangPeran(PERAN)
@@ -269,7 +275,7 @@ async function siapkan(fd:FormData) {
     const hasil=bacaTalentPool(buf)
     if(!hasil.baris.length)return {error:'Tidak ditemukan blok pegawai. Pastikan kolom NO berisi angka.'}
     if(hasil.baris.length>10000)return {error:'Maksimal 10.000 pegawai per batch.'}
-    return {rows:hasil.baris,file:b.name,sha,labels:hasil.labelTakDikenal}
+    return {rows:hasil.baris,file:b.name,sha,labels:hasil.labelTakDikenal,buffer:buf}
   }catch(e){return {error:e instanceof Error?e.message:'File Excel tidak dapat dibaca.'}}
 }
 export async function pratinjauImporTalentPool(fd:FormData):Promise<Hasil<Pratinjau>>{
@@ -280,6 +286,12 @@ export async function pratinjauImporTalentPool(fd:FormData):Promise<Hasil<Pratin
   try{
     const state=await dbSnapshot(input.rows)
     const preview=kumpul(input.rows,state,input.file!,input.sha!)
+    const pictures=ekstrakFotoTalentPool(input.buffer!,input.rows)
+    preview.foto=await Promise.all(pictures.foto.map(async p=>({
+      nip:p.nip,baris:p.barisExcel,sudahAda:state.pejabat.has(p.nip) && await adaFotoPegawai(p.nip),
+      ukuran:p.buffer.length,tipe:p.media
+    })))
+    preview.peringatanFoto=pictures.peringatan
     preview.tidakDikenal=input.labels||[]
     return {ok:true,data:preview}
   }catch(e){return {ok:false,pesan:e instanceof Error?e.message:'Gagal memeriksa database.'}}
@@ -290,7 +302,7 @@ import { normalisasiAsesmen } from '@/lib/importer/normalisasi-baris'
 import { ambilPengaturan, parameterSkoringDari } from '@/lib/pengaturan'
 import { skorPredikat } from '@/lib/scoring'
 
-type RingkasanImpor = {dibuat:number;diperbarui:number;riwayatJabatan:number;pendidikan:number;pelatihan:number;asesmen:number;ditahan:number}
+type RingkasanImpor = {dibuat:number;diperbarui:number;riwayatJabatan:number;pendidikan:number;pelatihan:number;asesmen:number;ditahan:number;fotoTersimpan:number;fotoDilewati:number;fotoGagal:number}
 function statusAsesmen(s:string) {
   const v=bersih(s).toLowerCase()
   if(v==='valid'||v==='berlaku')return 'Berlaku'
@@ -323,6 +335,13 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
     pilihanKolom=mentah
     if(Object.values(pilihanKolom).some(x=>x!=='DB'&&x!=='EXCEL'))throw new Error()
   }catch{return {ok:false,pesan:'Pilihan perbandingan kolom tidak sah.'}}
+  let pilihanFoto:Record<string,'GUNAKAN_EXCEL'|'LEWATI'>={}
+  try{
+    const mentah=JSON.parse(String(fd.get('pilihanFoto')||'{}'))
+    if(!mentah||typeof mentah!=='object'||Array.isArray(mentah))throw Error()
+    pilihanFoto=mentah
+    if(Object.values(pilihanFoto).some(x=>x!=='GUNAKAN_EXCEL'&&x!=='LEWATI'))throw Error()
+  }catch{return {ok:false,pesan:'Pilihan foto tidak valid.'}}
   let keputusan:Record<string,Putusan>
   try{
     keputusan=JSON.parse(String(fd.get('putusan')||'{}')) as Record<string,Putusan>
@@ -330,6 +349,10 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
   }catch{return {ok:false,pesan:'Keputusan review tidak terbaca.'}}
   const state=await dbSnapshot(input.rows)
   const pr=kumpul(input.rows,state,input.file!,input.sha!)
+  const gambar=ekstrakFotoTalentPool(input.buffer!,input.rows)
+  const validFotos=new Set(gambar.foto.map(x=>x.nip))
+  if(Object.keys(pilihanFoto).some(n=>!validFotos.has(n)))
+    return {ok:false,pesan:'Pilihan foto tidak sesuai isi file. Periksa ulang.'}
   if(pr.snapshot!==versi)return {ok:false,pesan:'Data di SIMT telah berubah sejak review. Upload kembali untuk memperbarui perbandingan.'}
   const validKolom=new Set(pr.daftar.flatMap(p=>p.perbedaan.filter(x=>!x.sama).map(x=>p.nip+':'+x.key)))
   if(Object.keys(pilihanKolom).some(x=>!validKolom.has(x)))
@@ -376,11 +399,13 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
   const user=await getCurrentUser()
   if(!user)return {ok:false,pesan:'Sesi sudah berakhir.'}
   const par=parameterSkoringDari(await ambilPengaturan())
-  const statistik:RingkasanImpor={dibuat:0,diperbarui:0,riwayatJabatan:0,pendidikan:0,pelatihan:0,asesmen:0,ditahan:0}
+  const statistik:RingkasanImpor={dibuat:0,diperbarui:0,riwayatJabatan:0,pendidikan:0,pelatihan:0,asesmen:0,ditahan:0,
+    fotoTersimpan:0,fotoDilewati:0,fotoGagal:0}
   const db=await mysql.createConnection({
     host:DATABASE_HOST||'127.0.0.1',port:Number(DATABASE_PORT||3306),
     user:DATABASE_USER,password:DATABASE_PASSWORD,database:DATABASE_NAME,dateStrings:true,timezone:'local'
   })
+  let committed=false
   try{
     await db.beginTransaction()
     for(const original of input.rows){
@@ -498,11 +523,62 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
     await db.execute('INSERT INTO audit_log(user_id,aksi,entitas,data_sesudah,ip_address) VALUES(?,"IMPOR_EXCEL","pegawai",?,NULL)',
       [user.id,JSON.stringify({nama_berkas:input.file,sha256:input.sha,hasil:statistik})])
     await db.commit()
+    committed=true
+    // Foto disimpan SETELAH transaksi pegawai berhasil. Kegagalan media
+    // dilaporkan terpisah, jangan mengklaim rollback DB yang sudah commit.
+    const kegagalanFoto:string[]=[]
+    for(const photo of gambar.foto){
+      if(keputusan[photo.nip+':pegawai']?.aksi==='TAHAN'){
+        statistik.fotoDilewati++;continue
+      }
+      try{
+        const existing=await adaFotoPegawai(photo.nip)
+        const policy=pilihanFoto[photo.nip]||(existing?'LEWATI':'GUNAKAN_EXCEL')
+        if(policy==='LEWATI'){statistik.fotoDilewati++;continue}
+        await simpanFotoPegawai(photo.nip,photo.buffer)
+        statistik.fotoTersimpan++
+        revalidatePath('/talenta/'+photo.nip)
+      }catch{
+        statistik.fotoGagal++
+        kegagalanFoto.push(photo.nip.slice(0,6)+'…')
+      }
+    }
+    try{
+      await db.execute('INSERT INTO audit_log(user_id,aksi,entitas,data_sesudah,ip_address) VALUES(?,"IMPOR_EXCEL","foto_pegawai",?,NULL)',[
+        user.id,JSON.stringify({sha256:input.sha,fotoTersimpan:statistik.fotoTersimpan,fotoDilewati:statistik.fotoDilewati,fotoGagal:statistik.fotoGagal})
+      ])
+    }catch{
+      // Tidak mengulang commit pegawai maupun menutup-nutupi hasil media.
+    }
     revalidatePath('/talenta')
-    return {ok:true,data:statistik,pesan:'Impor selesai. Semua perubahan tercatat dalam audit.'}
+    return {ok:true,data:statistik,pesan:statistik.fotoGagal
+      ?'Data pegawai tersimpan. '+statistik.fotoGagal+' foto gagal disimpan; ulangi perbaikan foto dari profil. Referensi NIP: '+kegagalanFoto.join(', ')
+      :'Impor selesai, termasuk '+statistik.fotoTersimpan+' foto yang disetujui.'}
   }catch(e){
-    await db.rollback()
-    return {ok:false,pesan:'Impor dibatalkan, tidak ada data disimpan: '+(e instanceof Error?e.message:'Gagal menjalankan transaksi.')}
+    if(!committed){
+      await db.rollback()
+      return {ok:false,pesan:'Impor dibatalkan, tidak ada data disimpan: '+(e instanceof Error?e.message:'Gagal menjalankan transaksi.')}
+    }
+    return {ok:false,pesan:'Data pegawai sudah disimpan, tetapi terjadi gangguan pada proses foto setelah commit. Jangan mengulang seluruh batch tanpa meninjau hasilnya.'}
   }finally{await db.end()}
 }
 
+
+/** Ambil foto unggahan untuk satu NIP saja pada modal review; tidak disimpan. */
+export async function pratinjauFotoTalentPool(fd:FormData,nip:string):Promise<Hasil<{gambar:string}>>{
+  const gate=await gerbangPeran(PERAN)
+  if(gate)return {ok:false,pesan:gate.pesan||'Akses ditolak.'}
+  if(!/^\d{18}$/.test(nip))return {ok:false,pesan:'NIP tidak valid.'}
+  const input=await siapkan(fd)
+  if(input.error||!input.rows||!input.buffer)return {ok:false,pesan:input.error||'Excel tidak terbaca.'}
+  if(String(fd.get('sha')||'')!==input.sha)return {ok:false,pesan:'Berkas berbeda dari pratinjau.'}
+  if(!input.rows.some(x=>x.nip===nip))return {ok:false,pesan:'NIP tidak ada pada berkas.'}
+  try{
+    const image=ekstrakFotoTalentPool(input.buffer,input.rows).foto.find(x=>x.nip===nip)
+    if(!image)return {ok:false,pesan:'Tidak ada foto untuk NIP ini.'}
+    const {default:sharp}=await import('sharp')
+    const thumb=await sharp(image.buffer,{limitInputPixels:20_000_000,failOn:'error'})
+      .rotate().resize({width:240,height:240,fit:'inside'}).jpeg({quality:70}).toBuffer()
+    return {ok:true,data:{gambar:'data:image/jpeg;base64,'+thumb.toString('base64')}}
+  }catch{return {ok:false,pesan:'Foto tidak valid atau tidak bisa ditampilkan.'}}
+}

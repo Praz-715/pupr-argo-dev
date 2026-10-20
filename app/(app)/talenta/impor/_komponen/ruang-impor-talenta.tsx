@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { BASE_PATH } from '@/lib/base-path'
 import {
   AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2,
   FileSpreadsheet, Search, ShieldCheck, UploadCloud
@@ -9,12 +11,12 @@ import {
 import { Dialog } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
-  pratinjauImporTalentPool, konfirmasiImporTalentPool,
+  pratinjauImporTalentPool, pratinjauFotoTalentPool, konfirmasiImporTalentPool,
   type MasalahImport, type Pratinjau, type Putusan, type PegawaiPreview, type KoreksiProfil,
 } from '@/lib/aksi/impor-talenta-review'
 
 type Stage='upload'|'review'|'confirm'|'done'
-type HasilImpor={dibuat:number;diperbarui:number;riwayatJabatan:number;pendidikan:number;pelatihan:number;asesmen:number;ditahan:number}
+type HasilImpor={dibuat:number;diperbarui:number;riwayatJabatan:number;pendidikan:number;pelatihan:number;asesmen:number;ditahan:number;fotoTersimpan:number;fotoDilewati:number;fotoGagal:number}
 const titleStage:{[k in Stage]:string}={
   upload:'Unggah Excel',review:'Periksa Hasil',confirm:'Konfirmasi',done:'Selesai'
 }
@@ -47,6 +49,11 @@ export function RuangImporTalenta(){
   const [activeComparison,setActiveComparison]=useState<PegawaiPreview|null>(null)
   const [profilEdit,setProfilEdit]=useState<KoreksiProfil>({})
   const [pilihanKolom,setPilihanKolom]=useState<Record<string,'EXCEL'|'DB'>>({})
+  const [pilihanFoto,setPilihanFoto]=useState<Record<string,'GUNAKAN_EXCEL'|'LEWATI'>>({})
+  const [activeFoto,setActiveFoto]=useState<Pratinjau['foto'][number]|null>(null)
+  const [fotoExcelSrc,setFotoExcelSrc]=useState('')
+  const [fotoLoading,setFotoLoading]=useState(false)
+  const [fotoError,setFotoError]=useState('')
 
   const remaining=(preview?.masalah??[]).filter(i=>!putusan[i.id])
   const decided=(preview?.masalah??[]).filter(i=>Boolean(putusan[i.id]))
@@ -72,7 +79,7 @@ export function RuangImporTalenta(){
       const fd=new FormData();fd.set('berkas',file)
       const response=await pratinjauImporTalentPool(fd)
       if(!response.ok){setError(response.pesan);return}
-      setPreview(response.data);setPutusan({});setPilihanKolom({});setPage(1);setStage('review')
+      setPreview(response.data);setPutusan({});setPilihanKolom({});setPilihanFoto({});setPage(1);setStage('review')
     })
   }
   const edit=(issue:MasalahImport)=>{
@@ -126,14 +133,25 @@ export function RuangImporTalenta(){
       setError('')
       const fd=new FormData()
       fd.set('berkas',file);fd.set('sha',preview.sha);fd.set('snapshot',preview.snapshot)
-      fd.set('putusan',JSON.stringify(putusan));fd.set('pilihanKolom',JSON.stringify(pilihanKolom))
+      fd.set('putusan',JSON.stringify(putusan));fd.set('pilihanKolom',JSON.stringify(pilihanKolom));fd.set('pilihanFoto',JSON.stringify(pilihanFoto))
       const response=await konfirmasiImporTalentPool(fd)
       if(!response.ok){setError(response.pesan);return}
       setResult(response.data);setStage('done')
     })
   }
+  const lihatFoto=async(p:Pratinjau['foto'][number])=>{
+    setActiveFoto(p);setFotoExcelSrc('');setFotoError('');setFotoLoading(true)
+    if(!file||!preview){setFotoLoading(false);return}
+    const fd=new FormData();fd.set('berkas',file);fd.set('sha',preview.sha)
+    try{
+      const res=await pratinjauFotoTalentPool(fd,p.nip)
+      if(res.ok)setFotoExcelSrc(res.data.gambar)
+      else setFotoError(res.pesan)
+    }catch{setFotoError('Gagal mengambil pratinjau foto.')}
+    finally{setFotoLoading(false)}
+  }
   const restart=()=>{
-    setFile(null);setPreview(null);setPutusan({});setPilihanKolom({});setResult(null);setError('');setStage('upload')
+    setFile(null);setPreview(null);setPutusan({});setPilihanKolom({});setPilihanFoto({});setResult(null);setError('');setStage('upload')
   }
 
   const steps:['upload','review','confirm']=['upload','review','confirm']
@@ -179,6 +197,11 @@ export function RuangImporTalenta(){
           <Angka value={preview.daftar.filter(x=>x.sudahAda).length} label="Sudah di SIMT"/>
           <Angka value={remaining.length} label="Perlu keputusan"/>
         </div>
+        {preview.foto.length>0&&<div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted">
+          <FileSpreadsheet className="size-4 shrink-0 text-accent"/>
+          <span><b>{preview.foto.length} foto tertanam ditemukan otomatis.</b> Klik tombol Bandingkan foto untuk melihat foto Excel dan memilih apakah foto SIMT perlu diganti.</span>
+        </div>}
+        {preview.peringatanFoto.length>0&&<div className="mt-2 rounded-md border border-warning-border bg-warning-subtle p-3 text-xs text-text-muted">{preview.peringatanFoto.slice(0,3).join(' · ')}</div>}
         <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-b border-border">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <button type="button" onClick={()=>{setTab('issues');setPage(1)}} className={'border-b-2 pb-3 text-xs font-medium '+(tab==='issues'?'border-accent text-accent':'border-transparent text-text-muted')}>Periksa ({remaining.length} belum selesai)</button>
@@ -210,6 +233,14 @@ export function RuangImporTalenta(){
                 Riwayat tambahan: <b>{Object.values(r.perbandingan).reduce((sum,x)=>sum+x.akanDitambah,0)} entri</b>
                 {r.kondisi==='SAMA'?' · Tidak ada perubahan yang diperlukan':''}
               </div>}
+              {preview.foto.some(x=>x.nip===r.nip)&&<div className="ml-12 mt-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2">
+                <span className="text-xs font-medium text-text">Foto resmi dari Excel</span>
+                <span className="text-xs text-text-subtle">{preview.foto.find(x=>x.nip===r.nip)?.sudahAda?'Sudah ada foto di SIMT':'Belum ada foto di SIMT'}</span>
+                <Button size="sm" variant="sekunder" onClick={()=>lihatFoto(preview.foto.find(x=>x.nip===r.nip)!)}>Bandingkan foto</Button>
+                <span className="text-xs text-accent">
+                  {(pilihanFoto[r.nip]||(preview.foto.find(x=>x.nip===r.nip)?.sudahAda?'LEWATI':'GUNAKAN_EXCEL'))==='GUNAKAN_EXCEL'?'Gunakan foto Excel':'Pertahankan foto SIMT'}
+                </span>
+              </div>}
               {issues.length>0&&<div className="ml-12 mt-3 space-y-2">
                 {issues.map(issue=>{
                   const status=putusan[issue.id]?.aksi
@@ -240,7 +271,8 @@ export function RuangImporTalenta(){
       <h2 className="text-sm font-semibold text-text">Konfirmasi penyimpanan</h2>
       <p className="mt-1 text-xs text-text-muted">Sistem akan memvalidasi ulang file dan kondisi database sebelum menyimpan. Seluruh batch dibatalkan bila ada kegagalan.</p>
       <dl className="mt-5 divide-y divide-border">
-        {[['File',preview.file],['Pegawai terbaca',preview.jumlah.toLocaleString('id-ID')],['Berpotensi baru',preview.baru.toLocaleString('id-ID')],['Pegawai existing dengan data impor',preview.berubah.toLocaleString('id-ID')],['Data ditahan',Object.values(putusan).filter(x=>x.aksi==='TAHAN').length.toLocaleString('id-ID')],['Koreksi dari review',Object.values(putusan).filter(x=>x.aksi==='KOREKSI').length.toLocaleString('id-ID')]].map(([name,value])=><div key={name} className="flex justify-between gap-3 py-3 text-xs"><dt className="text-text-muted">{name}</dt><dd className="text-right font-semibold text-text">{value}</dd></div>)}
+        {[['File',preview.file],['Pegawai terbaca',preview.jumlah.toLocaleString('id-ID')],['Berpotensi baru',preview.baru.toLocaleString('id-ID')],['Pegawai existing dengan data impor',preview.berubah.toLocaleString('id-ID')],['Data ditahan',Object.values(putusan).filter(x=>x.aksi==='TAHAN').length.toLocaleString('id-ID')],['Koreksi dari review',Object.values(putusan).filter(x=>x.aksi==='KOREKSI').length.toLocaleString('id-ID')],
+          ['Foto dari Excel yang disetujui',preview.foto.filter(x=>(pilihanFoto[x.nip]||(x.sudahAda?'LEWATI':'GUNAKAN_EXCEL'))==='GUNAKAN_EXCEL'&&putusan[x.nip+':pegawai']?.aksi!=='TAHAN').length.toLocaleString('id-ID')]].map(([name,value])=><div key={name} className="flex justify-between gap-3 py-3 text-xs"><dt className="text-text-muted">{name}</dt><dd className="text-right font-semibold text-text">{value}</dd></div>)}
       </dl>
       <div className="mt-4 flex items-start gap-2 rounded-md bg-accent-subtle p-3 text-xs text-accent"><ShieldCheck className="size-4 shrink-0"/>Data tidak dihapus otomatis. Identitas, riwayat, dan asesmen dicocokkan sebelum penulisan.</div>
       <div className="mt-5 flex items-center justify-between"><Button variant="sekunder" size="sm" disabled={pending} onClick={()=>setStage('review')}>Kembali ke review</Button><Button size="sm" pending={pending} onClick={apply} labelPending="Menyimpan ke SIMT…">Konfirmasi & simpan data <Check className="ml-1 inline size-4"/></Button></div>
@@ -250,12 +282,53 @@ export function RuangImporTalenta(){
       <h2 className="mt-3 text-lg font-semibold text-text">Data berhasil diproses</h2><p className="mt-1 text-xs text-text-muted">Hasil impor dicatat dalam audit SIMT.</p>
       <div className="mx-auto mt-5 grid max-w-xl grid-cols-2 gap-2 md:grid-cols-3">
         <Angka value={result.dibuat} label="Pegawai baru"/><Angka value={result.diperbarui} label="Profil diperbarui"/><Angka value={result.riwayatJabatan} label="Riwayat jabatan"/>
-        <Angka value={result.pendidikan} label="Pendidikan"/><Angka value={result.pelatihan} label="Pelatihan"/><Angka value={result.asesmen} label="Asesmen"/>
+        <Angka value={result.pendidikan} label="Pendidikan"/><Angka value={result.pelatihan} label="Pelatihan"/><Angka value={result.asesmen} label="Asesmen"/><Angka value={result.fotoTersimpan} label="Foto tersimpan"/>
       </div>
-      <p className="mt-4 text-xs text-text-subtle">{result.ditahan} entri ditahan. Foto tertanam belum ikut impor dan dapat diperbarui di profil talenta.</p>
+      <p className="mt-4 text-xs text-text-subtle">{result.ditahan} entri ditahan · {result.fotoDilewati} foto tidak diubah.</p>
+      {result.fotoGagal>0&&<p role="alert" className="mt-2 rounded-md border border-warning-border bg-warning-subtle p-3 text-xs text-warning">{result.fotoGagal} foto gagal disimpan. Data lain telah tersimpan; perbaiki melalui profil pegawai.</p>}
       <div className="mt-6 flex justify-center gap-2"><Button variant="sekunder" size="sm" onClick={restart}>Impor file lain</Button><Link href="/talenta" className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-accent-text">Kembali ke direktori</Link></div>
     </section>}
     {error&&<div role="alert" className="rounded-md border border-danger-border bg-danger-subtle px-4 py-3 text-xs text-danger">{error}</div>}
+    {activeFoto&&<Dialog buka onTutup={()=>setActiveFoto(null)} lebar="lg"
+      judul="Bandingkan foto pegawai"
+      deskripsi={'Foto Excel tertanam · NIP '+activeFoto.nip}
+      aksi={<Button size="sm" variant="sekunder" onClick={()=>setActiveFoto(null)}>Selesai</Button>}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-border bg-surface-2 p-3 text-center">
+          <p className="mb-3 text-xs font-semibold text-text">Foto dari Excel</p>
+          <div className="flex h-44 items-center justify-center rounded-md bg-surface">
+            {fotoLoading?<span className="text-xs text-text-muted">Membaca foto...</span>:
+             fotoExcelSrc?<Image unoptimized width={160} height={160} src={fotoExcelSrc} alt="Foto dari file Excel" className="max-h-40 max-w-full rounded object-contain"/>:
+             <span className="text-xs text-text-muted">Tidak dapat ditampilkan</span>}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-surface-2 p-3 text-center">
+          <p className="mb-3 text-xs font-semibold text-text">Foto SIMT saat ini</p>
+          <div className="flex h-44 items-center justify-center rounded-md bg-surface">
+            {activeFoto.sudahAda?
+              <Image unoptimized width={160} height={160} src={BASE_PATH+'/api/internal/foto/'+activeFoto.nip} alt="Foto di SIMT sekarang" className="max-h-40 max-w-full rounded object-contain"/>:
+              <span className="text-xs text-text-muted">Belum ada foto tersimpan</span>}
+          </div>
+        </div>
+      </div>
+      {fotoError&&<p className="mt-3 text-xs text-danger">{fotoError}</p>}
+      <div className="mt-4 space-y-2 rounded-md border border-border p-3">
+        <p className="text-xs font-semibold text-text">Foto mana yang akan dipakai?</p>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text">
+          <input type="radio" name={'pilih-foto-'+activeFoto.nip} className="accent-accent"
+            checked={(pilihanFoto[activeFoto.nip]||(activeFoto.sudahAda?'LEWATI':'GUNAKAN_EXCEL'))==='GUNAKAN_EXCEL'}
+            onChange={()=>setPilihanFoto(old=>({...old,[activeFoto.nip]:'GUNAKAN_EXCEL'}))}/>
+          Gunakan foto Excel {activeFoto.sudahAda?'(ganti foto SIMT)':'(isi foto baru)'}
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text">
+          <input type="radio" name={'pilih-foto-'+activeFoto.nip} className="accent-accent"
+            checked={(pilihanFoto[activeFoto.nip]||(activeFoto.sudahAda?'LEWATI':'GUNAKAN_EXCEL'))==='LEWATI'}
+            onChange={()=>setPilihanFoto(old=>({...old,[activeFoto.nip]:'LEWATI'}))}/>
+          {activeFoto.sudahAda?'Pertahankan foto SIMT':'Jangan impor foto ini'}
+        </label>
+      </div>
+      <p className="mt-3 text-xs text-text-muted">Keputusan tersimpan sebagai draft sampai konfirmasi akhir.</p>
+    </Dialog>}
     {activeComparison&&<Dialog buka onTutup={()=>setActiveComparison(null)} lebar="lg"
       judul={activeComparison.sudahAda?'Bandingkan dengan data SIMT':'Rincian calon pegawai baru'}
       deskripsi={activeComparison.nama+' · NIP '+activeComparison.nip}
