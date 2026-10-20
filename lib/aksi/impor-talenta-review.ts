@@ -95,7 +95,6 @@ async function dbSnapshot(rows:BarisTalentPool[]) {
   const nipUnik=[...new Set(rows.map(r=>r.nip.replace(/\D/g,'')).filter(n=>/^\d{18}$/.test(n)))]
   for(let i=0;i<nipUnik.length;i+=200){
     const ids=nipUnik.slice(i,i+200)
-    const cond=batas===null?'':' AND j.unit_organisasi_id IN (WITH RECURSIVE u AS (SELECT id FROM unit_organisasi WHERE id = ? UNION ALL SELECT o.id FROM unit_organisasi o JOIN u ON o.parent_id = u.id) SELECT id FROM u)'
     // Recursive CTE is placed outside IN for broad MySQL compatibility.
     const prefix=batas===null?'':'WITH RECURSIVE turunan AS (SELECT id FROM unit_organisasi WHERE id = ? UNION ALL SELECT u.id FROM unit_organisasi u JOIN turunan t ON u.parent_id=t.id) '
     const suffix=batas===null?'':' AND j.unit_organisasi_id IN (SELECT id FROM turunan)'
