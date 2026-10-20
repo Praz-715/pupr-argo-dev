@@ -274,7 +274,7 @@ async function siapkan(fd:FormData) {
 }
 export async function pratinjauImporTalentPool(fd:FormData):Promise<Hasil<Pratinjau>>{
   const gate=await gerbangPeran(PERAN)
-  if(gate)return {ok:false,pesan:gate.pesan}
+  if(gate)return {ok:false,pesan:gate.pesan||'Akses tidak diizinkan.'}
   const input=await siapkan(fd)
   if(input.error||!input.rows)return {ok:false,pesan:input.error||'Gagal membaca file.'}
   try{
@@ -310,7 +310,7 @@ function jsonDiklat(v:unknown):string[]{
 }
 export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<RingkasanImpor>>{
   const gate=await gerbangPeran(PERAN)
-  if(gate)return {ok:false,pesan:gate.pesan}
+  if(gate)return {ok:false,pesan:gate.pesan||'Akses tidak diizinkan.'}
   const input=await siapkan(fd)
   if(input.error||!input.rows)return {ok:false,pesan:input.error||'File tidak dapat dibaca.'}
   const hash=String(fd.get('sha')||'')
