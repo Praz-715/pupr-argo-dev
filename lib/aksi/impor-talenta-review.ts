@@ -19,11 +19,31 @@ export type MasalahImport = {
   index?: number
   nilai?: EntriAsesmenExcel
 }
+export type SelisihField = {
+  key: string
+  label: string
+  lama: string
+  excel: string
+  sama: boolean
+}
+export type RingkasanKategori = { dariExcel: number; diSIMT: number; akanDitambah: number }
+export type KoreksiProfil = Partial<Pick<BarisTalentPool,
+  'nama'|'golongan'|'tingkatPendidikan'|'namaJabatan'|'unitKerja'|'tmtGolongan'|'tmtJabatan'|'sekolah'|'jurusan'
+>>
 export type PegawaiPreview = {
   nip: string
   nama: string
   baris: number
   kondisi: 'BARU' | 'UPDATE' | 'SAMA' | 'DITINJAU'
+  sudahAda: boolean
+  sumber: KoreksiProfil
+  perbedaan: SelisihField[]
+  perbandingan: {
+    jabatan: RingkasanKategori
+    pelatihan: RingkasanKategori
+    pendidikan: RingkasanKategori
+    asesmen: RingkasanKategori
+  }
   ringkas: { jabatan: number; pelatihan: number; pendidikan: number; asesmen: number }
 }
 export type Pratinjau = {
@@ -48,6 +68,7 @@ export type Putusan = {
   potkom?: string
   catatan?: string
   diverifikasi?: boolean
+  perbaikan?: KoreksiProfil
 }
 type Hasil<T> = { ok: true; data: T; pesan?: string } | { ok: false; pesan: string }
 
@@ -84,23 +105,72 @@ function daftarPendidikan(s:string) {
     return {raw:row,level:jenjang(m[1]!),bidang:bersih(m[2]),tahun:m[3]?Number(m[3]):null}
   })
 }
-type DbPegawai = { id:number; nip:string; nama:string; golongan:string; pangkat:string; pendidikan:string; jabatanId:number|null; sekolah:string|null; bidang:string|null; tmtGolongan:string|null; tmtJabatan:string|null }
+type DbPegawai = { riwayatDiklat:unknown; jabatanNama:string|null; unitNama:string|null; id:number; nip:string; nama:string; golongan:string; pangkat:string; pendidikan:string; jabatanId:number|null; sekolah:string|null; bidang:string|null; tmtGolongan:string|null; tmtJabatan:string|null }
 type DbJabatan = {id:number; nama:string; unit:string; unitId:number}
+type RiwayatDb = { nip:string; nama:string; mulai:string|null; akhir:string|null }
+type PendidikanDb = { nip:string; jenjang:string; bidang:string|null; tahun:number|null }
+type AsesmenDb = { nip:string; tahun:number; jenis:string; jenjang:string|null; potkom:string|number; rating:string|null; status:string|null }
+type RiwayatPembanding = { jabatan:RiwayatDb[]; pendidikan:PendidikanDb[]; asesmen:AsesmenDb[] }
+function formatTanggal(v:string|null|undefined){return v ? String(v).slice(0,10):''}
+function jenisAsesmen(s:string){return kunci(s).replace(/\s+/g,' ')}
+function bandingkanProfil(r:BarisTalentPool, db:DbPegawai|null|undefined, jabatan:DbJabatan|undefined):SelisihField[]{
+  const g=golongan(r.golongan)
+  const bidang=bersih(r.jurusan)||bersih(r.bidangStudi)
+  const data:Array<{key:string;label:string;excel:string;lama:string}>= [
+    {key:'nama_lengkap',label:'Nama lengkap',excel:bersih(r.nama),lama:db?.nama||''},
+    {key:'golongan',label:'Golongan',excel:g,lama:db?.golongan||''},
+    {key:'pangkat',label:'Pangkat (otomatis)',excel:g?PANGKAT[g]||'':'',lama:db?.pangkat||''},
+    {key:'tingkat_pendidikan',label:'Pendidikan terakhir',excel:r.tingkatPendidikan?jenjang(r.tingkatPendidikan):'',lama:db?.pendidikan||''},
+    {key:'jabatan_id',label:'Jabatan / unit kerja',excel:jabatan?jabatan.nama+' · '+jabatan.unit:'',lama:db?.jabatanNama ? db.jabatanNama+' · '+(db.unitNama||'') : ''},
+    {key:'tmt_golongan',label:'TMT golongan',excel:parseTanggal(r.tmtGolongan)||'',lama:formatTanggal(db?.tmtGolongan)},
+    {key:'tmt_jabatan',label:'TMT jabatan',excel:parseTanggal(r.tmtJabatan)||'',lama:formatTanggal(db?.tmtJabatan)},
+    {key:'sekolah_terakhir',label:'Sekolah terakhir',excel:bersih(r.sekolah),lama:db?.sekolah||''},
+    {key:'bidang_studi_terakhir',label:'Bidang studi',excel:bidang,lama:db?.bidang||''},
+  ]
+  return data.filter(d=>d.excel!=='').map(d=>({...d,sama:d.excel===d.lama}))
+}
+function kunciRiwayat(r:{nama:string;mulai:string|null;akhir:string|null}){
+  return kunci(r.nama)+'|'+formatTanggal(r.mulai)+'|'+formatTanggal(r.akhir)
+}
+function hitungan(sumber:string[],db:string[]):RingkasanKategori{
+  const ada=new Set(db)
+  const tambahan=new Set(sumber.filter(v=>!ada.has(v)))
+  return {dariExcel:sumber.length,diSIMT:db.length,akanDitambah:tambahan.size}
+}
 async function dbSnapshot(rows:BarisTalentPool[]) {
   const user=await getCurrentUser()
   const lingkup=lingkupData(user)
   if(tanpaAkses(lingkup)) throw new Error('Tidak ada akses ke direktori.')
   const batas=unitWajib(lingkup)
   const pejabat=new Map<string,DbPegawai>()
+  const riwayat=new Map<string,RiwayatPembanding>()
+  const ambilRiwayat=(nip:string)=>{
+    const found=riwayat.get(nip)
+    if(found)return found
+    const fresh:RiwayatPembanding={jabatan:[],pendidikan:[],asesmen:[]}
+    riwayat.set(nip,fresh)
+    return fresh
+  }
   const nipUnik=[...new Set(rows.map(r=>r.nip.replace(/\D/g,'')).filter(n=>/^\d{18}$/.test(n)))]
   for(let i=0;i<nipUnik.length;i+=200){
     const ids=nipUnik.slice(i,i+200)
     // Recursive CTE is placed outside IN for broad MySQL compatibility.
     const prefix=batas===null?'':'WITH RECURSIVE turunan AS (SELECT id FROM unit_organisasi WHERE id = ? UNION ALL SELECT u.id FROM unit_organisasi u JOIN turunan t ON u.parent_id=t.id) '
     const suffix=batas===null?'':' AND j.unit_organisasi_id IN (SELECT id FROM turunan)'
-    const sql=prefix+'SELECT p.id, p.nip, p.nama_lengkap AS nama, p.golongan, p.pangkat, p.tingkat_pendidikan AS pendidikan, p.jabatan_id AS jabatanId, p.sekolah_terakhir AS sekolah, p.bidang_studi_terakhir AS bidang, p.tmt_golongan AS tmtGolongan, p.tmt_jabatan AS tmtJabatan FROM pegawai p LEFT JOIN jabatan j ON j.id=p.jabatan_id WHERE p.nip IN (?)'+suffix
+    const sql=prefix+'SELECT p.id, p.nip, p.nama_lengkap AS nama, p.golongan, p.pangkat, p.tingkat_pendidikan AS pendidikan, p.jabatan_id AS jabatanId, j.nama_jabatan AS jabatanNama, u.nama_unit AS unitNama, p.riwayat_diklat AS riwayatDiklat, p.sekolah_terakhir AS sekolah, p.bidang_studi_terakhir AS bidang, p.tmt_golongan AS tmtGolongan, p.tmt_jabatan AS tmtJabatan FROM pegawai p LEFT JOIN jabatan j ON j.id=p.jabatan_id LEFT JOIN unit_organisasi u ON u.id=j.unit_organisasi_id WHERE p.nip IN (?)'+suffix
     const found=await kueri<DbPegawai>(sql,batas===null?[ids]:[batas,ids])
     for(const x of found)pejabat.set(String(x.nip),x)
+    const aman=found.map(x=>String(x.nip))
+    if(aman.length){
+      const [jabDb,pendDb,asesDb]=await Promise.all([
+        kueri<RiwayatDb>('SELECT p.nip, r.jabatan_nama_mentah AS nama, r.tanggal_mulai AS mulai, r.tanggal_akhir AS akhir FROM riwayat_jabatan r JOIN pegawai p ON p.id=r.pegawai_id WHERE p.nip IN (?)',[aman]),
+        kueri<PendidikanDb>('SELECT p.nip, r.jenjang_pendidikan AS jenjang, r.bidang_studi AS bidang, r.tahun_lulus AS tahun FROM riwayat_pendidikan r JOIN pegawai p ON p.id=r.pegawai_id WHERE p.nip IN (?)',[aman]),
+        kueri<AsesmenDb>('SELECT p.nip, a.tahun_asesmen AS tahun, a.jenis_asesmen AS jenis, a.jenjang_asesmen AS jenjang, a.potkom, a.rating_kinerja AS rating, a.status_asesmen AS status FROM asesmen_talenta a JOIN pegawai p ON p.id=a.pegawai_id WHERE p.nip IN (?)',[aman])
+      ])
+      for(const x of jabDb)ambilRiwayat(String(x.nip)).jabatan.push(x)
+      for(const x of pendDb)ambilRiwayat(String(x.nip)).pendidikan.push(x)
+      for(const x of asesDb)ambilRiwayat(String(x.nip)).asesmen.push(x)
+    }
   }
   const jab=await kueri<DbJabatan>('SELECT j.id,j.nama_jabatan AS nama,u.nama_unit AS unit,j.unit_organisasi_id AS unitId FROM jabatan j JOIN unit_organisasi u ON u.id=j.unit_organisasi_id WHERE j.status_jabatan <> ?', ['DIHAPUS'])
   const jabatan=new Map(jab.map(x=>[kunci(x.nama)+'@@'+kunci(x.unit),x]))
@@ -110,7 +180,7 @@ async function dbSnapshot(rows:BarisTalentPool[]) {
     const ok=new Set(allowed.map(x=>Number(x.id)))
     for(const j of jab)if(!ok.has(Number(j.unitId)))forbidden.add(Number(j.id))
   }
-  return {pejabat,jabatan,forbidden,restricted:batas!==null}
+  return {pejabat,jabatan,riwayat,forbidden,restricted:batas!==null}
 }
 function kumpul(rows:BarisTalentPool[],existing:Awaited<ReturnType<typeof dbSnapshot>>,file:string,sha:string):Pratinjau {
   let baru=0,berubah=0,sama=0
@@ -150,21 +220,41 @@ function kumpul(rows:BarisTalentPool[],existing:Awaited<ReturnType<typeof dbSnap
       const high=Number(a.potkom)>100
       if(incomplete||high)tambah(r,nip+':asesmen:'+i,'asesmen','Asesmen perlu diperiksa',incomplete?'Tahun, jenis, status, rating atau POTKOM belum lengkap.': 'POTKOM di atas 100 perlu verifikasi sumber.',i,a)
     })
-    if(notes.length)status='DITINJAU'
-    else if(!db){status='BARU';baru++}
-    else {
-      const changes=[
-        n&&n!==db.nama,golongan(r.golongan)&&golongan(r.golongan)!==db.golongan,
-        r.tingkatPendidikan&&jenjang(r.tingkatPendidikan)!==db.pendidikan,
-        r.sekolah&&r.sekolah!==db.sekolah,r.jurusan&&r.jurusan!==db.bidang,
-        r.tmtGolongan&&parseTanggal(r.tmtGolongan)!==db.tmtGolongan,
-      ].some(Boolean)
-      if(changes||r.riwayatJabatan.length||r.riwayatDiklat.length||p.length||r.asesmen.length){status='UPDATE';berubah++}
-      else {status='SAMA';sama++}
+    const jabMatch=r.namaJabatan&&r.unitKerja
+      ? existing.jabatan.get(kunci(r.namaJabatan)+'@@'+kunci(r.unitKerja))
+      : undefined
+    const perbedaan=bandingkanProfil(r,db,jabMatch)
+    const old=existing.riwayat.get(nip)
+    const jabSumber=r.riwayatJabatan.map(x=>kunciRiwayat({
+      nama:x.nama,mulai:parseTanggal(x.tmtMulaiSerial),akhir:parseTanggal(x.tmtAkhirSerial)
+    }))
+    const jabDb=(old?.jabatan||[]).map(x=>kunciRiwayat(x))
+    const pendSumber=p.filter(x=>JENJANG.has(x.level)&&x.bidang).map(x=>x.level+'|'+kunci(x.bidang)+'|'+(x.tahun||''))
+    const pendDb=(old?.pendidikan||[]).map(x=>x.jenjang+'|'+kunci(x.bidang)+'|'+(x.tahun||''))
+    const pelatSumber=r.riwayatDiklat.map(kunci).filter(Boolean)
+    const pelatDb=jsonDiklat(db?.riwayatDiklat).map(kunci).filter(Boolean)
+    const asesSumber=r.asesmen.map(x=>String(x.tahun)+'|'+jenisAsesmen(x.jenis)+'|'+kunci(x.jenjang)+'|'+x.potkom+'|'+kunci(x.rating))
+    const asesDb=(old?.asesmen||[]).map(x=>String(x.tahun)+'|'+jenisAsesmen(x.jenis)+'|'+kunci(x.jenjang)+'|'+x.potkom+'|'+kunci(x.rating))
+    const perbandingan={
+      jabatan:hitungan(jabSumber,jabDb),
+      pendidikan:hitungan(pendSumber,pendDb),
+      pelatihan:hitungan(pelatSumber,pelatDb),
+      asesmen:hitungan(asesSumber,asesDb),
     }
-    daftar.push({nip:r.nip,nama:r.nama,baris:r.barisExcel,kondisi:status,ringkas:{jabatan:r.riwayatJabatan.length,pelatihan:r.riwayatDiklat.length,pendidikan:p.length,asesmen:r.asesmen.length}})
+    const riwayatBaru=Object.values(perbandingan).some(x=>x.akanDitambah>0)
+    if(notes.length)status='DITINJAU' 
+    else if(!db){status='BARU';baru++}
+    else if(perbedaan.some(x=>!x.sama)||riwayatBaru){status='UPDATE';berubah++}
+    else {status='SAMA';sama++}
+    daftar.push({nip:r.nip,nama:r.nama,baris:r.barisExcel,kondisi:status,sudahAda:Boolean(db),
+      sumber:{nama:r.nama,golongan:r.golongan,tingkatPendidikan:r.tingkatPendidikan,namaJabatan:r.namaJabatan,
+        unitKerja:r.unitKerja,tmtGolongan:r.tmtGolongan,tmtJabatan:r.tmtJabatan,sekolah:r.sekolah,jurusan:r.jurusan},
+      perbedaan,perbandingan,ringkas:{jabatan:r.riwayatJabatan.length,pelatihan:r.riwayatDiklat.length,pendidikan:p.length,asesmen:r.asesmen.length}})
   }
-  const snapshot=createHash('sha256').update(JSON.stringify([...existing.pejabat.values()].sort((a,b)=>a.nip.localeCompare(b.nip)))).digest('hex')
+  const snapshot=createHash('sha256').update(JSON.stringify({
+    pegawai:[...existing.pejabat.values()].sort((a,b)=>a.nip.localeCompare(b.nip)),
+    riwayat:[...existing.riwayat].sort(([a],[b])=>a.localeCompare(b))
+  })).digest('hex')
   return {sha,snapshot,file,jumlah:rows.length,baru,berubah,sama,daftar,masalah,tidakDikenal:[]}
 }
 async function siapkan(fd:FormData) {
@@ -183,6 +273,8 @@ async function siapkan(fd:FormData) {
   }catch(e){return {error:e instanceof Error?e.message:'File Excel tidak dapat dibaca.'}}
 }
 export async function pratinjauImporTalentPool(fd:FormData):Promise<Hasil<Pratinjau>>{
+  const gate=await gerbangPeran(PERAN)
+  if(gate)return {ok:false,pesan:gate.pesan}
   const input=await siapkan(fd)
   if(input.error||!input.rows)return {ok:false,pesan:input.error||'Gagal membaca file.'}
   try{
@@ -217,11 +309,20 @@ function jsonDiklat(v:unknown):string[]{
   return []
 }
 export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<RingkasanImpor>>{
+  const gate=await gerbangPeran(PERAN)
+  if(gate)return {ok:false,pesan:gate.pesan}
   const input=await siapkan(fd)
   if(input.error||!input.rows)return {ok:false,pesan:input.error||'File tidak dapat dibaca.'}
   const hash=String(fd.get('sha')||'')
   const versi=String(fd.get('snapshot')||'')
   if(hash!==input.sha)return {ok:false,pesan:'Berkas sudah berubah sejak preview. Periksa ulang.'}
+  let pilihanKolom:Record<string,'EXCEL'|'DB'>={}
+  try{
+    const mentah=JSON.parse(String(fd.get('pilihanKolom')||'{}'))
+    if(!mentah||typeof mentah!=='object'||Array.isArray(mentah))throw new Error()
+    pilihanKolom=mentah
+    if(Object.values(pilihanKolom).some(x=>x!=='DB'&&x!=='EXCEL'))throw new Error()
+  }catch{return {ok:false,pesan:'Pilihan perbandingan kolom tidak sah.'}}
   let keputusan:Record<string,Putusan>
   try{
     keputusan=JSON.parse(String(fd.get('putusan')||'{}')) as Record<string,Putusan>
@@ -230,10 +331,39 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
   const state=await dbSnapshot(input.rows)
   const pr=kumpul(input.rows,state,input.file!,input.sha!)
   if(pr.snapshot!==versi)return {ok:false,pesan:'Data di SIMT telah berubah sejak review. Upload kembali untuk memperbarui perbandingan.'}
+  const validKolom=new Set(pr.daftar.flatMap(p=>p.perbedaan.filter(x=>!x.sama).map(x=>p.nip+':'+x.key)))
+  if(Object.keys(pilihanKolom).some(x=>!validKolom.has(x)))
+    return {ok:false,pesan:'Perubahan kolom berbeda dengan pratinjau. Lakukan review ulang.'}
+  for(const r of pr.daftar){
+    const g=r.perbedaan.some(x=>x.key==='golongan'&&!x.sama)
+    const p=r.perbedaan.some(x=>x.key==='pangkat'&&!x.sama)
+    if(g&&p){
+      const gn=pilihanKolom[r.nip+':golongan']||'EXCEL'
+      const pn=pilihanKolom[r.nip+':pangkat']||'EXCEL'
+      if(gn!==pn)return {ok:false,pesan:'Golongan dan pangkat harus menggunakan sumber nilai yang sama.'}
+    }
+  }
+  const koreksiProfil=new Map<string,BarisTalentPool>()
+  const kolomBoleh=new Set(['nama','golongan','tingkatPendidikan','namaJabatan','unitKerja','tmtGolongan','tmtJabatan','sekolah','jurusan'])
   for(const issue of pr.masalah){
     const p=keputusan[issue.id]
     if(!p||!['TAHAN','KOREKSI'].includes(p.aksi))return {ok:false,pesan:'Masih ada masalah yang belum diputuskan: '+issue.judul}
-    if(p.aksi==='KOREKSI'&&issue.kategori!=='asesmen')return {ok:false,pesan:'Jenis koreksi ini belum didukung. Tahan data sampai dapat diperiksa lebih lanjut.'}
+    if(p.aksi==='KOREKSI'&&issue.kategori==='pendidikan')
+      return {ok:false,pesan:'Jenjang pendidikan di luar enum belum bisa dikoreksi otomatis. Tahan bagian tersebut.'}
+    if(p.aksi==='KOREKSI'&&issue.kategori==='pegawai'){
+      const original=input.rows.find(x=>x.nip===issue.nip)
+      if(!original)return {ok:false,pesan:'Pegawai untuk koreksi tidak ditemukan.'}
+      const fields=p.perbaikan
+      if(!fields||Object.entries(fields).some(([key,value])=>!kolomBoleh.has(key)||typeof value!=='string'||value.length>300))
+        return {ok:false,pesan:'Isian koreksi profil tidak sesuai.'}
+      const repaired={...original,...fields}
+      // A suspected shifted block is unsafe to correct through profile fields only.
+      if(original.perluTinjau.length>0)
+        return {ok:false,pesan:'Susunan kolom sumber diduga bergeser. Tahan pegawai ini dan perbaiki sumber Excel.'}
+      const errors=kumpul([repaired],state,input.file!,input.sha!).masalah.filter(x=>x.kategori==='pegawai')
+      if(errors.length)return {ok:false,pesan:'Masih ada masalah profil: '+errors.map(x=>x.penjelasan).join(' ')}
+      koreksiProfil.set(issue.nip,repaired)
+    }
     if(p.aksi==='KOREKSI'&&issue.kategori==='asesmen'){
       const year=Number(p.tahun),rating=ratingAsesmen(p.rating||''),potkom=Number(String(p.potkom||'').replace(',','.'))
       if(!Number.isInteger(year)||year<1990||year>new Date().getFullYear()+1||!bersih(p.jenis)||!['Berlaku','Draft','Expired'].includes(p.status||'')||!rating||!Number.isFinite(potkom)||potkom<0)
@@ -253,7 +383,8 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
   })
   try{
     await db.beginTransaction()
-    for(const r of input.rows){
+    for(const original of input.rows){
+      const r=koreksiProfil.get(original.nip)||original
       const nip=r.nip.replace(/\D/g,'')
       if(keputusan[nip+':pegawai']?.aksi==='TAHAN'){
         statistik.ditahan++;continue
@@ -273,6 +404,7 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
       if(idJab&&state.forbidden.has(Number(idJab)))throw new Error('Jabatan di luar lingkup.')
       if(!prev&&state.restricted&&!idJab)throw new Error('Penambahan pegawai harus ditautkan ke jabatan dalam lingkup unit.')
       let pegawaiId:number
+      const gunakanExcel=(kolom:string)=>pilihanKolom[r.nip+':'+kolom]!=='DB'
       const g=golongan(r.golongan)
       const sekolah=bersih(r.sekolah)||null
       const bidang=bersih(r.jurusan)||bersih(r.bidangStudi)||null
@@ -292,15 +424,15 @@ export async function konfirmasiImporTalentPool(fd:FormData):Promise<Hasil<Ringk
             col.push(key+'=?');val.push(value)
           }
         }
-        set('nama_lengkap',bersih(r.nama),prev.nama)
-        set('golongan',g,prev.golongan)
-        if(g&&PANGKAT[g])set('pangkat',PANGKAT[g],prev.pangkat)
-        if(JENJANG.has(jenjang(r.tingkatPendidikan)))set('tingkat_pendidikan',jenjang(r.tingkatPendidikan),prev.pendidikan)
-        if(idJab)set('jabatan_id',idJab,prev.jabatanId)
-        set('tmt_golongan',parseTanggal(r.tmtGolongan),prev.tmtGolongan)
-        set('tmt_jabatan',parseTanggal(r.tmtJabatan),prev.tmtJabatan)
-        set('sekolah_terakhir',sekolah,prev.sekolah)
-        set('bidang_studi_terakhir',bidang,prev.bidang)
+        if(gunakanExcel('nama_lengkap'))set('nama_lengkap',bersih(r.nama),prev.nama)
+        if(gunakanExcel('golongan'))set('golongan',g,prev.golongan)
+        if(g&&PANGKAT[g])if(gunakanExcel('pangkat'))set('pangkat',PANGKAT[g],prev.pangkat)
+        if(JENJANG.has(jenjang(r.tingkatPendidikan)))if(gunakanExcel('tingkat_pendidikan'))set('tingkat_pendidikan',jenjang(r.tingkatPendidikan),prev.pendidikan)
+        if(idJab)if(gunakanExcel('jabatan_id'))set('jabatan_id',idJab,prev.jabatanId)
+        if(gunakanExcel('tmt_golongan'))set('tmt_golongan',parseTanggal(r.tmtGolongan),prev.tmtGolongan)
+        if(gunakanExcel('tmt_jabatan'))set('tmt_jabatan',parseTanggal(r.tmtJabatan),prev.tmtJabatan)
+        if(gunakanExcel('sekolah_terakhir'))set('sekolah_terakhir',sekolah,prev.sekolah)
+        if(gunakanExcel('bidang_studi_terakhir'))set('bidang_studi_terakhir',bidang,prev.bidang)
         if(col.length){await db.execute('UPDATE pegawai SET '+col.join(',')+' WHERE id=?',[...val,pegawaiId]);statistik.diperbarui++}
       }
       const [riwDb]=await db.query<mysql.RowDataPacket[]>('SELECT urutan,jabatan_nama_mentah,tanggal_mulai,tanggal_akhir FROM riwayat_jabatan WHERE pegawai_id=?',[pegawaiId])
