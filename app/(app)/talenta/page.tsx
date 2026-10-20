@@ -1,4 +1,6 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
+import { FileSpreadsheet } from 'lucide-react'
 
 import { CatatanLingkup } from '@/components/ui/catatan-lingkup'
 import { PageHeader } from '@/components/ui/panel'
@@ -61,7 +63,7 @@ export default async function DirektoriPage({ searchParams }: { searchParams: Pa
           tombolnya tampil untuk peran lain, satu-satunya yang mereka dapat
           adalah dialog yang ditolak server setelah semua isian diketik.
         */
-        aksi={bolehTambah ? <TombolTambahPegawai opsiJabatan={opsiJabatan} /> : null}
+        aksi={bolehTambah ? <><Link href="/talenta/impor" className="inline-flex items-center gap-1.5 rounded-md border border-white/40 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"><FileSpreadsheet className="size-3.5"/> Impor Excel</Link><TombolTambahPegawai opsiJabatan={opsiJabatan} /></> : null}
       />
 
       <CatatanLingkup lingkup={lingkup} />

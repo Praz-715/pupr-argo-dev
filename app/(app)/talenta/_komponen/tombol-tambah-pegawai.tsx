@@ -2,6 +2,7 @@
 
 import { FileSpreadsheet, Plus, Upload, UserPlus } from 'lucide-react'
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { Bidang, kelasInput } from '@/components/ui/bidang'
 import { Button } from '@/components/ui/button'
@@ -65,6 +66,7 @@ function DialogTambah({
   opsiJabatan: Array<{ id: number; label: string }>
   onTutup: () => void
 }) {
+  const router = useRouter()
   const { tampilkan } = useToast()
   const [pending, mulaiTransisi] = useTransition()
   const [mode, setMode] = useState<Mode>('manual')
@@ -183,7 +185,7 @@ function DialogTambah({
           <button
             key={nilai}
             type="button"
-            onClick={() => setMode(nilai)}
+            onClick={() => { if (nilai === 'berkas') { onTutup(); router.push('/talenta/impor'); return } setMode(nilai) }}
             disabled={pending}
             aria-pressed={mode === nilai}
             className={cn(

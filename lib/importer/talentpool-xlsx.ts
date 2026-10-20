@@ -64,6 +64,8 @@ const LABEL_BERULANG: Record<string, string> = {
   'RIWAYAT PELATIHAN': 'riwayatDiklat',
   'TMT DIKLAT': 'tmtDiklat',
   'TMT MASA KERJA 1': 'tmtMulai',
+  'TMT MASA KERJA': 'tmtMulai',
+  'MASA KERJA JABATAN PENEMPATAN': 'masaKerja',
   'MASA KERJA JABATAN PENEMPATAN 1': 'masaKerja',
 }
 
@@ -76,6 +78,17 @@ export interface EntriRiwayatJabatan {
   masaKerja: string
   tmtMulaiSerial: string
   tmtAkhirSerial: string
+}
+
+export interface EntriAsesmenExcel {
+  barisExcel: number
+  jenjang: string
+  tahun: string
+  jenis: string
+  status: string
+  potkom: string
+  rating: string
+  kotak9: string
 }
 
 export interface BarisTalentPool {
@@ -104,6 +117,7 @@ export interface BarisTalentPool {
   tmtDiklat: string
   riwayatJabatan: EntriRiwayatJabatan[]
   riwayatDiklat: string[]
+  asesmen: EntriAsesmenExcel[]
   /** Alasan baris ini perlu ditinjau manusia. Kosong = bersih. */
   perluTinjau: string[]
 }
@@ -247,6 +261,27 @@ export function bacaTalentPool(buf: Buffer): HasilBacaTalentPool {
     if (kTmtDiklat !== undefined) rec.tmtDiklat = ambil(kTmtDiklat)
     if (rec.tmtDiklat === undefined) rec.tmtDiklat = ''
 
+    const asesmen: EntriAsesmenExcel[] = []
+    const acuanAsesmen = Object.fromEntries(
+      [...tunggal].filter(([, field]) => [
+        'jenjangAsesmen', 'tahunAsesmen', 'jenisAsesmen',
+        'statusAsesmen', 'potkom', 'ratingKinerja', 'kotak9Sumber',
+      ].includes(field)).map(([k, f]) => [f, k]),
+    ) as Record<string, number>
+    for (let m = n; m <= akhir; m++) {
+      const a: EntriAsesmenExcel = {
+        barisExcel: m,
+        jenjang: ambil(acuanAsesmen.jenjangAsesmen, m),
+        tahun: ambil(acuanAsesmen.tahunAsesmen, m),
+        jenis: ambil(acuanAsesmen.jenisAsesmen, m),
+        status: ambil(acuanAsesmen.statusAsesmen, m),
+        potkom: ambil(acuanAsesmen.potkom, m),
+        rating: ambil(acuanAsesmen.ratingKinerja, m),
+        kotak9: ambil(acuanAsesmen.kotak9Sumber, m),
+      }
+      if (Object.values(a).some((v) => typeof v === 'string' && v.trim() !== '')) asesmen.push(a)
+    }
+
     // ── Deteksi, BUKAN perbaikan ────────────────────────────────────────────
     const perluTinjau: string[] = []
     const unit = String(rec.unitKerja ?? '')
@@ -263,7 +298,7 @@ export function bacaTalentPool(buf: Buffer): HasilBacaTalentPool {
       perluTinjau.push(`TINGKAT PENDIDIKAN "${rec.tingkatPendidikan}" bukan jenjang yang dikenali`)
     }
 
-    baris.push({ ...(rec as unknown as BarisTalentPool), riwayatJabatan, riwayatDiklat, perluTinjau })
+    baris.push({ ...(rec as unknown as BarisTalentPool), riwayatJabatan, riwayatDiklat, asesmen, perluTinjau })
   }
 
   return { baris, labelTakDikenal: takDikenal, barisDataPertama: barisData }
